@@ -1,0 +1,92 @@
+@import "tailwindcss";
+
+@theme {
+  --font-display: "Lexend", sans-serif;
+  --font-sans: "Plus Jakarta Sans", sans-serif;
+  --font-mono: "IBM Plex Mono", monospace;
+
+  --color-mist-50: #F4F8FC;
+
+  --color-brand-50: #EAF2FC;
+  --color-brand-100: #D9E8F8;
+  --color-brand-200: #BBD6F0;
+  --color-brand-300: #93BEE6;
+  --color-brand-400: #6FA3D6;
+  --color-brand-500: #5489C2;
+  --color-brand-600: #3F70A8;
+  --color-brand-700: #335A87;
+
+  --color-honey-50: #FEF9EC;
+  --color-honey-100: #FCF0CE;
+  --color-honey-200: #F9E2A0;
+  --color-honey-300: #F5D26B;
+  --color-honey-400: #EFBD3E;
+  --color-honey-500: #D9A52A;
+  --color-honey-700: #8A6A14;
+
+  --color-ink-900: #22344A;
+  --color-ink-700: #3D5168;
+  --color-ink-500: #6E8094;
+  --color-ink-300: #AAB8C6;
+  --color-line-200: #E2EAF2;
+}
+
+body {
+  background-color: var(--color-mist-50);
+  color: var(--color-ink-900);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+@layer components {
+  .surface-card {
+    background-color: white;
+    border-radius: 1rem;
+    border: 1px solid var(--color-line-200);
+    box-shadow: 0 2px 16px rgba(34, 52, 74, 0.06), 0 1px 2px rgba(34, 52, 74, 0.04);
+  }
+
+  .field-input {
+    width: 100%;
+    border-radius: 0.75rem;
+    border: 1px solid var(--color-line-200);
+    padding: 0.625rem 0.875rem;
+    font-size: 0.9rem;
+    color: var(--color-ink-900);
+    background-color: white;
+    transition: box-shadow 0.15s, border-color 0.15s;
+  }
+  .field-input::placeholder { color: var(--color-ink-300); }
+  .field-input:focus {
+    outline: none;
+    border-color: var(--color-brand-400);
+    box-shadow: 0 0 0 3px var(--color-brand-100);
+  }
+
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: 0.75rem;
+    background-color: var(--color-brand-600);
+    color: white;
+    font-weight: 600;
+    font-size: 0.9rem;
+    padding: 0.625rem 1.25rem;
+    transition: background-color 0.15s;
+  }
+  .btn-primary:hover { background-color: var(--color-brand-700); }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .badge-soft {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: 0.125rem 0.625rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+  }
+  .badge-brand { background-color: var(--color-brand-100); color: var(--color-brand-700); }
+  .badge-honey { background-color: var(--color-honey-100); color: var(--color-honey-700); }
+}
