@@ -24,6 +24,10 @@
   --color-honey-500: #D9A52A;
   --color-honey-700: #8A6A14;
 
+  --color-rose-50: #FDF1F1;
+  --color-rose-100: #FADDDD;
+  --color-rose-700: #B9504F;
+
   --color-ink-900: #22344A;
   --color-ink-700: #3D5168;
   --color-ink-500: #6E8094;
@@ -89,4 +93,5 @@ body {
   }
   .badge-brand { background-color: var(--color-brand-100); color: var(--color-brand-700); }
   .badge-honey { background-color: var(--color-honey-100); color: var(--color-honey-700); }
+  .badge-rose { background-color: var(--color-rose-100); color: var(--color-rose-700); }
 }

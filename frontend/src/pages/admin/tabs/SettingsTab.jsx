@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Save, Clock, Info } from 'lucide-react';
+import { Save, Clock, Info, AlertOctagon } from 'lucide-react';
 import api from '../../../api/axios';
 
 export default function SettingsTab() {
@@ -7,6 +7,8 @@ export default function SettingsTab() {
     jam_masuk_mulai: '06:00',
     jam_masuk_batas: '07:30',
     jam_masuk_tutup: '09:00',
+    poin_telat: '5',
+    poin_alpa: '10',
   });
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -36,10 +38,10 @@ export default function SettingsTab() {
     }
   };
 
-  const fields = [
-    { key: 'jam_masuk_mulai', label: 'Jam Mulai Absen',    desc: 'Sebelum jam ini, barcode tidak bisa di-scan (absen belum dibuka)' },
-    { key: 'jam_masuk_batas', label: 'Batas Tepat Waktu',  desc: 'Siswa yang scan sebelum jam ini dianggap HADIR, setelahnya TELAT' },
-    { key: 'jam_masuk_tutup', label: 'Jam Tutup Absen',    desc: 'Setelah jam ini, barcode tidak bisa di-scan lagi (absen ditutup)' },
+  const jamFields = [
+    { key: 'jam_masuk_mulai', label: 'Jam Mulai Absen',   desc: 'Sebelum jam ini, barcode tidak bisa di-scan (absen belum dibuka)' },
+    { key: 'jam_masuk_batas', label: 'Batas Tepat Waktu', desc: 'Siswa yang scan sebelum jam ini dianggap HADIR, setelahnya TELAT' },
+    { key: 'jam_masuk_tutup', label: 'Jam Tutup Absen',   desc: 'Setelah jam ini, barcode tidak bisa di-scan lagi (absen ditutup)' },
   ];
 
   const { jam_masuk_mulai, jam_masuk_batas, jam_masuk_tutup } = form;
@@ -65,28 +67,69 @@ export default function SettingsTab() {
         </div>
       </div>
 
-      <form onSubmit={handleSave} className="surface-card p-5 space-y-4">
-        <h2 className="font-display font-semibold text-ink-900">Pengaturan Jam Masuk</h2>
+      <form onSubmit={handleSave} className="space-y-6">
         {error && (
           <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2">{error}</p>
         )}
-        {fields.map(({ key, label, desc }) => (
-          <div key={key}>
+
+        <div className="surface-card p-5 space-y-4">
+          <h2 className="font-display font-semibold text-ink-900">Pengaturan Jam Masuk</h2>
+          {jamFields.map(({ key, label, desc }) => (
+            <div key={key}>
+              <label className="block text-sm font-medium text-ink-700 mb-1">
+                <Clock className="w-3.5 h-3.5 inline mr-1.5 text-ink-400" />
+                {label}
+              </label>
+              <input
+                type="time"
+                value={form[key]}
+                onChange={(e) => setForm({ ...form, [key]: e.target.value })}
+                className="field-input w-40"
+                required
+              />
+              <p className="mt-1 text-xs text-ink-400">{desc}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="surface-card p-5 space-y-4">
+          <h2 className="font-display font-semibold text-ink-900">Poin Pelanggaran</h2>
+          <p className="text-xs text-ink-500 -mt-2">
+            Poin akan otomatis ditambahkan ke total poin siswa setiap kali terjadi pelanggaran.
+          </p>
+
+          <div>
             <label className="block text-sm font-medium text-ink-700 mb-1">
-              <Clock className="w-3.5 h-3.5 inline mr-1.5 text-ink-400" />
-              {label}
+              <AlertOctagon className="w-3.5 h-3.5 inline mr-1.5 text-honey-500" />
+              Poin Terlambat
             </label>
             <input
-              type="time"
-              value={form[key]}
-              onChange={(e) => setForm({ ...form, [key]: e.target.value })}
-              className="field-input w-40"
+              type="number" min="0" max="100"
+              value={form.poin_telat}
+              onChange={(e) => setForm({ ...form, poin_telat: e.target.value })}
+              className="field-input w-32"
               required
             />
-            <p className="mt-1 text-xs text-ink-400">{desc}</p>
+            <p className="mt-1 text-xs text-ink-400">Diberikan setiap kali siswa scan barcode setelah batas tepat waktu.</p>
           </div>
-        ))}
-        <div className="pt-2">
+
+          <div>
+            <label className="block text-sm font-medium text-ink-700 mb-1">
+              <AlertOctagon className="w-3.5 h-3.5 inline mr-1.5 text-honey-700" />
+              Poin Tidak Hadir (Alpa)
+            </label>
+            <input
+              type="number" min="0" max="100"
+              value={form.poin_alpa}
+              onChange={(e) => setForm({ ...form, poin_alpa: e.target.value })}
+              className="field-input w-32"
+              required
+            />
+            <p className="mt-1 text-xs text-ink-400">Diberikan untuk siswa yang sama sekali tidak scan barcode (lihat tombol "Proses Alpa" di halaman Guru).</p>
+          </div>
+        </div>
+
+        <div>
           <button type="submit" disabled={loading} className="btn-primary">
             <Save className="w-4 h-4" />
             {loading ? 'Menyimpan...' : 'Simpan Pengaturan'}
@@ -94,20 +137,6 @@ export default function SettingsTab() {
           {saved && <span className="ml-3 text-sm text-brand-600 font-medium">✓ Tersimpan!</span>}
         </div>
       </form>
-
-      <div className="surface-card p-5">
-        <h3 className="font-display font-semibold text-ink-900 mb-3 text-sm">Contoh Skenario</h3>
-        <div className="space-y-2 text-sm text-ink-700">
-          <div className="flex gap-3 items-start">
-            <span className="badge-soft badge-brand mt-0.5 shrink-0">Sekolah Pagi</span>
-            <span>Mulai <b>06:00</b> · Batas tepat waktu <b>07:00</b> · Tutup <b>08:30</b></span>
-          </div>
-          <div className="flex gap-3 items-start">
-            <span className="badge-soft badge-honey mt-0.5 shrink-0">Sekolah Siang</span>
-            <span>Mulai <b>11:30</b> · Batas tepat waktu <b>12:00</b> · Tutup <b>13:00</b></span>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

@@ -1,89 +1,55 @@
-import { useEffect, useState } from 'react';
-import { Search } from 'lucide-react';
-import api from '../../../api/axios';
+import { useState } from 'react';
+import { ChevronDown, ClipboardList, AlertOctagon } from 'lucide-react';
+import AttendanceReportTab from './AttendanceReportTab';
+import ViolationReportTab from './ViolationReportTab';
+
+const SUBMENU = [
+  { key: 'absensi', label: 'Rekap Absensi', icon: ClipboardList, component: AttendanceReportTab },
+  { key: 'poin', label: 'Rekap Poin Pelanggaran', icon: AlertOctagon, component: ViolationReportTab },
+];
 
 export default function ReportTab() {
-  const [report, setReport] = useState([]);
-  const [classes, setClasses] = useState([]);
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
-  const [classRoomId, setClassRoomId] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [activeSub, setActiveSub] = useState('absensi');
+  const [open, setOpen] = useState(false);
 
-  useEffect(() => {
-    api.get('/classes').then((res) => setClasses(res.data));
-  }, []);
-
-  const loadReport = () => {
-    setLoading(true);
-    const params = {};
-    if (date) params.date = date;
-    if (classRoomId) params.class_room_id = classRoomId;
-    api.get('/attendance/report', { params })
-      .then((res) => setReport(res.data))
-      .finally(() => setLoading(false));
-  };
-
-  useEffect(() => { loadReport(); }, []);
-
-  const totalHadir = report.filter((r) => r.status === 'hadir').length;
-  const totalTelat = report.filter((r) => r.status === 'telat').length;
+  const current = SUBMENU.find((s) => s.key === activeSub);
+  const ActiveComponent = current?.component;
 
   return (
-    <div className="space-y-6">
-      <div className="surface-card p-5 flex flex-wrap gap-3 items-end">
-        <div>
-          <label className="block text-xs font-medium text-ink-500 mb-1">Tanggal</label>
-          <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="field-input" />
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-ink-500 mb-1">Kelas</label>
-          <select value={classRoomId} onChange={(e) => setClassRoomId(e.target.value)} className="field-input text-ink-700">
-            <option value="">Semua Kelas</option>
-            {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </select>
-        </div>
-        <button onClick={loadReport} className="btn-primary">
-          <Search className="w-4 h-4" /> Tampilkan
+    <div>
+      <div className="relative mb-5 w-64">
+        <button
+          onClick={() => setOpen(!open)}
+          className="w-full flex items-center justify-between gap-2 field-input bg-white text-ink-900 font-medium"
+        >
+          <span className="flex items-center gap-2">
+            <current.icon className="w-4 h-4 text-brand-600" />
+            {current.label}
+          </span>
+          <ChevronDown className={`w-4 h-4 text-ink-400 transition-transform ${open ? 'rotate-180' : ''}`} />
         </button>
-        <div className="ml-auto flex gap-2">
-          <span className="badge-soft badge-brand">Hadir: {totalHadir}</span>
-          <span className="badge-soft badge-honey">Telat: {totalTelat}</span>
-        </div>
-      </div>
 
-      <div className="surface-card p-5">
-        <h2 className="font-display font-semibold text-ink-900 mb-4">
-          Rekap Absensi {date && <span className="text-ink-500 font-sans font-normal text-sm">— {date}</span>}
-        </h2>
-        {loading ? (
-          <p className="text-center text-ink-300 py-6">Memuat...</p>
-        ) : (
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-ink-500 border-b border-line-200">
-                <th className="pb-2 font-medium">Nama Siswa</th><th className="font-medium">Kelas</th><th className="font-medium">Jam Masuk</th><th className="font-medium">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {report.map((r) => (
-                <tr key={r.id} className="border-t border-line-200">
-                  <td className="py-2.5 text-ink-900">{r.student?.user?.name}</td>
-                  <td className="text-ink-700">{r.student?.class_room?.name || '-'}</td>
-                  <td className="font-mono text-xs text-ink-700">{r.time_in}</td>
-                  <td>
-                    <span className={`badge-soft ${r.status === 'telat' ? 'badge-honey' : 'badge-brand'}`}>
-                      {r.status}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-              {report.length === 0 && (
-                <tr><td colSpan="4" className="py-6 text-center text-ink-300">Tidak ada data absensi untuk filter ini.</td></tr>
-              )}
-            </tbody>
-          </table>
+        {open && (
+          <div className="absolute z-10 mt-1 w-full surface-card overflow-hidden">
+            {SUBMENU.map((item) => {
+              const Icon = item.icon;
+              return (
+                <button
+                  key={item.key}
+                  onClick={() => { setActiveSub(item.key); setOpen(false); }}
+                  className={`w-full flex items-center gap-2 px-4 py-2.5 text-sm text-left transition ${
+                    activeSub === item.key ? 'bg-brand-50 text-brand-700 font-medium' : 'text-ink-700 hover:bg-mist-50'
+                  }`}
+                >
+                  <Icon className="w-4 h-4" /> {item.label}
+                </button>
+              );
+            })}
+          </div>
         )}
       </div>
+
+      {ActiveComponent && <ActiveComponent />}
     </div>
   );
 }

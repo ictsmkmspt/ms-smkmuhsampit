@@ -25,7 +25,10 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::middleware('role:admin,guru')->group(function () {
         Route::post('/attendance/scan', [AttendanceController::class, 'scan']);
+        Route::post('/attendance/process-alpa', [AttendanceController::class, 'processAlpa']);
         Route::get('/attendance/report', [AttendanceController::class, 'report']);
+        Route::get('/violations/summary', [AttendanceController::class, 'violationReport']);
+        Route::get('/violations/detail', [AttendanceController::class, 'violationDetail']);
     });
 
     Route::middleware('role:siswa')->group(function () {

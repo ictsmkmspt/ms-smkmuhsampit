@@ -19,6 +19,8 @@ class SettingController extends Controller
             'jam_masuk_mulai' => 'required|date_format:H:i',
             'jam_masuk_batas' => 'required|date_format:H:i',
             'jam_masuk_tutup' => 'required|date_format:H:i',
+            'poin_telat'      => 'required|integer|min:0|max:100',
+            'poin_alpa'       => 'required|integer|min:0|max:100',
         ], [
             'date_format' => 'Format jam harus HH:MM (contoh: 07:30).',
         ]);
@@ -33,9 +35,11 @@ class SettingController extends Controller
         Setting::set('jam_masuk_mulai', $request->jam_masuk_mulai);
         Setting::set('jam_masuk_batas', $request->jam_masuk_batas);
         Setting::set('jam_masuk_tutup', $request->jam_masuk_tutup);
+        Setting::set('poin_telat', (string) $request->poin_telat);
+        Setting::set('poin_alpa', (string) $request->poin_alpa);
 
         return response()->json([
-            'message' => 'Pengaturan berhasil disimpan.',
+            'message'  => 'Pengaturan berhasil disimpan.',
             'settings' => Setting::orderBy('id')->get(),
         ]);
     }

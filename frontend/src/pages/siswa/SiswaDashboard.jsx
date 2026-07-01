@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
-import JsBarcode from 'jsbarcode';
+import { useEffect, useState } from 'react';
+import { QRCodeSVG } from 'qrcode.react';
 import { LogOut, Clock } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api/axios';
@@ -8,28 +8,11 @@ export default function SiswaDashboard() {
   const { user, logout } = useAuth();
   const [profile, setProfile] = useState(null);
   const [history, setHistory] = useState([]);
-  const barcodeRef = useRef(null);
 
   useEffect(() => {
     api.get('/my-profile').then((res) => setProfile(res.data));
     api.get('/my-attendances').then((res) => setHistory(res.data));
   }, []);
-
-  useEffect(() => {
-    if (profile && barcodeRef.current) {
-      JsBarcode(barcodeRef.current, profile.barcode_code, {
-        format: 'CODE128',
-        height: 50,
-        width: 2,
-        displayValue: true,
-        background: 'transparent',
-        lineColor: '#22344A',
-        fontOptions: 'bold',
-        fontSize: 13,
-        margin: 0,
-      });
-    }
-  }, [profile]);
 
   const initial = user.name?.charAt(0)?.toUpperCase() || '?';
 
@@ -68,8 +51,19 @@ export default function SiswaDashboard() {
         </div>
 
         <div className="bg-honey-50 px-5 py-6 flex flex-col items-center">
-          <svg ref={barcodeRef}></svg>
-          <p className="text-[11px] text-ink-500 mt-2">Tunjukkan barcode ini ke guru saat absen</p>
+          {profile && (
+            <div className="bg-white p-3 rounded-xl border border-honey-200">
+              <QRCodeSVG
+                value={profile.barcode_code}
+                size={160}
+                level="M"
+                fgColor="#22344A"
+                bgColor="#FFFFFF"
+              />
+            </div>
+          )}
+          <p className="font-mono text-xs text-ink-700 mt-3 tracking-wide">{profile?.barcode_code}</p>
+          <p className="text-[11px] text-ink-500 mt-1">Tunjukkan QR ini ke guru saat absen</p>
         </div>
       </div>
 
