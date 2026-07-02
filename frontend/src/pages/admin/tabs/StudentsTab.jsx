@@ -60,7 +60,9 @@ export default function StudentsTab() {
       </form>
 
       <div className="surface-card p-5">
-        <h2 className="font-display font-semibold text-ink-900 mb-4">Daftar Siswa <span className="text-ink-500 font-sans font-normal text-sm">({students.length})</span></h2>
+        <h2 className="font-display font-semibold text-ink-900 mb-4">
+          Daftar Siswa <span className="text-ink-500 font-sans font-normal text-sm">({students.length})</span>
+        </h2>
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-ink-500 border-b border-line-200">
@@ -68,19 +70,46 @@ export default function StudentsTab() {
             </tr>
           </thead>
           <tbody>
-            {students.map((s) => (
-              <tr key={s.id} className="border-t border-line-200">
-                <td className="py-2.5 text-ink-900">{s.user?.name}</td>
-                <td className="text-ink-700">{s.nis}</td>
-                <td className="text-ink-700">{s.class_room?.name || '-'}</td>
-                <td className="font-mono text-xs text-brand-600">{s.barcode_code}</td>
-                <td className="text-right">
-                  <button onClick={() => handleDelete(s.id, s.user?.name)} className="text-ink-300 hover:text-honey-700">
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </td>
-              </tr>
-            ))}
+            {(() => {
+              const sorted = [...students].sort((a, b) => {
+                const kelasA = a.class_room?.name || 'ZZZZZ';
+                const kelasB = b.class_room?.name || 'ZZZZZ';
+                if (kelasA !== kelasB) return kelasA.localeCompare(kelasB);
+                return (a.user?.name || '').localeCompare(b.user?.name || '');
+              });
+
+              const rows = [];
+              let lastKelas = null;
+              sorted.forEach((s) => {
+                const kelasName = s.class_room?.name || null;
+                if (kelasName !== lastKelas) {
+                  rows.push(
+                    <tr key={`header-${kelasName}`}>
+                      <td colSpan="5" className="pt-4 pb-1">
+                        <span className="badge-soft badge-brand text-[11px]">
+                          {kelasName || 'Belum Ada Kelas'}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                  lastKelas = kelasName;
+                }
+                rows.push(
+                  <tr key={s.id} className="border-t border-line-200">
+                    <td className="py-2.5 text-ink-900">{s.user?.name}</td>
+                    <td className="text-ink-700">{s.nis}</td>
+                    <td className="text-ink-700">{s.class_room?.name || '-'}</td>
+                    <td className="font-mono text-xs text-brand-600">{s.barcode_code}</td>
+                    <td className="text-right">
+                      <button onClick={() => handleDelete(s.id, s.user?.name)} className="text-ink-300 hover:text-honey-700">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </td>
+                  </tr>
+                );
+              });
+              return rows;
+            })()}
             {students.length === 0 && (
               <tr><td colSpan="5" className="py-6 text-center text-ink-300">Belum ada siswa.</td></tr>
             )}
