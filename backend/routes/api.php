@@ -27,6 +27,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::middleware('role:admin,guru')->group(function () {
 	Route::get('/classes', [ClassRoomController::class, 'index']);
+        Route::get('/students/barcode/{code}', [StudentController::class, 'findByBarcode']);
         Route::post('/attendance/scan', [AttendanceController::class, 'scan']);
         Route::post('/attendance/manual', [AttendanceController::class, 'attendanceManual']);
         Route::post('/attendance/manual', [AttendanceController::class, 'attendanceManual']);
@@ -35,6 +36,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/attendance/report', [AttendanceController::class, 'report']);
         Route::get('/violations/summary', [AttendanceController::class, 'violationReport']);
         Route::get('/violations/detail', [AttendanceController::class, 'violationDetail']);
+        Route::get('/students/{studentId}/violations', [AttendanceController::class, 'studentViolations']);
         Route::get('/violation-types', [ViolationTypeController::class, 'index']);
         Route::get('/students', [StudentController::class, 'index']);
     });

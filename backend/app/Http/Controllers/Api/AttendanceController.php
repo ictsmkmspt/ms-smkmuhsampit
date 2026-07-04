@@ -154,27 +154,30 @@ class AttendanceController extends Controller
     {
         $date = $request->date ?? now()->format('Y-m-d');
 
+        $studentsQuery = Student::with(['user', 'classRoom']);
         if ($request->class_room_id) {
-            $students   = Student::with('user')->where('class_room_id', $request->class_room_id)->get();
-            $attendances = Attendance::with('student.user', 'student.classRoom')
-                ->where('date', $date)->where('class_room_id', $request->class_room_id)
-                ->get()->keyBy('student_id');
-
-            $hasil = $students->map(function ($student) use ($attendances, $date) {
-                $attendance = $attendances->get($student->id);
-                if ($attendance) {
-                    return ['id' => $attendance->id, 'student' => $student, 'date' => $date, 'time_in' => $attendance->time_in, 'status' => $attendance->status];
-                }
-                return ['id' => 'alpa-' . $student->id, 'student' => $student, 'date' => $date, 'time_in' => null, 'status' => 'alpa'];
-            });
-
-            return $hasil->sortBy([
-                fn ($a, $b) => ($a['status'] === 'alpa') <=> ($b['status'] === 'alpa'),
-                fn ($a, $b) => $a['student']->user->name <=> $b['student']->user->name,
-            ])->values();
+            $studentsQuery->where('class_room_id', $request->class_room_id);
         }
+        $students = $studentsQuery->get();
 
-        return Attendance::with('student.user', 'student.classRoom')->where('date', $date)->orderByDesc('time_in')->get();
+        $attendanceQuery = Attendance::where('date', $date);
+        if ($request->class_room_id) {
+            $attendanceQuery->where('class_room_id', $request->class_room_id);
+        }
+        $attendances = $attendanceQuery->get()->keyBy('student_id');
+
+        $hasil = $students->map(function ($student) use ($attendances, $date) {
+            $attendance = $attendances->get($student->id);
+            if ($attendance) {
+                return ['id' => $attendance->id, 'student' => $student, 'date' => $date, 'time_in' => $attendance->time_in, 'status' => $attendance->status];
+            }
+            return ['id' => 'alpa-' . $student->id, 'student' => $student, 'date' => $date, 'time_in' => null, 'status' => 'alpa'];
+        });
+
+        return $hasil->sortBy([
+            fn ($a, $b) => ($a['status'] === 'alpa') <=> ($b['status'] === 'alpa'),
+            fn ($a, $b) => $a['student']->user->name <=> $b['student']->user->name,
+        ])->values();
     }
 
     public function violationReport(Request $request)
@@ -189,6 +192,23 @@ class AttendanceController extends Controller
         $query = Violation::with('student.user', 'student.classRoom', 'violationType');
         if ($request->date) $query->where('date', $request->date);
         if ($request->class_room_id) $query->whereHas('student', fn ($q) => $q->where('class_room_id', $request->class_room_id));
+        return $query->orderByDesc('date')->orderByDesc('created_at')->get();
+    }
+    public function studentViolations(Request $request, $studentId)
+    {
+        $query = Violation::with('violationType')
+            ->where('student_id', $studentId);
+
+        if ($request->date_from) {
+            $query->whereDate('date', '>=', $request->date_from);
+        }
+        if ($request->date_to) {
+            $query->whereDate('date', '<=', $request->date_to);
+        }
+        if ($request->violation_type_id) {
+            $query->where('violation_type_id', $request->violation_type_id);
+        }
+
         return $query->orderByDesc('date')->orderByDesc('created_at')->get();
     }
 

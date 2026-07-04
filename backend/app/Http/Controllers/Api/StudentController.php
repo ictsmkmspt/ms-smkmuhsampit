@@ -69,4 +69,21 @@ class StudentController extends Controller
         $student->user->delete();
         return response()->json(['message' => 'Siswa dihapus.']);
     }
+
+    /**
+     * Cari siswa berdasarkan barcode_code, TANPA mencatat absensi.
+     * Dipakai oleh fitur scan QR di halaman Poin Pelanggaran (guru).
+     */
+    public function findByBarcode(string $code)
+    {
+        $student = Student::with(['user', 'classRoom'])->where('barcode_code', $code)->first();
+
+        if (!$student) {
+            return response()->json([
+                'message' => 'Barcode tidak dikenali / siswa tidak ditemukan.',
+            ], 404);
+        }
+
+        return response()->json($student);
+    }
 }

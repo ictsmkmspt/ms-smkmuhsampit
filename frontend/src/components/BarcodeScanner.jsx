@@ -3,7 +3,7 @@ import { Html5Qrcode } from 'html5-qrcode';
 import { CheckCircle2, AlertTriangle } from 'lucide-react';
 import api from '../api/axios';
 
-export default function BarcodeScanner() {
+export default function BarcodeScanner({ onDecode }) {
   const [message, setMessage] = useState('');
   const [isError, setIsError] = useState(false);
   const scannerRef = useRef(null);
@@ -40,13 +40,27 @@ export default function BarcodeScanner() {
     if (isProcessing.current) return;
     isProcessing.current = true;
 
-    try {
-      const res = await api.post('/attendance/scan', { code: decodedText });
-      setIsError(res.data.already_scanned);
-      setMessage(res.data.message);
-    } catch (err) {
-      setIsError(true);
-      setMessage(err.response?.data?.message || 'Barcode tidak dikenali.');
+    if (onDecode) {
+      // Dipakai oleh halaman lain (misal Poin Pelanggaran) yang butuh
+      // penanganan berbeda saat barcode berhasil dibaca.
+      try {
+        const result = await onDecode(decodedText);
+        setIsError(!!result?.error);
+        setMessage(result?.message || '');
+      } catch (err) {
+        setIsError(true);
+        setMessage(err?.message || 'Terjadi kesalahan.');
+      }
+    } else {
+      // Perilaku default: catat absensi langsung (dipakai di halaman Absensi).
+      try {
+        const res = await api.post('/attendance/scan', { code: decodedText });
+        setIsError(res.data.already_scanned);
+        setMessage(res.data.message);
+      } catch (err) {
+        setIsError(true);
+        setMessage(err.response?.data?.message || 'Barcode tidak dikenali.');
+      }
     }
 
     setTimeout(() => { isProcessing.current = false; }, 2500);

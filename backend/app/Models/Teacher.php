@@ -12,4 +12,10 @@ class Teacher extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    // Kelas di mana guru ini menjadi wali kelas (kalau ada).
+    public function homeroomOf()
+    {
+        return $this->hasOne(ClassRoom::class, 'homeroom_teacher_id');
+    }
 }

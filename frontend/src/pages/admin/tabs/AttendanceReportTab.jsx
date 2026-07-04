@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Search, Info } from 'lucide-react';
+import { Search } from 'lucide-react';
 import api from '../../../api/axios';
 
 export default function AttendanceReportTab() {
@@ -58,15 +58,6 @@ export default function AttendanceReportTab() {
           <span className="badge-soft badge-rose">Alpa: {totalAlpa}</span>
         </div>
       </div>
-
-      {!classRoomId && (
-        <div className="surface-card p-4 border-l-4 border-l-brand-400 flex gap-2">
-          <Info className="w-4 h-4 text-brand-500 shrink-0 mt-0.5" />
-          <p className="text-sm text-ink-700">
-            Pilih kelas tertentu untuk melihat siswa yang <b>belum/tidak absen (alpa)</b> sekaligus. Saat "Semua Kelas" dipilih, hanya siswa yang sudah tercatat absennya yang ditampilkan.
-          </p>
-        </div>
-      )}
 
       <div className="surface-card p-5">
         <h2 className="font-display font-semibold text-ink-900 mb-4">
