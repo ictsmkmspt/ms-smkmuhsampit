@@ -121,6 +121,88 @@ class AttendanceController extends Controller
         ]);
     }
 
+    /**
+     * Ubah status kehadiran (hadir/telat/izin/alpa) DAN/ATAU jam masuk untuk 1 tanggal tertentu.
+     * Dipakai oleh jendela edit di menu Rekap Absensi (admin). "Hapus" juga memanggil endpoint ini
+     * dengan status=alpa (menghapus catatan kehadiran + mencatat poin alpa).
+     * Poin pelanggaran otomatis (telat/alpa) ikut disesuaikan: yang lama dibatalkan,
+     * lalu dicatat ulang sesuai status baru, supaya tidak dobel atau tertinggal.
+     */
+    public function updateStatus(Request $request)
+    {
+        $data = $request->validate([
+            'student_id' => 'required|exists:students,id',
+            'date'       => 'required|date',
+            'status'     => 'required|in:hadir,telat,izin,alpa',
+            'time_in'    => 'nullable|date_format:H:i',
+        ]);
+
+        $student   = Student::with('user')->findOrFail($data['student_id']);
+        $date      = $data['date'];
+        $newStatus = $data['status'];
+        $timeIn    = $data['time_in'] ?? null;
+
+        return DB::transaction(function () use ($student, $date, $newStatus, $timeIn, $request) {
+            $attendance = Attendance::where('student_id', $student->id)->where('date', $date)->first();
+            $oldStatus  = $attendance ? $attendance->status : 'alpa';
+
+            // 1. Batalkan poin dari pelanggaran otomatis lama (telat/alpa) untuk tanggal ini, kalau status berubah.
+            if ($oldStatus !== $newStatus) {
+                $oldViolation = Violation::where('student_id', $student->id)
+                    ->where('date', $date)
+                    ->whereIn('type', ['telat', 'alpa'])
+                    ->first();
+
+                if ($oldViolation) {
+                    $student->tambahPoin(-$oldViolation->poin);
+                    $oldViolation->delete();
+                }
+            }
+
+            // 2. Terapkan status + jam masuk baru ke tabel attendances.
+            if ($newStatus === 'alpa') {
+                if ($attendance) $attendance->delete();
+                $attendance = null;
+            } elseif ($attendance) {
+                $attendance->update([
+                    'status'  => $newStatus,
+                    'time_in' => $timeIn ?? $attendance->time_in,
+                ]);
+            } else {
+                $attendance = Attendance::create([
+                    'student_id'    => $student->id,
+                    'class_room_id' => $student->class_room_id,
+                    'date'          => $date,
+                    'time_in'       => $timeIn ?? now()->format('H:i:s'),
+                    'status'        => $newStatus,
+                    'scanned_by'    => $request->user()->id,
+                ]);
+            }
+
+            // 3. Catat ulang poin pelanggaran sesuai status baru (kalau telat/alpa dan berubah).
+            if (in_array($newStatus, ['telat', 'alpa']) && $oldStatus !== $newStatus) {
+                $jenis = ViolationType::where('system_key', $newStatus)->first();
+                $poin  = $jenis?->poin ?? ($newStatus === 'telat' ? 5 : 10);
+
+                Violation::create([
+                    'student_id'        => $student->id,
+                    'attendance_id'     => $newStatus === 'telat' ? $attendance->id : null,
+                    'violation_type_id' => $jenis?->id,
+                    'date'              => $date,
+                    'type'              => $newStatus,
+                    'poin'              => $poin,
+                    'recorded_by'       => $request->user()->id,
+                ]);
+
+                $student->tambahPoin($poin);
+            }
+
+            return response()->json([
+                'message' => 'Data kehadiran ' . $student->user->name . ' berhasil diperbarui.',
+            ]);
+        });
+    }
+
     public function recordManual(Request $request)
     {
         $data = $request->validate([
@@ -194,6 +276,12 @@ class AttendanceController extends Controller
         if ($request->class_room_id) $query->whereHas('student', fn ($q) => $q->where('class_room_id', $request->class_room_id));
         return $query->orderByDesc('date')->orderByDesc('created_at')->get();
     }
+
+    /**
+     * Riwayat pelanggaran 1 siswa tertentu, dengan filter opsional
+     * rentang tanggal (date_from/date_to) dan jenis pelanggaran (violation_type_id).
+     * Dipakai oleh popup riwayat pelanggaran di halaman Rekap Poin Pelanggaran.
+     */
     public function studentViolations(Request $request, $studentId)
     {
         $query = Violation::with('violationType')
@@ -212,16 +300,15 @@ class AttendanceController extends Controller
         return $query->orderByDesc('date')->orderByDesc('created_at')->get();
     }
 
-
     /**
-     * Catat kehadiran secara manual (hadir/telat) tanpa scan barcode.
+     * Catat kehadiran secara manual (hadir/telat/izin) tanpa scan barcode.
      * Dipanggil dari form Absensi Manual di halaman Guru.
      */
     public function attendanceManual(Request $request)
     {
         $data = $request->validate([
             'student_id' => 'required|exists:students,id',
-            'status'     => 'required|in:hadir,telat',
+            'status'     => 'required|in:hadir,telat,izin',
         ]);
 
         $student = Student::with('user')->find($data['student_id']);

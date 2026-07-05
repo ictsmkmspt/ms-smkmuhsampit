@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { Search } from 'lucide-react';
+import { Search, Trash2 } from 'lucide-react';
 import api from '../../../api/axios';
+import EditAttendanceModal from '../../../components/EditAttendanceModal';
 
 export default function AttendanceReportTab() {
   const [report, setReport] = useState([]);
@@ -8,6 +9,8 @@ export default function AttendanceReportTab() {
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [classRoomId, setClassRoomId] = useState('');
   const [loading, setLoading] = useState(false);
+  const [editingRecord, setEditingRecord] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
 
   useEffect(() => {
     api.get('/classes').then((res) => setClasses(res.data));
@@ -25,12 +28,31 @@ export default function AttendanceReportTab() {
 
   useEffect(() => { loadReport(); }, []);
 
+  const handleDelete = async (r) => {
+    if (!confirm(`Hapus data kehadiran ${r.student?.user?.name} pada ${r.date}? Siswa ini akan otomatis menjadi "alpa".`)) return;
+    setDeletingId(r.id);
+    try {
+      await api.post('/attendance/update-status', {
+        student_id: r.student.id,
+        date: r.date,
+        status: 'alpa',
+      });
+      loadReport();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Gagal menghapus data kehadiran.');
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   const totalHadir = report.filter((r) => r.status === 'hadir').length;
   const totalTelat = report.filter((r) => r.status === 'telat').length;
+  const totalIzin = report.filter((r) => r.status === 'izin').length;
   const totalAlpa = report.filter((r) => r.status === 'alpa').length;
 
   const badgeClass = (status) => {
     if (status === 'telat') return 'badge-honey';
+    if (status === 'izin') return 'badge-honey';
     if (status === 'alpa') return 'badge-rose';
     return 'badge-brand';
   };
@@ -55,6 +77,7 @@ export default function AttendanceReportTab() {
         <div className="ml-auto flex gap-2">
           <span className="badge-soft badge-brand">Hadir: {totalHadir}</span>
           <span className="badge-soft badge-honey">Telat: {totalTelat}</span>
+          <span className="badge-soft badge-honey">Izin: {totalIzin}</span>
           <span className="badge-soft badge-rose">Alpa: {totalAlpa}</span>
         </div>
       </div>
@@ -69,7 +92,11 @@ export default function AttendanceReportTab() {
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-ink-500 border-b border-line-200">
-                <th className="pb-2 font-medium">Nama Siswa</th><th className="font-medium">Kelas</th><th className="font-medium">Jam Masuk</th><th className="font-medium">Status</th>
+                <th className="pb-2 font-medium">Nama Siswa</th>
+                <th className="font-medium">Kelas</th>
+                <th className="font-medium">Jam Masuk</th>
+                <th className="font-medium">Status</th>
+                <th className="font-medium text-right">Aksi</th>
               </tr>
             </thead>
             <tbody>
@@ -79,19 +106,43 @@ export default function AttendanceReportTab() {
                   <td className="text-ink-700">{r.student?.class_room?.name || '-'}</td>
                   <td className="font-mono text-xs text-ink-700">{r.time_in || '-'}</td>
                   <td>
-                    <span className={`badge-soft ${badgeClass(r.status)}`}>
+                    <button
+                      onClick={() => setEditingRecord(r)}
+                      className={`badge-soft ${badgeClass(r.status)} cursor-pointer hover:opacity-80 transition`}
+                      title="Klik untuk edit"
+                    >
                       {r.status}
-                    </span>
+                    </button>
+                  </td>
+                  <td className="text-right">
+                    {r.status !== 'alpa' && (
+                      <button
+                        onClick={() => handleDelete(r)}
+                        disabled={deletingId === r.id}
+                        className="text-ink-300 hover:text-honey-700 disabled:opacity-40"
+                        title="Hapus data kehadiran"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}
               {report.length === 0 && (
-                <tr><td colSpan="4" className="py-6 text-center text-ink-300">Tidak ada data absensi untuk filter ini.</td></tr>
+                <tr><td colSpan="5" className="py-6 text-center text-ink-300">Tidak ada data absensi untuk filter ini.</td></tr>
               )}
             </tbody>
           </table>
         )}
       </div>
+
+      {editingRecord && (
+        <EditAttendanceModal
+          record={editingRecord}
+          onClose={() => setEditingRecord(null)}
+          onSaved={() => { setEditingRecord(null); loadReport(); }}
+        />
+      )}
     </div>
   );
 }

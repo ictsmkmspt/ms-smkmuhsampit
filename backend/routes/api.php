@@ -22,6 +22,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::apiResource('teachers', TeacherController::class);
         Route::get('/settings', [SettingController::class, 'index']);
         Route::put('/settings', [SettingController::class, 'update']);
+	Route::post('/attendance/update-status', [AttendanceController::class, 'updateStatus']);
         Route::apiResource('violation-types', ViolationTypeController::class)->except(['show']);
     });
 
