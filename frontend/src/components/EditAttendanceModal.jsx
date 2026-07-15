@@ -54,8 +54,8 @@ export default function EditAttendanceModal({ record, onClose, onSaved }) {
               className="field-input text-ink-700"
             >
               <option value="hadir">Hadir</option>
-              <option value="telat">Telat</option>
               <option value="izin">Izin</option>
+              <option value="sakit">Sakit</option>
               <option value="alpa">Alpa</option>
             </select>
           </div>

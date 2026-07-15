@@ -19,6 +19,7 @@ export default function Login() {
       const user = await login(email, password);
       if (user.role === 'admin') navigate('/admin');
       else if (user.role === 'guru') navigate('/guru');
+      else if (user.role === 'wali') navigate('/wali');
       else navigate('/siswa');
     } catch (err) {
       setError('Email atau password salah.');

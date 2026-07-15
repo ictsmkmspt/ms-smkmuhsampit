@@ -75,7 +75,7 @@ export default function AbsensiTab() {
           <ClipboardEdit className="w-4 h-4 text-brand-600 shrink-0" />
           <p className="text-sm font-semibold text-ink-700">Absensi Manual</p>
         </div>
-        <p className="text-xs text-ink-400 mb-4">Pilih kelas lalu klik Hadir, Telat, atau Izin di samping nama siswa.</p>
+        <p className="text-xs text-ink-400 mb-4">Pilih kelas lalu klik Hadir, Izin, atau Sakit di samping nama siswa.</p>
 
         <div className="mb-4">
           <select
@@ -106,7 +106,7 @@ export default function AbsensiTab() {
                 const done      = sudahAbsen(s.id);
                 const status    = statuses[s.id];
                 const msg       = messages[s.id];
-                const isLoading = loadingId === s.id + '-hadir' || loadingId === s.id + '-telat' || loadingId === s.id + '-izin';
+                const isLoading = loadingId === s.id + '-hadir' || loadingId === s.id + '-izin' || loadingId === s.id + '-sakit';
 
                 return (
                   <tr key={s.id} className="border-t border-line-200">
@@ -120,8 +120,8 @@ export default function AbsensiTab() {
                     </td>
                     <td className="text-center">
                       {status === 'hadir' && <span className="badge-soft badge-brand">Hadir</span>}
-                      {status === 'telat' && <span className="badge-soft badge-honey">Telat</span>}
-                      {status === 'izin' && <span className="badge-soft badge-rose">Izin</span>}
+                      {status === 'izin' && <span className="badge-soft badge-honey">Izin</span>}
+                      {status === 'sakit' && <span className="badge-soft badge-honey">Sakit</span>}
                       {status === 'sudah' && <span className="badge-soft badge-rose">Sudah</span>}
                     </td>
                     <td className="text-right">
@@ -135,18 +135,18 @@ export default function AbsensiTab() {
                             ✅ Hadir
                           </button>
                           <button
-                            onClick={() => handleAbsen(s, 'telat')}
+                            onClick={() => handleAbsen(s, 'izin')}
                             disabled={isLoading}
                             className="text-xs font-medium text-honey-700 bg-honey-50 hover:bg-honey-100 border border-honey-200 rounded-lg px-3 py-1.5 transition disabled:opacity-40"
                           >
-                            ⚠️ Telat
+                            📄 Izin
                           </button>
                           <button
-                            onClick={() => handleAbsen(s, 'izin')}
+                            onClick={() => handleAbsen(s, 'sakit')}
                             disabled={isLoading}
                             className="text-xs font-medium text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-lg px-3 py-1.5 transition disabled:opacity-40"
                           >
-                            📄 Izin
+                            🤒 Sakit
                           </button>
                         </div>
                       ) : (

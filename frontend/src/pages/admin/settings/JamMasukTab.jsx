@@ -5,7 +5,6 @@ import api from '../../../api/axios';
 export default function JamMasukTab() {
   const [form, setForm] = useState({
     jam_masuk_mulai: '06:00',
-    jam_masuk_batas: '07:30',
     jam_masuk_tutup: '09:00',
   });
   const [loading, setLoading] = useState(false);
@@ -35,12 +34,11 @@ export default function JamMasukTab() {
   };
 
   const jamFields = [
-    { key: 'jam_masuk_mulai', label: 'Jam Mulai Absen',   desc: 'Sebelum jam ini, barcode tidak bisa di-scan (absen belum dibuka)' },
-    { key: 'jam_masuk_batas', label: 'Batas Tepat Waktu', desc: 'Siswa yang scan sebelum jam ini dianggap HADIR, setelahnya TELAT' },
-    { key: 'jam_masuk_tutup', label: 'Jam Tutup Absen',   desc: 'Setelah jam ini, barcode tidak bisa di-scan lagi (absen ditutup)' },
+    { key: 'jam_masuk_mulai', label: 'Jam Mulai Absen', desc: 'Sebelum jam ini, barcode tidak bisa di-scan (absen belum dibuka)' },
+    { key: 'jam_masuk_tutup', label: 'Jam Tutup Absen', desc: 'Setelah jam ini, barcode tidak bisa di-scan lagi (absen ditutup)' },
   ];
 
-  const { jam_masuk_mulai, jam_masuk_batas, jam_masuk_tutup } = form;
+  const { jam_masuk_mulai, jam_masuk_tutup } = form;
 
   return (
     <div className="space-y-6 max-w-xl">
@@ -51,12 +49,8 @@ export default function JamMasukTab() {
         </div>
         <div className="flex items-center text-xs text-ink-500 flex-wrap gap-y-2">
           <span className="bg-mist-50 border border-line-200 rounded-lg px-2.5 py-1.5 font-mono font-medium text-ink-700">{jam_masuk_mulai}</span>
-          <span className="mx-2">→ absen dibuka →</span>
+          <span className="mx-2">→ absen dibuka, siswa yang scan tercatat →</span>
           <span className="bg-brand-100 border border-brand-200 rounded-lg px-2.5 py-1.5 font-medium text-brand-700">HADIR</span>
-          <span className="mx-2">→</span>
-          <span className="bg-mist-50 border border-line-200 rounded-lg px-2.5 py-1.5 font-mono font-medium text-ink-700">{jam_masuk_batas}</span>
-          <span className="mx-2">→ lewat batas →</span>
-          <span className="bg-honey-100 border border-honey-200 rounded-lg px-2.5 py-1.5 font-medium text-honey-700">TELAT</span>
           <span className="mx-2">→</span>
           <span className="bg-mist-50 border border-line-200 rounded-lg px-2.5 py-1.5 font-mono font-medium text-ink-700">{jam_masuk_tutup}</span>
           <span className="mx-2">→ absen ditutup</span>

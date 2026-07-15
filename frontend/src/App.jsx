@@ -6,6 +6,8 @@ import Login from './pages/Login';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import GuruDashboard from './pages/guru/GuruDashboard';
 import SiswaDashboard from './pages/siswa/SiswaDashboard';
+import ParentDashboard from './pages/wali/ParentDashboard';
+import PrintMonthlyAttendance from './pages/print/PrintMonthlyAttendance';
 
 export default function App() {
   return (
@@ -13,6 +15,10 @@ export default function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<Login />} />
+
+          <Route path="/print/absensi-bulanan" element={
+            <ProtectedRoute allowedRoles={['admin', 'guru']}><PrintMonthlyAttendance /></ProtectedRoute>
+          } />
 
           <Route path="/admin/*" element={
             <ProtectedRoute allowedRoles={['admin']}><AdminDashboard /></ProtectedRoute>
@@ -24,6 +30,10 @@ export default function App() {
 
           <Route path="/siswa/*" element={
             <ProtectedRoute allowedRoles={['siswa']}><SiswaDashboard /></ProtectedRoute>
+          } />
+
+          <Route path="/wali/*" element={
+            <ProtectedRoute allowedRoles={['wali']}><ParentDashboard /></ProtectedRoute>
           } />
 
           <Route path="*" element={<Login />} />

@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Exports\StudentTemplateExport;
 use App\Http\Controllers\Controller;
+use App\Imports\StudentsImport;
 use App\Models\Student;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Maatwebsite\Excel\Facades\Excel;
 
 class StudentController extends Controller
 {
@@ -85,5 +88,44 @@ class StudentController extends Controller
         }
 
         return response()->json($student);
+    }
+
+    /**
+     * Download file Excel (.xlsx) kosong berisi contoh format kolom untuk import data siswa.
+     * Isi datanya, lalu upload lewat fitur Import.
+     */
+    public function downloadTemplate()
+    {
+        return Excel::download(new StudentTemplateExport, 'template_import_siswa.xlsx');
+    }
+
+    /**
+     * Import banyak siswa sekaligus dari file Excel (.xlsx) yang diupload.
+     * Format kolom harus sesuai template (nama, email, password, nis, kelas).
+     * Baris yang gagal tidak menghentikan proses, cukup dilaporkan di akhir.
+     */
+    public function import(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:xlsx,xls,csv',
+        ]);
+
+        $import = new StudentsImport;
+        Excel::import($import, $request->file('file'));
+
+        $gagal = [];
+        foreach ($import->failures() as $failure) {
+            $gagal[] = [
+                'baris'  => $failure->row(),
+                'kolom'  => $failure->attribute(),
+                'alasan' => implode(' ', $failure->errors()),
+            ];
+        }
+
+        return response()->json([
+            'message'  => $import->successCount . ' siswa berhasil diimport, ' . count($gagal) . ' baris gagal.',
+            'berhasil' => $import->successCount,
+            'gagal'    => $gagal,
+        ]);
     }
 }

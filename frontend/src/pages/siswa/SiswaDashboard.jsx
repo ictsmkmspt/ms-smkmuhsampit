@@ -77,9 +77,15 @@ export default function SiswaDashboard() {
                 <span className="flex items-center gap-1 text-xs text-ink-500">
                   <Clock className="w-3.5 h-3.5" /> {h.time_in}
                 </span>
-                <span className={`badge-soft ${h.status === 'telat' ? 'badge-honey' : 'badge-brand'}`}>
+                
+		<span className={`badge-soft ${
+                  h.status === 'alpa' ? 'badge-rose' :
+                  (h.status === 'izin' || h.status === 'sakit') ? 'badge-honey' :
+                  'badge-brand'
+                }`}>
                   {h.status}
                 </span>
+
               </span>
             </li>
           ))}

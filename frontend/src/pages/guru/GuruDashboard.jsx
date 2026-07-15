@@ -1,12 +1,14 @@
 import { useState } from 'react';
-import { LogOut, ClipboardCheck, AlertTriangle } from 'lucide-react';
+import { LogOut, ClipboardCheck, AlertTriangle, FileText } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import AbsensiTab from './tabs/AbsensiTab';
 import PoinPelanggaranTab from './tabs/PoinPelanggaranTab';
+import LaporanTab from './tabs/LaporanTab';
 
 const TABS = [
-  { key: 'absensi', label: 'Absensi',          icon: ClipboardCheck, component: AbsensiTab },
-  { key: 'poin',    label: 'Poin Pelanggaran', icon: AlertTriangle,  component: PoinPelanggaranTab },
+  { key: 'absensi',   label: 'Absensi',          icon: ClipboardCheck, component: AbsensiTab },
+  { key: 'poin',       label: 'Poin Pelanggaran', icon: AlertTriangle,  component: PoinPelanggaranTab },
+  { key: 'laporan',    label: 'Laporan',          icon: FileText,       component: LaporanTab },
 ];
 
 export default function GuruDashboard() {
@@ -19,7 +21,7 @@ export default function GuruDashboard() {
   return (
     <div className="min-h-screen bg-mist-50">
       <div className="bg-white border-b border-line-200">
-        <div className="max-w-2xl mx-auto px-6 py-4 flex justify-between items-center">
+        <div className="max-w-4xl mx-auto px-6 py-4 flex justify-between items-center">
           <div>
             <p className="text-xs text-ink-500">Guru</p>
             <h1 className="font-display text-lg font-semibold text-ink-900">{user.name}</h1>
@@ -30,7 +32,7 @@ export default function GuruDashboard() {
         </div>
       </div>
 
-      <div className="max-w-2xl mx-auto px-6 pt-6">
+      <div className="max-w-4xl mx-auto px-6 pt-6">
         <div className="flex gap-1 bg-white rounded-xl border border-line-200 p-1 w-fit mb-6">
           {TABS.map((tab) => {
             const Icon = tab.icon;

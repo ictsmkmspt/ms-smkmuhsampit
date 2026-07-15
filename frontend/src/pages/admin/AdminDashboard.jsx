@@ -1,11 +1,11 @@
 import { useState, useRef, useEffect } from 'react';
-import { LogOut, Database, ClipboardList, Settings, ChevronDown, Users, GraduationCap, School } from 'lucide-react';
+import { LogOut, Database, ClipboardList, Settings, ChevronDown, Users, GraduationCap, School, UserCog } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import MasterDataTab, { MASTER_DATA_SUBMENU } from './tabs/MasterDataTab';
 import ReportTab from './tabs/ReportTab';
 import SettingsTab from './tabs/SettingsTab';
 
-const SUBMENU_ICONS = { siswa: Users, guru: GraduationCap, kelas: School };
+const SUBMENU_ICONS = { siswa: Users, guru: GraduationCap, kelas: School, wali: UserCog };
 
 const TABS = [
   { key: 'master',     label: 'Master Data', icon: Database,      component: MasterDataTab, hasDropdown: true },
