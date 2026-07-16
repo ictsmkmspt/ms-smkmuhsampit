@@ -40,4 +40,14 @@ class User extends Authenticatable
     {
         return $this->hasOne(Teacher::class);
     }
+
+    /**
+     * Anak-anak (siswa) yang terhubung ke akun ini, khusus untuk user berperan "wali".
+     */
+    public function children()
+    {
+        return $this->belongsToMany(Student::class, 'parent_student', 'parent_id', 'student_id')
+            ->withPivot('hubungan')
+            ->withTimestamps();
+    }
 }
