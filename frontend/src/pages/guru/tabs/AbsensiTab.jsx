@@ -75,7 +75,7 @@ export default function AbsensiTab() {
           <ClipboardEdit className="w-4 h-4 text-brand-600 shrink-0" />
           <p className="text-sm font-semibold text-ink-700">Absensi Manual</p>
         </div>
-        <p className="text-xs text-ink-400 mb-4">Pilih kelas lalu klik Hadir, Izin, atau Sakit di samping nama siswa.</p>
+        <p className="text-xs text-ink-400 mb-4">Pilih kelas lalu klik Hadir, Izin, Sakit, atau Alpa di samping nama siswa.</p>
 
         <div className="mb-4">
           <select
@@ -97,8 +97,8 @@ export default function AbsensiTab() {
             <thead>
               <tr className="text-left text-ink-500 border-b border-line-200">
                 <th className="pb-2 font-medium">Nama Siswa</th>
-                <th className="pb-2 font-medium text-center w-24">Status</th>
-                <th className="pb-2 font-medium text-right w-52">Aksi</th>
+                <th className="pb-2 font-medium text-center w-20">Status</th>
+                <th className="pb-2 font-medium text-right w-56">Aksi</th>
               </tr>
             </thead>
             <tbody>
@@ -106,7 +106,8 @@ export default function AbsensiTab() {
                 const done      = sudahAbsen(s.id);
                 const status    = statuses[s.id];
                 const msg       = messages[s.id];
-                const isLoading = loadingId === s.id + '-hadir' || loadingId === s.id + '-izin' || loadingId === s.id + '-sakit';
+                const isLoading = loadingId === s.id + '-hadir' || loadingId === s.id + '-izin'
+                  || loadingId === s.id + '-sakit' || loadingId === s.id + '-alpa';
 
                 return (
                   <tr key={s.id} className="border-t border-line-200">
@@ -122,31 +123,39 @@ export default function AbsensiTab() {
                       {status === 'hadir' && <span className="badge-soft badge-brand">Hadir</span>}
                       {status === 'izin' && <span className="badge-soft badge-honey">Izin</span>}
                       {status === 'sakit' && <span className="badge-soft badge-honey">Sakit</span>}
+                      {status === 'alpa' && <span className="badge-soft badge-rose">Alpa</span>}
                       {status === 'sudah' && <span className="badge-soft badge-rose">Sudah</span>}
                     </td>
                     <td className="text-right">
                       {!done ? (
-                        <div className="flex justify-end gap-2">
+                        <div className="flex justify-end gap-1">
                           <button
                             onClick={() => handleAbsen(s, 'hadir')}
                             disabled={isLoading}
-                            className="text-xs font-medium text-brand-700 bg-brand-50 hover:bg-brand-100 border border-brand-200 rounded-lg px-3 py-1.5 transition disabled:opacity-40"
+                            className="text-[11px] leading-none font-medium text-brand-700 bg-brand-50 hover:bg-brand-100 border border-brand-200 rounded-md px-1.5 py-1 transition disabled:opacity-40"
                           >
                             ✅ Hadir
                           </button>
                           <button
                             onClick={() => handleAbsen(s, 'izin')}
                             disabled={isLoading}
-                            className="text-xs font-medium text-honey-700 bg-honey-50 hover:bg-honey-100 border border-honey-200 rounded-lg px-3 py-1.5 transition disabled:opacity-40"
+                            className="text-[11px] leading-none font-medium text-honey-700 bg-honey-50 hover:bg-honey-100 border border-honey-200 rounded-md px-1.5 py-1 transition disabled:opacity-40"
                           >
                             📄 Izin
                           </button>
                           <button
                             onClick={() => handleAbsen(s, 'sakit')}
                             disabled={isLoading}
-                            className="text-xs font-medium text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-lg px-3 py-1.5 transition disabled:opacity-40"
+                            className="text-[11px] leading-none font-medium text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-md px-1.5 py-1 transition disabled:opacity-40"
                           >
                             🤒 Sakit
+                          </button>
+                          <button
+                            onClick={() => handleAbsen(s, 'alpa')}
+                            disabled={isLoading}
+                            className="text-[11px] leading-none font-medium text-ink-500 bg-mist-100 hover:bg-mist-200 border border-line-200 rounded-md px-1.5 py-1 transition disabled:opacity-40"
+                          >
+                            🚫 Alpa
                           </button>
                         </div>
                       ) : (

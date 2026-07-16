@@ -484,7 +484,7 @@ class AttendanceController extends Controller
     {
         $data = $request->validate([
             'student_id' => 'required|exists:students,id',
-            'status'     => 'required|in:hadir,izin,sakit',
+            'status'     => 'required|in:hadir,izin,sakit,alpa',
         ]);
 
         $student = Student::with('user')->find($data['student_id']);
@@ -498,6 +498,35 @@ class AttendanceController extends Controller
             return response()->json([
                 'message' => $student->user->name . ' sudah tercatat absen hari ini pukul ' . $existing->time_in . ' (status: ' . $existing->status . ').',
             ], 422);
+        }
+
+        // Alpa tidak membuat catatan kehadiran (memang begitu konsepnya: alpa = tidak ada
+        // catatan). Cukup langsung catat poin pelanggarannya sekali, tanpa nunggu tombol
+        // "Proses Alpa Hari Ini".
+        if ($data['status'] === 'alpa') {
+            $sudahAlpa = Violation::where('student_id', $student->id)
+                ->where('date', $today)->where('type', 'alpa')->exists();
+
+            if ($sudahAlpa) {
+                return response()->json([
+                    'message' => $student->user->name . ' sudah tercatat alpa hari ini.',
+                ], 422);
+            }
+
+            $jenisAlpa = ViolationType::where('system_key', 'alpa')->first();
+            $poinAlpa  = $jenisAlpa?->poin ?? 10;
+
+            Violation::create([
+                'student_id' => $student->id, 'attendance_id' => null,
+                'violation_type_id' => $jenisAlpa?->id,
+                'date' => $today, 'type' => 'alpa', 'poin' => $poinAlpa,
+                'recorded_by' => $request->user()->id,
+            ]);
+            $student->tambahPoin($poinAlpa);
+
+            return response()->json([
+                'message' => 'Absensi manual berhasil: ' . $student->user->name . ' (alpa)',
+            ]);
         }
 
         Attendance::create([
@@ -514,3 +543,4 @@ class AttendanceController extends Controller
         ]);
     }
 }
+

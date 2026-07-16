@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\StudentController;
 use App\Http\Controllers\Api\StudentSelfController;
 use App\Http\Controllers\Api\TeacherController;
 use App\Http\Controllers\Api\ViolationTypeController;
+use App\Http\Controllers\Api\WaliController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/login', [AuthController::class, 'login']);
@@ -20,7 +21,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::middleware('role:admin')->group(function () {
         Route::apiResource('classes', ClassRoomController::class)->parameters(['classes' => 'classRoom']);
-        Route::apiResource('students', StudentController::class);
+	Route::get('/students/import/template', [StudentController::class, 'downloadTemplate']);
+        Route::post('/students/import', [StudentController::class, 'import']);
+	Route::apiResource('students', StudentController::class);
         Route::get('/teachers/import/template', [TeacherController::class, 'downloadTemplate']);
         Route::post('/teachers/import', [TeacherController::class, 'import']);
         Route::apiResource('teachers', TeacherController::class);
@@ -28,6 +31,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/settings', [SettingController::class, 'update']);
         Route::apiResource('violation-types', ViolationTypeController::class)->except(['show']);
         Route::apiResource('holidays', HolidayController::class)->only(['index', 'store', 'destroy']);
+	Route::get('/parents', [WaliController::class, 'index']);
+        Route::post('/parents', [WaliController::class, 'store']);
+        Route::post('/parents/{parentId}/link', [WaliController::class, 'link']);
+        Route::delete('/parents/{parentId}/link/{studentId}', [WaliController::class, 'unlink']);
+        Route::delete('/parents/{id}', [WaliController::class, 'destroy']);
     });
 
     Route::middleware('role:admin,guru')->group(function () {
