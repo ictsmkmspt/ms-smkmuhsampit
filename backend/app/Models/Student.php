@@ -28,6 +28,11 @@ class Student extends Model
         return $this->hasMany(Violation::class);
     }
 
+    public function prayerAttendances()
+    {
+        return $this->hasMany(PrayerAttendance::class);
+    }
+
     public function achievements()
     {
         return $this->hasMany(Achievement::class);

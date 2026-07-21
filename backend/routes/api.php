@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ClassRoomController;
 use App\Http\Controllers\Api\HolidayController;
 use App\Http\Controllers\Api\ParentController;
+use App\Http\Controllers\Api\PrayerAttendanceController;
 use App\Http\Controllers\Api\SettingController;
 use App\Http\Controllers\Api\StudentController;
 use App\Http\Controllers\Api\StudentSelfController;
@@ -54,6 +55,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/students/{studentId}/violations', [AttendanceController::class, 'studentViolations']);
         Route::get('/violation-types', [ViolationTypeController::class, 'index']);
         Route::get('/students', [StudentController::class, 'index']);
+	Route::post('/prayer/scan', [PrayerAttendanceController::class, 'scan']);
+        Route::post('/prayer/manual', [PrayerAttendanceController::class, 'manual']);
+        Route::get('/prayer/report', [PrayerAttendanceController::class, 'report']);
     });
 
     Route::middleware('role:siswa')->group(function () {
