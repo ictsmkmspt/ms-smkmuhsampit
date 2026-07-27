@@ -7,7 +7,7 @@ import LaporanTab from './tabs/LaporanTab';
 
 const TABS = [
   { key: 'absensi', label: 'Absensi',          icon: ClipboardCheck, component: AbsensiTab },
-  { key: 'poin',    label: 'Poin Pelanggaran',  icon: AlertTriangle,  component: PoinPelanggaranTab },
+  { key: 'poin',    label: 'Poin',  icon: AlertTriangle,  component: PoinPelanggaranTab },
   { key: 'laporan', label: 'Laporan',           icon: FileText,       component: LaporanTab },
 ];
 

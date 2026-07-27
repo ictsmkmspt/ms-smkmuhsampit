@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Api\AchievementController;
+use App\Http\Controllers\Api\AchievementTypeController;
 use App\Http\Controllers\Api\AttendanceController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ClassRoomController;
@@ -22,9 +24,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::middleware('role:admin')->group(function () {
         Route::apiResource('classes', ClassRoomController::class)->parameters(['classes' => 'classRoom']);
-	Route::get('/students/import/template', [StudentController::class, 'downloadTemplate']);
+        Route::get('/students/import/template', [StudentController::class, 'downloadTemplate']);
         Route::post('/students/import', [StudentController::class, 'import']);
-	Route::apiResource('students', StudentController::class);
+        Route::apiResource('students', StudentController::class);
         Route::get('/teachers/import/template', [TeacherController::class, 'downloadTemplate']);
         Route::post('/teachers/import', [TeacherController::class, 'import']);
         Route::apiResource('teachers', TeacherController::class);
@@ -32,7 +34,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/settings', [SettingController::class, 'update']);
         Route::apiResource('violation-types', ViolationTypeController::class)->except(['show']);
         Route::apiResource('holidays', HolidayController::class)->only(['index', 'store', 'destroy']);
-	Route::get('/parents', [WaliController::class, 'index']);
+        Route::apiResource('achievement-types', AchievementTypeController::class)->except(['show']);
+        Route::get('/parents', [WaliController::class, 'index']);
         Route::post('/parents', [WaliController::class, 'store']);
         Route::post('/parents/{parentId}/link', [WaliController::class, 'link']);
         Route::delete('/parents/{parentId}/link/{studentId}', [WaliController::class, 'unlink']);
@@ -40,7 +43,7 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::middleware('role:admin,guru')->group(function () {
-	Route::get('/classes', [ClassRoomController::class, 'index']);
+        Route::get('/classes', [ClassRoomController::class, 'index']);
         Route::get('/students/barcode/{code}', [StudentController::class, 'findByBarcode']);
         Route::post('/attendance/scan', [AttendanceController::class, 'scan']);
         Route::post('/attendance/manual', [AttendanceController::class, 'attendanceManual']);
@@ -55,9 +58,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/students/{studentId}/violations', [AttendanceController::class, 'studentViolations']);
         Route::get('/violation-types', [ViolationTypeController::class, 'index']);
         Route::get('/students', [StudentController::class, 'index']);
-	Route::post('/prayer/scan', [PrayerAttendanceController::class, 'scan']);
+        Route::post('/prayer/scan', [PrayerAttendanceController::class, 'scan']);
         Route::post('/prayer/manual', [PrayerAttendanceController::class, 'manual']);
         Route::get('/prayer/report', [PrayerAttendanceController::class, 'report']);
+        Route::get('/achievement-types', [AchievementController::class, 'types']);
+        Route::post('/achievements/record', [AchievementController::class, 'record']);
+        Route::get('/achievements/summary', [AchievementController::class, 'summary']);
+        Route::get('/students/{studentId}/achievements', [AchievementController::class, 'studentAchievements']);
     });
 
     Route::middleware('role:siswa')->group(function () {

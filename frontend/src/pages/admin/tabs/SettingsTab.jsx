@@ -1,13 +1,15 @@
 import { useState } from 'react';
-import { ChevronDown, Clock, AlertOctagon, CalendarDays } from 'lucide-react';
+import { ChevronDown, Clock, AlertOctagon, CalendarDays, Trophy } from 'lucide-react';
 import JamMasukTab from '../settings/JamMasukTab';
 import PoinPelanggaranTab from '../settings/PoinPelanggaranTab';
 import KalenderLiburTab from '../settings/KalenderLiburTab';
+import PoinPrestasiTab from '../settings/PoinPrestasiTab';
 
 const SUBMENU = [
-  { key: 'jam',   label: 'Pengaturan Jam Masuk', icon: Clock,        component: JamMasukTab },
-  { key: 'poin',  label: 'Poin Pelanggaran',     icon: AlertOctagon, component: PoinPelanggaranTab },
-  { key: 'libur', label: 'Kalender Libur',       icon: CalendarDays, component: KalenderLiburTab },
+  { key: 'jam',      label: 'Pengaturan Jam Masuk', icon: Clock,        component: JamMasukTab },
+  { key: 'poin',     label: 'Poin Pelanggaran',     icon: AlertOctagon, component: PoinPelanggaranTab },
+  { key: 'prestasi', label: 'Poin Prestasi',        icon: Trophy,       component: PoinPrestasiTab },
+  { key: 'libur',    label: 'Kalender Libur',       icon: CalendarDays, component: KalenderLiburTab },
 ];
 
 export default function SettingsTab() {
