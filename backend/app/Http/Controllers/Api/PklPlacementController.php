@@ -1,0 +1,146 @@
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
+use App\Models\PklPlacement;
+use App\Models\Student;
+use App\Models\Teacher;
+use Illuminate\Http\Request;
+
+class PklPlacementController extends Controller
+{
+    /**
+     * Semua penempatan PKL (admin), dengan filter opsional by status.
+     */
+    public function index(Request $request)
+    {
+        $query = PklPlacement::with(['student.user', 'student.classRoom', 'dudi', 'guruPembimbing.user']);
+        if ($request->status) {
+            $query->where('status', $request->status);
+        }
+        return $query->orderByDesc('tanggal_mulai')->get();
+    }
+
+    /**
+     * Detail 1 penempatan PKL — dipakai halaman Cetak Jurnal PKL. Bisa diakses
+     * admin, guru pembimbingnya, DUDI pemiliknya, atau siswa yang bersangkutan.
+     */
+    public function show(Request $request, PklPlacement $pklPlacement)
+    {
+        $user = $request->user();
+        $boleh = $user->role === 'admin'
+            || ($user->role === 'guru' && $user->teacher && $pklPlacement->guru_pembimbing_id === $user->teacher->id)
+            || ($user->role === 'dudi' && $user->dudi && $pklPlacement->dudi_id === $user->dudi->id)
+            || ($user->role === 'siswa' && $user->student && $pklPlacement->student_id === $user->student->id);
+
+        if (!$boleh) {
+            return response()->json(['message' => 'Anda tidak berwenang melihat penempatan ini.'], 403);
+        }
+
+        return $pklPlacement->load(['student.user', 'student.classRoom', 'dudi', 'guruPembimbing.user']);
+    }
+
+    /**
+     * Buat penempatan PKL baru. Kalau siswa yang dipilih masih punya penempatan
+     * berstatus "aktif" sebelumnya, ditolak dulu — supaya tidak ada 2 penempatan
+     * aktif bertumpuk untuk 1 siswa yang sama (siswa jadi bingung absen ke mana).
+     */
+    public function store(Request $request)
+    {
+        $data = $request->validate([
+            'student_id'          => 'required|exists:students,id',
+            'dudi_id'              => 'required|exists:dudis,id',
+            'guru_pembimbing_id'   => 'nullable|exists:teachers,id',
+            'tanggal_mulai'        => 'required|date',
+            'tanggal_selesai'      => 'required|date|after_or_equal:tanggal_mulai',
+        ]);
+
+        $sudahAktif = PklPlacement::where('student_id', $data['student_id'])
+            ->where('status', 'aktif')->exists();
+
+        if ($sudahAktif) {
+            return response()->json([
+                'message' => 'Siswa ini sudah punya penempatan PKL yang masih aktif. Selesaikan dulu penempatan lamanya sebelum membuat yang baru.',
+            ], 422);
+        }
+
+        $placement = PklPlacement::create($data + ['status' => 'aktif']);
+
+        return response()->json(
+            $placement->load(['student.user', 'dudi', 'guruPembimbing.user']),
+            201
+        );
+    }
+
+    public function update(Request $request, PklPlacement $pklPlacement)
+    {
+        $data = $request->validate([
+            'dudi_id'            => 'sometimes|exists:dudis,id',
+            'guru_pembimbing_id' => 'nullable|exists:teachers,id',
+            'tanggal_mulai'      => 'sometimes|date',
+            'tanggal_selesai'    => 'sometimes|date|after_or_equal:tanggal_mulai',
+            'status'             => 'sometimes|in:aktif,selesai',
+        ]);
+
+        $pklPlacement->update($data);
+
+        return $pklPlacement->fresh(['student.user', 'dudi', 'guruPembimbing.user']);
+    }
+
+    public function destroy(PklPlacement $pklPlacement)
+    {
+        $pklPlacement->delete();
+        return response()->json(['message' => 'Penempatan PKL dihapus.']);
+    }
+
+    /**
+     * Daftar siswa bimbingan guru yang sedang login (dipakai tab "Bimbingan PKL" di dashboard guru).
+     */
+    public function bimbinganSaya(Request $request)
+    {
+        $teacher = Teacher::where('user_id', $request->user()->id)->first();
+        if (!$teacher) {
+            return response()->json([]);
+        }
+
+        return PklPlacement::with(['student.user', 'student.classRoom', 'dudi'])
+            ->where('guru_pembimbing_id', $teacher->id)
+            ->orderByDesc('status')
+            ->orderByDesc('tanggal_mulai')
+            ->get();
+    }
+
+    /**
+     * Daftar siswa yang ditempatkan di DUDI yang sedang login (dipakai dashboard DUDI).
+     */
+    public function siswaSaya(Request $request)
+    {
+        $dudi = $request->user()->dudi;
+        if (!$dudi) {
+            return response()->json(['message' => 'Akun ini belum terhubung ke profil DUDI.'], 404);
+        }
+
+        return PklPlacement::with(['student.user', 'student.classRoom', 'guruPembimbing.user'])
+            ->where('dudi_id', $dudi->id)
+            ->orderByDesc('status')
+            ->orderByDesc('tanggal_mulai')
+            ->get();
+    }
+
+    /**
+     * Penempatan PKL siswa yang sedang login, kalau ada yang aktif. Dipakai dashboard
+     * siswa untuk menentukan apakah menu PKL perlu ditampilkan (menggantikan QR barcode).
+     */
+    public function punyaKuSekarang(Request $request)
+    {
+        $student = $request->user()->student;
+        if (!$student) {
+            return response()->json(null);
+        }
+
+        $placement = $student->pklPlacementAktif()->with(['dudi', 'guruPembimbing.user'])->first();
+
+        return response()->json($placement);
+    }
+}

@@ -1,15 +1,17 @@
 import { useState, useRef, useEffect } from 'react';
-import { LogOut, Database, ClipboardList, Settings, ChevronDown, Users, GraduationCap, School, UserCog } from 'lucide-react';
+import { LogOut, Database, ClipboardList, Settings, ChevronDown, Users, GraduationCap, School, UserCog, Briefcase } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import MasterDataTab, { MASTER_DATA_SUBMENU } from './tabs/MasterDataTab';
 import ReportTab from './tabs/ReportTab';
 import SettingsTab from './tabs/SettingsTab';
+import PklTab from './tabs/PklTab';
 
 const SUBMENU_ICONS = { siswa: Users, guru: GraduationCap, kelas: School, wali: UserCog };
 
 const TABS = [
   { key: 'master',     label: 'Master Data', icon: Database,      component: MasterDataTab, hasDropdown: true },
   { key: 'laporan',    label: 'Laporan',     icon: ClipboardList, component: ReportTab },
+  { key: 'pkl',        label: 'PKL',         icon: Briefcase,     component: PklTab },
   { key: 'pengaturan', label: 'Pengaturan',  icon: Settings,      component: SettingsTab },
 ];
 

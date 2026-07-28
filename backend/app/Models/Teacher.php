@@ -18,4 +18,10 @@ class Teacher extends Model
     {
         return $this->hasOne(ClassRoom::class, 'homeroom_teacher_id');
     }
+
+    // Penempatan PKL siswa yang dibimbing guru ini.
+    public function pklPlacements()
+    {
+        return $this->hasMany(PklPlacement::class, 'guru_pembimbing_id');
+    }
 }

@@ -41,6 +41,11 @@ class User extends Authenticatable
         return $this->hasOne(Teacher::class);
     }
 
+    public function dudi()
+    {
+        return $this->hasOne(Dudi::class);
+    }
+
     /**
      * Anak-anak (siswa) yang terhubung ke akun ini, khusus untuk user berperan "wali".
      */

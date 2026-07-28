@@ -8,7 +8,9 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import GuruDashboard from './pages/guru/GuruDashboard';
 import SiswaDashboard from './pages/siswa/SiswaDashboard';
 import ParentDashboard from './pages/wali/ParentDashboard';
+import DudiDashboard from './pages/dudi/DudiDashboard';
 import PrintMonthlyAttendance from './pages/print/PrintMonthlyAttendance';
+import PrintPklJurnal from './pages/print/PrintPklJurnal';
 
 export default function App() {
   return (
@@ -20,6 +22,10 @@ export default function App() {
 
           <Route path="/print/absensi-bulanan" element={
             <ProtectedRoute allowedRoles={['admin', 'guru']}><PrintMonthlyAttendance /></ProtectedRoute>
+          } />
+
+          <Route path="/print/pkl-jurnal" element={
+            <ProtectedRoute allowedRoles={['admin', 'guru', 'dudi', 'siswa']}><PrintPklJurnal /></ProtectedRoute>
           } />
 
           <Route path="/admin/*" element={
@@ -36,6 +42,10 @@ export default function App() {
 
           <Route path="/wali/*" element={
             <ProtectedRoute allowedRoles={['wali']}><ParentDashboard /></ProtectedRoute>
+          } />
+
+          <Route path="/dudi/*" element={
+            <ProtectedRoute allowedRoles={['dudi']}><DudiDashboard /></ProtectedRoute>
           } />
 
           <Route path="*" element={<Landing />} />

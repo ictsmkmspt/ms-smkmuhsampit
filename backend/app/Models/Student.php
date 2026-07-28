@@ -38,6 +38,21 @@ class Student extends Model
         return $this->hasMany(Achievement::class);
     }
 
+    public function pklPlacements()
+    {
+        return $this->hasMany(PklPlacement::class);
+    }
+
+    /**
+     * Penempatan PKL yang sedang berjalan sekarang (kalau ada). Dipakai untuk
+     * menentukan apakah menu PKL perlu muncul di dashboard siswa, dan sebagai
+     * sumber lokasi DUDI + guru pembimbing untuk absensi radius.
+     */
+    public function pklPlacementAktif()
+    {
+        return $this->hasOne(PklPlacement::class)->where('status', 'aktif');
+    }
+
     public function parents()
     {
         return $this->belongsToMany(User::class, 'parent_student', 'student_id', 'parent_id')

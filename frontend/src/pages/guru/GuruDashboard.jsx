@@ -1,13 +1,15 @@
 import { useState } from 'react';
-import { LogOut, ClipboardCheck, AlertTriangle, FileText } from 'lucide-react';
+import { LogOut, ClipboardCheck, AlertTriangle, FileText, Briefcase } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import AbsensiTab from './tabs/AbsensiTab';
 import PoinPelanggaranTab from './tabs/PoinPelanggaranTab';
 import LaporanTab from './tabs/LaporanTab';
+import BimbinganPklTab from './tabs/BimbinganPklTab';
 
 const TABS = [
   { key: 'absensi', label: 'Absensi',          icon: ClipboardCheck, component: AbsensiTab },
   { key: 'poin',    label: 'Poin',  icon: AlertTriangle,  component: PoinPelanggaranTab },
+  { key: 'pkl',     label: 'PKL',               icon: Briefcase,      component: BimbinganPklTab },
   { key: 'laporan', label: 'Laporan',           icon: FileText,       component: LaporanTab },
 ];
 

@@ -5,8 +5,11 @@ use App\Http\Controllers\Api\AchievementTypeController;
 use App\Http\Controllers\Api\AttendanceController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ClassRoomController;
+use App\Http\Controllers\Api\DudiController;
 use App\Http\Controllers\Api\HolidayController;
 use App\Http\Controllers\Api\ParentController;
+use App\Http\Controllers\Api\PklAttendanceController;
+use App\Http\Controllers\Api\PklPlacementController;
 use App\Http\Controllers\Api\PrayerAttendanceController;
 use App\Http\Controllers\Api\SettingController;
 use App\Http\Controllers\Api\StudentController;
@@ -43,6 +46,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/parents/{parentId}/link', [WaliController::class, 'link']);
         Route::delete('/parents/{parentId}/link/{studentId}', [WaliController::class, 'unlink']);
         Route::delete('/parents/{id}', [WaliController::class, 'destroy']);
+        Route::apiResource('dudi', DudiController::class)->except(['show']);
+        Route::apiResource('pkl-placements', PklPlacementController::class)->except(['show']);
     });
 
     Route::middleware('role:admin,guru')->group(function () {
@@ -69,19 +74,41 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/achievement-types', [AchievementController::class, 'types']);
         Route::post('/achievements/record', [AchievementController::class, 'record']);
         Route::get('/achievements/summary', [AchievementController::class, 'summary']);
-        Route::get('/achievements/detail', [AchievementController::class, 'detail']);
         Route::get('/students/{studentId}/achievements', [AchievementController::class, 'studentAchievements']);
         Route::delete('/achievements/{id}', [AchievementController::class, 'destroy']);
         Route::put('/achievements/{id}', [AchievementController::class, 'update']);
+        Route::get('/pkl-placements/my-bimbingan', [PklPlacementController::class, 'bimbinganSaya']);
+    });
+
+    Route::middleware('role:admin,guru,dudi,siswa')->group(function () {
+        Route::get('/pkl-placements/{pklPlacement}', [PklPlacementController::class, 'show']);
+    });
+
+    Route::middleware('role:admin,guru,dudi')->group(function () {
+        Route::get('/pkl-placements/{pklPlacement}/attendances', [PklAttendanceController::class, 'riwayatPenempatan']);
+        Route::post('/pkl-attendances/koreksi', [PklAttendanceController::class, 'koreksi']);
+    });
+
+    Route::middleware('role:admin,dudi')->group(function () {
+        Route::post('/pkl-attendances/{pklAttendance}/verifikasi', [PklAttendanceController::class, 'verifikasi']);
     });
 
     Route::middleware('role:siswa')->group(function () {
         Route::get('/my-profile', [StudentSelfController::class, 'profile']);
         Route::get('/my-attendances', [StudentSelfController::class, 'attendances']);
+        Route::get('/my-pkl-placement', [PklPlacementController::class, 'punyaKuSekarang']);
+        Route::get('/my-pkl-attendances', [PklAttendanceController::class, 'riwayatSaya']);
+        Route::post('/pkl/absen-masuk', [PklAttendanceController::class, 'absenMasuk']);
+        Route::post('/pkl/absen-pulang', [PklAttendanceController::class, 'absenPulang']);
     });
 
     Route::middleware('role:wali')->group(function () {
         Route::get('/my-children', [ParentController::class, 'children']);
         Route::get('/my-children/{studentId}/activity', [ParentController::class, 'activity']);
+    });
+
+    Route::middleware('role:dudi')->group(function () {
+        Route::get('/my-dudi-profile', [DudiController::class, 'myProfile']);
+        Route::get('/dudi/my-siswa', [PklPlacementController::class, 'siswaSaya']);
     });
 });

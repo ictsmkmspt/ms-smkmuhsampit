@@ -1,0 +1,204 @@
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
+use App\Models\PklAttendance;
+use App\Models\PklPlacement;
+use Illuminate\Http\Request;
+
+class PklAttendanceController extends Controller
+{
+    /**
+     * True kalau user yang login berwenang MELIHAT absensi penempatan ini —
+     * yaitu admin, guru pembimbingnya, atau DUDI pemiliknya.
+     */
+    private function bolehLihat(PklPlacement $placement, $user): bool
+    {
+        if ($user->role === 'admin') {
+            return true;
+        }
+        if ($user->role === 'guru') {
+            $teacher = $user->teacher;
+            return $teacher && $placement->guru_pembimbing_id === $teacher->id;
+        }
+        if ($user->role === 'dudi') {
+            $dudi = $user->dudi;
+            return $dudi && $placement->dudi_id === $dudi->id;
+        }
+        return false;
+    }
+
+    /**
+     * True kalau user yang login berwenang MEMVERIFIKASI (paraf) absensi penempatan
+     * ini — cuma DUDI pemiliknya atau admin. Guru pembimbing bisa lihat & koreksi,
+     * tapi verifikasi/paraf resmi tetap tanggung jawab DUDI (instruktur lapangan).
+     */
+    private function bolehVerifikasi(PklPlacement $placement, $user): bool
+    {
+        if ($user->role === 'admin') {
+            return true;
+        }
+        if ($user->role === 'dudi') {
+            $dudi = $user->dudi;
+            return $dudi && $placement->dudi_id === $dudi->id;
+        }
+        return false;
+    }
+
+    /**
+     * Ambil penempatan aktif siswa yang login, atau null kalau tidak sedang PKL.
+     */
+    private function placementSiswa(Request $request): ?PklPlacement
+    {
+        $student = $request->user()->student;
+        if (!$student) {
+            return null;
+        }
+        return $student->pklPlacementAktif()->first();
+    }
+
+    /**
+     * Absen masuk — cukup klik tombol, tanpa validasi lokasi GPS. Absensi yang
+     * tercatat berstatus "hadir" tapi baru sah kalau sudah diverifikasi (di-paraf)
+     * oleh DUDI lewat endpoint verifikasi().
+     */
+    public function absenMasuk(Request $request)
+    {
+        $placement = $this->placementSiswa($request);
+        if (!$placement) {
+            return response()->json(['message' => 'Anda tidak sedang dalam masa PKL.'], 422);
+        }
+
+        $tanggal = now()->format('Y-m-d');
+        $absensi = PklAttendance::firstOrNew([
+            'pkl_placement_id' => $placement->id,
+            'date'             => $tanggal,
+        ]);
+
+        if ($absensi->exists && $absensi->time_in) {
+            return response()->json(['message' => 'Anda sudah absen masuk hari ini pukul ' . $absensi->time_in . '.'], 422);
+        }
+
+        $absensi->student_id = $placement->student_id;
+        $absensi->time_in    = now()->format('H:i:s');
+        $absensi->status     = 'hadir';
+        $absensi->save();
+
+        return response()->json(['message' => 'Absen masuk berhasil.', 'absensi' => $absensi]);
+    }
+
+    /**
+     * Absen pulang — mewajibkan sudah absen masuk dulu di tanggal yang sama.
+     */
+    public function absenPulang(Request $request)
+    {
+        $placement = $this->placementSiswa($request);
+        if (!$placement) {
+            return response()->json(['message' => 'Anda tidak sedang dalam masa PKL.'], 422);
+        }
+
+        $tanggal = now()->format('Y-m-d');
+        $absensi = PklAttendance::where('pkl_placement_id', $placement->id)
+            ->where('date', $tanggal)->first();
+
+        if (!$absensi || !$absensi->time_in) {
+            return response()->json(['message' => 'Anda belum absen masuk hari ini.'], 422);
+        }
+        if ($absensi->time_out) {
+            return response()->json(['message' => 'Anda sudah absen pulang hari ini pukul ' . $absensi->time_out . '.'], 422);
+        }
+
+        $absensi->time_out = now()->format('H:i:s');
+        $absensi->save();
+
+        return response()->json(['message' => 'Absen pulang berhasil.', 'absensi' => $absensi]);
+    }
+
+    /**
+     * Riwayat absensi PKL siswa yang sedang login.
+     */
+    public function riwayatSaya(Request $request)
+    {
+        $placement = $this->placementSiswa($request);
+        if (!$placement) {
+            return response()->json([]);
+        }
+
+        return PklAttendance::where('pkl_placement_id', $placement->id)
+            ->orderByDesc('date')->get();
+    }
+
+    /**
+     * Riwayat absensi 1 penempatan PKL tertentu — dipakai guru pembimbing, DUDI,
+     * atau admin untuk memantau/mengoreksi/memverifikasi.
+     */
+    public function riwayatPenempatan(Request $request, PklPlacement $pklPlacement)
+    {
+        if (!$this->bolehLihat($pklPlacement, $request->user())) {
+            return response()->json(['message' => 'Anda tidak berwenang melihat absensi siswa ini.'], 403);
+        }
+
+        return PklAttendance::with('verifiedBy')
+            ->where('pkl_placement_id', $pklPlacement->id)
+            ->orderByDesc('date')->get();
+    }
+
+    /**
+     * Buat atau perbaiki 1 baris absensi secara manual — dipakai guru pembimbing,
+     * DUDI, atau admin. Dipakai untuk mencatat izin/sakit/alpa, atau memperbaiki
+     * kesalahan input siswa.
+     */
+    public function koreksi(Request $request)
+    {
+        $data = $request->validate([
+            'pkl_placement_id' => 'required|exists:pkl_placements,id',
+            'date'             => 'required|date',
+            'status'           => 'required|in:hadir,izin,sakit,alpa',
+            'time_in'          => 'nullable|date_format:H:i',
+            'time_out'         => 'nullable|date_format:H:i',
+            'catatan_koreksi'  => 'nullable|string|max:500',
+        ]);
+
+        $placement = PklPlacement::findOrFail($data['pkl_placement_id']);
+        if (!$this->bolehLihat($placement, $request->user())) {
+            return response()->json(['message' => 'Anda tidak berwenang mengoreksi absensi siswa ini.'], 403);
+        }
+
+        $absensi = PklAttendance::firstOrNew([
+            'pkl_placement_id' => $placement->id,
+            'date'             => $data['date'],
+        ]);
+
+        $absensi->student_id       = $placement->student_id;
+        $absensi->status           = $data['status'];
+        $absensi->time_in          = $data['time_in'] ?? $absensi->time_in;
+        $absensi->time_out         = $data['time_out'] ?? $absensi->time_out;
+        $absensi->corrected_by     = $request->user()->id;
+        $absensi->catatan_koreksi  = $data['catatan_koreksi'] ?? null;
+        $absensi->save();
+
+        return response()->json(['message' => 'Absensi berhasil dikoreksi.', 'absensi' => $absensi->fresh()]);
+    }
+
+    /**
+     * Verifikasi (paraf digital) 1 baris absensi — cuma boleh DUDI pemilik
+     * penempatan ini atau admin. Menandai absensi hari itu sudah dianggap sah.
+     */
+    public function verifikasi(Request $request, PklAttendance $pklAttendance)
+    {
+        $placement = $pklAttendance->placement;
+        if (!$this->bolehVerifikasi($placement, $request->user())) {
+            return response()->json(['message' => 'Hanya DUDI atau admin yang bisa memverifikasi absensi ini.'], 403);
+        }
+
+        $pklAttendance->verified_by = $request->user()->id;
+        $pklAttendance->verified_at = now();
+        $pklAttendance->save();
+
+        return response()->json([
+            'message'  => 'Absensi berhasil diverifikasi.',
+            'absensi'  => $pklAttendance->fresh('verifiedBy'),
+        ]);
+    }
+}
