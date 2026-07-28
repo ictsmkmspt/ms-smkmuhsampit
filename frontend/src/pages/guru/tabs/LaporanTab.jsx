@@ -1,11 +1,13 @@
 import { useState } from 'react';
-import { ClipboardList, AlertTriangle } from 'lucide-react';
+import { ClipboardList, AlertTriangle, Award } from 'lucide-react';
 import AbsensiReportSection from './laporan/AbsensiReportSection';
 import PoinReportSection from './laporan/PoinReportSection';
+import PrestasiReportSection from './laporan/PrestasiReportSection';
 
 const SECTIONS = [
   { key: 'absensi', label: 'Rekap Absensi', icon: ClipboardList, component: AbsensiReportSection },
   { key: 'poin', label: 'Rekap Poin Pelanggaran', icon: AlertTriangle, component: PoinReportSection },
+  { key: 'prestasi', label: 'Rekap Poin Prestasi', icon: Award, component: PrestasiReportSection },
 ];
 
 export default function LaporanTab() {

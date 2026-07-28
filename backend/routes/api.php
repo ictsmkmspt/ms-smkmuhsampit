@@ -33,8 +33,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/settings', [SettingController::class, 'index']);
         Route::put('/settings', [SettingController::class, 'update']);
         Route::apiResource('violation-types', ViolationTypeController::class)->except(['show']);
+        Route::post('/violations/reset-all', [AttendanceController::class, 'violationResetAll']);
         Route::apiResource('holidays', HolidayController::class)->only(['index', 'store', 'destroy']);
+        Route::post('/holidays/range', [HolidayController::class, 'storeRange']);
         Route::apiResource('achievement-types', AchievementTypeController::class)->except(['show']);
+        Route::post('/achievements/reset-all', [AchievementController::class, 'resetAll']);
         Route::get('/parents', [WaliController::class, 'index']);
         Route::post('/parents', [WaliController::class, 'store']);
         Route::post('/parents/{parentId}/link', [WaliController::class, 'link']);
@@ -56,6 +59,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/violations/summary', [AttendanceController::class, 'violationReport']);
         Route::get('/violations/detail', [AttendanceController::class, 'violationDetail']);
         Route::get('/students/{studentId}/violations', [AttendanceController::class, 'studentViolations']);
+        Route::delete('/violations/{id}', [AttendanceController::class, 'violationDestroy']);
+        Route::put('/violations/{id}', [AttendanceController::class, 'violationUpdate']);
         Route::get('/violation-types', [ViolationTypeController::class, 'index']);
         Route::get('/students', [StudentController::class, 'index']);
         Route::post('/prayer/scan', [PrayerAttendanceController::class, 'scan']);
@@ -64,7 +69,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/achievement-types', [AchievementController::class, 'types']);
         Route::post('/achievements/record', [AchievementController::class, 'record']);
         Route::get('/achievements/summary', [AchievementController::class, 'summary']);
+        Route::get('/achievements/detail', [AchievementController::class, 'detail']);
         Route::get('/students/{studentId}/achievements', [AchievementController::class, 'studentAchievements']);
+        Route::delete('/achievements/{id}', [AchievementController::class, 'destroy']);
+        Route::put('/achievements/{id}', [AchievementController::class, 'update']);
     });
 
     Route::middleware('role:siswa')->group(function () {

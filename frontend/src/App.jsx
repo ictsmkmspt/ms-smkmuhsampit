@@ -3,6 +3,7 @@ import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 
 import Login from './pages/Login';
+import Landing from './pages/Landing';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import GuruDashboard from './pages/guru/GuruDashboard';
 import SiswaDashboard from './pages/siswa/SiswaDashboard';
@@ -14,6 +15,7 @@ export default function App() {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
+          <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
 
           <Route path="/print/absensi-bulanan" element={
@@ -36,7 +38,7 @@ export default function App() {
             <ProtectedRoute allowedRoles={['wali']}><ParentDashboard /></ProtectedRoute>
           } />
 
-          <Route path="*" element={<Login />} />
+          <Route path="*" element={<Landing />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

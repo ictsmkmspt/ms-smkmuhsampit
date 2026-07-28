@@ -490,6 +490,102 @@ class AttendanceController extends Controller
     }
 
     /**
+     * Hapus 1 catatan pelanggaran yang salah input, dan kembalikan poinnya dari total_poin siswa.
+     * Pelanggaran otomatis (alpa) tidak boleh dihapus di sini karena terikat ke data kehadiran;
+     * harus dikoreksi lewat menu Rekap Absensi. Kalau yang login guru, hanya boleh menghapus
+     * siswa di kelas walinya sendiri.
+     */
+    public function violationDestroy(Request $request, $id)
+    {
+        $violation = Violation::with('student')->find($id);
+        if (!$violation) {
+            return response()->json(['message' => 'Catatan pelanggaran tidak ditemukan.'], 404);
+        }
+        if ($violation->type === 'alpa') {
+            return response()->json(['message' => 'Pelanggaran alpa tidak bisa dihapus di sini. Ubah lewat menu Rekap Absensi.'], 422);
+        }
+
+        $restricted = $this->guruClassRoomId($request);
+        if ($restricted !== null && $violation->student->class_room_id !== $restricted) {
+            return response()->json(['message' => 'Anda tidak berwenang menghapus data siswa ini.'], 403);
+        }
+
+        DB::transaction(function () use ($violation) {
+            $violation->student->tambahPoin(-$violation->poin);
+            $violation->delete();
+        });
+
+        return response()->json(['message' => 'Catatan pelanggaran berhasil dihapus.']);
+    }
+
+    /**
+     * Ubah jenis pelanggaran dan/atau catatan pada 1 catatan pelanggaran yang salah input.
+     * Poin otomatis ikut menyesuaikan ke poin jenis pelanggaran yang baru, dan total_poin
+     * siswa disesuaikan (poin lama dikembalikan, poin baru ditambahkan). Pelanggaran alpa
+     * tidak boleh diubah di sini. Kalau yang login guru, hanya boleh mengubah siswa di kelas
+     * walinya sendiri.
+     */
+    public function violationUpdate(Request $request, $id)
+    {
+        $violation = Violation::with('student')->find($id);
+        if (!$violation) {
+            return response()->json(['message' => 'Catatan pelanggaran tidak ditemukan.'], 404);
+        }
+        if ($violation->type === 'alpa') {
+            return response()->json(['message' => 'Pelanggaran alpa tidak bisa diubah di sini. Ubah lewat menu Rekap Absensi.'], 422);
+        }
+
+        $restricted = $this->guruClassRoomId($request);
+        if ($restricted !== null && $violation->student->class_room_id !== $restricted) {
+            return response()->json(['message' => 'Anda tidak berwenang mengubah data siswa ini.'], 403);
+        }
+
+        $data = $request->validate([
+            'violation_type_id' => 'required|exists:violation_types,id',
+            'note'              => 'nullable|string|max:255',
+        ]);
+
+        $newType = ViolationType::findOrFail($data['violation_type_id']);
+
+        DB::transaction(function () use ($violation, $newType, $data) {
+            $violation->student->tambahPoin($newType->poin - $violation->poin);
+            $violation->update([
+                'violation_type_id' => $newType->id,
+                'poin'              => $newType->poin,
+                'note'              => $data['note'] ?? $violation->note,
+            ]);
+        });
+
+        return response()->json([
+            'message'   => 'Catatan pelanggaran berhasil diperbarui.',
+            'violation' => $violation->fresh(),
+        ]);
+    }
+
+    /**
+     * RESET TOTAL: hapus SELURUH riwayat pelanggaran (termasuk yang otomatis dari alpa)
+     * dan kembalikan total_poin SEMUA siswa ke 0. Dipakai admin di awal tahun pelajaran
+     * baru supaya siswa mulai dari poin bersih. Tindakan ini permanen dan tidak bisa
+     * dibatalkan, jadi wajib mengirim confirm=true.
+     */
+    public function violationResetAll(Request $request)
+    {
+        $request->validate(['confirm' => 'accepted']);
+
+        $jumlahRiwayat = Violation::count();
+        $jumlahSiswa   = Student::count();
+
+        DB::transaction(function () {
+            Violation::query()->delete();
+            Student::query()->update(['total_poin' => 0]);
+        });
+
+        return response()->json([
+            'message' => "Reset berhasil: {$jumlahSiswa} siswa dikembalikan ke 0 poin pelanggaran, {$jumlahRiwayat} catatan riwayat dihapus permanen.",
+        ]);
+    }
+
+    /**
      * Catat kehadiran secara manual (hadir/izin/sakit) tanpa scan barcode.
      * Dipanggil dari form Absensi Manual di halaman Guru.
      */

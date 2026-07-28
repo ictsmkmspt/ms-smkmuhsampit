@@ -2,12 +2,12 @@ import { useEffect, useState } from 'react';
 import { X, Pencil, Trash2 } from 'lucide-react';
 import api from '../api/axios';
 
-export default function StudentViolationModal({ student, onClose, onChanged }) {
-  const [violationTypes, setViolationTypes] = useState([]);
+export default function StudentAchievementModal({ student, onClose, onChanged }) {
+  const [achievementTypes, setAchievementTypes] = useState([]);
   const [dateFrom, setDateFrom]     = useState('');
   const [dateTo, setDateTo]         = useState('');
   const [typeId, setTypeId]         = useState('');
-  const [violations, setViolations] = useState([]);
+  const [achievements, setAchievements] = useState([]);
   const [loading, setLoading]       = useState(false);
 
   const [editingId, setEditingId]   = useState(null);
@@ -16,29 +16,27 @@ export default function StudentViolationModal({ student, onClose, onChanged }) {
   const [saving, setSaving]         = useState(false);
 
   useEffect(() => {
-    api.get('/violation-types').then((res) => setViolationTypes(res.data));
+    api.get('/achievement-types').then((res) => setAchievementTypes(res.data));
   }, []);
 
-  const loadViolations = () => {
+  const loadAchievements = () => {
     setLoading(true);
     const params = {};
     if (dateFrom) params.date_from = dateFrom;
     if (dateTo) params.date_to = dateTo;
-    if (typeId) params.violation_type_id = typeId;
+    if (typeId) params.achievement_type_id = typeId;
 
-    return api.get(`/students/${student.id}/violations`, { params })
-      .then((res) => setViolations(res.data))
+    return api.get(`/students/${student.id}/achievements`, { params })
+      .then((res) => setAchievements(res.data))
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => { loadViolations(); }, [student.id]); // eslint-disable-line
+  useEffect(() => { loadAchievements(); }, [student.id]); // eslint-disable-line
 
-  const editableTypes = violationTypes.filter((t) => !t.system_key);
-
-  const startEdit = (v) => {
-    setEditingId(v.id);
-    setEditTypeId(v.violation_type_id || '');
-    setEditNote(v.note || '');
+  const startEdit = (a) => {
+    setEditingId(a.id);
+    setEditTypeId(a.achievement_type_id || '');
+    setEditNote(a.note || '');
   };
 
   const cancelEdit = () => {
@@ -51,28 +49,28 @@ export default function StudentViolationModal({ student, onClose, onChanged }) {
     if (!editTypeId) return;
     setSaving(true);
     try {
-      await api.put(`/violations/${id}`, {
-        violation_type_id: editTypeId,
+      await api.put(`/achievements/${id}`, {
+        achievement_type_id: editTypeId,
         note: editNote || null,
       });
       cancelEdit();
-      await loadViolations();
+      await loadAchievements();
       onChanged?.();
     } catch (err) {
-      alert(err.response?.data?.message || 'Gagal memperbarui catatan pelanggaran.');
+      alert(err.response?.data?.message || 'Gagal memperbarui catatan prestasi.');
     } finally {
       setSaving(false);
     }
   };
 
-  const handleDelete = async (v) => {
-    if (!confirm(`Hapus catatan pelanggaran "${v.violation_type?.name || '-'}" tanggal ${v.date}? Poin akan dikembalikan.`)) return;
+  const handleDelete = async (a) => {
+    if (!confirm(`Hapus catatan prestasi "${a.achievement_type?.name || '-'}" tanggal ${a.date}? Poin akan dikembalikan.`)) return;
     try {
-      await api.delete(`/violations/${v.id}`);
-      await loadViolations();
+      await api.delete(`/achievements/${a.id}`);
+      await loadAchievements();
       onChanged?.();
     } catch (err) {
-      alert(err.response?.data?.message || 'Gagal menghapus catatan pelanggaran.');
+      alert(err.response?.data?.message || 'Gagal menghapus catatan prestasi.');
     }
   };
 
@@ -84,7 +82,7 @@ export default function StudentViolationModal({ student, onClose, onChanged }) {
         <div className="flex items-start justify-between p-5 border-b border-line-200">
           <div>
             <h3 className="font-display font-semibold text-ink-900">{student.user?.name}</h3>
-            <p className="text-xs text-ink-500 mt-0.5">{student.class_room?.name || '-'} · Riwayat Pelanggaran</p>
+            <p className="text-xs text-ink-500 mt-0.5">{student.class_room?.name || '-'} · Riwayat Prestasi</p>
           </div>
           <button onClick={onClose} className="text-ink-300 hover:text-ink-600">
             <X className="w-5 h-5" />
@@ -101,34 +99,34 @@ export default function StudentViolationModal({ student, onClose, onChanged }) {
             <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="field-input text-sm" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-ink-500 mb-1">Jenis Pelanggaran</label>
+            <label className="block text-xs font-medium text-ink-500 mb-1">Jenis Prestasi</label>
             <select value={typeId} onChange={(e) => setTypeId(e.target.value)} className="field-input text-sm">
               <option value="">Semua Jenis</option>
-              {violationTypes.map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}
+              {achievementTypes.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
             </select>
           </div>
-          <button onClick={loadViolations} className="btn-primary text-sm">Terapkan Filter</button>
+          <button onClick={loadAchievements} className="btn-primary text-sm">Terapkan Filter</button>
         </div>
 
         <div className="overflow-y-auto p-5">
           {loading ? (
             <p className="text-center text-ink-300 py-6">Memuat...</p>
-          ) : violations.length === 0 ? (
-            <p className="text-center text-ink-300 py-6">Tidak ada riwayat pelanggaran untuk filter ini.</p>
+          ) : achievements.length === 0 ? (
+            <p className="text-center text-ink-300 py-6">Tidak ada riwayat prestasi untuk filter ini.</p>
           ) : (
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left text-ink-500 border-b border-line-200">
                   <th className="pb-2 font-medium">Tanggal</th>
-                  <th className="font-medium">Jenis Pelanggaran</th>
+                  <th className="font-medium">Jenis Prestasi</th>
                   <th className="font-medium text-right">Poin</th>
                   <th className="font-medium text-right">Aksi</th>
                 </tr>
               </thead>
               <tbody>
-                {violations.map((v) => (
-                  editingId === v.id ? (
-                    <tr key={v.id} className="border-t border-line-200 bg-mist-50">
+                {achievements.map((a) => (
+                  editingId === a.id ? (
+                    <tr key={a.id} className="border-t border-line-200 bg-mist-50">
                       <td colSpan="4" className="py-3">
                         <div className="flex flex-wrap gap-2 items-end">
                           <select
@@ -137,7 +135,7 @@ export default function StudentViolationModal({ student, onClose, onChanged }) {
                             className="field-input text-sm"
                           >
                             <option value="">Pilih jenis...</option>
-                            {editableTypes.map((t) => (
+                            {achievementTypes.map((t) => (
                               <option key={t.id} value={t.id}>{t.name} ({t.poin} poin)</option>
                             ))}
                           </select>
@@ -149,7 +147,7 @@ export default function StudentViolationModal({ student, onClose, onChanged }) {
                             className="field-input text-sm flex-1 min-w-[140px]"
                           />
                           <button
-                            onClick={() => saveEdit(v.id)}
+                            onClick={() => saveEdit(a.id)}
                             disabled={saving || !editTypeId}
                             className="text-xs font-medium text-white bg-brand-600 hover:bg-brand-700 rounded-lg px-3 py-2 disabled:opacity-50"
                           >
@@ -162,26 +160,22 @@ export default function StudentViolationModal({ student, onClose, onChanged }) {
                       </td>
                     </tr>
                   ) : (
-                    <tr key={v.id} className="border-t border-line-200">
-                      <td className="py-2.5 text-ink-700 align-top">{v.date}</td>
+                    <tr key={a.id} className="border-t border-line-200">
+                      <td className="py-2.5 text-ink-700 align-top">{a.date}</td>
                       <td className="text-ink-900 align-top">
-                        {v.violation_type?.name || (v.type === 'alpa' ? 'Tidak Hadir' : v.type === 'telat' ? 'Terlambat' : '-')}
-                        {v.note && <p className="text-xs text-ink-400 mt-0.5">{v.note}</p>}
+                        {a.achievement_type?.name || '-'}
+                        {a.note && <p className="text-xs text-ink-400 mt-0.5">{a.note}</p>}
                       </td>
-                      <td className="text-right text-honey-700 font-medium align-top">+{v.poin}</td>
+                      <td className="text-right text-brand-700 font-medium align-top">+{a.poin}</td>
                       <td className="text-right align-top">
-                        {v.type === 'alpa' ? (
-                          <span className="text-xs text-ink-300">otomatis</span>
-                        ) : (
-                          <div className="flex gap-2 justify-end">
-                            <button onClick={() => startEdit(v)} className="text-ink-400 hover:text-brand-600" title="Ubah">
-                              <Pencil className="w-3.5 h-3.5" />
-                            </button>
-                            <button onClick={() => handleDelete(v)} className="text-ink-400 hover:text-rose-600" title="Hapus">
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        )}
+                        <div className="flex gap-2 justify-end">
+                          <button onClick={() => startEdit(a)} className="text-ink-400 hover:text-brand-600" title="Ubah">
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                          <button onClick={() => handleDelete(a)} className="text-ink-400 hover:text-rose-600" title="Hapus">
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   )

@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import api from '../../../../api/axios';
-import StudentViolationModal from '../../../../components/StudentViolationModal';
+import StudentAchievementModal from '../../../../components/StudentAchievementModal';
 
 const PAGE_SIZE = 5;
 const SUMMARY_PAGE_SIZE = 40;
 
-export default function PoinReportSection() {
+export default function PrestasiReportSection() {
   const [summary, setSummary] = useState([]);
   const [detail, setDetail] = useState([]);
   const [date, setDate] = useState('');
@@ -18,7 +18,7 @@ export default function PoinReportSection() {
   const loadSummary = () => {
     setLoading(true);
     setSummaryPage(1);
-    return api.get('/violations/summary')
+    return api.get('/achievements/summary')
       .then((res) => setSummary(res.data))
       .finally(() => setLoading(false));
   };
@@ -27,16 +27,16 @@ export default function PoinReportSection() {
     const params = {};
     if (date) params.date = date;
     setPage(1);
-    return api.get('/violations/detail', { params }).then((res) => setDetail(res.data));
+    return api.get('/achievements/detail', { params }).then((res) => setDetail(res.data));
   };
 
   const loadAll = () => { loadSummary(); loadDetail(); };
 
   useEffect(() => { loadAll(); }, []); // eslint-disable-line
 
-  const totalAlpa = summary.reduce((sum, s) => sum + (s.alpa_count || 0), 0);
+  const totalPoin = summary.reduce((sum, s) => sum + (s.total_prestasi || 0), 0);
 
-  const sortedSummary = [...summary].sort((a, b) => b.total_poin - a.total_poin);
+  const sortedSummary = [...summary].sort((a, b) => b.total_prestasi - a.total_prestasi);
   const summaryTotalPages = Math.max(1, Math.ceil(sortedSummary.length / SUMMARY_PAGE_SIZE));
   const paginatedSummary = sortedSummary.slice((summaryPage - 1) * SUMMARY_PAGE_SIZE, summaryPage * SUMMARY_PAGE_SIZE);
 
@@ -51,12 +51,12 @@ export default function PoinReportSection() {
             <Search className="w-4 h-4" /> Tampilkan
           </button>
           <div className="ml-auto flex gap-2">
-            <span className="badge-soft badge-rose">Total Alpa: {totalAlpa}</span>
+            <span className="badge-soft badge-brand">Total Poin Prestasi: {totalPoin}</span>
           </div>
         </div>
 
         <div className="surface-card p-5">
-          <h2 className="font-display font-semibold text-ink-900 mb-4">Akumulasi Poin Pelanggaran per Siswa</h2>
+          <h2 className="font-display font-semibold text-ink-900 mb-4">Akumulasi Poin Prestasi per Siswa</h2>
           {loading ? (
             <p className="text-center text-ink-300 py-6">Memuat...</p>
           ) : (
@@ -76,7 +76,7 @@ export default function PoinReportSection() {
                       </button>
                     </td>
                     <td className="text-right">
-                      <span className={`badge-soft ${s.total_poin > 0 ? 'badge-honey' : 'badge-brand'}`}>{s.total_poin} poin</span>
+                      <span className={`badge-soft ${s.total_prestasi > 0 ? 'badge-brand' : 'badge-soft'}`}>{s.total_prestasi} poin</span>
                     </td>
                   </tr>
                 ))}
@@ -103,7 +103,7 @@ export default function PoinReportSection() {
 
       <div className="lg:col-span-2">
         <div className="surface-card p-5 h-full flex flex-col">
-          <h2 className="font-display font-semibold text-ink-900 mb-3">Riwayat Kejadian Pelanggaran</h2>
+          <h2 className="font-display font-semibold text-ink-900 mb-3">Riwayat Kejadian Prestasi</h2>
 
           <div className="flex gap-2 mb-3">
             <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="field-input text-sm flex-1" />
@@ -111,19 +111,19 @@ export default function PoinReportSection() {
           </div>
 
           <div className="space-y-2 flex-1 overflow-y-auto">
-            {paginatedDetail.map((v) => (
-              <div key={v.id} className="border border-line-200 rounded-lg px-3 py-2 flex items-center justify-between gap-2 text-sm">
+            {paginatedDetail.map((a) => (
+              <div key={a.id} className="border border-line-200 rounded-lg px-3 py-2 flex items-center justify-between gap-2 text-sm">
                 <div className="min-w-0">
-                  <p className="text-ink-900 font-medium truncate">{v.student?.user?.name}</p>
+                  <p className="text-ink-900 font-medium truncate">{a.student?.user?.name}</p>
                   <p className="text-xs text-ink-500 truncate">
-                    {v.date} · {v.violation_type?.name || (v.type === 'alpa' ? 'Tidak Hadir' : '-')}
+                    {a.date} · {a.achievement_type?.name || '-'}
                   </p>
                 </div>
-                <span className="text-honey-700 font-medium shrink-0">+{v.poin}</span>
+                <span className="text-brand-700 font-medium shrink-0">+{a.poin}</span>
               </div>
             ))}
             {detail.length === 0 && (
-              <p className="py-6 text-center text-ink-300 text-sm">Tidak ada riwayat pelanggaran untuk filter ini.</p>
+              <p className="py-6 text-center text-ink-300 text-sm">Tidak ada riwayat prestasi untuk filter ini.</p>
             )}
           </div>
 
@@ -142,7 +142,7 @@ export default function PoinReportSection() {
       </div>
 
       {selectedStudent && (
-        <StudentViolationModal student={selectedStudent} onClose={() => setSelectedStudent(null)} onChanged={loadAll} />
+        <StudentAchievementModal student={selectedStudent} onClose={() => setSelectedStudent(null)} onChanged={loadAll} />
       )}
     </div>
   );

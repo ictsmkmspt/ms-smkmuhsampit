@@ -1,11 +1,13 @@
 import { useState } from 'react';
-import { ChevronDown, ClipboardList, AlertOctagon } from 'lucide-react';
+import { ChevronDown, ClipboardList, AlertOctagon, Award } from 'lucide-react';
 import AttendanceReportTab from './AttendanceReportTab';
 import ViolationReportTab from './ViolationReportTab';
+import AchievementReportTab from './AchievementReportTab';
 
 const SUBMENU = [
   { key: 'absensi', label: 'Rekap Absensi', icon: ClipboardList, component: AttendanceReportTab },
   { key: 'poin', label: 'Rekap Poin Pelanggaran', icon: AlertOctagon, component: ViolationReportTab },
+  { key: 'prestasi', label: 'Rekap Poin Prestasi', icon: Award, component: AchievementReportTab },
 ];
 
 export default function ReportTab() {
