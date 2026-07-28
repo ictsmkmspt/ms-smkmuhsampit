@@ -381,19 +381,32 @@ class AttendanceController extends Controller
         ], 201);
     }
 
+    /**
+     * Laporan absensi harian (opsional filter class_room_id). Kalau yang login guru,
+     * class_room_id dari request DIABAIKAN dan diganti otomatis dengan kelas walinya
+     * sendiri (sama seperti myClassReport/monthlyReport) — guru tidak boleh intip
+     * laporan kelas lain lewat endpoint ini.
+     */
     public function report(Request $request)
     {
         $date = $request->date ?? now()->format('Y-m-d');
 
+        $restricted  = $this->guruClassRoomId($request);
+        $classRoomId = $restricted ?? $request->class_room_id;
+
+        if ($restricted !== null && !ClassRoom::find($restricted)) {
+            return response()->json(['message' => 'Anda belum ditugaskan sebagai wali kelas.'], 403);
+        }
+
         $studentsQuery = Student::with(['user', 'classRoom']);
-        if ($request->class_room_id) {
-            $studentsQuery->where('class_room_id', $request->class_room_id);
+        if ($classRoomId) {
+            $studentsQuery->where('class_room_id', $classRoomId);
         }
         $students = $studentsQuery->get();
 
         $attendanceQuery = Attendance::where('date', $date);
-        if ($request->class_room_id) {
-            $attendanceQuery->where('class_room_id', $request->class_room_id);
+        if ($classRoomId) {
+            $attendanceQuery->where('class_room_id', $classRoomId);
         }
         $attendances = $attendanceQuery->get()->keyBy('student_id');
 
