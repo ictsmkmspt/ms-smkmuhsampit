@@ -2,6 +2,10 @@ import { useEffect, useRef, useState } from 'react';
 import { Plus, Trash2, Download, Upload } from 'lucide-react';
 import api from '../../../api/axios';
 
+import QRCode from "qrcode";
+import JSZip from "jszip";
+import { saveAs } from "file-saver";
+
 export default function StudentsTab() {
   const [students, setStudents] = useState([]);
   const [classes, setClasses] = useState([]);
@@ -84,6 +88,46 @@ export default function StudentsTab() {
     }
   };
 
+  const downloadAllQR = async () => {
+  try {
+    const zip = new JSZip();
+
+    for (const s of students) {
+
+	  console.log(
+    "Nama :", s.user?.name,
+    "NIS :", s.nis,
+    "Barcode :", s.barcode_code
+  );
+
+      const dataUrl = await QRCode.toDataURL(s.barcode_code, {
+        width: 400,
+        margin: 2,
+      });
+
+      const base64 = dataUrl.replace(
+        /^data:image\/png;base64,/,
+        ""
+      );
+
+      zip.file(
+        `${s.nis}_${s.user?.name || "Siswa"}.png`,
+        base64,
+        { base64: true }
+      );
+    }
+
+    const content = await zip.generateAsync({
+      type: "blob",
+    });
+
+    saveAs(content, "qrcode_siswa.zip");
+  } catch (err) {
+    console.error(err);
+    alert("Gagal membuat ZIP QR Code.");
+  }
+};
+
   return (
     <div className="space-y-6">
       <div className="surface-card p-5 flex flex-wrap items-center gap-3">
@@ -108,6 +152,8 @@ export default function StudentsTab() {
           onChange={handleFileChange}
           className="hidden"
         />
+
+	
       </div>
 
       {importResult && (
@@ -160,6 +206,12 @@ export default function StudentsTab() {
         <h2 className="font-display font-semibold text-ink-900 mb-4">
           Daftar Siswa <span className="text-ink-500 font-sans font-normal text-sm">({students.length})</span>
         </h2>
+	<button 
+	  onClick={downloadAllQR}
+          className="flex items-center gap-1.5 text-sm font-medium text-white bg-brand-600 hover:bg-brand-700 disabled:opacity-50 rounded-xl px-4 py-2 transition"
+	  >
+	    Download Semua QR
+	</button>
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-ink-500 border-b border-line-200">
