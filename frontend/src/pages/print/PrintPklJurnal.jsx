@@ -61,8 +61,11 @@ export default function PrintPklJurnal() {
   if (error) return <div className="p-8 text-center text-rose-600">{error}</div>;
   if (!placement) return <div className="p-8 text-center text-ink-400">Memuat data...</div>;
 
+  const hariHadir = rows.filter((r) => r.row?.status === 'hadir');
+  const adaBelumVerifikasi = hariHadir.some((r) => !r.row.verified_at);
+
   return (
-    <div className="p-8 max-w-3xl mx-auto bg-white text-ink-900">
+    <div className="p-8 max-w-3xl mx-auto bg-white text-ink-900 relative">
       <div className="no-print flex justify-between items-center mb-6">
         <select value={bulanPilih} onChange={(e) => setBulanPilih(e.target.value)} className="field-input text-sm">
           {Array.from({ length: 12 }, (_, i) => {
@@ -79,6 +82,17 @@ export default function PrintPklJurnal() {
           <Printer className="w-4 h-4" /> Print / Simpan PDF
         </button>
       </div>
+
+      {adaBelumVerifikasi && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+          <span
+            className="whitespace-nowrap tracking-widest font-medium"
+            style={{ fontSize: '64px', color: 'rgba(220,38,38,0.16)', transform: 'rotate(-35deg)' }}
+          >
+            BELUM VERIFIKASI
+          </span>
+        </div>
+      )}
 
       <div className="mb-6 text-sm">
         <p className="font-bold flex items-center gap-1.5">

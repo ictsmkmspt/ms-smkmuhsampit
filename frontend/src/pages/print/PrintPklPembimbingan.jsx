@@ -37,8 +37,29 @@ export default function PrintPklPembimbingan() {
     ? [...new Set(entries.map((e) => e.teacher?.user?.name).filter(Boolean))].join(', ') || '-'
     : (user.role === 'guru' ? user.name : '-');
 
+  const adaBelumVerifikasi = entries.some((e) => !e.verified_at);
+
   return (
-    <div className="p-8 max-w-5xl mx-auto bg-white text-ink-900">
+    <div className="p-8 max-w-5xl mx-auto bg-white text-ink-900 relative overflow-hidden">
+      {adaBelumVerifikasi && (
+        <div
+          className="fixed inset-0 flex items-center justify-center pointer-events-none select-none"
+          style={{ zIndex: 40 }}
+        >
+          <span
+            style={{
+              transform: 'rotate(-45deg)',
+              color: 'rgba(220, 38, 38, 0.18)',
+              fontSize: 'clamp(3rem, 9vw, 7rem)',
+              fontWeight: 800,
+              letterSpacing: '0.05em',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            BELUM VERIFIKASI
+          </span>
+        </div>
+      )}
       <div className="no-print flex justify-end items-center mb-6">
         <button
           onClick={() => window.print()}
