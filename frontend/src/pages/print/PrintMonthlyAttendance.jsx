@@ -101,7 +101,7 @@ export default function PrintMonthlyAttendance() {
         @media print {
           .no-print { display: none !important; }
         }
-        @page { size: landscape; margin: 10mm; }
+        @page { size: landscape; margin: 15mm 15mm 15mm 25mm; }
       `}</style>
     </div>
   );

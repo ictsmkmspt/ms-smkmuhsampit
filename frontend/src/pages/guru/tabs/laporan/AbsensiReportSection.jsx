@@ -141,10 +141,12 @@ export default function AbsensiReportSection() {
                   <tr key={r.id} className="border-t border-line-200">
                     <td className="py-2.5 text-ink-900">{r.student?.user?.name}</td>
                     <td className="font-mono text-xs text-ink-700">{r.time_in || '-'}</td>
-                    <td><span className={`badge-soft ${badgeClass(r.status)}`}>{r.status}</span></td>
+                    <td><span className={`badge-soft ${badgeClass(r.status)}`}>{r.status === 'pkl' ? 'PKL' : r.status}</span></td>
                     <td className="text-right">
                       {r.status === 'libur' ? (
                         <span className="text-xs text-ink-300 italic">Hari libur</span>
+                      ) : r.status === 'pkl' ? (
+                        <span className="text-xs text-ink-300 italic">Sedang PKL</span>
                       ) : (
                         <div className="flex justify-end gap-3">
                           <button onClick={() => setEditingRecord(r)} className="text-ink-300 hover:text-brand-600" title="Edit data kehadiran">

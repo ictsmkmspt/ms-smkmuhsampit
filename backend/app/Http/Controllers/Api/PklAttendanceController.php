@@ -116,6 +116,42 @@ class PklAttendanceController extends Controller
     }
 
     /**
+     * Siswa mengajukan izin/sakit untuk 1 tanggal, lengkap dengan alasan. Ditolak
+     * kalau tanggal itu sudah terlanjur ada absen masuk (berarti fisiknya hadir,
+     * jadi tidak masuk akal mengajukan izin/sakit untuk hari yang sama).
+     */
+    public function ajukanIzinSakit(Request $request)
+    {
+        $data = $request->validate([
+            'date'   => 'required|date',
+            'status' => 'required|in:izin,sakit',
+            'alasan' => 'required|string|max:500',
+        ]);
+
+        $placement = $this->placementSiswa($request);
+        if (!$placement) {
+            return response()->json(['message' => 'Anda tidak sedang dalam masa PKL.'], 422);
+        }
+
+        $absensi = PklAttendance::firstOrNew([
+            'pkl_placement_id' => $placement->id,
+            'date'             => $data['date'],
+        ]);
+
+        if ($absensi->exists && $absensi->time_in) {
+            return response()->json(['message' => 'Anda sudah tercatat absen masuk pada tanggal ini, tidak bisa mengajukan izin/sakit.'], 422);
+        }
+
+        $absensi->student_id      = $placement->student_id;
+        $absensi->status          = $data['status'];
+        $absensi->catatan_koreksi = $data['alasan'];
+        $absensi->save();
+
+        $label = $data['status'] === 'izin' ? 'Izin' : 'Sakit';
+        return response()->json(['message' => "Pengajuan {$label} berhasil dikirim.", 'absensi' => $absensi]);
+    }
+
+    /**
      * Riwayat absensi PKL siswa yang sedang login.
      */
     public function riwayatSaya(Request $request)
@@ -200,5 +236,24 @@ class PklAttendanceController extends Controller
             'message'  => 'Absensi berhasil diverifikasi.',
             'absensi'  => $pklAttendance->fresh('verifiedBy'),
         ]);
+    }
+
+    /**
+     * Semua absensi yang BELUM diverifikasi milik DUDI yang sedang login,
+     * dari semua siswa magangnya sekaligus — dipakai panel "Verifikasi Absensi"
+     * di dashboard DUDI supaya tidak perlu buka satu-satu per siswa.
+     */
+    public function pendingVerifikasi(Request $request)
+    {
+        $dudi = $request->user()->dudi;
+        if (!$dudi) {
+            return response()->json(['message' => 'Akun ini belum terhubung ke profil DUDI.'], 404);
+        }
+
+        return PklAttendance::with('student.user', 'student.classRoom')
+            ->whereNull('verified_at')
+            ->whereHas('placement', fn ($q) => $q->where('dudi_id', $dudi->id))
+            ->orderBy('date')
+            ->get();
     }
 }

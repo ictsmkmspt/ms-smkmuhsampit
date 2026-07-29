@@ -32,6 +32,11 @@ class PklPlacement extends Model
         return $this->hasMany(PklAttendance::class);
     }
 
+    public function journals()
+    {
+        return $this->hasMany(PklJournal::class);
+    }
+
     public function isAktif(): bool
     {
         return $this->status === 'aktif';

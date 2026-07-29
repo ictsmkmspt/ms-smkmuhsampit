@@ -68,6 +68,7 @@ export default function AttendanceReportTab() {
     if (status === 'sakit') return 'badge-honey';
     if (status === 'alpa') return 'badge-rose';
     if (status === 'libur') return 'bg-mist-200 text-ink-500';
+    if (status === 'pkl') return 'badge-brand';
     return 'badge-brand';
   };
 
@@ -160,11 +161,13 @@ export default function AttendanceReportTab() {
                   <td className="text-ink-700">{r.student?.class_room?.name || '-'}</td>
                   <td className="font-mono text-xs text-ink-700">{r.time_in || '-'}</td>
                   <td>
-                    <span className={`badge-soft ${badgeClass(r.status)}`}>{r.status}</span>
+                    <span className={`badge-soft ${badgeClass(r.status)}`}>{r.status === 'pkl' ? 'PKL' : r.status}</span>
                   </td>
                   <td className="text-right">
                     {r.status === 'libur' ? (
                       <span className="text-xs text-ink-300 italic">Hari libur</span>
+                    ) : r.status === 'pkl' ? (
+                      <span className="text-xs text-ink-300 italic">Sedang PKL</span>
                     ) : (
                       <div className="flex justify-end gap-3">
                         <button

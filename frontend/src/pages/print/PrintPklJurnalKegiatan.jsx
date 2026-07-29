@@ -6,9 +6,8 @@ import { useAuth } from '../../context/AuthContext';
 
 const HARI = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
 const BULAN = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-const STATUS_LABEL = { izin: 'Izin', sakit: 'Sakit', alpa: 'Alpa' };
 
-export default function PrintPklJurnal() {
+export default function PrintPklJurnalKegiatan() {
   const { user } = useAuth();
   const [params] = useSearchParams();
   const placementId = params.get('placement_id');
@@ -17,7 +16,7 @@ export default function PrintPklJurnal() {
   const [bulanPilih, setBulanPilih] = useState(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`);
 
   const [placement, setPlacement] = useState(null);
-  const [attendances, setAttendances] = useState([]);
+  const [entries, setEntries] = useState([]);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -26,17 +25,17 @@ export default function PrintPklJurnal() {
       return;
     }
 
-    const attendanceReq = user.role === 'siswa'
-      ? api.get('/my-pkl-attendances')
-      : api.get(`/pkl-placements/${placementId}/attendances`);
+    const jurnalReq = user.role === 'siswa'
+      ? api.get('/my-pkl-jurnal')
+      : api.get(`/pkl-placements/${placementId}/jurnal`);
 
     Promise.all([
       api.get(`/pkl-placements/${placementId}`),
-      attendanceReq,
+      jurnalReq,
     ])
-      .then(([p, a]) => {
+      .then(([p, j]) => {
         setPlacement(p.data);
-        setAttendances(a.data);
+        setEntries(j.data);
       })
       .catch((err) => setError(err.response?.data?.message || 'Gagal memuat data.'));
   }, [placementId]); // eslint-disable-line
@@ -44,25 +43,20 @@ export default function PrintPklJurnal() {
   const [tahun, bulan] = bulanPilih.split('-').map(Number);
 
   const rows = useMemo(() => {
-    if (!tahun || !bulan) return [];
-    const jumlahHari = new Date(tahun, bulan, 0).getDate();
-    const byDate = Object.fromEntries(attendances.map((a) => [a.date, a]));
-
-    return Array.from({ length: jumlahHari }, (_, i) => {
-      const tgl = i + 1;
-      const dateStr = `${tahun}-${String(bulan).padStart(2, '0')}-${String(tgl).padStart(2, '0')}`;
-      const d = new Date(tahun, bulan - 1, tgl);
-      const namaHari = HARI[d.getDay()];
-      const row = byDate[dateStr];
-      return { tgl, namaHari, dateStr, row };
-    });
-  }, [tahun, bulan, attendances]);
+    return entries
+      .filter((e) => e.date?.startsWith(bulanPilih))
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .map((e, i) => {
+        const d = new Date(e.date);
+        return { no: i + 1, namaHari: HARI[d.getDay()], tanggal: d.getDate(), ...e };
+      });
+  }, [entries, bulanPilih]);
 
   if (error) return <div className="p-8 text-center text-rose-600">{error}</div>;
   if (!placement) return <div className="p-8 text-center text-ink-400">Memuat data...</div>;
 
   return (
-    <div className="p-8 max-w-3xl mx-auto bg-white text-ink-900">
+    <div className="p-8 max-w-4xl mx-auto bg-white text-ink-900">
       <div className="no-print flex justify-between items-center mb-6">
         <select value={bulanPilih} onChange={(e) => setBulanPilih(e.target.value)} className="field-input text-sm">
           {Array.from({ length: 12 }, (_, i) => {
@@ -87,24 +81,29 @@ export default function PrintPklJurnal() {
         <p className="font-bold text-xs ml-4">JURNAL PRAKTIK KERJA LAPANGAN {tahun}</p>
       </div>
 
-      <h1 className="text-center font-bold text-lg mb-6">DAFTAR HADIR PESERTA PKL</h1>
+      <h1 className="text-center font-bold text-lg mb-6">JURNAL KEGIATAN PKL</h1>
 
       <table className="text-sm mb-6">
         <tbody>
           <tr>
-            <td className="pr-3 py-0.5 align-top w-48">Nama Murid</td>
+            <td className="pr-3 py-0.5 align-top w-48">Nama Peseta PKL</td>
             <td className="pr-2 py-0.5 align-top">:</td>
             <td className="py-0.5">{placement.student?.user?.name}</td>
           </tr>
           <tr>
-            <td className="pr-3 py-0.5 align-top">Kompetensi Keahlian</td>
-            <td className="pr-2 py-0.5 align-top">:</td>
-            <td className="py-0.5">{placement.student?.class_room?.name || '-'}</td>
-          </tr>
-          <tr>
-            <td className="pr-3 py-0.5 align-top">Tempat PKL/Nama Iduka</td>
+            <td className="pr-3 py-0.5 align-top">Nama Iduka Tempat PKL</td>
             <td className="pr-2 py-0.5 align-top">:</td>
             <td className="py-0.5">{placement.dudi?.nama_perusahaan}</td>
+          </tr>
+          <tr>
+            <td className="pr-3 py-0.5 align-top">Nama Instruktur</td>
+            <td className="pr-2 py-0.5 align-top">:</td>
+            <td className="py-0.5">{placement.dudi?.penanggung_jawab || '-'}</td>
+          </tr>
+          <tr>
+            <td className="pr-3 py-0.5 align-top">Nama Guru Pembimbing</td>
+            <td className="pr-2 py-0.5 align-top">:</td>
+            <td className="py-0.5">{placement.guru_pembimbing?.user?.name || '-'}</td>
           </tr>
           <tr>
             <td className="pr-3 py-0.5 align-top">Bulan</td>
@@ -117,52 +116,50 @@ export default function PrintPklJurnal() {
       <table className="w-full border-collapse text-xs">
         <thead>
           <tr>
-            <th rowSpan="2" className="border border-ink-400 px-2 py-2 w-32">Hari, tanggal</th>
-            <th colSpan="2" className="border border-ink-400 px-2 py-1">Absensi Kerja</th>
-            <th rowSpan="2" className="border border-ink-400 px-2 py-2 w-28">Ket. Tidak Hadir</th>
-            <th rowSpan="2" className="border border-ink-400 px-2 py-2 w-28">Paraf Instruktur</th>
-          </tr>
-          <tr>
-            <th className="border border-ink-400 px-2 py-1 w-16">Datang</th>
-            <th className="border border-ink-400 px-2 py-1 w-16">Pulang</th>
+            <th className="border border-ink-400 px-2 py-2 w-10">No</th>
+            <th className="border border-ink-400 px-2 py-2 w-28">Hari, tanggal</th>
+            <th className="border border-ink-400 px-2 py-2">Kegiatan</th>
+            <th className="border border-ink-400 px-2 py-2 w-40">Catatan</th>
           </tr>
         </thead>
         <tbody>
           {rows.map((r) => (
-            <tr key={r.dateStr}>
-              <td className="border border-ink-400 px-2 py-1.5">{r.namaHari}, {r.tgl}</td>
-              <td className="border border-ink-400 px-2 py-1.5 text-center">
-                {r.row?.time_in ? r.row.time_in.slice(0, 5) : ''}
-              </td>
-              <td className="border border-ink-400 px-2 py-1.5 text-center">
-                {r.row?.time_out ? r.row.time_out.slice(0, 5) : ''}
-              </td>
-              <td className="border border-ink-400 px-2 py-1.5 text-center">
-                {r.row && r.row.status !== 'hadir' ? STATUS_LABEL[r.row.status] : ''}
-              </td>
-              <td className="border border-ink-400 px-2 py-1.5 text-center">
-                {r.row?.verified_at ? '✓' : ''}
-              </td>
+            <tr key={r.id}>
+              <td className="border border-ink-400 px-2 py-2 text-center">{r.no}</td>
+              <td className="border border-ink-400 px-2 py-2">{r.namaHari}, {r.tanggal}</td>
+              <td className="border border-ink-400 px-2 py-2 whitespace-pre-wrap">{r.kegiatan}</td>
+              <td className="border border-ink-400 px-2 py-2 whitespace-pre-wrap">{r.catatan || ''}</td>
             </tr>
           ))}
+          {rows.length === 0 && (
+            <tr><td colSpan="4" className="border border-ink-400 px-2 py-6 text-center text-ink-400">Belum ada kegiatan yang diisi untuk bulan ini.</td></tr>
+          )}
         </tbody>
       </table>
 
-      <div className="mt-6 text-xs">
-        <p className="font-medium mb-1">Keterangan pengisian:</p>
+      <div className="flex justify-between mt-16 text-sm">
+        <div>
+          <p className="invisible">Sampit, ..................................</p>
+          <p>Guru Pembimbing,</p>
+          <div className="h-16" />
+          <p>.....................................</p>
+        </div>
+        <div className="text-right">
+          <p>Sampit, ..................................</p>
+          <p>Instruktur Dunia Kerja,</p>
+          <div className="h-16" />
+          <p>.....................................</p>
+        </div>
+      </div>
+
+      <div className="mt-8 text-xs">
+        <p className="font-medium mb-1">Format Jurnal Kegiatan PKL</p>
         <ol className="list-[lower-alpha] list-inside space-y-0.5">
-          <li>Satu halaman ini untuk daftar hadir 1 bulan</li>
-          <li>Daftar hadir diisi oleh perorangan/individu masing-masing</li>
-          <li>Kolom hari/tanggal diisi hari dan tanggal pelaksanaan</li>
-          <li>
-            Absensi kerja diisi berdasarkan:
-            <ul className="list-none ml-5">
-              <li>✓ Jam datang</li>
-              <li>✓ Jam pulang</li>
-            </ul>
-          </li>
-          <li>Kolom keterangan tidak hadir (diisi jika peserta PKL yang bersangkutan tidak hadir dalam melaksanakan PKL)</li>
-          <li>Paraf diisi oleh Instruktur Dunia Kerja.</li>
+          <li>Kolom 1 diisi dengan nomor urut</li>
+          <li>Kolom 2 diisi dengan Hari dan tanggal kegiatan.</li>
+          <li>Kolom 3 diisi dengan jenis kegiatan/pekerjaan atau keterampilan yang dilakukan murid.</li>
+          <li>Kolom 4 diisi oleh Instruktur Dunia Kerja pada setiap kegiatan atau waktu tertentu.</li>
+          <li>Jurnal diisi setiap hari, setiap bulan jurnal ditandatangani Guru Pembimbing dan Instruktur Dunia Kerja</li>
         </ol>
       </div>
 

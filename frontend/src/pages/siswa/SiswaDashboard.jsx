@@ -63,7 +63,7 @@ export default function SiswaDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-mist-50 p-6">
+    <div className={`min-h-screen bg-mist-50 p-6 ${isPkl ? 'pb-24' : ''}`}>
       <div className="flex justify-between items-center max-w-md mx-auto mb-6">
         <div>
           <p className="text-xs text-ink-500">Siswa</p>

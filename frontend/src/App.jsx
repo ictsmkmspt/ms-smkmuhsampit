@@ -11,6 +11,8 @@ import ParentDashboard from './pages/wali/ParentDashboard';
 import DudiDashboard from './pages/dudi/DudiDashboard';
 import PrintMonthlyAttendance from './pages/print/PrintMonthlyAttendance';
 import PrintPklJurnal from './pages/print/PrintPklJurnal';
+import PrintPklJurnalKegiatan from './pages/print/PrintPklJurnalKegiatan';
+import PrintPklPembimbingan from './pages/print/PrintPklPembimbingan';
 
 export default function App() {
   return (
@@ -26,6 +28,14 @@ export default function App() {
 
           <Route path="/print/pkl-jurnal" element={
             <ProtectedRoute allowedRoles={['admin', 'guru', 'dudi', 'siswa']}><PrintPklJurnal /></ProtectedRoute>
+          } />
+
+          <Route path="/print/pkl-jurnal-kegiatan" element={
+            <ProtectedRoute allowedRoles={['admin', 'guru', 'dudi', 'siswa']}><PrintPklJurnalKegiatan /></ProtectedRoute>
+          } />
+
+          <Route path="/print/pkl-pembimbingan" element={
+            <ProtectedRoute allowedRoles={['admin', 'guru', 'dudi']}><PrintPklPembimbingan /></ProtectedRoute>
           } />
 
           <Route path="/admin/*" element={

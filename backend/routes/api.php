@@ -9,6 +9,8 @@ use App\Http\Controllers\Api\DudiController;
 use App\Http\Controllers\Api\HolidayController;
 use App\Http\Controllers\Api\ParentController;
 use App\Http\Controllers\Api\PklAttendanceController;
+use App\Http\Controllers\Api\PklJournalController;
+use App\Http\Controllers\Api\PklPembimbinganJournalController;
 use App\Http\Controllers\Api\PklPlacementController;
 use App\Http\Controllers\Api\PrayerAttendanceController;
 use App\Http\Controllers\Api\SettingController;
@@ -87,10 +89,18 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('role:admin,guru,dudi')->group(function () {
         Route::get('/pkl-placements/{pklPlacement}/attendances', [PklAttendanceController::class, 'riwayatPenempatan']);
         Route::post('/pkl-attendances/koreksi', [PklAttendanceController::class, 'koreksi']);
+        Route::get('/pkl-placements/{pklPlacement}/jurnal', [PklJournalController::class, 'riwayatPenempatan']);
+        Route::get('/pkl-pembimbingan', [PklPembimbinganJournalController::class, 'index']);
     });
 
     Route::middleware('role:admin,dudi')->group(function () {
         Route::post('/pkl-attendances/{pklAttendance}/verifikasi', [PklAttendanceController::class, 'verifikasi']);
+        Route::put('/pkl-jurnal/{pklJournal}/catatan', [PklJournalController::class, 'isiCatatan']);
+        Route::post('/pkl-pembimbingan/{pklPembimbinganJournal}/verifikasi', [PklPembimbinganJournalController::class, 'verifikasi']);
+    });
+
+    Route::middleware('role:guru')->group(function () {
+        Route::post('/pkl-pembimbingan', [PklPembimbinganJournalController::class, 'store']);
     });
 
     Route::middleware('role:siswa')->group(function () {
@@ -100,6 +110,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/my-pkl-attendances', [PklAttendanceController::class, 'riwayatSaya']);
         Route::post('/pkl/absen-masuk', [PklAttendanceController::class, 'absenMasuk']);
         Route::post('/pkl/absen-pulang', [PklAttendanceController::class, 'absenPulang']);
+        Route::post('/pkl/izin-sakit', [PklAttendanceController::class, 'ajukanIzinSakit']);
+        Route::get('/my-pkl-jurnal', [PklJournalController::class, 'riwayatSaya']);
+        Route::post('/pkl-jurnal', [PklJournalController::class, 'simpanKegiatan']);
     });
 
     Route::middleware('role:wali')->group(function () {
@@ -110,5 +123,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('role:dudi')->group(function () {
         Route::get('/my-dudi-profile', [DudiController::class, 'myProfile']);
         Route::get('/dudi/my-siswa', [PklPlacementController::class, 'siswaSaya']);
+        Route::get('/dudi/absensi-pending', [PklAttendanceController::class, 'pendingVerifikasi']);
     });
 });

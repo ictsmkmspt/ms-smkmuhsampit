@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Attendance;
 use App\Models\ClassRoom;
 use App\Models\Holiday;
+use App\Models\PklPlacement;
 use App\Models\Setting;
 use App\Models\Student;
 use App\Models\Teacher;
@@ -209,10 +210,15 @@ class AttendanceController extends Controller
         $attendances = Attendance::where('date', $date)->where('class_room_id', $classRoom->id)
             ->get()->keyBy('student_id');
 
-        $hasil = $students->map(function ($student) use ($attendances, $date) {
+        $siswaPkl = PklPlacement::where('status', 'aktif')->pluck('student_id')->all();
+
+        $hasil = $students->map(function ($student) use ($attendances, $date, $siswaPkl) {
             $att = $attendances->get($student->id);
             if ($att) {
                 return ['id' => $att->id, 'student' => $student, 'date' => $date, 'time_in' => $att->time_in, 'status' => $att->status];
+            }
+            if (in_array($student->id, $siswaPkl, true)) {
+                return ['id' => 'pkl-' . $student->id, 'student' => $student, 'date' => $date, 'time_in' => null, 'status' => 'pkl'];
             }
             if (Holiday::isHariLibur($date)) {
                 return ['id' => 'libur-' . $student->id, 'student' => $student, 'date' => $date, 'time_in' => null, 'status' => 'libur'];
@@ -245,8 +251,11 @@ class AttendanceController extends Controller
         }
 
         $studentsAlreadyAbsent = Attendance::where('date', $date)->pluck('student_id');
+        $siswaPkl = PklPlacement::where('status', 'aktif')->pluck('student_id');
 
-        $alpaStudents = Student::whereNotIn('id', $studentsAlreadyAbsent)->with('user')->get();
+        $alpaStudents = Student::whereNotIn('id', $studentsAlreadyAbsent)
+            ->whereNotIn('id', $siswaPkl)
+            ->with('user')->get();
 
         $jenisAlpa = ViolationType::where('system_key', 'alpa')->first();
         $poinAlpa  = $jenisAlpa?->poin ?? 10;
@@ -411,11 +420,15 @@ class AttendanceController extends Controller
         $attendances = $attendanceQuery->get()->keyBy('student_id');
 
         $isLibur = Holiday::isHariLibur($date);
+        $siswaPkl = PklPlacement::where('status', 'aktif')->pluck('student_id')->all();
 
-        $hasil = $students->map(function ($student) use ($attendances, $date, $isLibur) {
+        $hasil = $students->map(function ($student) use ($attendances, $date, $isLibur, $siswaPkl) {
             $attendance = $attendances->get($student->id);
             if ($attendance) {
                 return ['id' => $attendance->id, 'student' => $student, 'date' => $date, 'time_in' => $attendance->time_in, 'status' => $attendance->status];
+            }
+            if (in_array($student->id, $siswaPkl, true)) {
+                return ['id' => 'pkl-' . $student->id, 'student' => $student, 'date' => $date, 'time_in' => null, 'status' => 'pkl'];
             }
             if ($isLibur) {
                 return ['id' => 'libur-' . $student->id, 'student' => $student, 'date' => $date, 'time_in' => null, 'status' => 'libur'];
