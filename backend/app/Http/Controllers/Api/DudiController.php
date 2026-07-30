@@ -34,9 +34,9 @@ class DudiController extends Controller
             'alamat'           => 'nullable|string|max:255',
             'penanggung_jawab' => 'nullable|string|max:100',
             'telepon'          => 'nullable|string|max:30',
-            'latitude'         => 'nullable|numeric|between:-90,90',
-            'longitude'        => 'nullable|numeric|between:-180,180',
-            'radius_meter'     => 'nullable|integer|min:10|max:5000',
+            'latitude'         => 'required|numeric|between:-90,90',
+            'longitude'        => 'required|numeric|between:-180,180',
+            'radius_meter'     => 'required|integer|min:10|max:5000',
         ]);
 
         return DB::transaction(function () use ($data) {
@@ -53,9 +53,9 @@ class DudiController extends Controller
                 'alamat'           => $data['alamat'] ?? null,
                 'penanggung_jawab' => $data['penanggung_jawab'] ?? null,
                 'telepon'          => $data['telepon'] ?? null,
-                'latitude'         => $data['latitude'] ?? null,
-                'longitude'        => $data['longitude'] ?? null,
-                'radius_meter'     => $data['radius_meter'] ?? null,
+                'latitude'         => $data['latitude'],
+                'longitude'        => $data['longitude'],
+                'radius_meter'     => $data['radius_meter'],
             ]);
 
             return response()->json($dudi->load('user'), 201);

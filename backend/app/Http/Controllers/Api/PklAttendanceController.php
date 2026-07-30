@@ -59,15 +59,32 @@ class PklAttendanceController extends Controller
     }
 
     /**
-     * Absen masuk — cukup klik tombol, tanpa validasi lokasi GPS. Absensi yang
-     * tercatat berstatus "hadir" tapi baru sah kalau sudah diverifikasi (di-paraf)
-     * oleh DUDI lewat endpoint verifikasi().
+     * Absen masuk — WAJIB lokasi GPS, harus berada dalam radius yang diatur
+     * admin untuk DUDI itu. Absensi yang tercatat berstatus "hadir" tapi baru
+     * sah kalau sudah diverifikasi (di-paraf) oleh DUDI lewat endpoint verifikasi().
      */
     public function absenMasuk(Request $request)
     {
+        $data = $request->validate([
+            'latitude'  => 'required|numeric|between:-90,90',
+            'longitude' => 'required|numeric|between:-180,180',
+        ]);
+
         $placement = $this->placementSiswa($request);
         if (!$placement) {
             return response()->json(['message' => 'Anda tidak sedang dalam masa PKL.'], 422);
+        }
+
+        $dudi = $placement->dudi;
+        if (!$dudi || !$dudi->latitude || !$dudi->longitude) {
+            return response()->json(['message' => 'Lokasi DUDI belum diatur oleh admin. Hubungi admin sekolah.'], 422);
+        }
+
+        $jarak = $dudi->jarakKe($data['latitude'], $data['longitude']);
+        if (!$dudi->dalamRadius($data['latitude'], $data['longitude'])) {
+            return response()->json([
+                'message' => "Anda berada di luar radius lokasi DUDI ({$jarak}m dari lokasi, radius diizinkan {$dudi->radius_meter}m).",
+            ], 422);
         }
 
         $tanggal = now()->format('Y-m-d');
@@ -80,22 +97,43 @@ class PklAttendanceController extends Controller
             return response()->json(['message' => 'Anda sudah absen masuk hari ini pukul ' . $absensi->time_in . '.'], 422);
         }
 
-        $absensi->student_id = $placement->student_id;
-        $absensi->time_in    = now()->format('H:i:s');
-        $absensi->status     = 'hadir';
+        $absensi->student_id         = $placement->student_id;
+        $absensi->time_in            = now()->format('H:i:s');
+        $absensi->latitude_in        = $data['latitude'];
+        $absensi->longitude_in       = $data['longitude'];
+        $absensi->distance_in_meter  = $jarak;
+        $absensi->status             = 'hadir';
         $absensi->save();
 
         return response()->json(['message' => 'Absen masuk berhasil.', 'absensi' => $absensi]);
     }
 
     /**
-     * Absen pulang — mewajibkan sudah absen masuk dulu di tanggal yang sama.
+     * Absen pulang — mewajibkan sudah absen masuk dulu di tanggal yang sama,
+     * WAJIB lokasi GPS juga.
      */
     public function absenPulang(Request $request)
     {
+        $data = $request->validate([
+            'latitude'  => 'required|numeric|between:-90,90',
+            'longitude' => 'required|numeric|between:-180,180',
+        ]);
+
         $placement = $this->placementSiswa($request);
         if (!$placement) {
             return response()->json(['message' => 'Anda tidak sedang dalam masa PKL.'], 422);
+        }
+
+        $dudi = $placement->dudi;
+        if (!$dudi || !$dudi->latitude || !$dudi->longitude) {
+            return response()->json(['message' => 'Lokasi DUDI belum diatur oleh admin. Hubungi admin sekolah.'], 422);
+        }
+
+        $jarak = $dudi->jarakKe($data['latitude'], $data['longitude']);
+        if (!$dudi->dalamRadius($data['latitude'], $data['longitude'])) {
+            return response()->json([
+                'message' => "Anda berada di luar radius lokasi DUDI ({$jarak}m dari lokasi, radius diizinkan {$dudi->radius_meter}m).",
+            ], 422);
         }
 
         $tanggal = now()->format('Y-m-d');
@@ -109,7 +147,10 @@ class PklAttendanceController extends Controller
             return response()->json(['message' => 'Anda sudah absen pulang hari ini pukul ' . $absensi->time_out . '.'], 422);
         }
 
-        $absensi->time_out = now()->format('H:i:s');
+        $absensi->time_out           = now()->format('H:i:s');
+        $absensi->latitude_out       = $data['latitude'];
+        $absensi->longitude_out      = $data['longitude'];
+        $absensi->distance_out_meter = $jarak;
         $absensi->save();
 
         return response()->json(['message' => 'Absen pulang berhasil.', 'absensi' => $absensi]);

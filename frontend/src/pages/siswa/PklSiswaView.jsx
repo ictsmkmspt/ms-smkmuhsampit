@@ -42,19 +42,40 @@ export default function PklSiswaView({ placement }) {
 
   useEffect(() => { loadHistory(); }, []);
 
-  const handleAbsen = async (jenis) => {
+  const handleAbsen = (jenis) => {
     setMessage(null);
-    setPosting(jenis);
-    try {
-      const endpoint = jenis === 'masuk' ? '/pkl/absen-masuk' : '/pkl/absen-pulang';
-      const res = await api.post(endpoint);
-      setMessage({ type: 'ok', text: res.data.message });
-      loadHistory();
-    } catch (err) {
-      setMessage({ type: 'error', text: err.response?.data?.message || 'Gagal mengirim absensi.' });
-    } finally {
-      setPosting('');
+
+    if (!navigator.geolocation) {
+      setMessage({ type: 'error', text: 'Perangkat/browser ini tidak mendukung fitur lokasi.' });
+      return;
     }
+
+    setPosting(jenis);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          const endpoint = jenis === 'masuk' ? '/pkl/absen-masuk' : '/pkl/absen-pulang';
+          const res = await api.post(endpoint, {
+            latitude: pos.coords.latitude,
+            longitude: pos.coords.longitude,
+          });
+          setMessage({ type: 'ok', text: res.data.message });
+          loadHistory();
+        } catch (err) {
+          setMessage({ type: 'error', text: err.response?.data?.message || 'Gagal mengirim absensi.' });
+        } finally {
+          setPosting('');
+        }
+      },
+      (err) => {
+        setMessage({
+          type: 'error',
+          text: 'Gagal mengambil lokasi: ' + err.message + '. Pastikan izin lokasi diaktifkan, dan situs ini diakses lewat https:// atau localhost.',
+        });
+        setPosting('');
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
   };
 
   const bukaIzinSakit = (jenis) => {
