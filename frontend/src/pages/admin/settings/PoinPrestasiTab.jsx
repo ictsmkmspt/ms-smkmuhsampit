@@ -80,7 +80,7 @@ export default function PoinPrestasiTab() {
   };
 
   return (
-    <div className="space-y-6 max-w-xl">
+    <div className="space-y-6">
       <div className="surface-card p-4 border-l-4 border-l-brand-400 flex gap-2">
         <Trophy className="w-4 h-4 text-brand-500 shrink-0 mt-0.5" />
         <p className="text-sm text-ink-700">

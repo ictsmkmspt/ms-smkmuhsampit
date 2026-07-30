@@ -1,24 +1,25 @@
 import { useState } from 'react';
 import {
   LogOut, Database, ClipboardList, Settings, ChevronDown, ChevronLeft, ChevronRight, Menu, X,
-  Users, GraduationCap, School, UserCog, Briefcase, LayoutDashboard,
+  Users, GraduationCap, School, UserCog, Briefcase, LayoutDashboard, Building2,
   Clock, AlertOctagon, Trophy, CalendarDays,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import MasterDataTab, { MASTER_DATA_SUBMENU } from './tabs/MasterDataTab';
 import ReportTab from './tabs/ReportTab';
 import SettingsTab, { SETTINGS_SUBMENU } from './tabs/SettingsTab';
-import PklTab from './tabs/PklTab';
+import PklTab, { PKL_SUBMENU } from './tabs/PklTab';
 import DashboardHomeTab from './tabs/DashboardHomeTab';
 
 const MASTER_ICONS = { siswa: Users, guru: GraduationCap, kelas: School, wali: UserCog };
 const SETTINGS_ICONS = { jam: Clock, poin: AlertOctagon, prestasi: Trophy, libur: CalendarDays };
+const PKL_ICONS = { dudi: Building2, penempatan: ClipboardList };
 
 const TABS = [
   { key: 'dashboard',  label: 'Dashboard',   icon: LayoutDashboard, component: DashboardHomeTab },
   { key: 'master',     label: 'Master Data', icon: Database,        hasDropdown: true, submenu: MASTER_DATA_SUBMENU, subIcons: MASTER_ICONS },
   { key: 'laporan',    label: 'Laporan',     icon: ClipboardList,   component: ReportTab },
-  { key: 'pkl',        label: 'PKL',         icon: Briefcase,       component: PklTab },
+  { key: 'pkl',        label: 'PKL',         icon: Briefcase,       hasDropdown: true, submenu: PKL_SUBMENU, subIcons: PKL_ICONS },
   { key: 'pengaturan', label: 'Pengaturan',  icon: Settings,        hasDropdown: true, submenu: SETTINGS_SUBMENU, subIcons: SETTINGS_ICONS },
 ];
 
@@ -27,6 +28,7 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [activeMasterSub, setActiveMasterSub] = useState('siswa');
   const [activeSettingsSub, setActiveSettingsSub] = useState('jam');
+  const [activePklSub, setActivePklSub] = useState('dudi');
   const [openDropdown, setOpenDropdown] = useState(null); // 'master' | 'pengaturan' | null
   const [collapsed, setCollapsed] = useState(false); // toggle sidebar desktop
   const [mobileOpen, setMobileOpen] = useState(false); // toggle dropdown menu di HP
@@ -40,6 +42,7 @@ export default function AdminDashboard() {
   const subStateFor = (key) => {
     if (key === 'master') return [activeMasterSub, setActiveMasterSub];
     if (key === 'pengaturan') return [activeSettingsSub, setActiveSettingsSub];
+    if (key === 'pkl') return [activePklSub, setActivePklSub];
     return [null, () => {}];
   };
 
@@ -88,7 +91,7 @@ export default function AdminDashboard() {
                   <button
                     key={sub.key}
                     onClick={() => { setActiveSub(sub.key); setActiveTab(tab.key); setMobileOpen(false); }}
-                    className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition ${
+                    className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-left whitespace-nowrap transition ${
                       subActive ? 'text-[#F2B705] font-medium' : 'text-white/60 hover:text-white'
                     }`}
                   >
@@ -213,6 +216,8 @@ export default function AdminDashboard() {
             <MasterDataTab activeSub={activeMasterSub} />
           ) : activeTab === 'pengaturan' ? (
             <SettingsTab activeSub={activeSettingsSub} />
+          ) : activeTab === 'pkl' ? (
+            <PklTab activeSub={activePklSub} />
           ) : (
             ActiveComponent && <ActiveComponent />
           )}

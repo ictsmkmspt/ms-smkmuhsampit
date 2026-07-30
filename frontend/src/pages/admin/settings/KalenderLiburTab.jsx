@@ -54,7 +54,7 @@ export default function KalenderLiburTab() {
   };
 
   return (
-    <div className="space-y-6 max-w-xl">
+    <div className="space-y-6">
       <div className="surface-card p-5 border-l-4 border-l-brand-400">
         <div className="flex gap-2">
           <CalendarDays className="w-4 h-4 text-brand-500 shrink-0 mt-0.5" />
