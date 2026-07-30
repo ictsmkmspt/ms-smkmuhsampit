@@ -6,7 +6,7 @@ import api from '../api/axios';
  * Panel jurnal kegiatan PKL 1 penempatan — dipakai bersama Guru (lihat saja)
  * dan DUDI (lihat + isi kolom Catatan lewat prop canIsiCatatan).
  */
-export default function PklJournalModal({ placement, onClose, canIsiCatatan = false }) {
+export default function PklJournalModal({ placement, onClose, canIsiCatatan = false, showCetak = true }) {
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -60,14 +60,16 @@ export default function PklJournalModal({ placement, onClose, canIsiCatatan = fa
           </button>
         </div>
 
-        <div className="p-5 border-b border-line-200">
-          <button
-            onClick={handleCetak}
-            className="flex items-center gap-1.5 text-sm font-medium text-ink-600 hover:text-brand-600"
-          >
-            <Printer className="w-4 h-4" /> Cetak Jurnal Kegiatan
-          </button>
-        </div>
+        {showCetak && (
+          <div className="p-5 border-b border-line-200">
+            <button
+              onClick={handleCetak}
+              className="flex items-center gap-1.5 text-sm font-medium text-ink-600 hover:text-brand-600"
+            >
+              <Printer className="w-4 h-4" /> Cetak Jurnal Kegiatan
+            </button>
+          </div>
+        )}
 
         <div className="overflow-y-auto p-5 space-y-3">
           {loading ? (

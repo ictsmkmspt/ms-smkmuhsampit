@@ -155,7 +155,11 @@ export default function PrintPklJurnal() {
                 {r.row && r.row.status !== 'hadir' ? STATUS_LABEL[r.row.status] : ''}
               </td>
               <td className="border border-ink-400 px-2 py-1.5 text-center">
-                {r.row?.verified_at ? '✓' : ''}
+                {r.row?.verified_at ? (
+                  r.row.verified_by?.dudi?.tanda_tangan_url ? (
+                    <img src={r.row.verified_by.dudi.tanda_tangan_url} alt="Tanda tangan" className="h-8 mx-auto object-contain" />
+                  ) : '✓'
+                ) : ''}
               </td>
             </tr>
           ))}

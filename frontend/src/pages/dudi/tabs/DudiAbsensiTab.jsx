@@ -169,11 +169,12 @@ export default function DudiAbsensiTab() {
           placement={attendanceTarget}
           onClose={() => { setAttendanceTarget(null); loadPending(); }}
           canVerify
+          showCetak={false}
         />
       )}
 
       {journalTarget && (
-        <PklJournalModal placement={journalTarget} onClose={() => setJournalTarget(null)} canIsiCatatan />
+        <PklJournalModal placement={journalTarget} onClose={() => setJournalTarget(null)} canIsiCatatan showCetak={false} />
       )}
     </div>
   );

@@ -103,7 +103,13 @@ export default function PrintPklPembimbingan() {
               <td className="border border-ink-400 px-2 py-6 align-top">{e.date}</td>
               <td className="border border-ink-400 px-2 py-6 align-top whitespace-pre-wrap">{e.aktivitas}</td>
               <td className="border border-ink-400 px-2 py-6 align-top whitespace-pre-wrap">{e.catatan || ''}</td>
-              <td className="border border-ink-400 px-2 py-6 text-center align-top">{e.verified_at ? '✓' : ''}</td>
+              <td className="border border-ink-400 px-2 py-6 text-center align-top">
+                {e.verified_at ? (
+                  e.verified_by?.dudi?.tanda_tangan_url ? (
+                    <img src={e.verified_by.dudi.tanda_tangan_url} alt="Tanda tangan" className="h-10 mx-auto object-contain" />
+                  ) : '✓'
+                ) : ''}
+              </td>
             </tr>
           ))}
           {entries.length === 0 && (

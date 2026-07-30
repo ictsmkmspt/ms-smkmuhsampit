@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { ScanBarcode, ArrowLeft, Mail, Lock } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Mail, Lock } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export default function Login() {
@@ -48,21 +48,11 @@ export default function Login() {
       />
 
       <div className="w-full max-w-sm relative z-10">
-        <Link
-          to="/"
-          className="flex items-center gap-1.5 text-white/60 hover:text-white text-sm font-medium mb-6 transition w-fit"
-        >
-          <ArrowLeft className="w-4 h-4" /> Kembali ke Beranda
-        </Link>
-
         <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
           <div className="h-1.5 bg-gradient-to-r from-[#F2B705] via-[#15803D] to-[#0B1B3A]" />
 
           <div className="p-8">
             <div className="flex flex-col items-center mb-6">
-              <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[#F2B705] to-[#15803D] flex items-center justify-center mb-4 shadow-md">
-                <ScanBarcode className="w-6 h-6 text-white" strokeWidth={2} />
-              </div>
               <h1 className="font-display text-lg font-bold text-[#0B1B3A] text-center">
                 SMK MUHAMMADIYAH SAMPIT
               </h1>

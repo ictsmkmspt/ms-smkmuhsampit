@@ -17,7 +17,7 @@ class PklPembimbinganJournalController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
-        $query = PklPembimbinganJournal::with(['teacher.user', 'dudi', 'verifiedBy']);
+        $query = PklPembimbinganJournal::with(['teacher.user', 'dudi', 'verifiedBy.dudi']);
 
         if ($user->role === 'guru') {
             $teacher = $user->teacher;

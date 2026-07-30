@@ -25,7 +25,8 @@ export default function DudiTab() {
     setError('');
     setLoading(true);
     try {
-      await api.post('/dudi', form);
+      // Nama akun login dipakai dari "Nama Instruktur" — tidak perlu diketik terpisah lagi.
+      await api.post('/dudi', { ...form, name: form.penanggung_jawab });
       setForm(emptyForm);
       load();
     } catch (err) {
@@ -84,8 +85,7 @@ export default function DudiTab() {
 
         <p className="text-xs font-medium text-ink-500 mb-2">Akun login</p>
         <div className="grid grid-cols-2 gap-3 mb-4">
-          <input placeholder="Nama penanggung jawab akun" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="field-input" required />
-          <input placeholder="Email login" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="field-input" required autoComplete="off" />
+          <input placeholder="Email login" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="field-input col-span-2" required autoComplete="off" />
           <input placeholder="Password" type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} className="field-input col-span-2" required autoComplete="new-password" />
         </div>
 
@@ -93,7 +93,7 @@ export default function DudiTab() {
         <div className="grid grid-cols-2 gap-3">
           <input placeholder="Nama perusahaan/instansi" value={form.nama_perusahaan} onChange={(e) => setForm({ ...form, nama_perusahaan: e.target.value })} className="field-input col-span-2" required />
           <input placeholder="Alamat" value={form.alamat} onChange={(e) => setForm({ ...form, alamat: e.target.value })} className="field-input col-span-2" />
-          <input placeholder="Penanggung jawab (nama kontak)" value={form.penanggung_jawab} onChange={(e) => setForm({ ...form, penanggung_jawab: e.target.value })} className="field-input" />
+          <input placeholder="Nama Instruktur" value={form.penanggung_jawab} onChange={(e) => setForm({ ...form, penanggung_jawab: e.target.value })} className="field-input" required />
           <input placeholder="Telepon" value={form.telepon} onChange={(e) => setForm({ ...form, telepon: e.target.value })} className="field-input" />
         </div>
 
@@ -121,7 +121,7 @@ export default function DudiTab() {
                   <td colSpan="3" className="py-3">
                     <div className="grid grid-cols-2 gap-2 mb-2">
                       <input value={editData.nama_perusahaan} onChange={(e) => setEditData({ ...editData, nama_perusahaan: e.target.value })} className="field-input py-1.5 text-sm" placeholder="Nama perusahaan" />
-                      <input value={editData.penanggung_jawab} onChange={(e) => setEditData({ ...editData, penanggung_jawab: e.target.value })} className="field-input py-1.5 text-sm" placeholder="Penanggung jawab" />
+                      <input value={editData.penanggung_jawab} onChange={(e) => setEditData({ ...editData, penanggung_jawab: e.target.value })} className="field-input py-1.5 text-sm" placeholder="Nama Instruktur" />
                       <input value={editData.alamat} onChange={(e) => setEditData({ ...editData, alamat: e.target.value })} className="field-input py-1.5 text-sm col-span-2" placeholder="Alamat" />
                       <input value={editData.telepon} onChange={(e) => setEditData({ ...editData, telepon: e.target.value })} className="field-input py-1.5 text-sm" placeholder="Telepon" />
                     </div>

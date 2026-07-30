@@ -7,6 +7,7 @@ use App\Models\Dudi;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class DudiController extends Controller
 {
@@ -99,5 +100,62 @@ class DudiController extends Controller
             return response()->json(['message' => 'Akun ini belum terhubung ke profil DUDI.'], 404);
         }
         return $dudi;
+    }
+
+    /**
+     * DUDI mengubah data profil perusahaannya sendiri (bukan admin) — dipakai
+     * menu "Edit Profil" di dashboard DUDI. Sengaja tidak termasuk email/password
+     * di sini, itu urusan terpisah supaya tidak tercampur dengan data profil biasa.
+     */
+    public function updateProfile(Request $request)
+    {
+        $dudi = $request->user()->dudi;
+        if (!$dudi) {
+            return response()->json(['message' => 'Akun ini belum terhubung ke profil DUDI.'], 404);
+        }
+
+        $data = $request->validate([
+            'nama_perusahaan'  => 'sometimes|string|max:150',
+            'alamat'           => 'nullable|string|max:255',
+            'penanggung_jawab' => 'nullable|string|max:100',
+            'telepon'          => 'nullable|string|max:30',
+        ]);
+
+        $dudi->update($data);
+
+        return response()->json([
+            'message' => 'Profil berhasil diperbarui.',
+            'dudi'    => $dudi->fresh(),
+        ]);
+    }
+
+    /**
+     * DUDI mengunggah/mengganti gambar tanda tangannya sendiri. Gambar ini
+     * dipakai menggantikan tanda centang (✓) di kolom paraf pada halaman
+     * cetak jurnal, begitu DUDI memverifikasi absensi/catatan bimbingan.
+     */
+    public function uploadTandaTangan(Request $request)
+    {
+        $dudi = $request->user()->dudi;
+        if (!$dudi) {
+            return response()->json(['message' => 'Akun ini belum terhubung ke profil DUDI.'], 404);
+        }
+
+        $request->validate([
+            'tanda_tangan' => 'required|image|max:2048',
+        ]);
+
+        // Hapus file lama dulu (kalau ada) supaya tidak menumpuk file tak terpakai.
+        if ($dudi->tanda_tangan) {
+            Storage::disk('public')->delete($dudi->tanda_tangan);
+        }
+
+        $path = $request->file('tanda_tangan')->store('tanda-tangan', 'public');
+        $dudi->update(['tanda_tangan' => $path]);
+
+        return response()->json([
+            'message' => 'Tanda tangan berhasil disimpan.',
+            'dudi'    => $dudi->fresh(),
+        ]);
     }
 }

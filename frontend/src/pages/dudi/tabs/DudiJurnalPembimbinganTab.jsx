@@ -1,10 +1,8 @@
 import { useEffect, useState } from 'react';
-import { NotebookPen, CheckCircle2, BellRing, Printer } from 'lucide-react';
+import { NotebookPen, CheckCircle2, BellRing } from 'lucide-react';
 import api from '../../../api/axios';
-import { useAuth } from '../../../context/AuthContext';
 
 export default function DudiJurnalPembimbinganTab() {
-  const { user } = useAuth();
   const [pending, setPending] = useState([]);
   const [loadingPending, setLoadingPending] = useState(false);
   const [verifyingId, setVerifyingId] = useState(null);
@@ -43,14 +41,6 @@ export default function DudiJurnalPembimbinganTab() {
     }
   };
 
-  const handleCetak = () => {
-    window.open(`/print/pkl-pembimbingan?dudi_nama=${encodeURIComponent(user.name)}`, '_blank');
-  };
-
-  const handleCetakEntry = (entryId) => {
-    window.open(`/print/pkl-pembimbingan?entry_id=${entryId}`, '_blank');
-  };
-
   return (
     <div className="space-y-6">
       <div className="surface-card p-4 border-l-4 border-l-brand-400 flex gap-2">
@@ -81,22 +71,13 @@ export default function DudiJurnalPembimbinganTab() {
                     <p className="text-ink-900 font-medium">{e.teacher?.user?.name}</p>
                     <p className="text-xs text-ink-500">{e.date}</p>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <button
-                      onClick={() => handleCetakEntry(e.id)}
-                      className="text-ink-400 hover:text-brand-600"
-                      title="Cetak kunjungan ini"
-                    >
-                      <Printer className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      onClick={() => handleVerifikasi(e.id)}
-                      disabled={verifyingId === e.id}
-                      className="flex items-center gap-1.5 text-xs font-medium text-white bg-brand-600 hover:bg-brand-700 disabled:opacity-50 rounded-lg px-3 py-1.5"
-                    >
-                      <CheckCircle2 className="w-3.5 h-3.5" /> {verifyingId === e.id ? 'Memproses...' : 'Verifikasi'}
-                    </button>
-                  </div>
+                  <button
+                    onClick={() => handleVerifikasi(e.id)}
+                    disabled={verifyingId === e.id}
+                    className="flex items-center gap-1.5 text-xs font-medium text-white bg-brand-600 hover:bg-brand-700 disabled:opacity-50 rounded-lg px-3 py-1.5 shrink-0"
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5" /> {verifyingId === e.id ? 'Memproses...' : 'Verifikasi'}
+                  </button>
                 </div>
                 <p className="text-ink-800 mt-2">{e.aktivitas}</p>
                 {e.catatan && <p className="text-xs text-ink-600 mt-1">Catatan: {e.catatan}</p>}
@@ -107,17 +88,9 @@ export default function DudiJurnalPembimbinganTab() {
       </div>
 
       <div className="surface-card p-5">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="font-display font-semibold text-ink-900">
-            Semua Catatan Bimbingan <span className="text-ink-500 font-sans font-normal text-sm">({all.length})</span>
-          </h2>
-          <button
-            onClick={handleCetak}
-            className="flex items-center gap-1.5 text-sm font-medium text-ink-600 hover:text-brand-600 border border-line-200 rounded-lg px-3 py-1.5"
-          >
-            <Printer className="w-4 h-4" /> Cetak Jurnal
-          </button>
-        </div>
+        <h2 className="font-display font-semibold text-ink-900 mb-4">
+          Semua Catatan Bimbingan <span className="text-ink-500 font-sans font-normal text-sm">({all.length})</span>
+        </h2>
 
         {loadingAll ? (
           <p className="text-center text-ink-300 py-6 text-sm">Memuat...</p>
@@ -129,20 +102,11 @@ export default function DudiJurnalPembimbinganTab() {
               <div key={e.id} className="border border-line-200 rounded-lg px-3 py-2.5 text-sm">
                 <div className="flex items-center justify-between">
                   <p className="text-ink-900 font-medium">{e.teacher?.user?.name} <span className="text-ink-400 font-normal text-xs">· {e.date}</span></p>
-                  <div className="flex items-center gap-2 shrink-0">
-                    {e.verified_at && (
-                      <span className="flex items-center gap-1 text-xs text-brand-700">
-                        <CheckCircle2 className="w-3.5 h-3.5" /> Diverifikasi
-                      </span>
-                    )}
-                    <button
-                      onClick={() => handleCetakEntry(e.id)}
-                      className="text-ink-400 hover:text-brand-600"
-                      title="Cetak kunjungan ini"
-                    >
-                      <Printer className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
+                  {e.verified_at && (
+                    <span className="flex items-center gap-1 text-xs text-brand-700">
+                      <CheckCircle2 className="w-3.5 h-3.5" /> Diverifikasi
+                    </span>
+                  )}
                 </div>
                 <p className="text-ink-800 mt-1">{e.aktivitas}</p>
                 {e.catatan && <p className="text-xs text-ink-600 mt-1">Catatan: {e.catatan}</p>}

@@ -123,9 +123,11 @@ class PklAttendanceController extends Controller
     public function ajukanIzinSakit(Request $request)
     {
         $data = $request->validate([
-            'date'   => 'required|date',
+            'date'   => 'required|date|before_or_equal:' . now()->addDays(14)->format('Y-m-d'),
             'status' => 'required|in:izin,sakit',
             'alasan' => 'required|string|max:500',
+        ], [
+            'date.before_or_equal' => 'Tanggal izin/sakit maksimal 14 hari ke depan.',
         ]);
 
         $placement = $this->placementSiswa($request);
@@ -161,7 +163,8 @@ class PklAttendanceController extends Controller
             return response()->json([]);
         }
 
-        return PklAttendance::where('pkl_placement_id', $placement->id)
+        return PklAttendance::with('verifiedBy.dudi')
+            ->where('pkl_placement_id', $placement->id)
             ->orderByDesc('date')->get();
     }
 
@@ -175,7 +178,7 @@ class PklAttendanceController extends Controller
             return response()->json(['message' => 'Anda tidak berwenang melihat absensi siswa ini.'], 403);
         }
 
-        return PklAttendance::with('verifiedBy')
+        return PklAttendance::with('verifiedBy.dudi')
             ->where('pkl_placement_id', $pklPlacement->id)
             ->orderByDesc('date')->get();
     }

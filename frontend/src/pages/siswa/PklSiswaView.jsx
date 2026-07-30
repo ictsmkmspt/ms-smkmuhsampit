@@ -30,6 +30,7 @@ export default function PklSiswaView({ placement }) {
   const [izinError, setIzinError] = useState('');
 
   const today = new Date().toISOString().slice(0, 10);
+  const maxTanggalIzin = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
   const todayRow = history.find((h) => h.date === today);
 
   const loadHistory = () => {
@@ -91,7 +92,7 @@ export default function PklSiswaView({ placement }) {
     <div className="max-w-md mx-auto space-y-5">
       <div className="rounded-2xl overflow-hidden shadow-[0_2px_16px_rgba(34,52,74,0.08)] border border-line-200">
         <div className="bg-brand-600 px-5 pt-5 pb-6 text-white">
-          <p className="text-[10px] uppercase tracking-widest text-brand-100 mb-3">Sedang PKL</p>
+          <p className="text-[10px] uppercase tracking-widest text-brand-100 mb-3">PKL</p>
           <div className="flex items-start gap-3">
             <div className="w-11 h-11 rounded-full bg-white/15 flex items-center justify-center shrink-0">
               <Building2 className="w-5 h-5" />
@@ -173,17 +174,18 @@ export default function PklSiswaView({ placement }) {
                 )}
               </p>
             )}
-
-            <button
-              onClick={handleCetak}
-              className="flex items-center justify-center gap-1.5 text-sm font-medium text-ink-600 hover:text-brand-600 mt-4 w-full border border-line-200 rounded-xl py-2.5"
-            >
-              <Printer className="w-4 h-4" /> Cetak Jurnal Absensi
-            </button>
           </div>
 
           <div className="surface-card p-5">
-            <h2 className="font-display font-semibold text-ink-900 mb-3">Riwayat Absensi PKL</h2>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="font-display font-semibold text-ink-900">Riwayat Absensi PKL</h2>
+              <button
+                onClick={handleCetak}
+                className="flex items-center gap-1.5 text-xs font-medium text-ink-600 hover:text-brand-600 border border-line-200 rounded-lg px-2.5 py-1.5 whitespace-nowrap"
+              >
+                <Printer className="w-3.5 h-3.5" /> Cetak
+              </button>
+            </div>
             {loadingHistory ? (
               <p className="text-center text-ink-300 py-6 text-sm">Memuat...</p>
             ) : history.length === 0 ? (
@@ -259,8 +261,9 @@ export default function PklSiswaView({ placement }) {
                 <label className="block text-xs font-medium text-ink-500 mb-1">Tanggal</label>
                 <input
                   type="date" value={izinTanggal} onChange={(e) => setIzinTanggal(e.target.value)}
-                  max={today} className="field-input" required
+                  max={maxTanggalIzin} className="field-input" required
                 />
+                <p className="text-xs text-ink-400 mt-1">Bisa untuk hari yang sudah lewat, atau maksimal 14 hari ke depan.</p>
               </div>
               <div>
                 <label className="block text-xs font-medium text-ink-500 mb-1">

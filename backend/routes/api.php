@@ -122,6 +122,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::middleware('role:dudi')->group(function () {
         Route::get('/my-dudi-profile', [DudiController::class, 'myProfile']);
+        Route::post('/dudi/tanda-tangan', [DudiController::class, 'uploadTandaTangan']);
+        Route::put('/dudi/profile', [DudiController::class, 'updateProfile']);
         Route::get('/dudi/my-siswa', [PklPlacementController::class, 'siswaSaya']);
         Route::get('/dudi/absensi-pending', [PklAttendanceController::class, 'pendingVerifikasi']);
     });

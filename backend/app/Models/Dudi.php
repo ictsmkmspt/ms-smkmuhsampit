@@ -8,8 +8,10 @@ class Dudi extends Model
 {
     protected $fillable = [
         'user_id', 'nama_perusahaan', 'alamat', 'penanggung_jawab',
-        'telepon', 'latitude', 'longitude', 'radius_meter',
+        'telepon', 'latitude', 'longitude', 'radius_meter', 'tanda_tangan',
     ];
+
+    protected $appends = ['tanda_tangan_url'];
 
     public function user()
     {
@@ -19,6 +21,16 @@ class Dudi extends Model
     public function placements()
     {
         return $this->hasMany(PklPlacement::class);
+    }
+
+    /**
+     * URL relatif gambar tanda tangan (null kalau DUDI belum pernah unggah).
+     * Sengaja relatif (bukan URL lengkap ke backend) supaya lewat proxy HTTPS
+     * Vite yang sama dengan /api — tidak diblokir browser karena mixed-content.
+     */
+    public function getTandaTanganUrlAttribute(): ?string
+    {
+        return $this->tanda_tangan ? '/storage/' . $this->tanda_tangan : null;
     }
 
     /**

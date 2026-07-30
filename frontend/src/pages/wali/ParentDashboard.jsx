@@ -41,13 +41,13 @@ export default function ParentDashboard() {
 
   return (
     <div className="min-h-screen bg-mist-50">
-      <div className="bg-white border-b border-line-200">
+      <div className="bg-[#0B1B3A]">
         <div className="max-w-2xl mx-auto px-6 py-4 flex justify-between items-center">
           <div>
-            <p className="text-xs text-ink-500">Orang Tua / Wali</p>
-            <h1 className="font-display text-lg font-semibold text-ink-900">{user.name}</h1>
+            <p className="text-xs text-white/60">Orang Tua / Wali</p>
+            <h1 className="font-display text-lg font-semibold text-white">{user.name}</h1>
           </div>
-          <button onClick={logout} className="flex items-center gap-1.5 text-sm text-ink-500 hover:text-honey-700 font-medium">
+          <button onClick={logout} className="flex items-center gap-1.5 text-sm text-white/70 hover:text-[#F2B705] font-medium">
             <LogOut className="w-4 h-4" /> Keluar
           </button>
         </div>

@@ -12,7 +12,7 @@ const PAGE_SIZE = 5;
  * Dilengkapi form koreksi manual, tombol verifikasi (khusus DUDI/admin lewat
  * prop canVerify), tombol cetak jurnal, dan paginasi 5 data per halaman.
  */
-export default function PklAttendanceDetailModal({ placement, onClose, canVerify = false }) {
+export default function PklAttendanceDetailModal({ placement, onClose, canVerify = false, showCetak = true }) {
   const [attendances, setAttendances] = useState([]);
   const [loading, setLoading] = useState(false);
   const [verifyingId, setVerifyingId] = useState(null);
@@ -138,12 +138,14 @@ export default function PklAttendanceDetailModal({ placement, onClose, canVerify
             </form>
           )}
 
-          <button
-            onClick={handleCetak}
-            className="flex items-center gap-1.5 text-sm font-medium text-ink-600 hover:text-brand-600 ml-auto"
-          >
-            <Printer className="w-4 h-4" /> Cetak Jurnal
-          </button>
+          {showCetak && (
+            <button
+              onClick={handleCetak}
+              className="flex items-center gap-1.5 text-sm font-medium text-ink-600 hover:text-brand-600 ml-auto"
+            >
+              <Printer className="w-4 h-4" /> Cetak Jurnal
+            </button>
+          )}
         </div>
 
         <div className="overflow-y-auto p-5">
