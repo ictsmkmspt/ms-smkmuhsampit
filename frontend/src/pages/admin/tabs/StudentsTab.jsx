@@ -6,10 +6,12 @@ import QRCode from "qrcode";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
 
+const JK_LABEL = { L: 'Laki-laki', P: 'Perempuan' };
+
 export default function StudentsTab() {
   const [students, setStudents] = useState([]);
   const [classes, setClasses] = useState([]);
-  const [form, setForm] = useState({ name: '', email: '', password: '', nis: '', class_room_id: '' });
+  const [form, setForm] = useState({ name: '', email: '', password: '', nis: '', jenis_kelamin: '', class_room_id: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -192,6 +194,11 @@ export default function StudentsTab() {
           <input placeholder="Email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="field-input" required autoComplete="off" />
           <input placeholder="Password" type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} className="field-input" required autoComplete="new-password" />
           <input placeholder="NIS" value={form.nis} onChange={(e) => setForm({ ...form, nis: e.target.value })} className="field-input" required />
+          <select value={form.jenis_kelamin} onChange={(e) => setForm({ ...form, jenis_kelamin: e.target.value })} className="field-input text-ink-700">
+            <option value="">— Jenis Kelamin —</option>
+            <option value="L">Laki-laki</option>
+            <option value="P">Perempuan</option>
+          </select>
           <select value={form.class_room_id} onChange={(e) => setForm({ ...form, class_room_id: e.target.value })} className="field-input col-span-2 text-ink-700">
             <option value="">— Pilih Kelas (opsional) —</option>
             {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -215,7 +222,7 @@ export default function StudentsTab() {
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-ink-500 border-b border-line-200">
-              <th className="pb-2 font-medium">Nama</th><th className="font-medium">NIS</th><th className="font-medium">Kelas</th><th className="font-medium">Barcode</th><th></th>
+              <th className="pb-2 font-medium">Nama</th><th className="font-medium">NIS</th><th className="font-medium">Jenis Kelamin</th><th className="font-medium">Kelas</th><th className="font-medium">Barcode</th><th></th>
             </tr>
           </thead>
           <tbody>
@@ -234,7 +241,7 @@ export default function StudentsTab() {
                 if (kelasName !== lastKelas) {
                   rows.push(
                     <tr key={`header-${kelasName}`}>
-                      <td colSpan="5" className="pt-4 pb-1">
+                      <td colSpan="6" className="pt-4 pb-1">
                         <span className="badge-soft badge-brand text-[11px]">
                           {kelasName || 'Belum Ada Kelas'}
                         </span>
@@ -247,6 +254,7 @@ export default function StudentsTab() {
                   <tr key={s.id} className="border-t border-line-200">
                     <td className="py-2.5 text-ink-900">{s.user?.name}</td>
                     <td className="text-ink-700">{s.nis}</td>
+                    <td className="text-ink-700">{JK_LABEL[s.jenis_kelamin] || '-'}</td>
                     <td className="text-ink-700">{s.class_room?.name || '-'}</td>
                     <td className="font-mono text-xs text-brand-600">{s.barcode_code}</td>
                     <td className="text-right">
@@ -260,7 +268,7 @@ export default function StudentsTab() {
               return rows;
             })()}
             {students.length === 0 && (
-              <tr><td colSpan="5" className="py-6 text-center text-ink-300">Belum ada siswa.</td></tr>
+              <tr><td colSpan="6" className="py-6 text-center text-ink-300">Belum ada siswa.</td></tr>
             )}
           </tbody>
         </table>

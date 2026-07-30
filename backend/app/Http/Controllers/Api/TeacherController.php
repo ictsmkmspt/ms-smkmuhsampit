@@ -25,6 +25,7 @@ class TeacherController extends Controller
             'email' => 'required|email|unique:users,email',
             'password' => 'required|min:6',
             'nip' => 'required|string|unique:teachers,nip',
+            'jenis_kelamin' => 'nullable|in:L,P',
         ]);
 
         return DB::transaction(function () use ($data) {
@@ -38,8 +39,24 @@ class TeacherController extends Controller
             return Teacher::create([
                 'user_id' => $user->id,
                 'nip' => $data['nip'],
+                'jenis_kelamin' => $data['jenis_kelamin'] ?? null,
             ])->load('user');
         });
+    }
+
+    public function update(Request $request, Teacher $teacher)
+    {
+        $data = $request->validate([
+            'name' => 'sometimes|string|max:100',
+            'jenis_kelamin' => 'nullable|in:L,P',
+        ]);
+
+        if (isset($data['name'])) {
+            $teacher->user->update(['name' => $data['name']]);
+        }
+        $teacher->update($request->only('jenis_kelamin'));
+
+        return $teacher->load('user');
     }
 
     public function destroy(Teacher $teacher)
@@ -48,20 +65,11 @@ class TeacherController extends Controller
         return response()->json(['message' => 'Guru dihapus.']);
     }
 
-    /**
-     * Download file Excel (.xlsx) kosong berisi contoh format kolom untuk import data guru.
-     * Isi datanya, lalu upload lewat fitur Import.
-     */
     public function downloadTemplate()
     {
         return Excel::download(new TeacherTemplateExport, 'template_import_guru.xlsx');
     }
 
-    /**
-     * Import banyak guru sekaligus dari file Excel (.xlsx) yang diupload.
-     * Format kolom harus sesuai template (nama, email, password, nip).
-     * Baris yang gagal tidak menghentikan proses, cukup dilaporkan di akhir.
-     */
     public function import(Request $request)
     {
         $request->validate([

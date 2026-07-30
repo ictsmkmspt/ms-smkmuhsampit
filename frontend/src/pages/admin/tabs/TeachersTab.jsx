@@ -1,16 +1,22 @@
 import { useEffect, useRef, useState } from 'react';
-import { Plus, Trash2, Download, Upload } from 'lucide-react';
+import { Plus, Trash2, Download, Upload, Save } from 'lucide-react';
 import api from '../../../api/axios';
+
+const JK_LABEL = { L: 'Laki-laki', P: 'Perempuan' };
 
 export default function TeachersTab() {
   const [teachers, setTeachers] = useState([]);
-  const [form, setForm] = useState({ name: '', email: '', password: '', nip: '' });
+  const [form, setForm] = useState({ name: '', email: '', password: '', nip: '', jenis_kelamin: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState(null);
   const fileInputRef = useRef(null);
+
+  const [editId, setEditId] = useState(null);
+  const [editData, setEditData] = useState({});
+  const [saving, setSaving] = useState(false);
 
   const loadTeachers = () => api.get('/teachers').then((res) => setTeachers(res.data));
   useEffect(() => { loadTeachers(); }, []);
@@ -21,7 +27,7 @@ export default function TeachersTab() {
     setLoading(true);
     try {
       await api.post('/teachers', form);
-      setForm({ name: '', email: '', password: '', nip: '' });
+      setForm({ name: '', email: '', password: '', nip: '', jenis_kelamin: '' });
       loadTeachers();
     } catch (err) {
       const msgs = err.response?.data?.errors;
@@ -35,6 +41,24 @@ export default function TeachersTab() {
     if (!confirm(`Hapus guru "${name}"?`)) return;
     await api.delete(`/teachers/${id}`);
     loadTeachers();
+  };
+
+  const startEdit = (t) => {
+    setEditId(t.id);
+    setEditData({ name: t.user?.name || '', jenis_kelamin: t.jenis_kelamin || '' });
+  };
+
+  const handleSaveEdit = async (id) => {
+    setSaving(true);
+    try {
+      await api.put(`/teachers/${id}`, editData);
+      setEditId(null);
+      loadTeachers();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Gagal menyimpan perubahan.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleDownloadTemplate = async () => {
@@ -140,6 +164,11 @@ export default function TeachersTab() {
           <input placeholder="Email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="field-input" required autoComplete="off" />
           <input placeholder="Password" type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} className="field-input" required autoComplete="new-password" />
           <input placeholder="NIP" value={form.nip} onChange={(e) => setForm({ ...form, nip: e.target.value })} className="field-input" required />
+          <select value={form.jenis_kelamin} onChange={(e) => setForm({ ...form, jenis_kelamin: e.target.value })} className="field-input col-span-2 text-ink-700">
+            <option value="">— Jenis Kelamin —</option>
+            <option value="L">Laki-laki</option>
+            <option value="P">Perempuan</option>
+          </select>
         </div>
         <button disabled={loading} className="btn-primary mt-4">
           <Plus className="w-4 h-4" /> {loading ? 'Menyimpan...' : 'Tambah Guru'}
@@ -151,24 +180,51 @@ export default function TeachersTab() {
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-ink-500 border-b border-line-200">
-              <th className="pb-2 font-medium">Nama</th><th className="font-medium">Email</th><th className="font-medium">NIP</th><th></th>
+              <th className="pb-2 font-medium">Nama</th><th className="font-medium">Email</th><th className="font-medium">NIP</th><th className="font-medium">Jenis Kelamin</th><th></th>
             </tr>
           </thead>
           <tbody>
             {teachers.map((t) => (
-              <tr key={t.id} className="border-t border-line-200">
-                <td className="py-2.5 text-ink-900">{t.user?.name}</td>
-                <td className="text-ink-700">{t.user?.email}</td>
-                <td className="text-ink-700">{t.nip}</td>
-                <td className="text-right">
-                  <button onClick={() => handleDelete(t.id, t.user?.name)} className="text-ink-300 hover:text-honey-700">
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </td>
-              </tr>
+              editId === t.id ? (
+                <tr key={t.id} className="border-t border-line-200 bg-mist-50">
+                  <td colSpan="5" className="py-3">
+                    <div className="grid grid-cols-2 gap-2 mb-2">
+                      <input value={editData.name} onChange={(e) => setEditData({ ...editData, name: e.target.value })} className="field-input py-1.5 text-sm" placeholder="Nama" />
+                      <select value={editData.jenis_kelamin} onChange={(e) => setEditData({ ...editData, jenis_kelamin: e.target.value })} className="field-input py-1.5 text-sm text-ink-700">
+                        <option value="">— Jenis Kelamin —</option>
+                        <option value="L">Laki-laki</option>
+                        <option value="P">Perempuan</option>
+                      </select>
+                    </div>
+                    <div className="flex gap-2">
+                      <button onClick={() => handleSaveEdit(t.id)} disabled={saving} className="flex items-center gap-1.5 text-xs font-medium text-white bg-brand-600 hover:bg-brand-700 rounded-lg px-3 py-1.5">
+                        <Save className="w-3.5 h-3.5" /> {saving ? 'Menyimpan...' : 'Simpan'}
+                      </button>
+                      <button onClick={() => setEditId(null)} className="text-xs font-medium text-ink-500 hover:text-ink-700 px-2 py-1.5">Batal</button>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                <tr key={t.id} className="border-t border-line-200">
+                  <td className="py-2.5 text-ink-900">{t.user?.name}</td>
+                  <td className="text-ink-700">{t.user?.email}</td>
+                  <td className="text-ink-700">{t.nip}</td>
+                  <td className="text-ink-700">{JK_LABEL[t.jenis_kelamin] || '-'}</td>
+                  <td className="text-right">
+                    <div className="flex justify-end gap-2">
+                      <button onClick={() => startEdit(t)} className="text-ink-400 hover:text-brand-600 text-xs border border-line-200 rounded-lg px-2 py-1">
+                        Edit
+                      </button>
+                      <button onClick={() => handleDelete(t.id, t.user?.name)} className="text-ink-300 hover:text-honey-700">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              )
             ))}
             {teachers.length === 0 && (
-              <tr><td colSpan="4" className="py-6 text-center text-ink-300">Belum ada guru.</td></tr>
+              <tr><td colSpan="5" className="py-6 text-center text-ink-300">Belum ada guru.</td></tr>
             )}
           </tbody>
         </table>

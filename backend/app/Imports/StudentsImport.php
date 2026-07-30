@@ -60,6 +60,7 @@ class StudentsImport implements ToModel, WithHeadingRow, WithValidation, SkipsOn
                 'user_id'       => $user->id,
                 'class_room_id' => $classRoomId,
                 'nis'           => $row['nis'],
+                'jenis_kelamin' => !empty($row['jenis_kelamin']) ? strtoupper(trim($row['jenis_kelamin'])) : null,
                 'barcode_code'  => 'STD-' . strtoupper(Str::random(8)),
             ]);
         });
@@ -76,6 +77,7 @@ class StudentsImport implements ToModel, WithHeadingRow, WithValidation, SkipsOn
             'email'    => 'required|email|unique:users,email',
             'password' => 'required|min:6',
             'nis'      => 'required|string|unique:students,nis',
+            'jenis_kelamin' => 'nullable|in:L,P,l,p',
             'kelas'    => ['nullable', function ($attribute, $value, $fail) {
                 if (!empty($value) && !ClassRoom::where('name', trim($value))->exists()) {
                     $fail("Kelas \"$value\" tidak ditemukan di Master Data. Cek ejaan atau tambahkan kelasnya dulu.");
@@ -95,6 +97,7 @@ class StudentsImport implements ToModel, WithHeadingRow, WithValidation, SkipsOn
             'password.min'      => 'Password minimal 6 karakter.',
             'nis.required'      => 'NIS wajib diisi.',
             'nis.unique'        => 'NIS sudah terdaftar.',
+            'jenis_kelamin.in'  => 'Jenis kelamin harus diisi "L" atau "P" saja.',
         ];
     }
 }

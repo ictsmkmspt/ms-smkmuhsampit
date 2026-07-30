@@ -30,6 +30,7 @@ class StudentController extends Controller
             'email' => 'required|email|unique:users,email',
             'password' => 'required|min:6',
             'nis' => 'required|string|unique:students,nis',
+            'jenis_kelamin' => 'nullable|in:L,P',
             'class_room_id' => 'nullable|exists:class_rooms,id',
         ]);
 
@@ -45,6 +46,7 @@ class StudentController extends Controller
                 'user_id' => $user->id,
                 'class_room_id' => $data['class_room_id'] ?? null,
                 'nis' => $data['nis'],
+                'jenis_kelamin' => $data['jenis_kelamin'] ?? null,
                 'barcode_code' => 'STD-' . strtoupper(Str::random(8)),
             ]);
 
@@ -56,13 +58,14 @@ class StudentController extends Controller
     {
         $data = $request->validate([
             'name' => 'sometimes|string|max:100',
+            'jenis_kelamin' => 'nullable|in:L,P',
             'class_room_id' => 'nullable|exists:class_rooms,id',
         ]);
 
         if (isset($data['name'])) {
             $student->user->update(['name' => $data['name']]);
         }
-        $student->update($request->only('class_room_id'));
+        $student->update($request->only('class_room_id', 'jenis_kelamin'));
 
         return $student->load(['user', 'classRoom']);
     }
@@ -101,7 +104,7 @@ class StudentController extends Controller
 
     /**
      * Import banyak siswa sekaligus dari file Excel (.xlsx) yang diupload.
-     * Format kolom harus sesuai template (nama, email, password, nis, kelas).
+     * Format kolom harus sesuai template (nama, email, password, nis, jenis_kelamin, kelas).
      * Baris yang gagal tidak menghentikan proses, cukup dilaporkan di akhir.
      */
     public function import(Request $request)

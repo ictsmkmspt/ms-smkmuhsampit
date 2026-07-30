@@ -54,6 +54,7 @@ class TeachersImport implements ToModel, WithHeadingRow, WithValidation, SkipsOn
             return Teacher::create([
                 'user_id' => $user->id,
                 'nip'     => $row['nip'],
+                'jenis_kelamin' => !empty($row['jenis_kelamin']) ? strtoupper(trim($row['jenis_kelamin'])) : null,
             ]);
         });
     }
@@ -69,6 +70,7 @@ class TeachersImport implements ToModel, WithHeadingRow, WithValidation, SkipsOn
             'email'    => 'required|email|unique:users,email',
             'password' => 'required|min:6',
             'nip'      => 'required|string|unique:teachers,nip',
+            'jenis_kelamin' => 'nullable|in:L,P,l,p',
         ];
     }
 
@@ -83,6 +85,7 @@ class TeachersImport implements ToModel, WithHeadingRow, WithValidation, SkipsOn
             'password.min'      => 'Password minimal 6 karakter.',
             'nip.required'      => 'NIP wajib diisi.',
             'nip.unique'        => 'NIP sudah terdaftar.',
+            'jenis_kelamin.in'  => 'Jenis kelamin harus diisi "L" atau "P" saja.',
         ];
     }
 }
