@@ -89,7 +89,7 @@ export default function JurnalPembimbinganTab() {
             onChange={(e) => setSelectedDudi(e.target.value)}
             className="field-input text-sm text-ink-700 w-56"
           >
-            <option value="">— Pilih DUDI —</option>
+            <option value="">— Pilih IDUKA —</option>
             {dudiOptions.map((d) => (
               <option key={d.id} value={d.id}>{d.nama_perusahaan}</option>
             ))}
@@ -97,7 +97,7 @@ export default function JurnalPembimbinganTab() {
         </div>
 
         {!selectedDudi ? (
-          <p className="text-sm text-ink-400 text-center py-6">Pilih DUDI dulu untuk menambah atau melihat catatan bimbingan.</p>
+          <p className="text-sm text-ink-400 text-center py-6">Pilih IDUKA dulu untuk menambah atau melihat catatan bimbingan.</p>
         ) : (
           <>
             {!showForm ? (
@@ -122,7 +122,7 @@ export default function JurnalPembimbinganTab() {
                 <textarea
                   value={aktivitas} onChange={(e) => setAktivitas(e.target.value)}
                   className="field-input w-full text-sm" rows="2"
-                  placeholder="Aktivitas pembimbingan (contoh: Kunjungan monitoring ke DUDI)"
+                  placeholder="Aktivitas pembimbingan (contoh: Kunjungan monitoring ke IDUKA)"
                   required
                 />
                 <textarea
@@ -144,7 +144,7 @@ export default function JurnalPembimbinganTab() {
             {loading ? (
               <p className="text-center text-ink-300 py-6 text-sm">Memuat...</p>
             ) : filtered.length === 0 ? (
-              <p className="text-center text-ink-300 py-6 text-sm">Belum ada catatan bimbingan untuk DUDI ini.</p>
+              <p className="text-center text-ink-300 py-6 text-sm">Belum ada catatan bimbingan untuk IDUKA ini.</p>
             ) : (
               <div className="space-y-2">
                 {filtered.map((e) => (
@@ -164,10 +164,10 @@ export default function JurnalPembimbinganTab() {
                     <div className="mt-2 pt-2 border-t border-line-200">
                       {e.verified_at ? (
                         <span className="flex items-center gap-1 text-xs text-brand-700">
-                          <CheckCircle2 className="w-3.5 h-3.5" /> Diparaf Instruktur DUDI
+                          <CheckCircle2 className="w-3.5 h-3.5" /> Diparaf Instruktur IDUKA
                         </span>
                       ) : (
-                        <span className="text-xs text-ink-300">Belum diparaf DUDI</span>
+                        <span className="text-xs text-ink-300">Belum diparaf IDUKA</span>
                       )}
                     </div>
                   </div>

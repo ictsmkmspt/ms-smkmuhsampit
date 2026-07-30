@@ -46,8 +46,6 @@ export default function AchievementReportTab() {
 
   useEffect(() => { loadAll(); }, []); // eslint-disable-line
 
-  const totalPoin = summary.reduce((sum, s) => sum + (s.total_prestasi || 0), 0);
-
   const sortedSummary = [...summary].sort((a, b) => b.total_prestasi - a.total_prestasi);
   const summaryTotalPages = Math.max(1, Math.ceil(sortedSummary.length / SUMMARY_PAGE_SIZE));
   const paginatedSummary = sortedSummary.slice((summaryPage - 1) * SUMMARY_PAGE_SIZE, summaryPage * SUMMARY_PAGE_SIZE);
@@ -69,9 +67,6 @@ export default function AchievementReportTab() {
           <button onClick={loadAll} className="btn-primary">
             <Search className="w-4 h-4" /> Tampilkan
           </button>
-          <div className="ml-auto flex gap-2">
-            <span className="badge-soft badge-brand">Total Poin Prestasi: {totalPoin}</span>
-          </div>
         </div>
 
         <div className="surface-card p-5">

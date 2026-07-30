@@ -8,7 +8,7 @@ const emptyForm = {
   latitude: '', longitude: '', radius_meter: '100',
 };
 
-export default function DudiTab() {
+export default function IdukaTab() {
   const [list, setList] = useState([]);
   const [form, setForm] = useState(emptyForm);
   const [error, setError] = useState('');
@@ -20,7 +20,7 @@ export default function DudiTab() {
   const [saving, setSaving] = useState(false);
   const [locatingEdit, setLocatingEdit] = useState(false);
 
-  const load = () => api.get('/dudi').then((res) => setList(res.data));
+  const load = () => api.get('/iduka').then((res) => setList(res.data));
   useEffect(() => { load(); }, []);
 
   const ambilLokasi = (onDone) => {
@@ -48,7 +48,7 @@ export default function DudiTab() {
     setLoading(true);
     try {
       // Nama akun login dipakai dari "Nama Instruktur" — tidak perlu diketik terpisah lagi.
-      await api.post('/dudi', { ...form, name: form.penanggung_jawab });
+      await api.post('/iduka', { ...form, name: form.penanggung_jawab });
       setForm(emptyForm);
       load();
     } catch (err) {
@@ -75,7 +75,7 @@ export default function DudiTab() {
   const handleSaveEdit = async (id) => {
     setSaving(true);
     try {
-      await api.put(`/dudi/${id}`, editData);
+      await api.put(`/iduka/${id}`, editData);
       setEditId(null);
       load();
     } catch (err) {
@@ -88,7 +88,7 @@ export default function DudiTab() {
   const handleDelete = async (d) => {
     if (!confirm(`Hapus akun IDUKA "${d.nama_perusahaan}"? Penempatan PKL yang terhubung ke IDUKA ini juga akan terhapus.`)) return;
     try {
-      await api.delete(`/dudi/${d.id}`);
+      await api.delete(`/iduka/${d.id}`);
       load();
     } catch (err) {
       alert(err.response?.data?.message || 'Gagal menghapus.');
@@ -100,7 +100,7 @@ export default function DudiTab() {
       <div className="surface-card p-4 border-l-4 border-l-brand-400 flex gap-2">
         <Building2 className="w-4 h-4 text-brand-500 shrink-0 mt-0.5" />
         <p className="text-sm text-ink-700">
-          IDUKA (Industri, Dunia Usaha, dan Dunia Kerja) = perusahaan/instansi tempat siswa PKL. Setiap IDUKA punya akun login sendiri untuk memantau kehadiran dan memverifikasi absensi siswa bimbingannya. Lokasi &amp; radius dipakai untuk memvalidasi absen masuk/pulang siswa lewat GPS.
+          IDUKA = Dunia Usaha/Dunia Industri, yaitu perusahaan/instansi tempat siswa PKL. Setiap IDUKA punya akun login sendiri untuk memantau kehadiran dan memverifikasi absensi siswa bimbingannya. Lokasi &amp; radius dipakai untuk memvalidasi absen masuk/pulang siswa lewat GPS.
         </p>
       </div>
 

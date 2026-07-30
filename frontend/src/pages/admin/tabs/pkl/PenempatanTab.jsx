@@ -73,7 +73,7 @@ export default function PenempatanTab() {
       <div className="surface-card p-4 border-l-4 border-l-brand-400 flex gap-2">
         <ClipboardList className="w-4 h-4 text-brand-500 shrink-0 mt-0.5" />
         <p className="text-sm text-ink-700">
-          Setiap siswa hanya boleh punya 1 penempatan berstatus <b>aktif</b> di satu waktu. Begitu penempatan aktif dibuat, menu PKL otomatis muncul di dashboard siswa (menggantikan QR barcode), guru pembimbing, dan DUDI terkait.
+          Setiap siswa hanya boleh punya 1 penempatan berstatus <b>aktif</b> di satu waktu. Begitu penempatan aktif dibuat, menu PKL otomatis muncul di dashboard siswa (menggantikan QR barcode), guru pembimbing, dan IDUKA terkait.
         </p>
       </div>
 
@@ -88,7 +88,7 @@ export default function PenempatanTab() {
             ))}
           </select>
           <select value={form.dudi_id} onChange={(e) => setForm({ ...form, dudi_id: e.target.value })} className="field-input text-ink-700" required>
-            <option value="">— Pilih DUDI —</option>
+            <option value="">— Pilih IDUKA —</option>
             {dudiList.map((d) => (
               <option key={d.id} value={d.id}>{d.nama_perusahaan}</option>
             ))}
@@ -128,7 +128,7 @@ export default function PenempatanTab() {
           <thead>
             <tr className="text-left text-ink-500 border-b border-line-200">
               <th className="pb-2 font-medium">Siswa</th>
-              <th className="font-medium">DUDI</th>
+              <th className="font-medium">IDUKA</th>
               <th className="font-medium">Pembimbing</th>
               <th className="font-medium">Periode</th>
               <th className="font-medium">Status</th>

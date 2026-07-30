@@ -76,6 +76,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/achievement-types', [AchievementController::class, 'types']);
         Route::post('/achievements/record', [AchievementController::class, 'record']);
         Route::get('/achievements/summary', [AchievementController::class, 'summary']);
+        Route::get('/achievements/detail', [AchievementController::class, 'detail']);
         Route::get('/students/{studentId}/achievements', [AchievementController::class, 'studentAchievements']);
         Route::delete('/achievements/{id}', [AchievementController::class, 'destroy']);
         Route::put('/achievements/{id}', [AchievementController::class, 'update']);

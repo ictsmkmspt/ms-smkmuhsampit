@@ -2,7 +2,7 @@ import DudiTab from './pkl/DudiTab';
 import PenempatanTab from './pkl/PenempatanTab';
 
 export const PKL_SUBMENU = [
-  { key: 'dudi',        label: 'Kelola DUDI',     component: DudiTab },
+  { key: 'dudi',        label: 'Kelola IDUKA',     component: DudiTab },
   { key: 'penempatan',  label: 'Penempatan PKL',  component: PenempatanTab },
 ];
 

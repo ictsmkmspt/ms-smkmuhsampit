@@ -2,16 +2,16 @@ import { useEffect, useRef, useState } from 'react';
 import { LogOut, Building2, ClipboardCheck, NotebookPen, ChevronDown, UserCog } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api/axios';
-import DudiAbsensiTab from './tabs/DudiAbsensiTab';
-import DudiJurnalPembimbinganTab from './tabs/DudiJurnalPembimbinganTab';
+import IdukaAbsensiTab from './tabs/IdukaAbsensiTab';
+import IdukaJurnalPembimbinganTab from './tabs/IdukaJurnalPembimbinganTab';
 import TandaTanganModal from '../../components/TandaTanganModal';
 
 const TABS = [
-  { key: 'absensi', label: 'Absensi', icon: ClipboardCheck, component: DudiAbsensiTab },
-  { key: 'pembimbingan', label: 'Jurnal Pembimbing', icon: NotebookPen, component: DudiJurnalPembimbinganTab },
+  { key: 'absensi', label: 'Absensi', icon: ClipboardCheck, component: IdukaAbsensiTab },
+  { key: 'pembimbingan', label: 'Jurnal Pembimbing', icon: NotebookPen, component: IdukaJurnalPembimbinganTab },
 ];
 
-export default function DudiDashboard() {
+export default function IdukaDashboard() {
   const { user, logout } = useAuth();
   const [profile, setProfile] = useState(null);
   const [activeTab, setActiveTab] = useState('absensi');
@@ -20,7 +20,7 @@ export default function DudiDashboard() {
   const [showEditProfil, setShowEditProfil] = useState(false);
   const menuRef = useRef(null);
 
-  const loadProfile = () => api.get('/my-dudi-profile').then((res) => setProfile(res.data));
+  const loadProfile = () => api.get('/my-iduka-profile').then((res) => setProfile(res.data));
   useEffect(() => { loadProfile(); }, []);
 
   useEffect(() => {
@@ -112,7 +112,7 @@ export default function DudiDashboard() {
 
       {showEditProfil && (
         <TandaTanganModal
-          dudi={profile}
+          iduka={profile}
           onClose={() => setShowEditProfil(false)}
           onSaved={(updated) => setProfile(updated)}
         />

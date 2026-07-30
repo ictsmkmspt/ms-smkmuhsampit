@@ -6,7 +6,7 @@ const STAT_DEFS = [
   { key: 'siswa', label: 'Total Siswa', icon: Users, color: '#0B1B3A' },
   { key: 'guru', label: 'Total Guru', icon: GraduationCap, color: '#15803D' },
   { key: 'kelas', label: 'Total Kelas', icon: School, color: '#F2B705' },
-  { key: 'dudi', label: 'Total DUDI', icon: Building2, color: '#3FB27F' },
+  { key: 'dudi', label: 'Total IDUKA', icon: Building2, color: '#3FB27F' },
 ];
 
 export default function DashboardHomeTab() {

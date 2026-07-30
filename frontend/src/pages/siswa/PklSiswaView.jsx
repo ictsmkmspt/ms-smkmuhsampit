@@ -189,9 +189,9 @@ export default function PklSiswaView({ placement }) {
                 {todayRow.status !== 'hadir' ? (
                   <span className="text-ink-500">Status hari ini: {STATUS_LABEL[todayRow.status]}</span>
                 ) : todayRow.verified_at ? (
-                  <span className="flex items-center gap-1 text-brand-700"><CheckCircle2 className="w-3.5 h-3.5" /> Absensi hari ini sudah diverifikasi DUDI</span>
+                  <span className="flex items-center gap-1 text-brand-700"><CheckCircle2 className="w-3.5 h-3.5" /> Absensi hari ini sudah diverifikasi IDUKA</span>
                 ) : (
-                  <span className="text-honey-700">Menunggu verifikasi dari DUDI</span>
+                  <span className="text-honey-700">Menunggu verifikasi dari IDUKA</span>
                 )}
               </p>
             )}

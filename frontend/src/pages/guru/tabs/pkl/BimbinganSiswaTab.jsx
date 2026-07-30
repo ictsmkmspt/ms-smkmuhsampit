@@ -30,7 +30,7 @@ export default function BimbinganSiswaTab() {
           <thead>
             <tr className="text-left text-ink-500 border-b border-line-200">
               <th className="pb-2 font-medium">Nama Siswa</th>
-              <th className="font-medium">DUDI</th>
+              <th className="font-medium">IDUKA</th>
               <th className="font-medium">Periode</th>
               <th className="font-medium">Status</th>
               <th className="pb-2 w-36"></th>

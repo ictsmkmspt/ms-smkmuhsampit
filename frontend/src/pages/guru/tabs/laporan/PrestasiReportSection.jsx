@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Award, ChevronLeft, ChevronRight } from 'lucide-react';
 import api from '../../../../api/axios';
 import StudentAchievementModal from '../../../../components/StudentAchievementModal';
 
 const PAGE_SIZE = 5;
-const SUMMARY_PAGE_SIZE = 40;
 
 export default function PrestasiReportSection() {
   const [summary, setSummary] = useState([]);
@@ -13,11 +12,9 @@ export default function PrestasiReportSection() {
   const [loading, setLoading] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [page, setPage] = useState(1);
-  const [summaryPage, setSummaryPage] = useState(1);
 
   const loadSummary = () => {
     setLoading(true);
-    setSummaryPage(1);
     return api.get('/achievements/summary')
       .then((res) => setSummary(res.data))
       .finally(() => setLoading(false));
@@ -34,12 +31,6 @@ export default function PrestasiReportSection() {
 
   useEffect(() => { loadAll(); }, []); // eslint-disable-line
 
-  const totalPoin = summary.reduce((sum, s) => sum + (s.total_prestasi || 0), 0);
-
-  const sortedSummary = [...summary].sort((a, b) => b.total_prestasi - a.total_prestasi);
-  const summaryTotalPages = Math.max(1, Math.ceil(sortedSummary.length / SUMMARY_PAGE_SIZE));
-  const paginatedSummary = sortedSummary.slice((summaryPage - 1) * SUMMARY_PAGE_SIZE, summaryPage * SUMMARY_PAGE_SIZE);
-
   const totalPages = Math.max(1, Math.ceil(detail.length / PAGE_SIZE));
   const paginatedDetail = detail.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
@@ -50,9 +41,6 @@ export default function PrestasiReportSection() {
           <button onClick={loadAll} className="btn-primary">
             <Search className="w-4 h-4" /> Tampilkan
           </button>
-          <div className="ml-auto flex gap-2">
-            <span className="badge-soft badge-brand">Total Poin Prestasi: {totalPoin}</span>
-          </div>
         </div>
 
         <div className="surface-card p-5">
@@ -68,7 +56,7 @@ export default function PrestasiReportSection() {
                 </tr>
               </thead>
               <tbody>
-                {paginatedSummary.map((s) => (
+                {[...summary].sort((a, b) => b.total_prestasi - a.total_prestasi).map((s) => (
                   <tr key={s.id} className="border-t border-line-200">
                     <td className="py-2.5">
                       <button onClick={() => setSelectedStudent(s)} className="text-ink-900 font-medium hover:text-brand-600 hover:underline transition text-left">
@@ -85,18 +73,6 @@ export default function PrestasiReportSection() {
                 )}
               </tbody>
             </table>
-          )}
-
-          {sortedSummary.length > SUMMARY_PAGE_SIZE && (
-            <div className="flex items-center justify-between mt-4 pt-3 border-t border-line-200">
-              <button onClick={() => setSummaryPage((p) => Math.max(1, p - 1))} disabled={summaryPage === 1} className="flex items-center gap-1 text-xs font-medium text-ink-500 hover:text-brand-600 disabled:opacity-30">
-                <ChevronLeft className="w-3.5 h-3.5" /> Sebelumnya
-              </button>
-              <span className="text-xs text-ink-400">Halaman {summaryPage} / {summaryTotalPages} · {sortedSummary.length} siswa</span>
-              <button onClick={() => setSummaryPage((p) => Math.min(summaryTotalPages, p + 1))} disabled={summaryPage === summaryTotalPages} className="flex items-center gap-1 text-xs font-medium text-ink-500 hover:text-brand-600 disabled:opacity-30">
-                Selanjutnya <ChevronRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
           )}
         </div>
       </div>
