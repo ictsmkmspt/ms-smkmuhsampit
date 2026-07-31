@@ -4,7 +4,7 @@ import { Mail, Lock } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export default function Login() {
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -16,14 +16,14 @@ export default function Login() {
     setError('');
     setLoading(true);
     try {
-      const user = await login(email, password);
+      const user = await login(identifier, password);
       if (user.role === 'admin') navigate('/admin');
       else if (user.role === 'guru') navigate('/guru');
       else if (user.role === 'wali') navigate('/wali');
       else if (user.role === 'dudi') navigate('/dudi');
       else navigate('/siswa');
     } catch (err) {
-      setError('Email atau password salah.');
+      setError('Email/No. HP atau password salah.');
     } finally {
       setLoading(false);
     }
@@ -68,14 +68,14 @@ export default function Login() {
 
             <form onSubmit={handleSubmit} className="space-y-3">
               <div>
-                <label className="block text-xs font-medium text-ink-500 mb-1">Email</label>
+                <label className="block text-xs font-medium text-ink-500 mb-1">Email atau No. HP</label>
                 <div className="relative">
                   <Mail className="w-4 h-4 text-ink-300 absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
-                    type="email" value={email} autoFocus
-                    onChange={(e) => setEmail(e.target.value)}
+                    type="text" value={identifier} autoFocus
+                    onChange={(e) => setIdentifier(e.target.value)}
                     className="field-input pl-9 focus:border-[#15803D] focus:ring-[#15803D]/20"
-                    placeholder="nama@sekolah.com"
+                    placeholder="nama@sekolah.com atau 08xxxxxxxxxx"
                   />
                 </div>
               </div>

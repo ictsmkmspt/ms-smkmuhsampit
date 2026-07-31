@@ -20,8 +20,8 @@ export function AuthProvider({ children }) {
       .finally(() => setLoading(false));
   }, []);
 
-  const login = async (email, password) => {
-    const res = await api.post('/login', { email, password });
+  const login = async (identifier, password) => {
+    const res = await api.post('/login', { login: identifier, password });
     localStorage.setItem('token', res.data.token);
     setUser(res.data.user);
     setMustChangePassword(!!res.data.must_change_password);

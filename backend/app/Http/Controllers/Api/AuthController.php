@@ -10,18 +10,24 @@ use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
+    /**
+     * Login pakai email ATAU nomor HP — dipakai bareng: siswa/guru/admin/IDUKA
+     * biasanya pakai email, sedangkan wali (orang tua) khusus pakai nomor HP
+     * (akun wali sengaja tidak punya email sama sekali).
+     */
     public function login(Request $request)
     {
         $request->validate([
-            'email' => 'required|email',
+            'login' => 'required|string',
             'password' => 'required',
         ]);
 
-        $user = User::where('email', $request->email)->first();
+        $identifier = trim($request->login);
+        $user = User::where('email', $identifier)->orWhere('phone', $identifier)->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
             throw ValidationException::withMessages([
-                'email' => ['Email atau password salah.'],
+                'login' => ['Email/No. HP atau password salah.'],
             ]);
         }
 
@@ -30,8 +36,6 @@ class AuthController extends Controller
         return response()->json([
             'user' => $user,
             'token' => $token,
-            // Password default sekolah — kalau masih dipakai, paksa ganti dulu
-            // sebelum bisa lanjut pakai aplikasi (demi keamanan akun).
             'must_change_password' => $request->password === '123456',
         ]);
     }

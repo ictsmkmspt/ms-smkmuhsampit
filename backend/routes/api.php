@@ -51,7 +51,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/parents/{parentId}/link', [WaliController::class, 'link']);
         Route::delete('/parents/{parentId}/link/{studentId}', [WaliController::class, 'unlink']);
         Route::delete('/parents/{id}', [WaliController::class, 'destroy']);
+        Route::get('/parents/import/template', [WaliController::class, 'downloadTemplate']);
+        Route::post('/parents/import', [WaliController::class, 'import']);
         Route::apiResource('dudi', DudiController::class)->except(['show']);
+        Route::post('/pkl-placements/tutup-semua-aktif', [PklPlacementController::class, 'tutupSemuaAktif']);
         Route::apiResource('pkl-placements', PklPlacementController::class)->except(['show']);
     });
 

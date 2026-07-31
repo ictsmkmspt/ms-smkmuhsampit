@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, Trash2, ClipboardList } from 'lucide-react';
+import { Plus, Trash2, ClipboardList, PowerOff } from 'lucide-react';
 import api from '../../../../api/axios';
 
 const emptyForm = {
@@ -16,11 +16,38 @@ export default function PenempatanTab() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [filterStatus, setFilterStatus] = useState('');
+  const [closingAll, setClosingAll] = useState(false);
+  const [aktifCount, setAktifCount] = useState(0);
 
   const load = () => {
     const params = {};
     if (filterStatus) params.status = filterStatus;
     return api.get('/pkl-placements', { params }).then((res) => setList(res.data));
+  };
+
+  const loadAktifCount = () => {
+    return api.get('/pkl-placements', { params: { status: 'aktif' } }).then((res) => setAktifCount(res.data.length));
+  };
+
+  const handleTutupSemuaAktif = async () => {
+    if (aktifCount === 0) return;
+    if (!confirm(
+      `Anda akan menutup ${aktifCount} penempatan PKL yang masih aktif (ditandai "Selesai").\n\n` +
+      `Semua riwayat absensi, jurnal, dan penilaian IDUKA yang sudah ada TIDAK akan terhapus — tetap bisa dibuka lagi kapan saja.\n\n` +
+      `Setelah ini, Anda bisa membuat penempatan baru untuk periode PKL berikutnya. Lanjutkan?`
+    )) return;
+
+    setClosingAll(true);
+    try {
+      const res = await api.post('/pkl-placements/tutup-semua-aktif');
+      alert(res.data.message);
+      load();
+      loadAktifCount();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Gagal menutup penempatan.');
+    } finally {
+      setClosingAll(false);
+    }
   };
 
   useEffect(() => {
@@ -30,6 +57,7 @@ export default function PenempatanTab() {
   }, []);
 
   useEffect(() => { load(); }, [filterStatus]); // eslint-disable-line
+  useEffect(() => { loadAktifCount(); }, []);
 
   const handleAdd = async (e) => {
     e.preventDefault();
@@ -75,6 +103,22 @@ export default function PenempatanTab() {
         <p className="text-sm text-ink-700">
           Setiap siswa hanya boleh punya 1 penempatan berstatus <b>aktif</b> di satu waktu. Begitu penempatan aktif dibuat, menu PKL otomatis muncul di dashboard siswa (menggantikan QR barcode), guru pembimbing, dan IDUKA terkait.
         </p>
+      </div>
+
+      <div className="surface-card p-4 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p className="text-sm font-medium text-ink-900">Mulai Periode PKL Baru?</p>
+          <p className="text-xs text-ink-500">
+            Tutup semua penempatan yang masih aktif sekaligus (ditandai "Selesai") — data riwayatnya tetap tersimpan, tidak dihapus.
+          </p>
+        </div>
+        <button
+          onClick={handleTutupSemuaAktif}
+          disabled={closingAll || aktifCount === 0}
+          className="flex items-center gap-1.5 text-sm font-medium text-honey-700 bg-honey-50 hover:bg-honey-100 disabled:opacity-40 border border-honey-200 rounded-xl px-4 py-2 transition shrink-0"
+        >
+          <PowerOff className="w-4 h-4" /> {closingAll ? 'Menutup...' : `Tutup Semua Penempatan Aktif (${aktifCount})`}
+        </button>
       </div>
 
       <form onSubmit={handleAdd} className="surface-card p-5">

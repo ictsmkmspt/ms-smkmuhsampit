@@ -2,15 +2,15 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Exports\WaliTemplateExport;
 use App\Http\Controllers\Controller;
+use App\Imports\WaliImport;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Maatwebsite\Excel\Facades\Excel;
 
 class WaliController extends Controller
 {
-    /**
-     * Daftar akun wali beserta anak-anak yang sudah terhubung.
-     */
     public function index()
     {
         return User::where('role', 'wali')
@@ -18,20 +18,17 @@ class WaliController extends Controller
             ->get();
     }
 
-    /**
-     * Buat akun wali baru (belum terhubung ke anak manapun — dihubungkan lewat endpoint link()).
-     */
     public function store(Request $request)
     {
         $data = $request->validate([
             'name'     => 'required|string|max:100',
-            'email'    => 'required|email|unique:users,email',
+            'phone'    => 'required|string|max:20|unique:users,phone',
             'password' => 'required|min:6',
         ]);
 
         $user = User::create([
             'name'     => $data['name'],
-            'email'    => $data['email'],
+            'phone'    => $data['phone'],
             'password' => bcrypt($data['password']),
             'role'     => 'wali',
         ]);
@@ -39,9 +36,6 @@ class WaliController extends Controller
         return response()->json($user, 201);
     }
 
-    /**
-     * Hubungkan 1 akun wali ke 1 siswa (bisa dipanggil berkali-kali untuk hubungkan beberapa anak).
-     */
     public function link(Request $request, $parentId)
     {
         $data = $request->validate([
@@ -58,9 +52,6 @@ class WaliController extends Controller
         return response()->json(['message' => 'Siswa berhasil dihubungkan ke akun wali ini.']);
     }
 
-    /**
-     * Lepas hubungan 1 wali dari 1 anak (tidak menghapus akun/data siswanya, cuma relasinya).
-     */
     public function unlink($parentId, $studentId)
     {
         $parent = User::where('role', 'wali')->findOrFail($parentId);
@@ -75,5 +66,35 @@ class WaliController extends Controller
         $parent->delete();
 
         return response()->json(['message' => 'Akun wali dihapus.']);
+    }
+
+    public function downloadTemplate()
+    {
+        return Excel::download(new WaliTemplateExport, 'template_import_wali.xlsx');
+    }
+
+    public function import(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:xlsx,xls,csv',
+        ]);
+
+        $import = new WaliImport;
+        Excel::import($import, $request->file('file'));
+
+        $gagal = [];
+        foreach ($import->failures() as $failure) {
+            $gagal[] = [
+                'baris'  => $failure->row(),
+                'kolom'  => $failure->attribute(),
+                'alasan' => implode(' ', $failure->errors()),
+            ];
+        }
+
+        return response()->json([
+            'message'  => $import->successCount . ' baris berhasil diproses, ' . count($gagal) . ' baris gagal.',
+            'berhasil' => $import->successCount,
+            'gagal'    => $gagal,
+        ]);
     }
 }

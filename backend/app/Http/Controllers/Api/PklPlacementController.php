@@ -95,6 +95,28 @@ class PklPlacementController extends Controller
     }
 
     /**
+     * Tutup SEMUA penempatan PKL yang statusnya masih "aktif" sekaligus —
+     * dipakai admin di awal periode PKL baru. TIDAK menghapus data apa pun,
+     * cuma mengubah status jadi "selesai" — semua riwayat absensi, jurnal,
+     * dan penilaian IDUKA tetap tersimpan utuh dan bisa dibuka lagi kapan saja.
+     * Setelah ini, siswa bisa dibuatkan penempatan baru untuk periode berikutnya.
+     */
+    public function tutupSemuaAktif()
+    {
+        $jumlah = PklPlacement::where('status', 'aktif')->count();
+
+        PklPlacement::where('status', 'aktif')->update([
+            'status' => 'selesai',
+            'tanggal_selesai' => now()->format('Y-m-d'),
+        ]);
+
+        return response()->json([
+            'message' => "$jumlah penempatan PKL berhasil ditutup (ditandai selesai). Semua data riwayatnya tetap tersimpan.",
+            'jumlah'  => $jumlah,
+        ]);
+    }
+
+    /**
      * Daftar siswa bimbingan guru yang sedang login (dipakai tab "Bimbingan PKL" di dashboard guru).
      */
     public function bimbinganSaya(Request $request)

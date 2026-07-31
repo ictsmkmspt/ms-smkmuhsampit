@@ -1,17 +1,21 @@
-import { useEffect, useState } from 'react';
-import { Plus, Trash2, UserPlus, Link2 } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { Plus, Trash2, UserPlus, Link2, Download, Upload } from 'lucide-react';
 import api from '../../../api/axios';
 
 export default function WaliTab() {
   const [parents, setParents] = useState([]);
   const [students, setStudents] = useState([]);
-  const [form, setForm] = useState({ name: '', email: '', password: '' });
+  const [form, setForm] = useState({ name: '', phone: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const [linkingId, setLinkingId] = useState(null);
   const [linkForm, setLinkForm] = useState({ student_id: '', hubungan: '' });
   const [linkError, setLinkError] = useState('');
+
+  const [importing, setImporting] = useState(false);
+  const [importResult, setImportResult] = useState(null);
+  const fileInputRef = useRef(null);
 
   const loadParents = () => api.get('/parents').then((res) => setParents(res.data));
   const loadStudents = () => api.get('/students').then((res) => setStudents(res.data));
@@ -27,7 +31,7 @@ export default function WaliTab() {
     setLoading(true);
     try {
       await api.post('/parents', form);
-      setForm({ name: '', email: '', password: '' });
+      setForm({ name: '', phone: '', password: '' });
       loadParents();
     } catch (err) {
       const msgs = err.response?.data?.errors;
@@ -66,8 +70,95 @@ export default function WaliTab() {
     loadParents();
   };
 
+  const handleDownloadTemplate = async () => {
+    const res = await api.get('/parents/import/template', { responseType: 'blob' });
+    const url = window.URL.createObjectURL(new Blob([res.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', 'template_import_wali.xlsx');
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  };
+
+  const handleImportClick = () => fileInputRef.current?.click();
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setImporting(true);
+    setImportResult(null);
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const res = await api.post('/parents/import', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      setImportResult(res.data);
+      loadParents();
+    } catch (err) {
+      setImportResult({
+        message: err.response?.data?.message || 'Gagal mengimpor data. Pastikan format file sesuai template.',
+        gagal: [],
+      });
+    } finally {
+      setImporting(false);
+      e.target.value = '';
+    }
+  };
+
   return (
     <div className="space-y-6">
+      <div className="surface-card p-5 flex flex-wrap items-center gap-3">
+        <h2 className="font-display font-semibold text-ink-900 mr-auto">Import Data Wali dari Excel</h2>
+        <button
+          onClick={handleDownloadTemplate}
+          className="flex items-center gap-1.5 text-sm font-medium text-ink-700 bg-mist-50 hover:bg-mist-100 border border-line-200 rounded-xl px-4 py-2 transition"
+        >
+          <Download className="w-4 h-4" /> Download Template
+        </button>
+        <button
+          onClick={handleImportClick}
+          disabled={importing}
+          className="flex items-center gap-1.5 text-sm font-medium text-white bg-brand-600 hover:bg-brand-700 disabled:opacity-50 rounded-xl px-4 py-2 transition"
+        >
+          <Upload className="w-4 h-4" /> {importing ? 'Mengimpor...' : 'Import Excel'}
+        </button>
+        <input ref={fileInputRef} type="file" accept=".xlsx,.xls,.csv" onChange={handleFileChange} className="hidden" />
+      </div>
+
+      {importResult && (
+        <div className="surface-card p-5">
+          <p className={`text-sm font-medium ${importResult.gagal?.length > 0 ? 'text-honey-700' : 'text-brand-600'}`}>
+            {importResult.message}
+          </p>
+          {importResult.gagal?.length > 0 && (
+            <table className="w-full text-sm mt-3">
+              <thead>
+                <tr className="text-left text-ink-500 border-b border-line-200">
+                  <th className="pb-2 font-medium">Baris</th>
+                  <th className="font-medium">Kolom</th>
+                  <th className="font-medium">Alasan Gagal</th>
+                </tr>
+              </thead>
+              <tbody>
+                {importResult.gagal.map((g, i) => (
+                  <tr key={i} className="border-t border-line-200">
+                    <td className="py-2 text-ink-900">{g.baris}</td>
+                    <td className="text-ink-700">{g.kolom}</td>
+                    <td className="text-honey-700">{g.alasan}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
+
       <form onSubmit={handleAdd} className="surface-card p-5">
         <h2 className="font-display font-semibold text-ink-900 mb-4 flex items-center gap-2">
           <UserPlus className="w-4 h-4 text-brand-600" /> Tambah Akun Wali Baru
@@ -75,7 +166,7 @@ export default function WaliTab() {
         {error && <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2 mb-3">{error}</p>}
         <div className="grid grid-cols-3 gap-3">
           <input placeholder="Nama" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="field-input" required />
-          <input placeholder="Email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="field-input" required autoComplete="off" />
+          <input placeholder="No. HP" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="field-input" required autoComplete="off" />
           <input placeholder="Password" type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} className="field-input" required autoComplete="new-password" />
         </div>
         <button disabled={loading} className="btn-primary mt-4">
@@ -94,7 +185,7 @@ export default function WaliTab() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="font-medium text-ink-900">{p.name}</p>
-                  <p className="text-xs text-ink-500">{p.email}</p>
+                  <p className="text-xs text-ink-500">{p.phone}</p>
                 </div>
                 <div className="flex gap-2">
                   <button
