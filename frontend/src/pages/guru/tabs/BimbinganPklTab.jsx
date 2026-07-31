@@ -1,11 +1,10 @@
 import { useState } from 'react';
-import { Users, NotebookPen } from 'lucide-react';
 import BimbinganSiswaTab from './pkl/BimbinganSiswaTab';
 import JurnalPembimbinganTab from './pkl/JurnalPembimbinganTab';
 
 const SECTIONS = [
-  { key: 'siswa', label: 'Siswa Bimbingan', icon: Users, component: BimbinganSiswaTab },
-  { key: 'pembimbingan', label: 'Jurnal Pembimbing', icon: NotebookPen, component: JurnalPembimbinganTab },
+  { key: 'siswa', label: 'Siswa Bimbingan', component: BimbinganSiswaTab },
+  { key: 'pembimbingan', label: 'Jurnal Pembimbing', component: JurnalPembimbinganTab },
 ];
 
 export default function BimbinganPklTab() {
@@ -15,22 +14,23 @@ export default function BimbinganPklTab() {
 
   return (
     <div>
-      <div className="flex gap-1 bg-white rounded-xl border border-line-200 p-1 w-fit mb-6">
-        {SECTIONS.map((s) => {
-          const Icon = s.icon;
-          const isActive = active === s.key;
-          return (
-            <button
-              key={s.key}
-              onClick={() => setActive(s.key)}
-              className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition ${
-                isActive ? 'bg-brand-600 text-white' : 'text-ink-500 hover:bg-mist-50'
-              }`}
-            >
-              <Icon className="w-4 h-4" /> {s.label}
-            </button>
-          );
-        })}
+      <div className="flex justify-center mb-6">
+        <div className="flex gap-1 bg-white rounded-xl border border-line-200 p-0.5 w-fit">
+          {SECTIONS.map((s) => {
+            const isActive = active === s.key;
+            return (
+              <button
+                key={s.key}
+                onClick={() => setActive(s.key)}
+                className={`px-4 py-1.5 rounded-lg text-sm font-medium transition ${
+                  isActive ? 'bg-brand-600 text-white' : 'text-ink-500 hover:bg-mist-50'
+                }`}
+              >
+                {s.label}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {ActiveComponent && <ActiveComponent />}
