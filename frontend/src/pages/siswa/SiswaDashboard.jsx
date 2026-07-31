@@ -1,16 +1,22 @@
 import { useEffect, useRef, useState } from 'react';
 import QRCode from 'qrcode';
-import { LogOut, Clock, ChevronDown, KeyRound } from 'lucide-react';
+import { LogOut, Clock, ChevronDown, KeyRound, ChevronLeft, ChevronRight, Award, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api/axios';
 import PklSiswaView from './PklSiswaView';
 import ChangePasswordModal from '../../components/ChangePasswordModal';
+
+const PAGE_SIZE = 5;
 
 export default function SiswaDashboard() {
   const { user, logout } = useAuth();
   const [profile, setProfile] = useState(null);
   const [history, setHistory] = useState([]);
   const [qrImage, setQrImage] = useState('');
+
+  const [poinHistory, setPoinHistory] = useState([]);
+  const [poinPage, setPoinPage] = useState(1);
+  const [absensiPage, setAbsensiPage] = useState(1);
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [showGantiPassword, setShowGantiPassword] = useState(false);
@@ -40,6 +46,14 @@ export default function SiswaDashboard() {
 
     api.get('/my-profile').then((res) => setProfile(res.data));
     api.get('/my-attendances').then((res) => setHistory(res.data));
+
+    Promise.all([api.get('/my-violations'), api.get('/my-achievements')]).then(([v, a]) => {
+      const gabungan = [
+        ...v.data.map((item) => ({ ...item, jenis: 'pelanggaran', nama: item.violation_type?.name })),
+        ...a.data.map((item) => ({ ...item, jenis: 'prestasi', nama: item.achievement_type?.name })),
+      ].sort((x, y) => y.date.localeCompare(x.date));
+      setPoinHistory(gabungan);
+    });
   }, [pklPlacement]); // eslint-disable-line
 
   useEffect(() => {
@@ -57,6 +71,12 @@ export default function SiswaDashboard() {
   }, [profile]);
 
   const initial = user.name?.charAt(0)?.toUpperCase() || '?';
+
+  const absensiTotalPages = Math.max(1, Math.ceil(history.length / PAGE_SIZE));
+  const absensiPaginated = history.slice((absensiPage - 1) * PAGE_SIZE, absensiPage * PAGE_SIZE);
+
+  const poinTotalPages = Math.max(1, Math.ceil(poinHistory.length / PAGE_SIZE));
+  const poinPaginated = poinHistory.slice((poinPage - 1) * PAGE_SIZE, poinPage * PAGE_SIZE);
 
   // Belum tahu status PKL-nya (masih loading) — tampilkan header saja dulu supaya tidak "kedip"
   // dari tampilan QR ke tampilan PKL begitu datanya datang.
@@ -168,13 +188,74 @@ export default function SiswaDashboard() {
             </div>
           </div>
 
+          {/* Riwayat Poin — total di atas, daftar riwayat gabungan prestasi & pelanggaran di bawah */}
+          <div className="surface-card max-w-md mx-auto p-4 mb-6">
+            <h2 className="font-display font-semibold text-sm text-ink-900 mb-3">
+              Riwayat Poin
+            </h2>
+
+            <div className="grid grid-cols-2 gap-2 mb-3">
+              <div className="rounded-lg bg-brand-50 border border-brand-200 px-2 py-1.5 text-center">
+                <p className="font-display text-sm font-bold text-brand-700">{profile?.total_prestasi ?? 0}</p>
+                <p className="text-[10px] text-brand-700">Poin Prestasi</p>
+              </div>
+              <div className="rounded-lg bg-honey-50 border border-honey-200 px-2 py-1.5 text-center">
+                <p className="font-display text-sm font-bold text-honey-700">{profile?.total_poin ?? 0}</p>
+                <p className="text-[10px] text-honey-700">Poin Pelanggaran</p>
+              </div>
+            </div>
+
+            <ul className="divide-y divide-line-200">
+              {poinPaginated.map((item) => (
+                <li key={`${item.jenis}-${item.id}`} className="py-2.5 flex items-center justify-between text-sm gap-2">
+                  <div className="min-w-0">
+                    <p className="text-ink-900 truncate">{item.nama || '-'}</p>
+                    <p className="text-xs text-ink-500">{item.date}</p>
+                  </div>
+                  <span className={`flex items-center gap-1 text-xs font-medium shrink-0 ${
+                    item.jenis === 'prestasi' ? 'text-brand-700' : 'text-honey-700'
+                  }`}>
+                    {item.jenis === 'prestasi' ? <Award className="w-3.5 h-3.5" /> : <AlertTriangle className="w-3.5 h-3.5" />}
+                    {item.jenis === 'prestasi' ? '+' : '-'}{item.poin}
+                  </span>
+                </li>
+              ))}
+
+              {poinHistory.length === 0 && (
+                <li className="py-4 text-center text-sm text-ink-300">
+                  Belum ada riwayat poin.
+                </li>
+              )}
+            </ul>
+
+            {poinHistory.length > PAGE_SIZE && (
+              <div className="flex items-center justify-between mt-3 pt-3 border-t border-line-200">
+                <button
+                  onClick={() => setPoinPage((p) => Math.max(1, p - 1))}
+                  disabled={poinPage === 1}
+                  className="flex items-center gap-1 text-xs font-medium text-ink-500 hover:text-brand-600 disabled:opacity-30"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" /> Sebelumnya
+                </button>
+                <span className="text-xs text-ink-400">Halaman {poinPage} / {poinTotalPages}</span>
+                <button
+                  onClick={() => setPoinPage((p) => Math.min(poinTotalPages, p + 1))}
+                  disabled={poinPage === poinTotalPages}
+                  className="flex items-center gap-1 text-xs font-medium text-ink-500 hover:text-brand-600 disabled:opacity-30"
+                >
+                  Selanjutnya <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
+          </div>
+
           <div className="surface-card max-w-md mx-auto p-4">
             <h2 className="font-display font-semibold text-sm text-ink-900 mb-3">
               Riwayat Absensi
             </h2>
 
             <ul className="divide-y divide-line-200">
-              {history.map((h) => (
+              {absensiPaginated.map((h) => (
                 <li key={h.id} className="py-2.5 flex items-center justify-between text-sm">
                   <span className="text-ink-700">{h.date}</span>
 
@@ -204,6 +285,26 @@ export default function SiswaDashboard() {
                 </li>
               )}
             </ul>
+
+            {history.length > PAGE_SIZE && (
+              <div className="flex items-center justify-between mt-3 pt-3 border-t border-line-200">
+                <button
+                  onClick={() => setAbsensiPage((p) => Math.max(1, p - 1))}
+                  disabled={absensiPage === 1}
+                  className="flex items-center gap-1 text-xs font-medium text-ink-500 hover:text-brand-600 disabled:opacity-30"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" /> Sebelumnya
+                </button>
+                <span className="text-xs text-ink-400">Halaman {absensiPage} / {absensiTotalPages}</span>
+                <button
+                  onClick={() => setAbsensiPage((p) => Math.min(absensiTotalPages, p + 1))}
+                  disabled={absensiPage === absensiTotalPages}
+                  className="flex items-center gap-1 text-xs font-medium text-ink-500 hover:text-brand-600 disabled:opacity-30"
+                >
+                  Selanjutnya <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
           </div>
         </>
       )}

@@ -108,6 +108,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('role:siswa')->group(function () {
         Route::get('/my-profile', [StudentSelfController::class, 'profile']);
         Route::get('/my-attendances', [StudentSelfController::class, 'attendances']);
+        Route::get('/my-violations', [StudentSelfController::class, 'violations']);
+        Route::get('/my-achievements', [StudentSelfController::class, 'achievements']);
         Route::get('/my-pkl-placement', [PklPlacementController::class, 'punyaKuSekarang']);
         Route::get('/my-pkl-attendances', [PklAttendanceController::class, 'riwayatSaya']);
         Route::post('/pkl/absen-masuk', [PklAttendanceController::class, 'absenMasuk']);
