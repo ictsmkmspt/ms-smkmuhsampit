@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import {
   LogIn, LogOut, Building2, User, Printer, CheckCircle2,
-  ClipboardCheck, NotebookPen, X, CalendarOff, Thermometer,
+  X, CalendarOff, Thermometer,
 } from 'lucide-react';
 import api from '../../api/axios';
 import PklJurnalTab from './PklJurnalTab';
@@ -10,14 +10,12 @@ const STATUS_LABEL = { hadir: 'Hadir', izin: 'Izin', sakit: 'Sakit', alpa: 'Alpa
 const STATUS_BADGE = { hadir: 'badge-brand', izin: 'badge-honey', sakit: 'badge-honey', alpa: 'badge-rose' };
 
 /**
- * Tampilan PKL untuk siswa yang sedang punya penempatan aktif — menggantikan
- * kartu QR barcode sepenuhnya selama masa PKL berlangsung. Ada 2 sub-menu
- * lewat navbar bawah (Absensi & Jurnal Kegiatan), mengikuti pola yang sama
- * dengan dashboard Guru.
+ * Tampilan PKL untuk siswa yang sedang punya penempatan aktif. Sub-menunya
+ * (Beranda / Absensi / Jurnal Kegiatan) sekarang dikendalikan dari
+ * SiswaDashboard lewat prop `tab`, supaya "Beranda" (kartu QR sekolah biasa)
+ * tetap bisa diakses walau sedang PKL.
  */
-export default function PklSiswaView({ placement }) {
-  const [tab, setTab] = useState('absensi'); // 'absensi' | 'jurnal'
-
+export default function PklSiswaView({ placement, tab }) {
   const [history, setHistory] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [posting, setPosting] = useState(''); // '' | 'masuk' | 'pulang'
@@ -234,32 +232,6 @@ export default function PklSiswaView({ placement }) {
           </div>
         </>
       )}
-
-      {/* Navbar bawah, mengikuti pola yang sama dengan dashboard Guru */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-line-200 z-40">
-        <div className="max-w-md mx-auto flex">
-          <button
-            onClick={() => setTab('absensi')}
-            className={`relative flex-1 flex flex-col items-center justify-center gap-1 py-3 transition ${
-              tab === 'absensi' ? 'text-brand-600' : 'text-ink-400 hover:text-ink-600'
-            }`}
-          >
-            <ClipboardCheck className={`w-6 h-6 ${tab === 'absensi' ? 'stroke-[2.5]' : 'stroke-[1.75]'}`} />
-            <span className="text-[10px] font-medium tracking-wide">Absensi</span>
-            {tab === 'absensi' && <span className="absolute bottom-0 w-8 h-0.5 bg-brand-600 rounded-t-full" />}
-          </button>
-          <button
-            onClick={() => setTab('jurnal')}
-            className={`relative flex-1 flex flex-col items-center justify-center gap-1 py-3 transition ${
-              tab === 'jurnal' ? 'text-brand-600' : 'text-ink-400 hover:text-ink-600'
-            }`}
-          >
-            <NotebookPen className={`w-6 h-6 ${tab === 'jurnal' ? 'stroke-[2.5]' : 'stroke-[1.75]'}`} />
-            <span className="text-[10px] font-medium tracking-wide">Jurnal Kegiatan</span>
-            {tab === 'jurnal' && <span className="absolute bottom-0 w-8 h-0.5 bg-brand-600 rounded-t-full" />}
-          </button>
-        </div>
-      </div>
 
       {/* Popup pengajuan Izin/Sakit */}
       {izinSakitJenis && (

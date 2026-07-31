@@ -1,10 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import QRCode from 'qrcode';
-import { LogOut, Clock, ChevronDown, KeyRound, ChevronLeft, ChevronRight, Award, AlertTriangle } from 'lucide-react';
+import {
+  LogOut, Clock, ChevronDown, KeyRound, ChevronLeft, ChevronRight,
+  Award, AlertTriangle, Home, ClipboardCheck, NotebookPen,
+} from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api/axios';
 import PklSiswaView from './PklSiswaView';
 import ChangePasswordModal from '../../components/ChangePasswordModal';
+import LeaderboardPrestasi from '../../components/LeaderboardPrestasi';
 
 const PAGE_SIZE = 5;
 
@@ -21,6 +25,9 @@ export default function SiswaDashboard() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [showGantiPassword, setShowGantiPassword] = useState(false);
   const menuRef = useRef(null);
+
+  // Sub-menu dipakai cuma saat sedang PKL: 'beranda' | 'absensi' | 'jurnal'
+  const [pklTab, setPklTab] = useState('absensi');
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -40,9 +47,10 @@ export default function SiswaDashboard() {
   }, []);
 
   useEffect(() => {
-    // Kalau sedang PKL, tidak perlu ambil profil/riwayat/QR barcode sekolah sama sekali —
-    // PklSiswaView yang mengambil datanya sendiri lewat /my-pkl-attendances.
-    if (pklPlacement === undefined || isPkl) return;
+    // Data "Beranda" (profil, QR, riwayat absensi & poin sekolah) sekarang
+    // selalu diambil, walaupun sedang PKL — supaya menu "Beranda" tetap
+    // bisa diakses siswa PKL lewat navbar bawah.
+    if (pklPlacement === undefined) return;
 
     api.get('/my-profile').then((res) => setProfile(res.data));
     api.get('/my-attendances').then((res) => setHistory(res.data));
@@ -97,6 +105,190 @@ export default function SiswaDashboard() {
     );
   }
 
+  const berandaContent = (
+    <>
+      <div className="max-w-md mx-auto mb-6 rounded-2xl overflow-hidden shadow-[0_2px_16px_rgba(34,52,74,0.08)] border border-line-200">
+        <div className="bg-brand-600 px-5 pt-5 pb-7 text-white">
+          <p className="text-[10px] uppercase tracking-widest text-brand-100 mb-3">
+            Kartu Absensi Siswa
+          </p>
+
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-full bg-white/15 flex items-center justify-center font-display font-semibold text-lg">
+              {initial}
+            </div>
+
+            <div>
+              <p className="font-display font-semibold leading-tight">{user.name}</p>
+
+              <p className="text-xs text-brand-100">
+                NIS {profile?.nis || '—'} · {profile?.class_room?.name || 'Belum ada kelas'}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="relative bg-honey-50 h-0">
+          <div className="absolute -top-3 -left-3 w-6 h-6 rounded-full bg-mist-50" />
+          <div className="absolute -top-3 -right-3 w-6 h-6 rounded-full bg-mist-50" />
+          <div className="absolute top-0 left-3 right-3 border-t-2 border-dashed border-honey-300" />
+        </div>
+
+        <div className="bg-honey-50 px-5 py-6 flex flex-col items-center">
+
+          {qrImage && (
+            <div className="bg-white p-3 rounded-xl border border-honey-200">
+              <img
+                src={qrImage}
+                alt="QR Code"
+                width={160}
+                height={160}
+              />
+            </div>
+          )}
+
+          <p className="font-mono text-xs text-ink-700 mt-3 tracking-wide">
+            {profile?.barcode_code}
+          </p>
+
+          <p className="text-[11px] text-ink-500 mt-1">
+            Tunjukkan QR ini ke guru saat absen
+          </p>
+
+        </div>
+      </div>
+
+      {/* Riwayat Poin — total di atas, daftar riwayat gabungan prestasi & pelanggaran di bawah */}
+      <div className="surface-card max-w-md mx-auto p-4 mb-6">
+        <h2 className="font-display font-semibold text-sm text-ink-900 mb-3">
+          Riwayat Poin
+        </h2>
+
+        <div className="grid grid-cols-2 gap-2 mb-3">
+          <div className="rounded-lg bg-brand-50 border border-brand-200 px-2 py-1.5 text-center">
+            <p className="font-display text-sm font-bold text-brand-700">{profile?.total_prestasi ?? 0}</p>
+            <p className="text-[10px] text-brand-700">Poin Prestasi</p>
+          </div>
+          <div className="rounded-lg bg-honey-50 border border-honey-200 px-2 py-1.5 text-center">
+            <p className="font-display text-sm font-bold text-honey-700">{profile?.total_poin ?? 0}</p>
+            <p className="text-[10px] text-honey-700">Poin Pelanggaran</p>
+          </div>
+        </div>
+
+        <ul className="divide-y divide-line-200">
+          {poinPaginated.map((item) => (
+            <li key={`${item.jenis}-${item.id}`} className="py-2.5 flex items-center justify-between text-sm gap-2">
+              <div className="min-w-0">
+                <p className="text-ink-900 truncate">{item.nama || '-'}</p>
+                <p className="text-xs text-ink-500">{item.date}</p>
+              </div>
+              <span className={`flex items-center gap-1 text-xs font-medium shrink-0 ${
+                item.jenis === 'prestasi' ? 'text-brand-700' : 'text-honey-700'
+              }`}>
+                {item.jenis === 'prestasi' ? <Award className="w-3.5 h-3.5" /> : <AlertTriangle className="w-3.5 h-3.5" />}
+                {item.jenis === 'prestasi' ? '+' : '-'}{item.poin}
+              </span>
+            </li>
+          ))}
+
+          {poinHistory.length === 0 && (
+            <li className="py-4 text-center text-sm text-ink-300">
+              Belum ada riwayat poin.
+            </li>
+          )}
+        </ul>
+
+        {poinHistory.length > PAGE_SIZE && (
+          <div className="flex items-center justify-between mt-3 pt-3 border-t border-line-200">
+            <button
+              onClick={() => setPoinPage((p) => Math.max(1, p - 1))}
+              disabled={poinPage === 1}
+              className="flex items-center gap-1 text-xs font-medium text-ink-500 hover:text-brand-600 disabled:opacity-30"
+            >
+              <ChevronLeft className="w-3.5 h-3.5" /> Sebelumnya
+            </button>
+            <span className="text-xs text-ink-400">Halaman {poinPage} / {poinTotalPages}</span>
+            <button
+              onClick={() => setPoinPage((p) => Math.min(poinTotalPages, p + 1))}
+              disabled={poinPage === poinTotalPages}
+              className="flex items-center gap-1 text-xs font-medium text-ink-500 hover:text-brand-600 disabled:opacity-30"
+            >
+              Selanjutnya <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
+      </div>
+
+      <div className="surface-card max-w-md mx-auto p-4">
+        <h2 className="font-display font-semibold text-sm text-ink-900 mb-3">
+          Riwayat Absensi
+        </h2>
+
+        <ul className="divide-y divide-line-200">
+          {absensiPaginated.map((h) => (
+            <li key={h.id} className="py-2.5 flex items-center justify-between text-sm">
+              <span className="text-ink-700">{h.date}</span>
+
+              <span className="flex items-center gap-2">
+                <span className="flex items-center gap-1 text-xs text-ink-500">
+                  <Clock className="w-3.5 h-3.5" /> {h.time_in}
+                </span>
+
+                <span
+                  className={`badge-soft ${
+                    h.status === 'alpa'
+                      ? 'badge-rose'
+                      : h.status === 'izin' || h.status === 'sakit'
+                      ? 'badge-honey'
+                      : 'badge-brand'
+                  }`}
+                >
+                  {h.status}
+                </span>
+              </span>
+            </li>
+          ))}
+
+          {history.length === 0 && (
+            <li className="py-4 text-center text-sm text-ink-300">
+              Belum ada riwayat absensi.
+            </li>
+          )}
+        </ul>
+
+        {history.length > PAGE_SIZE && (
+          <div className="flex items-center justify-between mt-3 pt-3 border-t border-line-200">
+            <button
+              onClick={() => setAbsensiPage((p) => Math.max(1, p - 1))}
+              disabled={absensiPage === 1}
+              className="flex items-center gap-1 text-xs font-medium text-ink-500 hover:text-brand-600 disabled:opacity-30"
+            >
+              <ChevronLeft className="w-3.5 h-3.5" /> Sebelumnya
+            </button>
+            <span className="text-xs text-ink-400">Halaman {absensiPage} / {absensiTotalPages}</span>
+            <button
+              onClick={() => setAbsensiPage((p) => Math.min(absensiTotalPages, p + 1))}
+              disabled={absensiPage === absensiTotalPages}
+              className="flex items-center gap-1 text-xs font-medium text-ink-500 hover:text-brand-600 disabled:opacity-30"
+            >
+              Selanjutnya <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
+      </div>
+
+      <div className="max-w-md mx-auto mt-6">
+        <LeaderboardPrestasi />
+      </div>
+    </>
+  );
+
+  const PKL_TABS = [
+    { key: 'beranda', label: 'Beranda', icon: Home },
+    { key: 'absensi', label: 'Absensi', icon: ClipboardCheck },
+    { key: 'jurnal', label: 'Jurnal Kegiatan', icon: NotebookPen },
+  ];
+
   return (
     <div className={`min-h-screen bg-mist-50 p-6 ${isPkl ? 'pb-24' : ''}`}>
       <div className="flex justify-between items-end max-w-md mx-auto mb-6">
@@ -134,179 +326,35 @@ export default function SiswaDashboard() {
       </div>
 
       {isPkl ? (
-        <PklSiswaView placement={pklPlacement} />
+        pklTab === 'beranda' ? berandaContent : <PklSiswaView placement={pklPlacement} tab={pklTab} />
       ) : (
-        <>
-          <div className="max-w-md mx-auto mb-6 rounded-2xl overflow-hidden shadow-[0_2px_16px_rgba(34,52,74,0.08)] border border-line-200">
-            <div className="bg-brand-600 px-5 pt-5 pb-7 text-white">
-              <p className="text-[10px] uppercase tracking-widest text-brand-100 mb-3">
-                Kartu Absensi Siswa
-              </p>
+        berandaContent
+      )}
 
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-white/15 flex items-center justify-center font-display font-semibold text-lg">
-                  {initial}
-                </div>
-
-                <div>
-                  <p className="font-display font-semibold leading-tight">{user.name}</p>
-
-                  <p className="text-xs text-brand-100">
-                    NIS {profile?.nis || '—'} · {profile?.class_room?.name || 'Belum ada kelas'}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="relative bg-honey-50 h-0">
-              <div className="absolute -top-3 -left-3 w-6 h-6 rounded-full bg-mist-50" />
-              <div className="absolute -top-3 -right-3 w-6 h-6 rounded-full bg-mist-50" />
-              <div className="absolute top-0 left-3 right-3 border-t-2 border-dashed border-honey-300" />
-            </div>
-
-            <div className="bg-honey-50 px-5 py-6 flex flex-col items-center">
-
-              {qrImage && (
-                <div className="bg-white p-3 rounded-xl border border-honey-200">
-                  <img
-                    src={qrImage}
-                    alt="QR Code"
-                    width={160}
-                    height={160}
-                  />
-                </div>
-              )}
-
-              <p className="font-mono text-xs text-ink-700 mt-3 tracking-wide">
-                {profile?.barcode_code}
-              </p>
-
-              <p className="text-[11px] text-ink-500 mt-1">
-                Tunjukkan QR ini ke guru saat absen
-              </p>
-
-            </div>
+      {isPkl && (
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-line-200 z-40">
+          <div className="max-w-md mx-auto flex">
+            {PKL_TABS.map((t) => {
+              const Icon = t.icon;
+              const isActive = pklTab === t.key;
+              return (
+                <button
+                  key={t.key}
+                  onClick={() => setPklTab(t.key)}
+                  className={`relative flex-1 flex flex-col items-center justify-center gap-1 py-3 transition ${
+                    isActive ? 'text-brand-600' : 'text-ink-400 hover:text-ink-600'
+                  }`}
+                >
+                  <Icon className={`w-6 h-6 ${isActive ? 'stroke-[2.5]' : 'stroke-[1.75]'}`} />
+                  <span className="text-[10px] font-medium tracking-wide">{t.label}</span>
+                  {isActive && (
+                    <span className="absolute bottom-0 w-8 h-0.5 bg-brand-600 rounded-t-full" />
+                  )}
+                </button>
+              );
+            })}
           </div>
-
-          {/* Riwayat Poin — total di atas, daftar riwayat gabungan prestasi & pelanggaran di bawah */}
-          <div className="surface-card max-w-md mx-auto p-4 mb-6">
-            <h2 className="font-display font-semibold text-sm text-ink-900 mb-3">
-              Riwayat Poin
-            </h2>
-
-            <div className="grid grid-cols-2 gap-2 mb-3">
-              <div className="rounded-lg bg-brand-50 border border-brand-200 px-2 py-1.5 text-center">
-                <p className="font-display text-sm font-bold text-brand-700">{profile?.total_prestasi ?? 0}</p>
-                <p className="text-[10px] text-brand-700">Poin Prestasi</p>
-              </div>
-              <div className="rounded-lg bg-honey-50 border border-honey-200 px-2 py-1.5 text-center">
-                <p className="font-display text-sm font-bold text-honey-700">{profile?.total_poin ?? 0}</p>
-                <p className="text-[10px] text-honey-700">Poin Pelanggaran</p>
-              </div>
-            </div>
-
-            <ul className="divide-y divide-line-200">
-              {poinPaginated.map((item) => (
-                <li key={`${item.jenis}-${item.id}`} className="py-2.5 flex items-center justify-between text-sm gap-2">
-                  <div className="min-w-0">
-                    <p className="text-ink-900 truncate">{item.nama || '-'}</p>
-                    <p className="text-xs text-ink-500">{item.date}</p>
-                  </div>
-                  <span className={`flex items-center gap-1 text-xs font-medium shrink-0 ${
-                    item.jenis === 'prestasi' ? 'text-brand-700' : 'text-honey-700'
-                  }`}>
-                    {item.jenis === 'prestasi' ? <Award className="w-3.5 h-3.5" /> : <AlertTriangle className="w-3.5 h-3.5" />}
-                    {item.jenis === 'prestasi' ? '+' : '-'}{item.poin}
-                  </span>
-                </li>
-              ))}
-
-              {poinHistory.length === 0 && (
-                <li className="py-4 text-center text-sm text-ink-300">
-                  Belum ada riwayat poin.
-                </li>
-              )}
-            </ul>
-
-            {poinHistory.length > PAGE_SIZE && (
-              <div className="flex items-center justify-between mt-3 pt-3 border-t border-line-200">
-                <button
-                  onClick={() => setPoinPage((p) => Math.max(1, p - 1))}
-                  disabled={poinPage === 1}
-                  className="flex items-center gap-1 text-xs font-medium text-ink-500 hover:text-brand-600 disabled:opacity-30"
-                >
-                  <ChevronLeft className="w-3.5 h-3.5" /> Sebelumnya
-                </button>
-                <span className="text-xs text-ink-400">Halaman {poinPage} / {poinTotalPages}</span>
-                <button
-                  onClick={() => setPoinPage((p) => Math.min(poinTotalPages, p + 1))}
-                  disabled={poinPage === poinTotalPages}
-                  className="flex items-center gap-1 text-xs font-medium text-ink-500 hover:text-brand-600 disabled:opacity-30"
-                >
-                  Selanjutnya <ChevronRight className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            )}
-          </div>
-
-          <div className="surface-card max-w-md mx-auto p-4">
-            <h2 className="font-display font-semibold text-sm text-ink-900 mb-3">
-              Riwayat Absensi
-            </h2>
-
-            <ul className="divide-y divide-line-200">
-              {absensiPaginated.map((h) => (
-                <li key={h.id} className="py-2.5 flex items-center justify-between text-sm">
-                  <span className="text-ink-700">{h.date}</span>
-
-                  <span className="flex items-center gap-2">
-                    <span className="flex items-center gap-1 text-xs text-ink-500">
-                      <Clock className="w-3.5 h-3.5" /> {h.time_in}
-                    </span>
-
-                    <span
-                      className={`badge-soft ${
-                        h.status === 'alpa'
-                          ? 'badge-rose'
-                          : h.status === 'izin' || h.status === 'sakit'
-                          ? 'badge-honey'
-                          : 'badge-brand'
-                      }`}
-                    >
-                      {h.status}
-                    </span>
-                  </span>
-                </li>
-              ))}
-
-              {history.length === 0 && (
-                <li className="py-4 text-center text-sm text-ink-300">
-                  Belum ada riwayat absensi.
-                </li>
-              )}
-            </ul>
-
-            {history.length > PAGE_SIZE && (
-              <div className="flex items-center justify-between mt-3 pt-3 border-t border-line-200">
-                <button
-                  onClick={() => setAbsensiPage((p) => Math.max(1, p - 1))}
-                  disabled={absensiPage === 1}
-                  className="flex items-center gap-1 text-xs font-medium text-ink-500 hover:text-brand-600 disabled:opacity-30"
-                >
-                  <ChevronLeft className="w-3.5 h-3.5" /> Sebelumnya
-                </button>
-                <span className="text-xs text-ink-400">Halaman {absensiPage} / {absensiTotalPages}</span>
-                <button
-                  onClick={() => setAbsensiPage((p) => Math.min(absensiTotalPages, p + 1))}
-                  disabled={absensiPage === absensiTotalPages}
-                  className="flex items-center gap-1 text-xs font-medium text-ink-500 hover:text-brand-600 disabled:opacity-30"
-                >
-                  Selanjutnya <ChevronRight className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            )}
-          </div>
-        </>
+        </div>
       )}
 
       {showGantiPassword && (

@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react';
-import { LogOut, School, Trophy, AlertOctagon, Clock, ChevronDown } from 'lucide-react';
+import { LogOut, School, Trophy, AlertOctagon, Clock, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api/axios';
+import LeaderboardPrestasi from '../../components/LeaderboardPrestasi';
+
+const PAGE_SIZE = 5;
 
 const TYPE_CONFIG = {
   absensi: { icon: Clock, badge: 'badge-brand' },
@@ -17,6 +20,7 @@ export default function ParentDashboard() {
   const [activity, setActivity] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [activityPage, setActivityPage] = useState(1);
 
   useEffect(() => {
     api.get('/my-children')
@@ -31,6 +35,7 @@ export default function ParentDashboard() {
   useEffect(() => {
     if (!selectedId) return;
     setLoading(true);
+    setActivityPage(1);
     api.get(`/my-children/${selectedId}/activity`)
       .then((res) => setActivity(res.data))
       .catch(() => setError('Gagal memuat aktivitas.'))
@@ -38,6 +43,9 @@ export default function ParentDashboard() {
   }, [selectedId]);
 
   const selectedChild = children.find((c) => c.id === selectedId);
+
+  const timelineTotalPages = Math.max(1, Math.ceil((activity?.timeline?.length || 0) / PAGE_SIZE));
+  const timelinePaginated = (activity?.timeline || []).slice((activityPage - 1) * PAGE_SIZE, activityPage * PAGE_SIZE);
 
   return (
     <div className="min-h-screen bg-mist-50">
@@ -118,7 +126,7 @@ export default function ParentDashboard() {
                 <p className="text-center text-honey-700 py-6">{error}</p>
               ) : (
                 <ul className="divide-y divide-line-200">
-                  {activity?.timeline?.map((item, i) => {
+                  {timelinePaginated.map((item, i) => {
                     const config = TYPE_CONFIG[item.type] || TYPE_CONFIG.absensi;
                     const Icon = config.icon;
                     return (
@@ -146,9 +154,33 @@ export default function ParentDashboard() {
                   )}
                 </ul>
               )}
+
+              {activity?.timeline?.length > PAGE_SIZE && (
+                <div className="flex items-center justify-between mt-3 pt-3 border-t border-line-200">
+                  <button
+                    onClick={() => setActivityPage((p) => Math.max(1, p - 1))}
+                    disabled={activityPage === 1}
+                    className="flex items-center gap-1 text-xs font-medium text-ink-500 hover:text-brand-600 disabled:opacity-30"
+                  >
+                    <ChevronLeft className="w-3.5 h-3.5" /> Sebelumnya
+                  </button>
+                  <span className="text-xs text-ink-400">Halaman {activityPage} / {timelineTotalPages}</span>
+                  <button
+                    onClick={() => setActivityPage((p) => Math.min(timelineTotalPages, p + 1))}
+                    disabled={activityPage === timelineTotalPages}
+                    className="flex items-center gap-1 text-xs font-medium text-ink-500 hover:text-brand-600 disabled:opacity-30"
+                  >
+                    Selanjutnya <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
             </div>
           </>
         )}
+
+        <div className="mt-6">
+          <LeaderboardPrestasi />
+        </div>
       </div>
     </div>
   );

@@ -214,4 +214,17 @@ class AchievementController extends Controller
             'message' => "Reset berhasil: {$jumlahSiswa} siswa dikembalikan ke 0 poin prestasi, {$jumlahRiwayat} catatan riwayat dihapus permanen.",
         ]);
     }
+
+    /**
+     * 10 siswa dengan poin prestasi tertinggi — dipakai kartu "Leaderboard"
+     * di beranda Guru, Siswa, dan Wali.
+     */
+    public function leaderboard()
+    {
+        return \App\Models\Student::with(['user', 'classRoom'])
+            ->where('total_prestasi', '>', 0)
+            ->orderByDesc('total_prestasi')
+            ->limit(10)
+            ->get();
+    }
 }

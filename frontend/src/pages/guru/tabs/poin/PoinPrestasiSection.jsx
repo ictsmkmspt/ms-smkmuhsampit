@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ClipboardEdit, AlertTriangle, CheckCircle2, PlusCircle } from 'lucide-react';
 import BarcodeScanner from '../../../../components/BarcodeScanner';
+import StudentAchievementModal from '../../../../components/StudentAchievementModal';
 import api from '../../../../api/axios';
 
 export default function PoinPrestasiSection() {
@@ -19,6 +20,7 @@ export default function PoinPrestasiSection() {
   const [rowTypeId, setRowTypeId]         = useState({});
   const [rowLoading, setRowLoading]       = useState(null);
   const [rowMessage, setRowMessage]       = useState({});
+  const [selectedStudent, setSelectedStudent] = useState(null);
 
   useEffect(() => {
     api.get('/achievement-types').then((res) => setAchievementTypes(res.data));
@@ -29,6 +31,11 @@ export default function PoinPrestasiSection() {
     if (!selectedClass) { setStudents([]); setRowMessage({}); return; }
     api.get('/students', { params: { class_room_id: selectedClass } }).then((res) => setStudents(res.data));
   }, [selectedClass]);
+
+  const reloadStudents = () => {
+    if (!selectedClass) return;
+    api.get('/students', { params: { class_room_id: selectedClass } }).then((res) => setStudents(res.data));
+  };
 
   const handleDecode = async (code) => {
     try {
@@ -166,11 +173,18 @@ export default function PoinPrestasiSection() {
                 return (
                   <tr key={s.id} className="border-t border-line-200">
                     <td className="py-2.5">
-                      <p className="text-ink-900 font-medium">{s.user?.name}</p>
+                      <button
+                        onClick={() => setSelectedStudent(s)}
+                        className="text-ink-900 font-medium hover:text-brand-600 hover:underline transition text-left"
+                      >
+                        {s.user?.name}
+                      </button>
                       {msg && <p className={`text-xs mt-0.5 ${msg.error ? 'text-honey-700' : 'text-brand-600'}`}>{msg.text}</p>}
                     </td>
                     <td className="text-center">
-                      <span className="badge-soft badge-brand">{s.total_prestasi || 0}</span>
+                      <button onClick={() => setSelectedStudent(s)} title="Lihat/edit riwayat poin">
+                        <span className="badge-soft badge-brand hover:brightness-95 transition">{s.total_prestasi || 0}</span>
+                      </button>
                     </td>
                     <td className="text-right">
                       <div className="flex justify-end gap-2">
@@ -194,6 +208,14 @@ export default function PoinPrestasiSection() {
           </table>
         )}
       </div>
+
+      {selectedStudent && (
+        <StudentAchievementModal
+          student={selectedStudent}
+          onClose={() => setSelectedStudent(null)}
+          onChanged={reloadStudents}
+        />
+      )}
     </div>
   );
 }

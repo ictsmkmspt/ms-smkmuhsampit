@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ClipboardEdit, AlertTriangle, CheckCircle2, PlusCircle } from 'lucide-react';
 import BarcodeScanner from '../../../../components/BarcodeScanner';
+import StudentViolationModal from '../../../../components/StudentViolationModal';
 import api from '../../../../api/axios';
 
 export default function PoinPelanggaranSection() {
@@ -19,6 +20,7 @@ export default function PoinPelanggaranSection() {
   const [rowTypeId, setRowTypeId]         = useState({});
   const [rowLoading, setRowLoading]       = useState(null);
   const [rowMessage, setRowMessage]       = useState({});
+  const [selectedStudent, setSelectedStudent] = useState(null);
 
   useEffect(() => {
     api.get('/violation-types').then((res) => setViolationTypes(res.data));
@@ -29,6 +31,11 @@ export default function PoinPelanggaranSection() {
     if (!selectedClass) { setStudents([]); setRowMessage({}); return; }
     api.get('/students', { params: { class_room_id: selectedClass } }).then((res) => setStudents(res.data));
   }, [selectedClass]);
+
+  const reloadStudents = () => {
+    if (!selectedClass) return;
+    api.get('/students', { params: { class_room_id: selectedClass } }).then((res) => setStudents(res.data));
+  };
 
   const handleDecode = async (code) => {
     try {
@@ -152,6 +159,10 @@ export default function PoinPelanggaranSection() {
         )}
 
         {students.length > 0 && (
+          <p className="text-xs text-ink-400 mb-2">Klik nama siswa atau badge poin untuk lihat riwayat, edit, atau hapus catatan yang salah input.</p>
+        )}
+
+        {students.length > 0 && (
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-ink-500 border-b border-line-200">
@@ -166,11 +177,18 @@ export default function PoinPelanggaranSection() {
                 return (
                   <tr key={s.id} className="border-t border-line-200">
                     <td className="py-2.5">
-                      <p className="text-ink-900 font-medium">{s.user?.name}</p>
+                      <button
+                        onClick={() => setSelectedStudent(s)}
+                        className="text-ink-900 font-medium hover:text-brand-600 hover:underline transition text-left"
+                      >
+                        {s.user?.name}
+                      </button>
                       {msg && <p className={`text-xs mt-0.5 ${msg.error ? 'text-honey-700' : 'text-brand-600'}`}>{msg.text}</p>}
                     </td>
                     <td className="text-center">
-                      <span className="badge-soft badge-honey">{s.total_poin || 0}</span>
+                      <button onClick={() => setSelectedStudent(s)} title="Lihat/edit riwayat poin">
+                        <span className="badge-soft badge-honey hover:brightness-95 transition">{s.total_poin || 0}</span>
+                      </button>
                     </td>
                     <td className="text-right">
                       <div className="flex justify-end gap-2">
@@ -194,6 +212,14 @@ export default function PoinPelanggaranSection() {
           </table>
         )}
       </div>
+
+      {selectedStudent && (
+        <StudentViolationModal
+          student={selectedStudent}
+          onClose={() => setSelectedStudent(null)}
+          onChanged={reloadStudents}
+        />
+      )}
     </div>
   );
 }

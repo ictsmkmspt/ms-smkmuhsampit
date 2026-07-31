@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import { LogOut, ClipboardCheck, AlertTriangle, FileText, Briefcase, ChevronDown, KeyRound } from 'lucide-react';
+import { LogOut, ClipboardCheck, AlertTriangle, FileText, Briefcase, ChevronDown, KeyRound, Home } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import BerandaTab from './tabs/BerandaTab';
 import AbsensiTab from './tabs/AbsensiTab';
 import PoinPelanggaranTab from './tabs/PoinPelanggaranTab';
 import LaporanTab from './tabs/LaporanTab';
@@ -8,6 +9,7 @@ import BimbinganPklTab from './tabs/BimbinganPklTab';
 import ChangePasswordModal from '../../components/ChangePasswordModal';
 
 const TABS = [
+  { key: 'beranda', label: 'Beranda',          icon: Home,           component: BerandaTab },
   { key: 'absensi', label: 'Absensi',          icon: ClipboardCheck, component: AbsensiTab },
   { key: 'poin',    label: 'Poin',  icon: AlertTriangle,  component: PoinPelanggaranTab },
   { key: 'pkl',     label: 'PKL',               icon: Briefcase,      component: BimbinganPklTab },
@@ -16,7 +18,7 @@ const TABS = [
 
 export default function GuruDashboard() {
   const { user, logout } = useAuth();
-  const [activeTab, setActiveTab] = useState('absensi');
+  const [activeTab, setActiveTab] = useState('beranda');
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [showGantiPassword, setShowGantiPassword] = useState(false);
