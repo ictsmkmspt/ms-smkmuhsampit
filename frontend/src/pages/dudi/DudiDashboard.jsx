@@ -1,15 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
-import { LogOut, Building2, ClipboardCheck, NotebookPen, ChevronDown, UserCog, KeyRound } from 'lucide-react';
+import { LogOut, Building2, ClipboardCheck, NotebookPen, ChevronDown, UserCog, KeyRound, Star } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api/axios';
 import DudiAbsensiTab from './tabs/DudiAbsensiTab';
 import DudiJurnalPembimbinganTab from './tabs/DudiJurnalPembimbinganTab';
+import DudiPenilaianTab from './tabs/DudiPenilaianTab';
 import TandaTanganModal from '../../components/TandaTanganModal';
 import ChangePasswordModal from '../../components/ChangePasswordModal';
 
 const TABS = [
   { key: 'absensi', label: 'Absensi', icon: ClipboardCheck, component: DudiAbsensiTab },
   { key: 'pembimbingan', label: 'Jurnal Pembimbing', icon: NotebookPen, component: DudiJurnalPembimbinganTab },
+  { key: 'penilaian', label: 'Penilaian', icon: Star, component: DudiPenilaianTab },
 ];
 
 export default function DudiDashboard() {

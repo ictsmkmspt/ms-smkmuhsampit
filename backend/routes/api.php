@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\HolidayController;
 use App\Http\Controllers\Api\ParentController;
 use App\Http\Controllers\Api\PklAttendanceController;
 use App\Http\Controllers\Api\PklJournalController;
+use App\Http\Controllers\Api\PklPenilaianController;
 use App\Http\Controllers\Api\PklPembimbinganJournalController;
 use App\Http\Controllers\Api\PklPlacementController;
 use App\Http\Controllers\Api\PrayerAttendanceController;
@@ -87,6 +88,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::middleware('role:admin,guru,dudi,siswa')->group(function () {
         Route::get('/pkl-placements/{pklPlacement}', [PklPlacementController::class, 'show']);
+        Route::get('/pkl-placements/{pklPlacement}/penilaian', [PklPenilaianController::class, 'show']);
+        Route::get('/pkl-placements/{pklPlacement}/penilaian/export-word', [PklPenilaianController::class, 'exportWord']);
     });
 
     Route::middleware('role:admin,guru,dudi')->group(function () {
@@ -131,5 +134,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/dudi/profile', [DudiController::class, 'updateProfile']);
         Route::get('/dudi/my-siswa', [PklPlacementController::class, 'siswaSaya']);
         Route::get('/dudi/absensi-pending', [PklAttendanceController::class, 'pendingVerifikasi']);
+        Route::post('/pkl-placements/{pklPlacement}/penilaian', [PklPenilaianController::class, 'store']);
+        Route::put('/pkl-placements/{pklPlacement}/penilaian', [PklPenilaianController::class, 'update']);
+        Route::delete('/pkl-placements/{pklPlacement}/penilaian', [PklPenilaianController::class, 'destroy']);
     });
 });
