@@ -7,7 +7,6 @@ import PklJournalModal from '../../../components/PklJournalModal';
 export default function DudiAbsensiTab() {
   const [list, setList] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [filterStatus, setFilterStatus] = useState('');
 
   const [pending, setPending] = useState([]);
   const [loadingPending, setLoadingPending] = useState(false);
@@ -42,7 +41,9 @@ export default function DudiAbsensiTab() {
     }
   };
 
-  const filtered = filterStatus ? list.filter((p) => p.status === filterStatus) : list;
+  // Yang statusnya sudah "selesai" tidak perlu ditampilkan lagi di sini —
+  // halaman ini khusus siswa yang masih aktif PKL.
+  const filtered = list.filter((p) => p.status !== 'selesai');
 
   const pembimbingUnik = [...new Set(
     filtered.map((p) => p.guru_pembimbing?.user?.name).filter(Boolean)
@@ -99,11 +100,6 @@ export default function DudiAbsensiTab() {
           <h2 className="font-display font-semibold text-ink-900">
             Siswa Magang <span className="text-ink-500 font-sans font-normal text-sm">({filtered.length})</span>
           </h2>
-          <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="field-input text-sm text-ink-700 w-40">
-            <option value="">Semua Status</option>
-            <option value="aktif">Aktif</option>
-            <option value="selesai">Selesai</option>
-          </select>
         </div>
 
         {pembimbingUnik.length > 0 && (
@@ -121,8 +117,7 @@ export default function DudiAbsensiTab() {
               <tr className="text-left text-ink-500 border-b border-line-200">
                 <th className="pb-2 font-medium">Nama Siswa</th>
                 <th className="font-medium">Periode</th>
-                <th className="font-medium">Status</th>
-                <th className="pb-2 w-36"></th>
+                <th className="pb-2"></th>
               </tr>
             </thead>
             <tbody>
@@ -133,22 +128,17 @@ export default function DudiAbsensiTab() {
                     <p className="text-xs text-ink-500">{p.student?.class_room?.name || '-'}</p>
                   </td>
                   <td className="text-ink-700 text-xs">{p.tanggal_mulai} s/d {p.tanggal_selesai}</td>
-                  <td>
-                    <span className={`badge-soft ${p.status === 'aktif' ? 'badge-brand' : 'badge-soft'}`}>
-                      {p.status === 'aktif' ? 'Aktif' : 'Selesai'}
-                    </span>
-                  </td>
                   <td className="text-right">
-                    <div className="flex flex-col gap-1.5 items-end">
+                    <div className="flex justify-end gap-1.5">
                       <button
                         onClick={() => setAttendanceTarget(p)}
-                        className="text-xs font-medium text-ink-600 hover:text-brand-600 border border-line-200 rounded-lg px-2.5 py-1.5 whitespace-nowrap w-full text-center"
+                        className="text-xs font-medium text-ink-600 hover:text-brand-600 border border-line-200 rounded-lg px-2 py-1 whitespace-nowrap"
                       >
                         Riwayat Absensi
                       </button>
                       <button
                         onClick={() => setJournalTarget(p)}
-                        className="text-xs font-medium text-ink-600 hover:text-brand-600 border border-line-200 rounded-lg px-2.5 py-1.5 whitespace-nowrap w-full text-center"
+                        className="text-xs font-medium text-ink-600 hover:text-brand-600 border border-line-200 rounded-lg px-2 py-1 whitespace-nowrap"
                       >
                         Jurnal Kegiatan
                       </button>
@@ -157,7 +147,7 @@ export default function DudiAbsensiTab() {
                 </tr>
               ))}
               {filtered.length === 0 && (
-                <tr><td colSpan="4" className="py-6 text-center text-ink-300">Belum ada siswa yang ditempatkan di sini.</td></tr>
+                <tr><td colSpan="3" className="py-6 text-center text-ink-300">Belum ada siswa yang ditempatkan di sini.</td></tr>
               )}
             </tbody>
           </table>

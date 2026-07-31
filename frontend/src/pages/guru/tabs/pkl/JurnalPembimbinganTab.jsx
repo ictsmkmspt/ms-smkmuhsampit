@@ -1,13 +1,7 @@
 import { useEffect, useState } from 'react';
-import { Plus, Printer, CheckCircle2 } from 'lucide-react';
+import { Plus, Printer, CheckCircle2, Pencil, Trash2 } from 'lucide-react';
 import api from '../../../../api/axios';
 
-/**
- * Jurnal Pembimbing PKL untuk guru — beda dari "Siswa Bimbingan" (yang per
- * siswa). Ini catatan kunjungan/aktivitas bimbingan guru ke SEBUAH DUDI,
- * mencakup semua siswa bimbingannya di DUDI itu sekaligus. Wajib diverifikasi
- * (diparaf) oleh Instruktur DUDI.
- */
 export default function JurnalPembimbinganTab() {
   const today = new Date().toISOString().slice(0, 10);
   const [dudiOptions, setDudiOptions] = useState([]);
@@ -17,6 +11,7 @@ export default function JurnalPembimbinganTab() {
   const [loading, setLoading] = useState(false);
 
   const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState(null);
   const [tanggal, setTanggal] = useState(today);
   const [aktivitas, setAktivitas] = useState('');
   const [catatan, setCatatan] = useState('');
@@ -45,25 +40,55 @@ export default function JurnalPembimbinganTab() {
 
   useEffect(() => { loadEntries(); }, []);
 
-  const handleTambah = async (e) => {
+  const bukaFormTambah = () => {
+    setEditingId(null);
+    setTanggal(today);
+    setAktivitas('');
+    setCatatan('');
+    setError('');
+    setShowForm(true);
+  };
+
+  const bukaFormEdit = (e) => {
+    setEditingId(e.id);
+    setTanggal(e.date);
+    setAktivitas(e.aktivitas);
+    setCatatan(e.catatan || '');
+    setError('');
+    setShowForm(true);
+  };
+
+  const tutupForm = () => {
+    setShowForm(false);
+    setEditingId(null);
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setSaving(true);
     try {
-      await api.post('/pkl-pembimbingan', {
-        dudi_id: selectedDudi,
-        date: tanggal,
-        aktivitas,
-        catatan: catatan || null,
-      });
-      setAktivitas('');
-      setCatatan('');
-      setShowForm(false);
+      if (editingId) {
+        await api.put(`/pkl-pembimbingan/${editingId}`, { date: tanggal, aktivitas, catatan: catatan || null });
+      } else {
+        await api.post('/pkl-pembimbingan', { dudi_id: selectedDudi, date: tanggal, aktivitas, catatan: catatan || null });
+      }
+      tutupForm();
       loadEntries();
     } catch (err) {
       setError(err.response?.data?.message || 'Gagal menyimpan catatan.');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleHapus = async (id) => {
+    if (!confirm('Hapus catatan bimbingan ini?')) return;
+    try {
+      await api.delete(`/pkl-pembimbingan/${id}`);
+      loadEntries();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Gagal menghapus catatan.');
     }
   };
 
@@ -102,7 +127,7 @@ export default function JurnalPembimbinganTab() {
           <>
             {!showForm ? (
               <div className="flex gap-3 mb-4">
-                <button onClick={() => setShowForm(true)} className="btn-primary">
+                <button onClick={bukaFormTambah} className="btn-primary">
                   <Plus className="w-4 h-4" /> Tambah Catatan Kunjungan
                 </button>
                 <button
@@ -113,7 +138,7 @@ export default function JurnalPembimbinganTab() {
                 </button>
               </div>
             ) : (
-              <form onSubmit={handleTambah} className="space-y-2 mb-4 border border-line-200 rounded-xl p-4">
+              <form onSubmit={handleSubmit} className="space-y-2 mb-4 border border-line-200 rounded-xl p-4">
                 {error && <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2">{error}</p>}
                 <input
                   type="date" value={tanggal} onChange={(e) => setTanggal(e.target.value)}
@@ -132,9 +157,9 @@ export default function JurnalPembimbinganTab() {
                 />
                 <div className="flex gap-2">
                   <button disabled={saving} className="text-sm font-medium text-white bg-brand-600 hover:bg-brand-700 rounded-lg px-4 py-2 disabled:opacity-50">
-                    {saving ? 'Menyimpan...' : 'Simpan'}
+                    {saving ? 'Menyimpan...' : editingId ? 'Simpan Perubahan' : 'Simpan'}
                   </button>
-                  <button type="button" onClick={() => setShowForm(false)} className="text-sm font-medium text-ink-500 hover:text-ink-700 px-2">
+                  <button type="button" onClick={tutupForm} className="text-sm font-medium text-ink-500 hover:text-ink-700 px-2">
                     Batal
                   </button>
                 </div>
@@ -151,13 +176,25 @@ export default function JurnalPembimbinganTab() {
                   <div key={e.id} className="border border-line-200 rounded-lg px-3 py-2.5 text-sm">
                     <div className="flex items-start justify-between gap-2">
                       <p className="text-ink-500 text-xs font-medium mb-1">{e.date}</p>
-                      <button
-                        onClick={() => handleCetakEntry(e.id)}
-                        className="text-ink-400 hover:text-brand-600 shrink-0"
-                        title="Cetak kunjungan ini"
-                      >
-                        <Printer className="w-3.5 h-3.5" />
-                      </button>
+                      <div className="flex items-center gap-2 shrink-0">
+                        {!e.verified_at && (
+                          <>
+                            <button onClick={() => bukaFormEdit(e)} className="text-ink-400 hover:text-brand-600" title="Edit catatan">
+                              <Pencil className="w-3.5 h-3.5" />
+                            </button>
+                            <button onClick={() => handleHapus(e.id)} className="text-ink-400 hover:text-honey-700" title="Hapus catatan">
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </>
+                        )}
+                        <button
+                          onClick={() => handleCetakEntry(e.id)}
+                          className="text-ink-400 hover:text-brand-600"
+                          title="Cetak kunjungan ini"
+                        >
+                          <Printer className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
                     <p className="text-ink-900">{e.aktivitas}</p>
                     {e.catatan && <p className="text-xs text-ink-600 mt-1">Catatan: {e.catatan}</p>}

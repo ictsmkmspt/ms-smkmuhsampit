@@ -18,10 +18,12 @@ export default function BimbinganSiswaTab() {
 
   useEffect(() => { load(); }, []);
 
+  const filtered = list.filter((p) => p.status !== 'selesai');
+
   return (
     <div className="surface-card p-5">
       <h2 className="font-display font-semibold text-ink-900 mb-4">
-        Siswa Bimbingan <span className="text-ink-500 font-sans font-normal text-sm">({list.length})</span>
+        Siswa Bimbingan <span className="text-ink-500 font-sans font-normal text-sm">({filtered.length})</span>
       </h2>
       {loading ? (
         <p className="text-center text-ink-300 py-6">Memuat...</p>
@@ -32,12 +34,11 @@ export default function BimbinganSiswaTab() {
               <th className="pb-2 font-medium">Nama Siswa</th>
               <th className="font-medium">IDUKA</th>
               <th className="font-medium">Periode</th>
-              <th className="font-medium">Status</th>
-              <th className="pb-2 w-36"></th>
+              <th className="pb-2"></th>
             </tr>
           </thead>
           <tbody>
-            {list.map((p) => (
+            {filtered.map((p) => (
               <tr key={p.id} className="border-t border-line-200">
                 <td className="py-2.5">
                   <p className="text-ink-900 font-medium">{p.student?.user?.name}</p>
@@ -45,22 +46,17 @@ export default function BimbinganSiswaTab() {
                 </td>
                 <td className="text-ink-700">{p.dudi?.nama_perusahaan}</td>
                 <td className="text-ink-700 text-xs">{p.tanggal_mulai} s/d {p.tanggal_selesai}</td>
-                <td>
-                  <span className={`badge-soft ${p.status === 'aktif' ? 'badge-brand' : 'badge-soft'}`}>
-                    {p.status === 'aktif' ? 'Aktif' : 'Selesai'}
-                  </span>
-                </td>
                 <td className="text-right">
-                  <div className="flex flex-col gap-1.5 items-end">
+                  <div className="flex justify-end gap-1.5">
                     <button
                       onClick={() => setAttendanceTarget(p)}
-                      className="text-xs font-medium text-ink-600 hover:text-brand-600 border border-line-200 rounded-lg px-2.5 py-1.5 whitespace-nowrap w-full text-center"
+                      className="text-xs font-medium text-ink-600 hover:text-brand-600 border border-line-200 rounded-lg px-2 py-1 whitespace-nowrap"
                     >
                       Absensi
                     </button>
                     <button
                       onClick={() => setJournalTarget(p)}
-                      className="text-xs font-medium text-ink-600 hover:text-brand-600 border border-line-200 rounded-lg px-2.5 py-1.5 whitespace-nowrap w-full text-center"
+                      className="text-xs font-medium text-ink-600 hover:text-brand-600 border border-line-200 rounded-lg px-2 py-1 whitespace-nowrap"
                     >
                       Jurnal Kegiatan
                     </button>
@@ -68,8 +64,8 @@ export default function BimbinganSiswaTab() {
                 </td>
               </tr>
             ))}
-            {list.length === 0 && (
-              <tr><td colSpan="5" className="py-6 text-center text-ink-300">Anda belum ditugaskan membimbing siswa PKL.</td></tr>
+            {filtered.length === 0 && (
+              <tr><td colSpan="4" className="py-6 text-center text-ink-300">Anda belum ditugaskan membimbing siswa PKL.</td></tr>
             )}
           </tbody>
         </table>

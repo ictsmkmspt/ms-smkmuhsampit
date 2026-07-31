@@ -15,7 +15,7 @@ const SKOR_LABEL = { 1: '1 - Perlu Bimbingan', 2: '2 - Cukup', 3: '3 - Baik', 4:
 const skorAwal = { skor_disiplin: 3, skor_sikap: 3, skor_komunikasi: 3, skor_inisiatif: 3, skor_k3: 3 };
 const kompetensiAwal = [{ nama_kompetensi: '', skor: 3 }];
 
-export default function PenilaianPklModal({ placement, canIsi, onClose }) {
+export default function PenilaianPklModal({ placement, canIsi, showActions = true, onClose }) {
   const [loading, setLoading] = useState(true);
   const [existing, setExisting] = useState(undefined);
   const [isEditing, setIsEditing] = useState(false);
@@ -124,10 +124,10 @@ export default function PenilaianPklModal({ placement, canIsi, onClose }) {
   const tampilkanForm = isEditing || (canIsi && !(existing && existing.nilai_akhir != null));
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-ink-900/40" onClick={onClose} />
 
-      <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] flex flex-col">
+      <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[75vh] flex flex-col">
         <div className="flex items-start justify-between p-5 border-b border-line-200 shrink-0">
           <div className="flex items-center gap-2">
             <Star className="w-4 h-4 text-brand-600" />
@@ -173,14 +173,16 @@ export default function PenilaianPklModal({ placement, canIsi, onClose }) {
                 </div>
               )}
 
-              <button
-                onClick={handleExportWord}
-                className="w-full flex items-center justify-center gap-2 text-sm font-medium text-ink-600 hover:text-brand-600 border border-line-200 rounded-xl py-2.5"
-              >
-                <FileDown className="w-4 h-4" /> Export ke Word
-              </button>
+              {showActions && (
+                <button
+                  onClick={handleExportWord}
+                  className="w-full flex items-center justify-center gap-2 text-sm font-medium text-ink-600 hover:text-brand-600 border border-line-200 rounded-xl py-2.5"
+                >
+                  <FileDown className="w-4 h-4" /> Export ke Word
+                </button>
+              )}
 
-              {canIsi && (
+              {showActions && canIsi && (
                 <div className="flex gap-2">
                   <button
                     onClick={mulaiEdit}

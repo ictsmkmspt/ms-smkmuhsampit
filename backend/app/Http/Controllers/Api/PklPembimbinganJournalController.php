@@ -76,6 +76,60 @@ class PklPembimbinganJournalController extends Controller
     }
 
     /**
+     * Guru pembimbing mengedit catatannya sendiri — cuma boleh SELAMA belum
+     * diverifikasi (diparaf) DUDI, supaya data yang sudah disahkan tidak
+     * berubah diam-diam.
+     */
+    public function update(Request $request, PklPembimbinganJournal $pklPembimbinganJournal)
+    {
+        $user = $request->user();
+        $teacher = $user->teacher;
+
+        if ($user->role !== 'guru' || !$teacher || $pklPembimbinganJournal->teacher_id !== $teacher->id) {
+            return response()->json(['message' => 'Anda tidak berwenang mengubah catatan ini.'], 403);
+        }
+
+        if ($pklPembimbinganJournal->verified_at) {
+            return response()->json(['message' => 'Catatan ini sudah diverifikasi DUDI, tidak bisa diubah lagi.'], 422);
+        }
+
+        $data = $request->validate([
+            'date'      => 'required|date',
+            'aktivitas' => 'required|string|max:2000',
+            'catatan'   => 'nullable|string|max:2000',
+        ]);
+
+        $pklPembimbinganJournal->update($data);
+
+        return response()->json([
+            'message' => 'Catatan bimbingan berhasil diperbarui.',
+            'jurnal'  => $pklPembimbinganJournal->fresh(['teacher.user', 'dudi']),
+        ]);
+    }
+
+    /**
+     * Guru pembimbing menghapus catatannya sendiri — sama seperti edit,
+     * cuma boleh selama belum diverifikasi DUDI.
+     */
+    public function destroy(Request $request, PklPembimbinganJournal $pklPembimbinganJournal)
+    {
+        $user = $request->user();
+        $teacher = $user->teacher;
+
+        if ($user->role !== 'guru' || !$teacher || $pklPembimbinganJournal->teacher_id !== $teacher->id) {
+            return response()->json(['message' => 'Anda tidak berwenang menghapus catatan ini.'], 403);
+        }
+
+        if ($pklPembimbinganJournal->verified_at) {
+            return response()->json(['message' => 'Catatan ini sudah diverifikasi DUDI, tidak bisa dihapus lagi.'], 422);
+        }
+
+        $pklPembimbinganJournal->delete();
+
+        return response()->json(['message' => 'Catatan bimbingan berhasil dihapus.']);
+    }
+
+    /**
      * DUDI (atau admin) memverifikasi (paraf) 1 catatan bimbingan yang ditujukan
      * ke tempatnya — sesuai format jurnal kertas, kolom "Paraf Pimpinan/Pembimbing
      * Iduka" diisi pihak DUDI.

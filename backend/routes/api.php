@@ -107,6 +107,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::middleware('role:guru')->group(function () {
         Route::post('/pkl-pembimbingan', [PklPembimbinganJournalController::class, 'store']);
+        Route::put('/pkl-pembimbingan/{pklPembimbinganJournal}', [PklPembimbinganJournalController::class, 'update']);
+        Route::delete('/pkl-pembimbingan/{pklPembimbinganJournal}', [PklPembimbinganJournalController::class, 'destroy']);
     });
 
     Route::middleware('role:siswa')->group(function () {

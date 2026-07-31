@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import BimbinganSiswaTab from './pkl/BimbinganSiswaTab';
 import JurnalPembimbinganTab from './pkl/JurnalPembimbinganTab';
+import PenilaianIdukaTab from './pkl/PenilaianIdukaTab';
 
 const SECTIONS = [
   { key: 'siswa', label: 'Siswa Bimbingan', component: BimbinganSiswaTab },
   { key: 'pembimbingan', label: 'Jurnal Pembimbing', component: JurnalPembimbinganTab },
+  { key: 'penilaian', label: 'Penilaian dari IDUKA', component: PenilaianIdukaTab },
 ];
 
 export default function BimbinganPklTab() {
