@@ -30,6 +30,9 @@ class AuthController extends Controller
         return response()->json([
             'user' => $user,
             'token' => $token,
+            // Password default sekolah — kalau masih dipakai, paksa ganti dulu
+            // sebelum bisa lanjut pakai aplikasi (demi keamanan akun).
+            'must_change_password' => $request->password === '123456',
         ]);
     }
 
@@ -42,5 +45,29 @@ class AuthController extends Controller
     {
         $request->user()->currentAccessToken()->delete();
         return response()->json(['message' => 'Berhasil logout.']);
+    }
+
+    /**
+     * Ganti password akun sendiri — dipakai semua peran (Guru, Siswa, IDUKA, dst),
+     * jadi cukup 1 endpoint umum, tidak perlu diulang per role.
+     */
+    public function changePassword(Request $request)
+    {
+        $data = $request->validate([
+            'current_password' => 'required',
+            'new_password'     => 'required|min:6|confirmed',
+        ]);
+
+        $user = $request->user();
+
+        if (!Hash::check($data['current_password'], $user->password)) {
+            throw ValidationException::withMessages([
+                'current_password' => ['Password saat ini salah.'],
+            ]);
+        }
+
+        $user->update(['password' => bcrypt($data['new_password'])]);
+
+        return response()->json(['message' => 'Password berhasil diganti.']);
     }
 }

@@ -8,7 +8,7 @@ import api from '../api/axios';
  * pakai mouse/jari, bukan upload file). Hasil kanvas diekspor jadi PNG
  * transparan lalu dikirim ke server persis seperti file upload biasa.
  */
-export default function TandaTanganModal({ dudi, onClose, onSaved }) {
+export default function TandaTanganModal({ dudi, onClose, onSaved, forced = false }) {
   // --- Bagian data perusahaan ---
   const [form, setForm] = useState({
     nama_perusahaan: dudi?.nama_perusahaan || '',
@@ -124,7 +124,7 @@ export default function TandaTanganModal({ dudi, onClose, onSaved }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-ink-900/40" onClick={onClose} />
+      <div className="absolute inset-0 bg-ink-900/40" onClick={forced ? undefined : onClose} />
 
       <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] flex flex-col">
         <div className="flex items-start justify-between p-5 border-b border-line-200 shrink-0">
@@ -132,10 +132,18 @@ export default function TandaTanganModal({ dudi, onClose, onSaved }) {
             <h3 className="font-display font-semibold text-ink-900">Edit Profil</h3>
             <p className="text-xs text-ink-500 mt-0.5">Data perusahaan &amp; tanda tangan Anda</p>
           </div>
-          <button onClick={onClose} className="text-ink-300 hover:text-ink-600">
-            <X className="w-5 h-5" />
-          </button>
+          {!forced && (
+            <button onClick={onClose} className="text-ink-300 hover:text-ink-600">
+              <X className="w-5 h-5" />
+            </button>
+          )}
         </div>
+
+        {forced && (
+          <p className="mx-5 mt-4 text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2">
+            Akun IDUKA wajib mengisi tanda tangan sebelum bisa lanjut menggunakan aplikasi — gambar dulu di bagian bawah, lalu klik "Simpan Tanda Tangan".
+          </p>
+        )}
 
         <div className="overflow-y-auto p-5 space-y-6">
           {/* Bagian 1: Data Perusahaan */}

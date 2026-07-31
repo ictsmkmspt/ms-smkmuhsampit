@@ -1,0 +1,100 @@
+import { useState } from 'react';
+import { X, KeyRound } from 'lucide-react';
+import api from '../api/axios';
+
+/**
+ * Modal ganti password akun sendiri — dipakai bersama semua peran
+ * (Guru, Siswa, IDUKA, dst) lewat 1 endpoint umum (/me/password).
+ * Ada mode "forced" (dipakai saat wajib ganti password default) yang
+ * tidak bisa ditutup sebelum berhasil.
+ */
+export default function ChangePasswordModal({ onClose, forced = false, onSuccess }) {
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const [sukses, setSukses] = useState('');
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSukses('');
+    setSaving(true);
+    try {
+      const res = await api.put('/me/password', {
+        current_password: currentPassword,
+        new_password: newPassword,
+        new_password_confirmation: confirmPassword,
+      });
+      setSukses(res.data.message);
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      if (forced && onSuccess) {
+        setTimeout(() => onSuccess(), 800);
+      }
+    } catch (err) {
+      const msgs = err.response?.data?.errors;
+      setError(msgs ? Object.values(msgs).flat().join(', ') : err.response?.data?.message || 'Gagal mengganti password.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-ink-900/40" onClick={forced ? undefined : onClose} />
+
+      <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-sm">
+        <div className="flex items-start justify-between p-5 border-b border-line-200">
+          <div className="flex items-center gap-2">
+            <KeyRound className="w-4 h-4 text-brand-600" />
+            <h3 className="font-display font-semibold text-ink-900">Ganti Password</h3>
+          </div>
+          {!forced && (
+            <button onClick={onClose} className="text-ink-300 hover:text-ink-600">
+              <X className="w-5 h-5" />
+            </button>
+          )}
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-5 space-y-3">
+          {forced && (
+            <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2">
+              Password Anda masih menggunakan kata sandi default (123456). Untuk keamanan akun, wajib diganti dulu sebelum melanjutkan.
+            </p>
+          )}
+          {error && <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2">{error}</p>}
+          {sukses && <p className="text-sm text-brand-700 bg-brand-50 border border-brand-200 rounded-lg px-3 py-2">{sukses}</p>}
+
+          <div>
+            <label className="block text-xs font-medium text-ink-500 mb-1">Password Saat Ini</label>
+            <input
+              type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)}
+              className="field-input" required autoComplete="current-password"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-ink-500 mb-1">Password Baru</label>
+            <input
+              type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)}
+              className="field-input" required minLength={6} autoComplete="new-password"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-ink-500 mb-1">Ulangi Password Baru</label>
+            <input
+              type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
+              className="field-input" required minLength={6} autoComplete="new-password"
+            />
+          </div>
+
+          <button disabled={saving} className="btn-primary w-full justify-center mt-1">
+            {saving ? 'Menyimpan...' : 'Simpan Password Baru'}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}

@@ -1,15 +1,30 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import QRCode from 'qrcode';
-import { LogOut, Clock } from 'lucide-react';
+import { LogOut, Clock, ChevronDown, KeyRound } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api/axios';
 import PklSiswaView from './PklSiswaView';
+import ChangePasswordModal from '../../components/ChangePasswordModal';
 
 export default function SiswaDashboard() {
   const { user, logout } = useAuth();
   const [profile, setProfile] = useState(null);
   const [history, setHistory] = useState([]);
   const [qrImage, setQrImage] = useState('');
+
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [showGantiPassword, setShowGantiPassword] = useState(false);
+  const menuRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const [pklPlacement, setPklPlacement] = useState(undefined); // undefined = belum dicek, null = tidak PKL
   const isPkl = pklPlacement && pklPlacement.status === 'aktif';
@@ -48,13 +63,13 @@ export default function SiswaDashboard() {
   if (pklPlacement === undefined) {
     return (
       <div className="min-h-screen bg-mist-50 p-6">
-        <div className="flex justify-between items-center max-w-md mx-auto mb-6">
+        <div className="flex justify-between items-end max-w-md mx-auto mb-6">
           <div>
             <p className="text-xs text-ink-500">Siswa</p>
             <h1 className="font-display text-lg font-semibold text-ink-900">{user.name}</h1>
           </div>
-          <button onClick={logout} className="flex items-center gap-1.5 text-sm text-ink-500 hover:text-honey-700 font-medium">
-            <LogOut className="w-4 h-4" /> Keluar
+          <button onClick={logout} className="flex items-center gap-1 text-sm font-semibold text-ink-700 hover:text-brand-600 transition">
+            Profil <ChevronDown className="w-4 h-4" />
           </button>
         </div>
         <p className="text-center text-ink-300 text-sm mt-10">Memuat...</p>
@@ -64,18 +79,38 @@ export default function SiswaDashboard() {
 
   return (
     <div className={`min-h-screen bg-mist-50 p-6 ${isPkl ? 'pb-24' : ''}`}>
-      <div className="flex justify-between items-center max-w-md mx-auto mb-6">
+      <div className="flex justify-between items-end max-w-md mx-auto mb-6">
         <div>
           <p className="text-xs text-ink-500">Siswa</p>
           <h1 className="font-display text-lg font-semibold text-ink-900">{user.name}</h1>
         </div>
 
-        <button
-          onClick={logout}
-          className="flex items-center gap-1.5 text-sm text-ink-500 hover:text-honey-700 font-medium"
-        >
-          <LogOut className="w-4 h-4" /> Keluar
-        </button>
+        <div className="relative" ref={menuRef}>
+          <button
+            onClick={() => setMenuOpen((v) => !v)}
+            className="flex items-center gap-1 text-sm font-semibold text-ink-700 hover:text-brand-600 transition"
+          >
+            Profil
+            <ChevronDown className={`w-4 h-4 transition-transform ${menuOpen ? 'rotate-180' : ''}`} />
+          </button>
+
+          {menuOpen && (
+            <div className="absolute right-0 z-20 mt-2 w-44 surface-card overflow-hidden">
+              <button
+                onClick={() => { setShowGantiPassword(true); setMenuOpen(false); }}
+                className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-left text-ink-700 hover:bg-mist-50 transition"
+              >
+                <KeyRound className="w-4 h-4" /> Ganti Password
+              </button>
+              <button
+                onClick={logout}
+                className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-left text-ink-700 hover:bg-mist-50 transition"
+              >
+                <LogOut className="w-4 h-4" /> Keluar
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {isPkl ? (
@@ -171,6 +206,10 @@ export default function SiswaDashboard() {
             </ul>
           </div>
         </>
+      )}
+
+      {showGantiPassword && (
+        <ChangePasswordModal onClose={() => setShowGantiPassword(false)} />
       )}
     </div>
   );

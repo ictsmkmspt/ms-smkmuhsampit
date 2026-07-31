@@ -6,6 +6,7 @@ const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [mustChangePassword, setMustChangePassword] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -23,6 +24,7 @@ export function AuthProvider({ children }) {
     const res = await api.post('/login', { email, password });
     localStorage.setItem('token', res.data.token);
     setUser(res.data.user);
+    setMustChangePassword(!!res.data.must_change_password);
     return res.data.user;
   };
 
@@ -30,10 +32,11 @@ export function AuthProvider({ children }) {
     await api.post('/logout');
     localStorage.removeItem('token');
     setUser(null);
+    setMustChangePassword(false);
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, login, logout, loading, mustChangePassword, setMustChangePassword }}>
       {children}
     </AuthContext.Provider>
   );

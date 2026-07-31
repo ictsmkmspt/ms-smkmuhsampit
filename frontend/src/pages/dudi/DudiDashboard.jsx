@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import { LogOut, Building2, ClipboardCheck, NotebookPen, ChevronDown, UserCog } from 'lucide-react';
+import { LogOut, Building2, ClipboardCheck, NotebookPen, ChevronDown, UserCog, KeyRound } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api/axios';
 import DudiAbsensiTab from './tabs/DudiAbsensiTab';
 import DudiJurnalPembimbinganTab from './tabs/DudiJurnalPembimbinganTab';
 import TandaTanganModal from '../../components/TandaTanganModal';
+import ChangePasswordModal from '../../components/ChangePasswordModal';
 
 const TABS = [
   { key: 'absensi', label: 'Absensi', icon: ClipboardCheck, component: DudiAbsensiTab },
@@ -18,10 +19,16 @@ export default function DudiDashboard() {
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [showEditProfil, setShowEditProfil] = useState(false);
+  const [showGantiPassword, setShowGantiPassword] = useState(false);
   const menuRef = useRef(null);
 
   const loadProfile = () => api.get('/my-dudi-profile').then((res) => setProfile(res.data));
   useEffect(() => { loadProfile(); }, []);
+
+  // Wajib punya tanda tangan sebelum bisa pakai aplikasi — begitu profil
+  // selesai dimuat dan ternyata belum ada, modal-nya otomatis terbuka
+  // dan tidak bisa ditutup sampai berhasil disimpan.
+  const wajibIsiTandaTangan = profile !== null && !profile.tanda_tangan_url;
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -39,7 +46,7 @@ export default function DudiDashboard() {
   return (
     <div className="min-h-screen bg-mist-50 pb-20">
       <div className="bg-[#0B1B3A]">
-        <div className="max-w-4xl mx-auto px-6 py-4 flex justify-between items-center">
+        <div className="max-w-4xl mx-auto px-6 py-4 flex justify-between items-end">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-white/15 flex items-center justify-center shrink-0">
               <Building2 className="w-5 h-5 text-white" />
@@ -53,19 +60,25 @@ export default function DudiDashboard() {
           <div className="relative" ref={menuRef}>
             <button
               onClick={() => setMenuOpen((v) => !v)}
-              className="flex items-center gap-1.5 text-sm text-white/80 hover:text-white font-medium border border-white/20 rounded-lg px-3 py-2"
+              className="flex items-center gap-1 text-sm font-semibold text-white hover:text-[#F2B705] transition"
             >
               Profil
               <ChevronDown className={`w-4 h-4 transition-transform ${menuOpen ? 'rotate-180' : ''}`} />
             </button>
 
             {menuOpen && (
-              <div className="absolute right-0 z-20 mt-1 w-48 surface-card overflow-hidden">
+              <div className="absolute right-0 z-20 mt-2 w-48 surface-card overflow-hidden">
                 <button
                   onClick={() => { setShowEditProfil(true); setMenuOpen(false); }}
                   className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-left text-ink-700 hover:bg-mist-50 transition"
                 >
                   <UserCog className="w-4 h-4" /> Edit Profil
+                </button>
+                <button
+                  onClick={() => { setShowGantiPassword(true); setMenuOpen(false); }}
+                  className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-left text-ink-700 hover:bg-mist-50 transition"
+                >
+                  <KeyRound className="w-4 h-4" /> Ganti Password
                 </button>
                 <button
                   onClick={logout}
@@ -110,12 +123,17 @@ export default function DudiDashboard() {
         </div>
       </div>
 
-      {showEditProfil && (
+      {(showEditProfil || wajibIsiTandaTangan) && (
         <TandaTanganModal
           dudi={profile}
           onClose={() => setShowEditProfil(false)}
           onSaved={(updated) => setProfile(updated)}
+          forced={wajibIsiTandaTangan}
         />
+      )}
+
+      {showGantiPassword && (
+        <ChangePasswordModal onClose={() => setShowGantiPassword(false)} />
       )}
     </div>
   );
