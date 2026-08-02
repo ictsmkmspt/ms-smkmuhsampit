@@ -1,11 +1,7 @@
 import { useEffect, useState } from 'react';
-import { X, MessageSquare, Printer } from 'lucide-react';
+import { X, MessageSquare, Printer, Pencil, Trash2 } from 'lucide-react';
 import api from '../api/axios';
 
-/**
- * Panel jurnal kegiatan PKL 1 penempatan — dipakai bersama Guru (lihat saja)
- * dan DUDI (lihat + isi kolom Catatan lewat prop canIsiCatatan).
- */
 export default function PklJournalModal({ placement, onClose, canIsiCatatan = false, showCetak = true }) {
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -13,6 +9,11 @@ export default function PklJournalModal({ placement, onClose, canIsiCatatan = fa
   const [editingId, setEditingId] = useState(null);
   const [catatanText, setCatatanText] = useState('');
   const [saving, setSaving] = useState(false);
+
+  const [editingKegiatanId, setEditingKegiatanId] = useState(null);
+  const [editTanggal, setEditTanggal] = useState('');
+  const [editKegiatan, setEditKegiatan] = useState('');
+  const [savingKegiatan, setSavingKegiatan] = useState(false);
 
   const load = () => {
     setLoading(true);
@@ -43,6 +44,37 @@ export default function PklJournalModal({ placement, onClose, canIsiCatatan = fa
 
   const handleCetak = () => {
     window.open(`/print/pkl-jurnal-kegiatan?placement_id=${placement.id}`, '_blank');
+  };
+
+  const mulaiEditKegiatan = (entry) => {
+    setEditingKegiatanId(entry.id);
+    setEditTanggal(entry.date);
+    setEditKegiatan(entry.kegiatan);
+  };
+
+  const batalEditKegiatan = () => setEditingKegiatanId(null);
+
+  const simpanEditKegiatan = async (id) => {
+    setSavingKegiatan(true);
+    try {
+      await api.put(`/pkl-jurnal/${id}`, { date: editTanggal, kegiatan: editKegiatan });
+      setEditingKegiatanId(null);
+      load();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Gagal menyimpan perubahan.');
+    } finally {
+      setSavingKegiatan(false);
+    }
+  };
+
+  const hapusKegiatan = async (id) => {
+    if (!confirm('Hapus catatan kegiatan ini?')) return;
+    try {
+      await api.delete(`/pkl-jurnal/${id}`);
+      load();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Gagal menghapus kegiatan.');
+    }
   };
 
   return (
@@ -79,8 +111,43 @@ export default function PklJournalModal({ placement, onClose, canIsiCatatan = fa
           ) : (
             entries.map((e) => (
               <div key={e.id} className="border border-line-200 rounded-lg px-3 py-2.5 text-sm">
-                <p className="text-ink-500 text-xs font-medium mb-1">{e.date}</p>
-                <p className="text-ink-900">{e.kegiatan}</p>
+                {editingKegiatanId === e.id ? (
+                  <div className="space-y-2">
+                    <input
+                      type="date" value={editTanggal} onChange={(ev) => setEditTanggal(ev.target.value)}
+                      className="field-input text-sm"
+                    />
+                    <textarea
+                      value={editKegiatan} onChange={(ev) => setEditKegiatan(ev.target.value)}
+                      className="field-input w-full text-sm" rows="3"
+                    />
+                    <div className="flex gap-2">
+                      <button onClick={() => simpanEditKegiatan(e.id)} disabled={savingKegiatan} className="text-xs font-medium text-white bg-brand-600 hover:bg-brand-700 rounded-lg px-3 py-1.5 disabled:opacity-50">
+                        {savingKegiatan ? 'Menyimpan...' : 'Simpan'}
+                      </button>
+                      <button onClick={batalEditKegiatan} className="text-xs font-medium text-ink-500 hover:text-ink-700 px-2 py-1.5">
+                        Batal
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex items-start justify-between gap-2 mb-1">
+                      <p className="text-ink-500 text-xs font-medium">{e.date}</p>
+                      {!e.catatan && (
+                        <div className="flex items-center gap-2 shrink-0">
+                          <button onClick={() => mulaiEditKegiatan(e)} className="text-ink-400 hover:text-brand-600" title="Edit kegiatan">
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                          <button onClick={() => hapusKegiatan(e.id)} className="text-ink-400 hover:text-honey-700" title="Hapus kegiatan">
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                    <p className="text-ink-900">{e.kegiatan}</p>
+                  </>
+                )}
 
                 {editingId === e.id ? (
                   <div className="mt-2 pt-2 border-t border-line-200 space-y-2">

@@ -261,6 +261,20 @@ class PklAttendanceController extends Controller
         return response()->json(['message' => 'Absensi berhasil dikoreksi.', 'absensi' => $absensi->fresh()]);
     }
 
+    public function hapus(Request $request, PklAttendance $pklAttendance)
+    {
+        if (!$this->bolehLihat($pklAttendance->placement, $request->user())) {
+            return response()->json(['message' => 'Anda tidak berwenang menghapus absensi ini.'], 403);
+        }
+        if ($pklAttendance->verified_at) {
+            return response()->json(['message' => 'Absensi ini sudah diverifikasi IDUKA, tidak bisa dihapus lagi.'], 422);
+        }
+
+        $pklAttendance->delete();
+
+        return response()->json(['message' => 'Absensi berhasil dihapus.']);
+    }
+
     /**
      * Verifikasi (paraf digital) 1 baris absensi — cuma boleh DUDI pemilik
      * penempatan ini atau admin. Menandai absensi hari itu sudah dianggap sah.

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { X, PenSquare, CheckCircle2, Printer, ChevronLeft, ChevronRight } from 'lucide-react';
+import { X, PenSquare, CheckCircle2, Printer, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
 import api from '../api/axios';
 
 const STATUS_LABEL = { hadir: 'Hadir', izin: 'Izin', sakit: 'Sakit', alpa: 'Alpa' };
@@ -70,6 +70,16 @@ export default function PklAttendanceDetailModal({ placement, onClose, canVerify
 
   const handleCetak = () => {
     window.open(`/print/pkl-jurnal?placement_id=${placement.id}`, '_blank');
+  };
+
+  const handleHapus = async (id) => {
+    if (!confirm('Hapus baris absensi ini?')) return;
+    try {
+      await api.delete(`/pkl-attendances/${id}`);
+      load();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Gagal menghapus absensi.');
+    }
   };
 
   const totalPages = Math.max(1, Math.ceil(attendances.length / PAGE_SIZE));
@@ -163,6 +173,7 @@ export default function PklAttendanceDetailModal({ placement, onClose, canVerify
                     <th className="font-medium">Pulang</th>
                     <th className="font-medium">Status</th>
                     <th className="font-medium text-right">Verifikasi</th>
+                    <th className="pb-2"></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -190,6 +201,13 @@ export default function PklAttendanceDetailModal({ placement, onClose, canVerify
                           </button>
                         ) : (
                           <span className="text-xs text-ink-300">Belum diverifikasi</span>
+                        )}
+                      </td>
+                      <td className="text-right">
+                        {!a.verified_at && (
+                          <button onClick={() => handleHapus(a.id)} className="text-ink-300 hover:text-honey-700" title="Hapus baris ini">
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
                         )}
                       </td>
                     </tr>

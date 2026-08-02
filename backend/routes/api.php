@@ -93,11 +93,14 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/pkl-placements/{pklPlacement}', [PklPlacementController::class, 'show']);
         Route::get('/pkl-placements/{pklPlacement}/penilaian', [PklPenilaianController::class, 'show']);
         Route::get('/pkl-placements/{pklPlacement}/penilaian/export-word', [PklPenilaianController::class, 'exportWord']);
+        Route::put('/pkl-jurnal/{pklJournal}', [PklJournalController::class, 'updateKegiatan']);
+        Route::delete('/pkl-jurnal/{pklJournal}', [PklJournalController::class, 'destroyKegiatan']);
     });
 
     Route::middleware('role:admin,guru,dudi')->group(function () {
         Route::get('/pkl-placements/{pklPlacement}/attendances', [PklAttendanceController::class, 'riwayatPenempatan']);
         Route::post('/pkl-attendances/koreksi', [PklAttendanceController::class, 'koreksi']);
+        Route::delete('/pkl-attendances/{pklAttendance}', [PklAttendanceController::class, 'hapus']);
         Route::get('/pkl-placements/{pklPlacement}/jurnal', [PklJournalController::class, 'riwayatPenempatan']);
         Route::get('/pkl-pembimbingan', [PklPembimbinganJournalController::class, 'index']);
     });
@@ -124,6 +127,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/pkl/absen-masuk', [PklAttendanceController::class, 'absenMasuk']);
         Route::post('/pkl/absen-pulang', [PklAttendanceController::class, 'absenPulang']);
         Route::post('/pkl/izin-sakit', [PklAttendanceController::class, 'ajukanIzinSakit']);
+        Route::put('/pkl-attendances/{pklAttendance}', [PklAttendanceController::class, 'updateIzinSakit']);
+        Route::delete('/pkl-attendances/{pklAttendance}/izin-sakit', [PklAttendanceController::class, 'hapusIzinSakit']);
         Route::get('/my-pkl-jurnal', [PklJournalController::class, 'riwayatSaya']);
         Route::post('/pkl-jurnal', [PklJournalController::class, 'simpanKegiatan']);
     });

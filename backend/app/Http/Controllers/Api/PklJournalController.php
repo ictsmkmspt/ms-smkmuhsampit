@@ -84,6 +84,56 @@ class PklJournalController extends Controller
         ], 201);
     }
 
+    private function bolehUbahKegiatan(PklJournal $jurnal, $user): bool
+    {
+        if ($user->role === 'siswa') {
+            $student = $user->student;
+            return $student && $jurnal->student_id === $student->id;
+        }
+        return $this->bolehLihat($jurnal->placement, $user);
+    }
+
+    public function updateKegiatan(Request $request, PklJournal $pklJournal)
+    {
+        if (!$this->bolehUbahKegiatan($pklJournal, $request->user())) {
+            return response()->json(['message' => 'Anda tidak berwenang mengubah kegiatan ini.'], 403);
+        }
+
+        if ($pklJournal->catatan) {
+            return response()->json(['message' => 'Kegiatan ini sudah dikomentari IDUKA, tidak bisa diubah lagi.'], 422);
+        }
+
+        $data = $request->validate([
+            'date'     => 'nullable|date',
+            'kegiatan' => 'required|string|max:2000',
+        ]);
+
+        $pklJournal->update([
+            'date'     => $data['date'] ?? $pklJournal->date,
+            'kegiatan' => $data['kegiatan'],
+        ]);
+
+        return response()->json([
+            'message' => 'Kegiatan berhasil diperbarui.',
+            'jurnal'  => $pklJournal->fresh(),
+        ]);
+    }
+
+    public function destroyKegiatan(Request $request, PklJournal $pklJournal)
+    {
+        if (!$this->bolehUbahKegiatan($pklJournal, $request->user())) {
+            return response()->json(['message' => 'Anda tidak berwenang menghapus kegiatan ini.'], 403);
+        }
+
+        if ($pklJournal->catatan) {
+            return response()->json(['message' => 'Kegiatan ini sudah dikomentari IDUKA, tidak bisa dihapus lagi.'], 422);
+        }
+
+        $pklJournal->delete();
+
+        return response()->json(['message' => 'Kegiatan berhasil dihapus.']);
+    }
+
     /**
      * Riwayat jurnal kegiatan siswa yang sedang login.
      */
