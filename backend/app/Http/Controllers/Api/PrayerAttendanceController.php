@@ -29,6 +29,7 @@ class PrayerAttendanceController extends Controller
         $date = $request->date ?? now()->format('Y-m-d');
 
         $students = Student::with('user')->where('class_room_id', $request->class_room_id)
+            ->where('status', 'aktif')
             ->join('users', 'users.id', '=', 'students.user_id')
             ->orderBy('users.name')
             ->select('students.*')

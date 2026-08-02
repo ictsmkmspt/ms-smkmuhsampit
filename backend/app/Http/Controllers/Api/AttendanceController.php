@@ -116,6 +116,7 @@ class AttendanceController extends Controller
         }
 
         $students = Student::with('user')->where('class_room_id', $classRoom->id)
+            ->where('status', 'aktif')
             ->join('users', 'users.id', '=', 'students.user_id')
             ->orderBy('users.name')
             ->select('students.*')
@@ -202,6 +203,7 @@ class AttendanceController extends Controller
         $date = $request->date ?? now()->format('Y-m-d');
 
         $students = Student::with('user')->where('class_room_id', $classRoom->id)
+            ->where('status', 'aktif')
             ->join('users', 'users.id', '=', 'students.user_id')
             ->orderBy('users.name')
             ->select('students.*')
@@ -253,7 +255,8 @@ class AttendanceController extends Controller
         $studentsAlreadyAbsent = Attendance::where('date', $date)->pluck('student_id');
         $siswaPkl = PklPlacement::where('status', 'aktif')->pluck('student_id');
 
-        $alpaStudents = Student::whereNotIn('id', $studentsAlreadyAbsent)
+        $alpaStudents = Student::where('status', 'aktif')
+            ->whereNotIn('id', $studentsAlreadyAbsent)
             ->whereNotIn('id', $siswaPkl)
             ->with('user')->get();
 
@@ -407,7 +410,7 @@ class AttendanceController extends Controller
             return response()->json(['message' => 'Anda belum ditugaskan sebagai wali kelas.'], 403);
         }
 
-        $studentsQuery = Student::with(['user', 'classRoom']);
+        $studentsQuery = Student::with(['user', 'classRoom'])->where('status', 'aktif');
         if ($classRoomId) {
             $studentsQuery->where('class_room_id', $classRoomId);
         }
@@ -451,7 +454,7 @@ class AttendanceController extends Controller
         $restricted  = $this->guruClassRoomId($request);
         $classRoomId = $restricted ?? $request->class_room_id;
 
-        $query = Student::with(['user', 'classRoom']);
+        $query = Student::with(['user', 'classRoom'])->where('status', 'aktif');
         if ($classRoomId) $query->where('class_room_id', $classRoomId);
         return $query->orderByDesc('total_poin')->get();
     }

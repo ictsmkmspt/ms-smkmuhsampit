@@ -77,7 +77,7 @@ class AchievementController extends Controller
         $restricted  = $this->guruClassRoomId($request);
         $classRoomId = $restricted ?? $request->class_room_id;
 
-        $query = Student::with(['user', 'classRoom']);
+        $query = Student::with(['user', 'classRoom'])->where('status', 'aktif');
         if ($classRoomId) $query->where('class_room_id', $classRoomId);
         return $query->orderByDesc('total_prestasi')->get();
     }
@@ -222,6 +222,7 @@ class AchievementController extends Controller
     public function leaderboard()
     {
         return \App\Models\Student::with(['user', 'classRoom'])
+            ->where('status', 'aktif')
             ->where('total_prestasi', '>', 0)
             ->orderByDesc('total_prestasi')
             ->limit(10)

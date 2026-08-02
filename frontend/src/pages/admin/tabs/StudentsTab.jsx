@@ -95,13 +95,6 @@ export default function StudentsTab() {
     const zip = new JSZip();
 
     for (const s of students) {
-
-	  console.log(
-    "Nama :", s.user?.name,
-    "NIS :", s.nis,
-    "Barcode :", s.barcode_code
-  );
-
       const dataUrl = await QRCode.toDataURL(s.barcode_code, {
         width: 400,
         margin: 2,
