@@ -146,6 +146,43 @@ class SppController extends Controller
     }
 
     /**
+     * Bayar SPP di muka untuk 1 siswa saja, buat bulan yang belum digenerate
+     * massal — dipakai kalau ada orang tua yang mau bayar duluan sebelum
+     * tanggal 1. Sengaja TIDAK lewat generateBulanan() (yang bikin tagihan
+     * utk SEMUA siswa aktif) supaya orang tua lain tidak ikut lihat tagihan
+     * bulan depan sebelum waktunya — cuma siswa ini yang dapat tagihannya,
+     * dan langsung berstatus lunas.
+     */
+    public function bayarDimuka(Request $request)
+    {
+        $data = $request->validate([
+            'student_id' => 'required|exists:students,id',
+            'bulan' => 'required|integer|min:1|max:12',
+            'tahun' => 'required|integer|min:2020|max:2100',
+        ]);
+
+        $sudahAda = Spp::where('student_id', $data['student_id'])
+            ->where('bulan', $data['bulan'])->where('tahun', $data['tahun'])
+            ->exists();
+
+        if ($sudahAda) {
+            return response()->json(['message' => 'Tagihan SPP siswa ini untuk bulan tersebut sudah ada.'], 422);
+        }
+
+        $spp = Spp::create([
+            'student_id' => $data['student_id'],
+            'bulan' => $data['bulan'],
+            'tahun' => $data['tahun'],
+            'nominal' => (int) Setting::get('spp_nominal_default', '0'),
+            'status' => 'lunas',
+            'tanggal_bayar' => now()->toDateString(),
+            'dicatat_oleh' => $request->user()->id,
+        ]);
+
+        return $spp->load(['student.user', 'student.classRoom']);
+    }
+
+    /**
      * Ubah nominal SPP 1 siswa (dipakai TU kalau ada kasus khusus:
      * beasiswa, potongan, dsb — beda dari nominal default).
      */
