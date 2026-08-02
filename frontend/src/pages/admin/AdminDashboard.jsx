@@ -2,7 +2,7 @@ import { useState } from 'react';
 import {
   LogOut, Database, ClipboardList, Settings, ChevronDown, ChevronLeft, ChevronRight, Menu, X,
   Users, GraduationCap, School, UserCog, Briefcase, LayoutDashboard, Building2, ClipboardCheck,
-  Clock, AlertOctagon, Trophy, CalendarDays,
+  Clock, AlertOctagon, Trophy, CalendarDays, Wallet,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import MasterDataTab, { MASTER_DATA_SUBMENU } from './tabs/MasterDataTab';
@@ -11,7 +11,7 @@ import SettingsTab, { SETTINGS_SUBMENU } from './tabs/SettingsTab';
 import PklTab, { PKL_SUBMENU } from './tabs/PklTab';
 import DashboardHomeTab from './tabs/DashboardHomeTab';
 
-const MASTER_ICONS = { siswa: Users, guru: GraduationCap, kelas: School, wali: UserCog };
+const MASTER_ICONS = { siswa: Users, guru: GraduationCap, kelas: School, wali: UserCog, tu: Wallet, alumni: GraduationCap };
 const SETTINGS_ICONS = { jam: Clock, poin: AlertOctagon, prestasi: Trophy, libur: CalendarDays };
 const PKL_ICONS = { dudi: Building2, penempatan: ClipboardList };
 const REPORT_ICONS = { absensi: ClipboardCheck, poin: AlertOctagon, prestasi: Trophy };

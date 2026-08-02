@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, Trash2, Pencil, X, Check } from 'lucide-react';
+import { Plus, Trash2, Pencil, X, Check, GraduationCap } from 'lucide-react';
 import api from '../../../api/axios';
 
 export default function ClassesTab() {
@@ -39,6 +39,17 @@ export default function ClassesTab() {
     if (!confirm(`Hapus kelas "${className}"? Siswa di kelas ini tidak akan terhapus, hanya jadi tanpa kelas.`)) return;
     await api.delete(`/classes/${id}`);
     loadClasses();
+  };
+
+  const handleLuluskan = async (c) => {
+    if (!confirm(`Luluskan ${c.students_count ?? 0} siswa aktif di kelas "${c.name}"? Mereka akan pindah ke menu Alumni, datanya tidak akan hilang.`)) return;
+    try {
+      const res = await api.post(`/classes/${c.id}/luluskan`);
+      alert(res.data.message);
+      loadClasses();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Gagal meluluskan kelas ini.');
+    }
   };
 
   const startEdit = (c) => {
@@ -166,6 +177,9 @@ export default function ClassesTab() {
                     <div className="flex justify-end gap-3">
                       <button onClick={() => startEdit(c)} className="text-ink-300 hover:text-brand-600" title="Edit Kelas">
                         <Pencil className="w-4 h-4" />
+                      </button>
+                      <button onClick={() => handleLuluskan(c)} disabled={!c.students_count} className="text-ink-300 hover:text-brand-600 disabled:opacity-30 disabled:hover:text-ink-300" title="Luluskan Semua Siswa Aktif di Kelas Ini">
+                        <GraduationCap className="w-4 h-4" />
                       </button>
                       <button onClick={() => handleDelete(c.id, c.name)} className="text-ink-300 hover:text-honey-700" title="Hapus Kelas">
                         <Trash2 className="w-4 h-4" />

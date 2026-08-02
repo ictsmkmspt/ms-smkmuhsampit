@@ -14,9 +14,18 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class StudentController extends Controller
 {
+    /**
+     * Default cuma siswa aktif (dipakai hampir semua fitur: absensi, dropdown,
+     * daftar Master Data > Siswa, dst). Kirim ?status=lulus untuk menu Alumni,
+     * atau ?status=semua kalau perlu keduanya sekaligus.
+     */
     public function index(Request $request)
     {
         $query = Student::with(['user', 'classRoom']);
+        $status = $request->query('status', 'aktif');
+        if ($status !== 'semua') {
+            $query->where('status', $status);
+        }
         if ($request->class_room_id) {
             $query->where('class_room_id', $request->class_room_id);
         }
@@ -74,6 +83,18 @@ class StudentController extends Controller
     {
         $student->user->delete();
         return response()->json(['message' => 'Siswa dihapus.']);
+    }
+
+    /**
+     * Batalkan status lulus — dipakai kalau ada siswa yang salah ikut
+     * diluluskan. Riwayat SPP dkk tidak berubah, cuma status siswanya balik
+     * jadi aktif lagi.
+     */
+    public function kembalikanAktif(Student $student)
+    {
+        $student->update(['status' => 'aktif', 'tanggal_lulus' => null]);
+
+        return $student->load(['user', 'classRoom']);
     }
 
     /**

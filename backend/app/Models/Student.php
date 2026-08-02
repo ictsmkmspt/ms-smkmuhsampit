@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Student extends Model
 {
-    protected $fillable = ['user_id', 'class_room_id', 'nis', 'jenis_kelamin', 'barcode_code', 'total_poin', 'total_prestasi'];
+    protected $fillable = ['user_id', 'class_room_id', 'nis', 'jenis_kelamin', 'barcode_code', 'total_poin', 'total_prestasi', 'status', 'tanggal_lulus'];
 
     public function user()
     {
@@ -41,6 +41,11 @@ class Student extends Model
     public function pklPlacements()
     {
         return $this->hasMany(PklPlacement::class);
+    }
+
+    public function spps()
+    {
+        return $this->hasMany(Spp::class);
     }
 
     /**
