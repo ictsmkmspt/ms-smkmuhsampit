@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import {
   LogIn, LogOut, Building2, User, Printer, CheckCircle2,
-  X, CalendarOff, Thermometer,
+  X, CalendarOff, Thermometer, Pencil, Trash2,
 } from 'lucide-react';
 import api from '../../api/axios';
 import PklJurnalTab from './PklJurnalTab';
@@ -16,6 +16,7 @@ const STATUS_BADGE = { hadir: 'badge-brand', izin: 'badge-honey', sakit: 'badge-
  * tetap bisa diakses walau sedang PKL.
  */
 export default function PklSiswaView({ placement, tab }) {
+  const pklSelesai = placement.status !== 'aktif';
   const [history, setHistory] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [posting, setPosting] = useState(''); // '' | 'masuk' | 'pulang'
@@ -27,8 +28,14 @@ export default function PklSiswaView({ placement, tab }) {
   const [savingIzin, setSavingIzin] = useState(false);
   const [izinError, setIzinError] = useState('');
 
+  const [editingRowId, setEditingRowId] = useState(null);
+  const [editRowStatus, setEditRowStatus] = useState('izin');
+  const [editRowTanggal, setEditRowTanggal] = useState('');
+  const [editRowAlasan, setEditRowAlasan] = useState('');
+  const [savingRowEdit, setSavingRowEdit] = useState(false);
+
   const today = new Date().toISOString().slice(0, 10);
-  const maxTanggalIzin = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const maxTanggalIzin = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
   const todayRow = history.find((h) => h.date === today);
 
   const loadHistory = () => {
@@ -103,6 +110,38 @@ export default function PklSiswaView({ placement, tab }) {
     }
   };
 
+  const mulaiEditRow = (h) => {
+    setEditingRowId(h.id);
+    setEditRowTanggal(h.date);
+    setEditRowStatus(h.status);
+    setEditRowAlasan(h.catatan_koreksi || '');
+  };
+
+  const batalEditRow = () => setEditingRowId(null);
+
+  const simpanEditRow = async (id) => {
+    setSavingRowEdit(true);
+    try {
+      await api.put(`/pkl-attendances/${id}`, { date: editRowTanggal, status: editRowStatus, alasan: editRowAlasan });
+      setEditingRowId(null);
+      loadHistory();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Gagal menyimpan perubahan.');
+    } finally {
+      setSavingRowEdit(false);
+    }
+  };
+
+  const hapusRow = async (id) => {
+    if (!confirm('Hapus pengajuan izin/sakit ini?')) return;
+    try {
+      await api.delete(`/pkl-attendances/${id}/izin-sakit`);
+      loadHistory();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Gagal menghapus pengajuan.');
+    }
+  };
+
   const handleCetak = () => {
     window.open(`/print/pkl-jurnal?placement_id=${placement.id}`, '_blank');
   };
@@ -144,43 +183,51 @@ export default function PklSiswaView({ placement, tab }) {
               </p>
             )}
 
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                onClick={() => handleAbsen('masuk')}
-                disabled={!!posting || !!todayRow?.time_in}
-                className="flex flex-col items-center gap-1.5 bg-brand-50 hover:bg-brand-100 disabled:opacity-50 disabled:cursor-not-allowed text-brand-700 rounded-xl py-4 transition"
-              >
-                <LogIn className="w-5 h-5" />
-                <span className="text-sm font-medium">
-                  {posting === 'masuk' ? 'Mengirim...' : todayRow?.time_in ? `Masuk ${todayRow.time_in.slice(0, 5)}` : 'Absen Masuk'}
-                </span>
-              </button>
-              <button
-                onClick={() => handleAbsen('pulang')}
-                disabled={!!posting || !todayRow?.time_in || !!todayRow?.time_out}
-                className="flex flex-col items-center gap-1.5 bg-mist-50 hover:bg-mist-100 disabled:opacity-50 disabled:cursor-not-allowed text-ink-700 rounded-xl py-4 transition"
-              >
-                <LogOut className="w-5 h-5" />
-                <span className="text-sm font-medium">
-                  {posting === 'pulang' ? 'Mengirim...' : todayRow?.time_out ? `Pulang ${todayRow.time_out.slice(0, 5)}` : 'Absen Pulang'}
-                </span>
-              </button>
-            </div>
+            {pklSelesai ? (
+              <p className="flex items-center gap-1.5 text-sm text-ink-500 bg-mist-50 border border-line-200 rounded-lg px-3 py-2.5">
+                PKL Anda sudah berstatus <b className="mx-1">Selesai</b> — tidak bisa absen atau mengajukan izin/sakit baru lagi. Riwayat lama masih bisa dilihat di bawah.
+              </p>
+            ) : (
+              <>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    onClick={() => handleAbsen('masuk')}
+                    disabled={!!posting || !!todayRow?.time_in}
+                    className="flex flex-col items-center gap-1.5 bg-brand-50 hover:bg-brand-100 disabled:opacity-50 disabled:cursor-not-allowed text-brand-700 rounded-xl py-4 transition"
+                  >
+                    <LogIn className="w-5 h-5" />
+                    <span className="text-sm font-medium">
+                      {posting === 'masuk' ? 'Mengirim...' : todayRow?.time_in ? `Masuk ${todayRow.time_in.slice(0, 5)}` : 'Absen Masuk'}
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => handleAbsen('pulang')}
+                    disabled={!!posting || !todayRow?.time_in || !!todayRow?.time_out}
+                    className="flex flex-col items-center gap-1.5 bg-mist-50 hover:bg-mist-100 disabled:opacity-50 disabled:cursor-not-allowed text-ink-700 rounded-xl py-4 transition"
+                  >
+                    <LogOut className="w-5 h-5" />
+                    <span className="text-sm font-medium">
+                      {posting === 'pulang' ? 'Mengirim...' : todayRow?.time_out ? `Pulang ${todayRow.time_out.slice(0, 5)}` : 'Absen Pulang'}
+                    </span>
+                  </button>
+                </div>
 
-            <div className="grid grid-cols-2 gap-3 mt-3">
-              <button
-                onClick={() => bukaIzinSakit('izin')}
-                className="flex items-center justify-center gap-1.5 text-sm font-medium text-ink-600 hover:text-brand-600 border border-line-200 rounded-xl py-2.5"
-              >
-                <CalendarOff className="w-4 h-4" /> Izin
-              </button>
-              <button
-                onClick={() => bukaIzinSakit('sakit')}
-                className="flex items-center justify-center gap-1.5 text-sm font-medium text-ink-600 hover:text-brand-600 border border-line-200 rounded-xl py-2.5"
-              >
-                <Thermometer className="w-4 h-4" /> Sakit
-              </button>
-            </div>
+                <div className="grid grid-cols-2 gap-3 mt-3">
+                  <button
+                    onClick={() => bukaIzinSakit('izin')}
+                    className="flex items-center justify-center gap-1.5 text-sm font-medium text-ink-600 hover:text-brand-600 border border-line-200 rounded-xl py-2.5"
+                  >
+                    <CalendarOff className="w-4 h-4" /> Izin
+                  </button>
+                  <button
+                    onClick={() => bukaIzinSakit('sakit')}
+                    className="flex items-center justify-center gap-1.5 text-sm font-medium text-ink-600 hover:text-brand-600 border border-line-200 rounded-xl py-2.5"
+                  >
+                    <Thermometer className="w-4 h-4" /> Sakit
+                  </button>
+                </div>
+              </>
+            )}
 
             {todayRow && (
               <p className="flex items-center gap-1.5 text-xs mt-3">
@@ -211,22 +258,66 @@ export default function PklSiswaView({ placement, tab }) {
               <p className="text-center text-ink-300 py-6 text-sm">Belum ada riwayat.</p>
             ) : (
               <div className="space-y-2 max-h-80 overflow-y-auto">
-                {history.map((h) => (
-                  <div key={h.id} className="border border-line-200 rounded-lg px-3 py-2 flex items-center justify-between text-sm">
-                    <div>
-                      <p className="text-ink-900 font-medium">{h.date}</p>
-                      <p className="text-xs text-ink-500">
-                        {h.status === 'hadir'
-                          ? `${h.time_in ? h.time_in.slice(0, 5) : '--:--'} – ${h.time_out ? h.time_out.slice(0, 5) : '--:--'}`
-                          : (h.catatan_koreksi || '-')}
-                      </p>
+                {history.map((h) => {
+                  const bisaDiubah = (h.status === 'izin' || h.status === 'sakit') && !h.verified_at;
+                  return (
+                    <div key={h.id} className="border border-line-200 rounded-lg px-3 py-2 text-sm">
+                      {editingRowId === h.id ? (
+                        <div className="space-y-2">
+                          <input
+                            type="date" value={editRowTanggal} onChange={(e) => setEditRowTanggal(e.target.value)}
+                            max={maxTanggalIzin} className="field-input text-sm"
+                          />
+                          <select
+                            value={editRowStatus} onChange={(e) => setEditRowStatus(e.target.value)}
+                            className="field-input text-sm text-ink-700"
+                          >
+                            <option value="izin">Izin</option>
+                            <option value="sakit">Sakit</option>
+                          </select>
+                          <textarea
+                            value={editRowAlasan} onChange={(e) => setEditRowAlasan(e.target.value)}
+                            className="field-input w-full text-sm" rows="2"
+                            placeholder="Alasan"
+                          />
+                          <div className="flex gap-2">
+                            <button onClick={() => simpanEditRow(h.id)} disabled={savingRowEdit} className="text-xs font-medium text-white bg-brand-600 hover:bg-brand-700 rounded-lg px-3 py-1.5 disabled:opacity-50">
+                              {savingRowEdit ? 'Menyimpan...' : 'Simpan'}
+                            </button>
+                            <button onClick={batalEditRow} className="text-xs font-medium text-ink-500 hover:text-ink-700 px-2 py-1.5">
+                              Batal
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-ink-900 font-medium">{h.date}</p>
+                            <p className="text-xs text-ink-500">
+                              {h.status === 'hadir'
+                                ? `${h.time_in ? h.time_in.slice(0, 5) : '--:--'} – ${h.time_out ? h.time_out.slice(0, 5) : '--:--'}`
+                                : (h.catatan_koreksi || '-')}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {bisaDiubah && (
+                              <>
+                                <button onClick={() => mulaiEditRow(h)} className="text-ink-400 hover:text-brand-600" title="Edit pengajuan">
+                                  <Pencil className="w-3.5 h-3.5" />
+                                </button>
+                                <button onClick={() => hapusRow(h.id)} className="text-ink-400 hover:text-honey-700" title="Hapus pengajuan">
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </>
+                            )}
+                            {h.verified_at && <CheckCircle2 className="w-3.5 h-3.5 text-brand-600" />}
+                            <span className={`badge-soft ${STATUS_BADGE[h.status]}`}>{STATUS_LABEL[h.status]}</span>
+                          </div>
+                        </div>
+                      )}
                     </div>
-                    <div className="flex items-center gap-2">
-                      {h.verified_at && <CheckCircle2 className="w-3.5 h-3.5 text-brand-600" />}
-                      <span className={`badge-soft ${STATUS_BADGE[h.status]}`}>{STATUS_LABEL[h.status]}</span>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
@@ -256,7 +347,7 @@ export default function PklSiswaView({ placement, tab }) {
                   type="date" value={izinTanggal} onChange={(e) => setIzinTanggal(e.target.value)}
                   max={maxTanggalIzin} className="field-input" required
                 />
-                <p className="text-xs text-ink-400 mt-1">Bisa untuk hari yang sudah lewat, atau maksimal 14 hari ke depan.</p>
+                <p className="text-xs text-ink-400 mt-1">Bisa untuk hari yang sudah lewat, atau maksimal 7 hari ke depan.</p>
               </div>
               <div>
                 <label className="block text-xs font-medium text-ink-500 mb-1">

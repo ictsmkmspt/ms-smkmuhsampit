@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, Trash2, ClipboardList, PowerOff } from 'lucide-react';
+import { Plus, Trash2, ClipboardList, PowerOff, AlertTriangle, RotateCcw } from 'lucide-react';
 import api from '../../../../api/axios';
 
 const emptyForm = {
@@ -18,6 +18,8 @@ export default function PenempatanTab() {
   const [filterStatus, setFilterStatus] = useState('');
   const [closingAll, setClosingAll] = useState(false);
   const [aktifCount, setAktifCount] = useState(0);
+  const [activatingAll, setActivatingAll] = useState(false);
+  const [selesaiCount, setSelesaiCount] = useState(0);
 
   const load = () => {
     const params = {};
@@ -25,8 +27,14 @@ export default function PenempatanTab() {
     return api.get('/pkl-placements', { params }).then((res) => setList(res.data));
   };
 
+  // Dihitung terpisah dari daftar yang tampil, supaya tetap akurat walau
+  // tabelnya sedang difilter ke status tertentu (misal cuma "Selesai").
   const loadAktifCount = () => {
     return api.get('/pkl-placements', { params: { status: 'aktif' } }).then((res) => setAktifCount(res.data.length));
+  };
+
+  const loadSelesaiCount = () => {
+    return api.get('/pkl-placements', { params: { status: 'selesai' } }).then((res) => setSelesaiCount(res.data.length));
   };
 
   const handleTutupSemuaAktif = async () => {
@@ -50,6 +58,54 @@ export default function PenempatanTab() {
     }
   };
 
+  const handleAktifkanSemuaSelesai = async () => {
+    if (selesaiCount === 0) return;
+    if (!confirm(
+      `Anda akan mengaktifkan kembali ${selesaiCount} penempatan PKL yang berstatus "Selesai" jadi "Aktif" lagi.\n\n` +
+      `Lanjutkan?`
+    )) return;
+
+    setActivatingAll(true);
+    try {
+      const res = await api.post('/pkl-placements/aktifkan-semua-selesai');
+      alert(res.data.message);
+      load();
+      loadAktifCount();
+      loadSelesaiCount();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Gagal mengaktifkan penempatan.');
+    } finally {
+      setActivatingAll(false);
+    }
+  };
+
+  const [resetting, setResetting] = useState(false);
+  const [resetConfirmText, setResetConfirmText] = useState('');
+  const [resetMessage, setResetMessage] = useState('');
+
+  const handleResetSemua = async () => {
+    if (resetConfirmText !== 'RESET') return;
+
+    if (!confirm(
+      'Terakhir kali — Anda YAKIN mau menghapus SELURUH data kegiatan PKL secara permanen?\n\n' +
+      'Ini akan menghapus semua penempatan, absensi, jurnal kegiatan, jurnal pembimbing, dan nilai PKL. Akun IDUKA tidak terhapus. Tidak ada cara mengembalikan data setelah ini.'
+    )) return;
+
+    setResetting(true);
+    setResetMessage('');
+    try {
+      const res = await api.post('/pkl-placements/reset-semua');
+      setResetMessage(res.data.message);
+      setResetConfirmText('');
+      load();
+      loadAktifCount();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Gagal mereset data PKL.');
+    } finally {
+      setResetting(false);
+    }
+  };
+
   useEffect(() => {
     api.get('/students').then((res) => setStudents(res.data));
     api.get('/dudi').then((res) => setDudiList(res.data));
@@ -58,6 +114,7 @@ export default function PenempatanTab() {
 
   useEffect(() => { load(); }, [filterStatus]); // eslint-disable-line
   useEffect(() => { loadAktifCount(); }, []);
+  useEffect(() => { loadSelesaiCount(); }, []);
 
   const handleAdd = async (e) => {
     e.preventDefault();
@@ -105,22 +162,6 @@ export default function PenempatanTab() {
         </p>
       </div>
 
-      <div className="surface-card p-4 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <p className="text-sm font-medium text-ink-900">Mulai Periode PKL Baru?</p>
-          <p className="text-xs text-ink-500">
-            Tutup semua penempatan yang masih aktif sekaligus (ditandai "Selesai") — data riwayatnya tetap tersimpan, tidak dihapus.
-          </p>
-        </div>
-        <button
-          onClick={handleTutupSemuaAktif}
-          disabled={closingAll || aktifCount === 0}
-          className="flex items-center gap-1.5 text-sm font-medium text-honey-700 bg-honey-50 hover:bg-honey-100 disabled:opacity-40 border border-honey-200 rounded-xl px-4 py-2 transition shrink-0"
-        >
-          <PowerOff className="w-4 h-4" /> {closingAll ? 'Menutup...' : `Tutup Semua Penempatan Aktif (${aktifCount})`}
-        </button>
-      </div>
-
       <form onSubmit={handleAdd} className="surface-card p-5">
         <h2 className="font-display font-semibold text-ink-900 mb-4">Buat Penempatan PKL</h2>
         {error && <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2 mb-3">{error}</p>}
@@ -158,15 +199,33 @@ export default function PenempatanTab() {
       </form>
 
       <div className="surface-card p-5">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
           <h2 className="font-display font-semibold text-ink-900">
             Daftar Penempatan <span className="text-ink-500 font-sans font-normal text-sm">({list.length})</span>
           </h2>
-          <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="field-input text-sm text-ink-700 w-40">
-            <option value="">Semua Status</option>
-            <option value="aktif">Aktif</option>
-            <option value="selesai">Selesai</option>
-          </select>
+          <div className="flex items-center gap-2">
+            <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="field-input text-sm text-ink-700 w-40">
+              <option value="">Semua Status</option>
+              <option value="aktif">Aktif</option>
+              <option value="selesai">Selesai</option>
+            </select>
+            <button
+              onClick={handleTutupSemuaAktif}
+              disabled={closingAll || aktifCount === 0}
+              className="flex items-center gap-1.5 text-sm font-medium text-honey-700 bg-honey-50 hover:bg-honey-100 disabled:opacity-40 border border-honey-200 rounded-xl px-3 py-2 transition whitespace-nowrap"
+              title="Tutup semua penempatan yang masih aktif (ditandai Selesai) — data riwayatnya tetap tersimpan."
+            >
+              <PowerOff className="w-4 h-4" /> Tutup PKL ({aktifCount})
+            </button>
+            <button
+              onClick={handleAktifkanSemuaSelesai}
+              disabled={activatingAll || selesaiCount === 0}
+              className="flex items-center gap-1.5 text-sm font-medium text-brand-700 bg-brand-50 hover:bg-brand-100 disabled:opacity-40 border border-brand-200 rounded-xl px-3 py-2 transition whitespace-nowrap"
+              title="Aktifkan kembali semua penempatan yang berstatus Selesai."
+            >
+              <PowerOff className="w-4 h-4 rotate-180" /> Aktif PKL ({selesaiCount})
+            </button>
+          </div>
         </div>
         <table className="w-full text-sm">
           <thead>
@@ -208,6 +267,35 @@ export default function PenempatanTab() {
             )}
           </tbody>
         </table>
+      </div>
+
+      <div className="surface-card p-5 border-2 border-rose-200 bg-rose-50/40">
+        <h2 className="font-display font-semibold text-rose-700 mb-1 flex items-center gap-2">
+          <AlertTriangle className="w-4 h-4" /> Zona Berbahaya — Mulai Tahun Ajaran Baru
+        </h2>
+        <p className="text-sm text-ink-600 mb-4">
+          Menghapus PERMANEN <b>semua penempatan PKL</b> (semua status), beserta <b>seluruh riwayat absensi, jurnal kegiatan, jurnal pembimbing, dan nilai PKL</b>. Akun IDUKA (perusahaan, tanda tangan, dll) <b>TIDAK</b> ikut terhapus. <b>Tindakan ini tidak bisa dibatalkan.</b>
+        </p>
+        <div className="flex flex-wrap gap-3 items-center">
+          <input
+            type="text"
+            value={resetConfirmText}
+            onChange={(e) => setResetConfirmText(e.target.value)}
+            placeholder='Ketik "RESET" untuk mengaktifkan tombol'
+            className="field-input flex-1 min-w-[220px]"
+          />
+          <button
+            onClick={handleResetSemua}
+            disabled={resetConfirmText !== 'RESET' || resetting}
+            className="flex items-center gap-2 text-sm font-medium text-white bg-rose-600 hover:bg-rose-700 disabled:opacity-40 disabled:cursor-not-allowed rounded-lg px-4 py-2.5 whitespace-nowrap"
+          >
+            <RotateCcw className="w-4 h-4" />
+            {resetting ? 'Mereset...' : 'Reset Kegiatan PKL'}
+          </button>
+        </div>
+        {resetMessage && (
+          <p className="text-sm text-brand-700 bg-brand-50 border border-brand-200 rounded-lg px-3 py-2 mt-3">{resetMessage}</p>
+        )}
       </div>
     </div>
   );

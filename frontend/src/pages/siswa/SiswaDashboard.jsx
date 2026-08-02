@@ -27,7 +27,7 @@ export default function SiswaDashboard() {
   const menuRef = useRef(null);
 
   // Sub-menu dipakai cuma saat sedang PKL: 'beranda' | 'absensi' | 'jurnal'
-  const [pklTab, setPklTab] = useState('absensi');
+  const [pklTab, setPklTab] = useState('beranda');
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -40,7 +40,11 @@ export default function SiswaDashboard() {
   }, []);
 
   const [pklPlacement, setPklPlacement] = useState(undefined); // undefined = belum dicek, null = tidak PKL
-  const isPkl = pklPlacement && pklPlacement.status === 'aktif';
+  // Sengaja mencakup status "selesai" juga (bukan cuma "aktif") — supaya
+  // siswa yang PKL-nya sudah berakhir tetap bisa buka menu Absensi & Jurnal
+  // Kegiatan untuk lihat riwayat lamanya, cuma tombol "buat baru"-nya saja
+  // yang otomatis ditolak backend karena penempatannya sudah tidak aktif.
+  const isPkl = !!(pklPlacement && Object.keys(pklPlacement).length > 0);
 
   useEffect(() => {
     api.get('/my-pkl-placement').then((res) => setPklPlacement(res.data));

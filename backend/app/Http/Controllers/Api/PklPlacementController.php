@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\PklPembimbinganJournal;
 use App\Models\PklPlacement;
 use App\Models\Student;
 use App\Models\Teacher;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class PklPlacementController extends Controller
 {
@@ -117,6 +119,45 @@ class PklPlacementController extends Controller
     }
 
     /**
+     * Kebalikan dari tutupSemuaAktif() — mengaktifkan kembali SEMUA
+     * penempatan yang statusnya "selesai" jadi "aktif" lagi sekaligus.
+     */
+    public function aktifkanSemuaSelesai()
+    {
+        $jumlah = PklPlacement::where('status', 'selesai')->count();
+
+        PklPlacement::where('status', 'selesai')->update(['status' => 'aktif']);
+
+        return response()->json([
+            'message' => "$jumlah penempatan PKL berhasil diaktifkan kembali.",
+            'jumlah'  => $jumlah,
+        ]);
+    }
+
+    /**
+     * RESET TOTAL untuk mulai tahun ajaran baru — MENGHAPUS PERMANEN semua
+     * penempatan PKL beserta absensi, jurnal kegiatan, dan nilainya (otomatis
+     * ikut terhapus lewat cascade database), ditambah SEMUA jurnal pembimbing
+     * (yang terpisah dari penempatan, jadi dihapus manual di sini). Akun
+     * IDUKA (dan datanya seperti nama perusahaan, tanda tangan, dsb) TIDAK
+     * disentuh sama sekali — cuma riwayat kegiatan PKL-nya yang dibersihkan.
+     */
+    public function resetSemuaPkl()
+    {
+        return DB::transaction(function () {
+            $jumlahPenempatan = PklPlacement::count();
+            $jumlahJurnalPembimbing = PklPembimbinganJournal::count();
+
+            PklPembimbinganJournal::query()->delete();
+            PklPlacement::query()->delete();
+
+            return response()->json([
+                'message' => "Reset berhasil. $jumlahPenempatan penempatan PKL (beserta absensi, jurnal kegiatan, dan nilai) serta $jumlahJurnalPembimbing catatan jurnal pembimbing telah dihapus permanen. Akun IDUKA tetap ada dan tidak berubah.",
+            ]);
+        });
+    }
+
+    /**
      * Daftar siswa bimbingan guru yang sedang login (dipakai tab "Bimbingan PKL" di dashboard guru).
      */
     public function bimbinganSaya(Request $request)
@@ -154,6 +195,12 @@ class PklPlacementController extends Controller
      * Penempatan PKL siswa yang sedang login, kalau ada yang aktif. Dipakai dashboard
      * siswa untuk menentukan apakah menu PKL perlu ditampilkan (menggantikan QR barcode).
      */
+    /**
+     * Penempatan PKL siswa yang sedang login — diutamakan yang masih AKTIF,
+     * tapi kalau tidak ada (semua sudah "selesai"), tetap kembalikan yang
+     * PALING BARU biar siswa masih bisa buka riwayat absensi & jurnal
+     * kegiatannya walau PKL-nya sudah berakhir.
+     */
     public function punyaKuSekarang(Request $request)
     {
         $student = $request->user()->student;
@@ -161,7 +208,12 @@ class PklPlacementController extends Controller
             return response()->json(null);
         }
 
-        $placement = $student->pklPlacementAktif()->with(['dudi', 'guruPembimbing.user'])->first();
+        $placement = $student->pklPlacements()
+            ->with(['dudi', 'guruPembimbing.user'])
+            ->orderByRaw("status = 'aktif' desc")
+            ->orderByDesc('tanggal_mulai')
+            ->first();
+
 
         return response()->json($placement);
     }

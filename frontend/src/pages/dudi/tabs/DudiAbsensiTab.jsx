@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ClipboardList, User, CheckCircle2, BellRing } from 'lucide-react';
+import { ClipboardList, User, CheckCircle2, BellRing, History } from 'lucide-react';
 import api from '../../../api/axios';
 import PklAttendanceDetailModal from '../../../components/PklAttendanceDetailModal';
 import PklJournalModal from '../../../components/PklJournalModal';
@@ -41,13 +41,29 @@ export default function DudiAbsensiTab() {
     }
   };
 
-  // Yang statusnya sudah "selesai" tidak perlu ditampilkan lagi di sini —
-  // halaman ini khusus siswa yang masih aktif PKL.
-  const filtered = list.filter((p) => p.status !== 'selesai');
+  const aktif = list.filter((p) => p.status !== 'selesai');
+  const selesai = list.filter((p) => p.status === 'selesai');
 
   const pembimbingUnik = [...new Set(
-    filtered.map((p) => p.guru_pembimbing?.user?.name).filter(Boolean)
+    aktif.map((p) => p.guru_pembimbing?.user?.name).filter(Boolean)
   )];
+
+  const TombolAksi = ({ p }) => (
+    <div className="flex flex-col gap-1.5 items-stretch">
+      <button
+        onClick={() => setAttendanceTarget(p)}
+        className="text-xs font-medium text-ink-600 hover:text-brand-600 border border-line-200 rounded-lg px-2.5 py-1.5 whitespace-nowrap text-center"
+      >
+        Riwayat Absensi
+      </button>
+      <button
+        onClick={() => setJournalTarget(p)}
+        className="text-xs font-medium text-ink-600 hover:text-brand-600 border border-line-200 rounded-lg px-2.5 py-1.5 whitespace-nowrap text-center"
+      >
+        Jurnal Kegiatan
+      </button>
+    </div>
+  );
 
   return (
     <div className="space-y-6">
@@ -98,7 +114,7 @@ export default function DudiAbsensiTab() {
       <div className="surface-card p-5">
         <div className="flex items-center justify-between mb-1">
           <h2 className="font-display font-semibold text-ink-900">
-            Siswa Magang <span className="text-ink-500 font-sans font-normal text-sm">({filtered.length})</span>
+            Siswa Magang <span className="text-ink-500 font-sans font-normal text-sm">({aktif.length})</span>
           </h2>
         </div>
 
@@ -117,38 +133,64 @@ export default function DudiAbsensiTab() {
               <tr className="text-left text-ink-500 border-b border-line-200">
                 <th className="pb-2 font-medium">Nama Siswa</th>
                 <th className="font-medium">Periode</th>
-                <th className="pb-2"></th>
+                <th className="pb-2 w-32"></th>
               </tr>
             </thead>
             <tbody>
-              {filtered.map((p) => (
+              {aktif.map((p) => (
                 <tr key={p.id} className="border-t border-line-200">
                   <td className="py-2.5">
                     <p className="text-ink-900 font-medium">{p.student?.user?.name}</p>
                     <p className="text-xs text-ink-500">{p.student?.class_room?.name || '-'}</p>
                   </td>
                   <td className="text-ink-700 text-xs">{p.tanggal_mulai} s/d {p.tanggal_selesai}</td>
-                  <td className="text-right">
-                    <div className="flex justify-end gap-1.5">
-                      <button
-                        onClick={() => setAttendanceTarget(p)}
-                        className="text-xs font-medium text-ink-600 hover:text-brand-600 border border-line-200 rounded-lg px-2 py-1 whitespace-nowrap"
-                      >
-                        Riwayat Absensi
-                      </button>
-                      <button
-                        onClick={() => setJournalTarget(p)}
-                        className="text-xs font-medium text-ink-600 hover:text-brand-600 border border-line-200 rounded-lg px-2 py-1 whitespace-nowrap"
-                      >
-                        Jurnal Kegiatan
-                      </button>
-                    </div>
+                  <td className="text-right py-2">
+                    <TombolAksi p={p} />
                   </td>
                 </tr>
               ))}
-              {filtered.length === 0 && (
+              {aktif.length === 0 && (
                 <tr><td colSpan="3" className="py-6 text-center text-ink-300">Belum ada siswa yang ditempatkan di sini.</td></tr>
               )}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      <div className="surface-card p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <History className="w-4 h-4 text-ink-400" />
+          <h2 className="font-display font-semibold text-ink-900">
+            Siswa Selesai PKL <span className="text-ink-500 font-sans font-normal text-sm">({selesai.length})</span>
+          </h2>
+        </div>
+
+        {loading ? (
+          <p className="text-center text-ink-300 py-6">Memuat...</p>
+        ) : selesai.length === 0 ? (
+          <p className="text-center text-ink-300 py-6 text-sm">Belum ada siswa yang menyelesaikan PKL.</p>
+        ) : (
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-ink-500 border-b border-line-200">
+                <th className="pb-2 font-medium">Nama Siswa</th>
+                <th className="font-medium">Periode</th>
+                <th className="pb-2 w-32"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {selesai.map((p) => (
+                <tr key={p.id} className="border-t border-line-200">
+                  <td className="py-2.5">
+                    <p className="text-ink-900 font-medium">{p.student?.user?.name}</p>
+                    <p className="text-xs text-ink-500">{p.student?.class_room?.name || '-'}</p>
+                  </td>
+                  <td className="text-ink-700 text-xs">{p.tanggal_mulai} s/d {p.tanggal_selesai}</td>
+                  <td className="text-right py-2">
+                    <TombolAksi p={p} />
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         )}

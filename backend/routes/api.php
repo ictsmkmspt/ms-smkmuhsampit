@@ -55,6 +55,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/parents/import', [WaliController::class, 'import']);
         Route::apiResource('dudi', DudiController::class)->except(['show']);
         Route::post('/pkl-placements/tutup-semua-aktif', [PklPlacementController::class, 'tutupSemuaAktif']);
+        Route::post('/pkl-placements/aktifkan-semua-selesai', [PklPlacementController::class, 'aktifkanSemuaSelesai']);
+        Route::post('/pkl-placements/reset-semua', [PklPlacementController::class, 'resetSemuaPkl']);
         Route::apiResource('pkl-placements', PklPlacementController::class)->except(['show']);
     });
 

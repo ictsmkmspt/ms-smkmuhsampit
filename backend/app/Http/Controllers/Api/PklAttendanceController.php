@@ -164,11 +164,11 @@ class PklAttendanceController extends Controller
     public function ajukanIzinSakit(Request $request)
     {
         $data = $request->validate([
-            'date'   => 'required|date|before_or_equal:' . now()->addDays(14)->format('Y-m-d'),
+            'date'   => 'required|date|before_or_equal:' . now()->addDays(7)->format('Y-m-d'),
             'status' => 'required|in:izin,sakit',
             'alasan' => 'required|string|max:500',
         ], [
-            'date.before_or_equal' => 'Tanggal izin/sakit maksimal 14 hari ke depan.',
+            'date.before_or_equal' => 'Tanggal izin/sakit maksimal 7 hari ke depan.',
         ]);
 
         $placement = $this->placementSiswa($request);

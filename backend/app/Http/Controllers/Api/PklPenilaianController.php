@@ -40,7 +40,7 @@ class PklPenilaianController extends Controller
         $penilaian = $pklPlacement->penilaian()->with(['kompetensis', 'submittedBy.dudi'])->first();
 
         if (!$penilaian) {
-            return response()->json(null);
+            return response('null', 200)->header('Content-Type', 'application/json');
         }
 
         return response()->json($penilaian);
