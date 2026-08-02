@@ -1,10 +1,13 @@
 import { useEffect, useState } from 'react';
-import { LogOut, School, Trophy, AlertOctagon, Clock, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
+import { LogOut, School, Trophy, AlertOctagon, Clock, ChevronDown, ChevronLeft, ChevronRight, Wallet } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api/axios';
 import LeaderboardPrestasi from '../../components/LeaderboardPrestasi';
 
 const PAGE_SIZE = 5;
+
+const BULAN = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+const formatRupiah = (n) => 'Rp' + Number(n || 0).toLocaleString('id-ID');
 
 const TYPE_CONFIG = {
   absensi: { icon: Clock, badge: 'badge-brand' },
@@ -21,6 +24,8 @@ export default function ParentDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [activityPage, setActivityPage] = useState(1);
+  const [spp, setSpp] = useState([]);
+  const [showSppDetail, setShowSppDetail] = useState(false);
 
   useEffect(() => {
     api.get('/my-children')
@@ -36,16 +41,25 @@ export default function ParentDashboard() {
     if (!selectedId) return;
     setLoading(true);
     setActivityPage(1);
+    setShowSppDetail(false);
     api.get(`/my-children/${selectedId}/activity`)
       .then((res) => setActivity(res.data))
       .catch(() => setError('Gagal memuat aktivitas.'))
       .finally(() => setLoading(false));
+
+    api.get(`/my-children/${selectedId}/spp`)
+      .then((res) => setSpp(res.data))
+      .catch(() => setSpp([]));
   }, [selectedId]);
 
   const selectedChild = children.find((c) => c.id === selectedId);
 
   const timelineTotalPages = Math.max(1, Math.ceil((activity?.timeline?.length || 0) / PAGE_SIZE));
   const timelinePaginated = (activity?.timeline || []).slice((activityPage - 1) * PAGE_SIZE, activityPage * PAGE_SIZE);
+
+  const sppBelumBayar = spp.filter((s) => s.status === 'belum_bayar');
+  const sppTunggakan = sppBelumBayar.reduce((sum, s) => sum + Number(s.nominal || 0), 0);
+  const sppBelumBayarCount = sppBelumBayar.length;
 
   return (
     <div className="min-h-screen bg-mist-50">
@@ -100,24 +114,72 @@ export default function ParentDashboard() {
               </div>
             )}
 
-            {/* Kartu ringkasan anak */}
-            {selectedChild && (
-              <div className="surface-card p-5 mb-6 flex items-center justify-between flex-wrap gap-3">
+            {/* SPP */}
+            <div className="surface-card p-5 mb-6">
+              <h2 className="font-display font-semibold text-ink-900 mb-4 flex items-center gap-2">
+                <Wallet className="w-4 h-4 text-ink-500" /> SPP
+              </h2>
+
+              <div className="flex items-center justify-between flex-wrap gap-3">
                 <div>
-                  <h2 className="font-display font-semibold text-ink-900 text-lg">{selectedChild.user?.name}</h2>
-                  <p className="text-sm text-ink-500">
-                    {selectedChild.class_room?.name || 'Belum ada kelas'} · NIS {selectedChild.nis}
+                  <p className="text-xs text-ink-500">Total Tunggakan</p>
+                  <p className={`text-xl font-display font-semibold ${sppTunggakan > 0 ? 'text-honey-700' : 'text-brand-600'}`}>
+                    {formatRupiah(sppTunggakan)}
                   </p>
                 </div>
-                <div className="flex gap-2">
-                  <span className="badge-soft badge-rose">Poin Pelanggaran: {selectedChild.total_poin ?? 0}</span>
-                  <span className="badge-soft badge-honey">Poin Prestasi: {selectedChild.total_prestasi ?? 0}</span>
-                </div>
+                {sppBelumBayarCount > 0 ? (
+                  <span className="badge-soft badge-rose">{sppBelumBayarCount} bulan belum bayar</span>
+                ) : (
+                  <span className="badge-soft badge-brand">Semua SPP lunas</span>
+                )}
               </div>
-            )}
+
+              <button
+                onClick={() => setShowSppDetail((v) => !v)}
+                className="w-full mt-4 flex items-center justify-center gap-1.5 text-sm font-medium text-ink-700 bg-mist-50 hover:bg-mist-100 border border-line-200 rounded-xl px-4 py-2 transition"
+              >
+                Detail Tagihan
+                <ChevronDown className={`w-4 h-4 transition-transform ${showSppDetail ? 'rotate-180' : ''}`} />
+              </button>
+
+              {showSppDetail && (
+                spp.length === 0 ? (
+                  <p className="text-sm text-ink-500 text-center py-3">Belum ada tagihan SPP tercatat.</p>
+                ) : (
+                  <ul className="divide-y divide-line-200 mt-2">
+                    {spp.map((s) => (
+                      <li key={s.id} className="py-2.5 flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-medium text-ink-900">{BULAN[s.bulan - 1]} {s.tahun}</p>
+                          <p className="text-xs text-ink-500">{formatRupiah(s.nominal)}</p>
+                        </div>
+                        <span className={`badge-soft ${s.status === 'lunas' ? 'badge-brand' : 'badge-rose'}`}>
+                          {s.status === 'lunas' ? 'Lunas' : 'Belum Bayar'}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )
+              )}
+            </div>
 
             {/* Aktivitas terkini */}
             <div className="surface-card p-5">
+              {selectedChild && (
+                <div className="flex items-center justify-between flex-wrap gap-3 pb-4 mb-4 border-b border-line-200">
+                  <div>
+                    <h2 className="font-display font-semibold text-ink-900 text-lg">{selectedChild.user?.name}</h2>
+                    <p className="text-sm text-ink-500">
+                      {selectedChild.class_room?.name || 'Belum ada kelas'} · NIS {selectedChild.nis}
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <span className="badge-soft badge-rose">Poin Pelanggaran: {selectedChild.total_poin ?? 0}</span>
+                    <span className="badge-soft badge-honey">Poin Prestasi: {selectedChild.total_prestasi ?? 0}</span>
+                  </div>
+                </div>
+              )}
+
               <h2 className="font-display font-semibold text-ink-900 mb-4">Aktivitas Terkini</h2>
 
               {loading ? (

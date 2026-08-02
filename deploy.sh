@@ -23,6 +23,13 @@ php artisan storage:link
 php artisan config:clear
 php artisan config:cache
 
+echo ">> Pasang cron scheduler (kalau belum ada)"
+CRON_FILE=/etc/cron.d/ms-smkmuhsampit-scheduler
+if [ ! -f "$CRON_FILE" ]; then
+    echo "* * * * * www-data cd /var/www/ms-smkmuhsampit/backend && php artisan schedule:run >> /dev/null 2>&1" | sudo tee "$CRON_FILE" > /dev/null
+    sudo chmod 644 "$CRON_FILE"
+fi
+
 echo ">> Frontend build"
 cd ../frontend
 npm install

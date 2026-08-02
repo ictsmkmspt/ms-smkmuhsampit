@@ -15,9 +15,11 @@ use App\Http\Controllers\Api\PklPembimbinganJournalController;
 use App\Http\Controllers\Api\PklPlacementController;
 use App\Http\Controllers\Api\PrayerAttendanceController;
 use App\Http\Controllers\Api\SettingController;
+use App\Http\Controllers\Api\SppController;
 use App\Http\Controllers\Api\StudentController;
 use App\Http\Controllers\Api\StudentSelfController;
 use App\Http\Controllers\Api\TeacherController;
+use App\Http\Controllers\Api\TuController;
 use App\Http\Controllers\Api\ViolationTypeController;
 use App\Http\Controllers\Api\WaliController;
 use Illuminate\Support\Facades\Route;
@@ -32,9 +34,12 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::middleware('role:admin')->group(function () {
         Route::apiResource('classes', ClassRoomController::class)->parameters(['classes' => 'classRoom']);
+        Route::post('/classes/{classRoom}/luluskan', [ClassRoomController::class, 'luluskan']);
+        Route::post('/classes/{classRoom}/aktifkan', [ClassRoomController::class, 'aktifkan']);
         Route::get('/students/import/template', [StudentController::class, 'downloadTemplate']);
         Route::post('/students/import', [StudentController::class, 'import']);
         Route::apiResource('students', StudentController::class);
+        Route::put('/students/{student}/kembalikan-aktif', [StudentController::class, 'kembalikanAktif']);
         Route::get('/teachers/import/template', [TeacherController::class, 'downloadTemplate']);
         Route::post('/teachers/import', [TeacherController::class, 'import']);
         Route::apiResource('teachers', TeacherController::class);
@@ -54,6 +59,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/parents/import/template', [WaliController::class, 'downloadTemplate']);
         Route::post('/parents/import', [WaliController::class, 'import']);
         Route::apiResource('dudi', DudiController::class)->except(['show']);
+        Route::get('/tu', [TuController::class, 'index']);
+        Route::post('/tu', [TuController::class, 'store']);
+        Route::delete('/tu/{id}', [TuController::class, 'destroy']);
         Route::post('/pkl-placements/tutup-semua-aktif', [PklPlacementController::class, 'tutupSemuaAktif']);
         Route::post('/pkl-placements/aktifkan-semua-selesai', [PklPlacementController::class, 'aktifkanSemuaSelesai']);
         Route::post('/pkl-placements/reset-semua', [PklPlacementController::class, 'resetSemuaPkl']);
@@ -61,7 +69,6 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::middleware('role:admin,guru')->group(function () {
-        Route::get('/classes', [ClassRoomController::class, 'index']);
         Route::get('/students/barcode/{code}', [StudentController::class, 'findByBarcode']);
         Route::post('/attendance/scan', [AttendanceController::class, 'scan']);
         Route::post('/attendance/manual', [AttendanceController::class, 'attendanceManual']);
@@ -77,7 +84,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/violations/{id}', [AttendanceController::class, 'violationDestroy']);
         Route::put('/violations/{id}', [AttendanceController::class, 'violationUpdate']);
         Route::get('/violation-types', [ViolationTypeController::class, 'index']);
-        Route::get('/students', [StudentController::class, 'index']);
         Route::post('/prayer/scan', [PrayerAttendanceController::class, 'scan']);
         Route::post('/prayer/manual', [PrayerAttendanceController::class, 'manual']);
         Route::get('/prayer/report', [PrayerAttendanceController::class, 'report']);
@@ -138,6 +144,21 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('role:wali')->group(function () {
         Route::get('/my-children', [ParentController::class, 'children']);
         Route::get('/my-children/{studentId}/activity', [ParentController::class, 'activity']);
+        Route::get('/my-children/{studentId}/spp', [ParentController::class, 'spp']);
+    });
+
+    Route::middleware('role:tu')->group(function () {
+        Route::get('/spp/settings', [SppController::class, 'settings']);
+        Route::put('/spp/settings', [SppController::class, 'updateSettings']);
+        Route::get('/spp/siswa/{studentId}', [SppController::class, 'byStudent']);
+        Route::get('/spp/alumni', [SppController::class, 'alumni']);
+        Route::get('/spp', [SppController::class, 'index']);
+        Route::get('/spp/{spp}', [SppController::class, 'show']);
+        Route::post('/spp/generate', [SppController::class, 'generate']);
+        Route::put('/spp/{spp}', [SppController::class, 'update']);
+        Route::put('/spp/{spp}/status', [SppController::class, 'updateStatus']);
+        Route::delete('/spp/bulan', [SppController::class, 'destroyBulan']);
+        Route::delete('/spp/{spp}', [SppController::class, 'destroy']);
     });
 
     Route::middleware('role:dudi')->group(function () {
@@ -149,5 +170,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/pkl-placements/{pklPlacement}/penilaian', [PklPenilaianController::class, 'store']);
         Route::put('/pkl-placements/{pklPlacement}/penilaian', [PklPenilaianController::class, 'update']);
         Route::delete('/pkl-placements/{pklPlacement}/penilaian', [PklPenilaianController::class, 'destroy']);
+    });
+
+    // Dipisah dari grup role:admin,guru di atas supaya TU juga bisa akses
+    // (butuh daftar kelas & siswa buat filter menu SPP), tanpa memberi TU
+    // akses ke rute lain di grup itu (absensi, pelanggaran, dll).
+    Route::middleware('role:admin,guru,tu')->group(function () {
+        Route::get('/classes', [ClassRoomController::class, 'index']);
+        Route::get('/students', [StudentController::class, 'index']);
     });
 });

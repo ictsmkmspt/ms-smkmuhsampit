@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Achievement;
 use App\Models\Attendance;
+use App\Models\Spp;
 use App\Models\Student;
 use App\Models\Violation;
 use Illuminate\Http\Request;
@@ -76,5 +77,22 @@ class ParentController extends Controller
             'student'  => $student,
             'timeline' => $timeline,
         ]);
+    }
+
+    /**
+     * Riwayat SPP 1 anak, dari bulan terbaru. Selalu dicek dulu bahwa
+     * $studentId ini benar anak dari wali yang login.
+     */
+    public function spp(Request $request, $studentId)
+    {
+        $isMyChild = $request->user()->children()->where('students.id', $studentId)->exists();
+
+        if (!$isMyChild) {
+            return response()->json(['message' => 'Anda tidak berwenang melihat data siswa ini.'], 403);
+        }
+
+        return Spp::where('student_id', $studentId)
+            ->orderByDesc('tahun')->orderByDesc('bulan')
+            ->get();
     }
 }

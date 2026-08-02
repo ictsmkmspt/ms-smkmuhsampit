@@ -8,10 +8,12 @@ import GuruDashboard from './pages/guru/GuruDashboard';
 import SiswaDashboard from './pages/siswa/SiswaDashboard';
 import ParentDashboard from './pages/wali/ParentDashboard';
 import DudiDashboard from './pages/dudi/DudiDashboard';
+import TuDashboard from './pages/tu/TuDashboard';
 import PrintMonthlyAttendance from './pages/print/PrintMonthlyAttendance';
 import PrintPklJurnal from './pages/print/PrintPklJurnal';
 import PrintPklJurnalKegiatan from './pages/print/PrintPklJurnalKegiatan';
 import PrintPklPembimbingan from './pages/print/PrintPklPembimbingan';
+import PrintSppNota from './pages/print/PrintSppNota';
 
 export default function App() {
   return (
@@ -37,6 +39,10 @@ export default function App() {
             <ProtectedRoute allowedRoles={['admin', 'guru', 'dudi']}><PrintPklPembimbingan /></ProtectedRoute>
           } />
 
+          <Route path="/print/spp-nota" element={
+            <ProtectedRoute allowedRoles={['tu']}><PrintSppNota /></ProtectedRoute>
+          } />
+
 
           <Route path="/admin/*" element={
             <ProtectedRoute allowedRoles={['admin']}><AdminDashboard /></ProtectedRoute>
@@ -56,6 +62,10 @@ export default function App() {
 
           <Route path="/dudi/*" element={
             <ProtectedRoute allowedRoles={['dudi']}><DudiDashboard /></ProtectedRoute>
+          } />
+
+          <Route path="/tu/*" element={
+            <ProtectedRoute allowedRoles={['tu']}><TuDashboard /></ProtectedRoute>
           } />
 
           <Route path="*" element={<Login />} />
