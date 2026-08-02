@@ -35,8 +35,10 @@ export function AuthProvider({ children }) {
     setMustChangePassword(false);
   };
 
+  const updateUser = (partial) => setUser((prev) => ({ ...prev, ...partial }));
+
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading, mustChangePassword, setMustChangePassword }}>
+    <AuthContext.Provider value={{ user, login, logout, loading, mustChangePassword, setMustChangePassword, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

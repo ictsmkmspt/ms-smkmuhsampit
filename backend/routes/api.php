@@ -32,6 +32,21 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/leaderboard/prestasi', [AchievementController::class, 'leaderboard']);
     Route::post('/logout', [AuthController::class, 'logout']);
 
+    // Didaftarkan SEBELUM grup role:admin (yang punya apiResource('dudi', ...)
+    // dengan rute wildcard /dudi/{dudi}) — supaya /dudi/profile & /dudi/tanda-tangan
+    // (rute literal) tidak ketiban rute wildcard admin itu. Laravel mencocokkan
+    // rute sesuai urutan didaftarkan, jadi rute literal wajib didaftarkan lebih dulu.
+    Route::middleware('role:dudi')->group(function () {
+        Route::get('/my-dudi-profile', [DudiController::class, 'myProfile']);
+        Route::post('/dudi/tanda-tangan', [DudiController::class, 'uploadTandaTangan']);
+        Route::put('/dudi/profile', [DudiController::class, 'updateProfile']);
+        Route::get('/dudi/my-siswa', [PklPlacementController::class, 'siswaSaya']);
+        Route::get('/dudi/absensi-pending', [PklAttendanceController::class, 'pendingVerifikasi']);
+        Route::post('/pkl-placements/{pklPlacement}/penilaian', [PklPenilaianController::class, 'store']);
+        Route::put('/pkl-placements/{pklPlacement}/penilaian', [PklPenilaianController::class, 'update']);
+        Route::delete('/pkl-placements/{pklPlacement}/penilaian', [PklPenilaianController::class, 'destroy']);
+    });
+
     Route::middleware('role:admin')->group(function () {
         Route::apiResource('classes', ClassRoomController::class)->parameters(['classes' => 'classRoom']);
         Route::post('/classes/{classRoom}/luluskan', [ClassRoomController::class, 'luluskan']);
@@ -155,21 +170,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/spp', [SppController::class, 'index']);
         Route::get('/spp/{spp}', [SppController::class, 'show']);
         Route::post('/spp/generate', [SppController::class, 'generate']);
+        Route::post('/spp/bayar-dimuka', [SppController::class, 'bayarDimuka']);
         Route::put('/spp/{spp}', [SppController::class, 'update']);
         Route::put('/spp/{spp}/status', [SppController::class, 'updateStatus']);
         Route::delete('/spp/bulan', [SppController::class, 'destroyBulan']);
         Route::delete('/spp/{spp}', [SppController::class, 'destroy']);
-    });
-
-    Route::middleware('role:dudi')->group(function () {
-        Route::get('/my-dudi-profile', [DudiController::class, 'myProfile']);
-        Route::post('/dudi/tanda-tangan', [DudiController::class, 'uploadTandaTangan']);
-        Route::put('/dudi/profile', [DudiController::class, 'updateProfile']);
-        Route::get('/dudi/my-siswa', [PklPlacementController::class, 'siswaSaya']);
-        Route::get('/dudi/absensi-pending', [PklAttendanceController::class, 'pendingVerifikasi']);
-        Route::post('/pkl-placements/{pklPlacement}/penilaian', [PklPenilaianController::class, 'store']);
-        Route::put('/pkl-placements/{pklPlacement}/penilaian', [PklPenilaianController::class, 'update']);
-        Route::delete('/pkl-placements/{pklPlacement}/penilaian', [PklPenilaianController::class, 'destroy']);
     });
 
     // Dipisah dari grup role:admin,guru di atas supaya TU juga bisa akses

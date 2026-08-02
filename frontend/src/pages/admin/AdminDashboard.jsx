@@ -2,7 +2,7 @@ import { useState } from 'react';
 import {
   LogOut, Database, ClipboardList, Settings, ChevronDown, ChevronLeft, ChevronRight, Menu, X,
   Users, GraduationCap, School, UserCog, Briefcase, LayoutDashboard, Building2, ClipboardCheck,
-  Clock, AlertOctagon, Trophy, CalendarDays, Wallet,
+  Clock, AlertOctagon, Trophy, CalendarDays, Wallet, Pencil,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import MasterDataTab, { MASTER_DATA_SUBMENU } from './tabs/MasterDataTab';
@@ -10,6 +10,7 @@ import ReportTab, { REPORT_SUBMENU } from './tabs/ReportTab';
 import SettingsTab, { SETTINGS_SUBMENU } from './tabs/SettingsTab';
 import PklTab, { PKL_SUBMENU } from './tabs/PklTab';
 import DashboardHomeTab from './tabs/DashboardHomeTab';
+import EditProfileModal from '../../components/EditProfileModal';
 
 const MASTER_ICONS = { siswa: Users, guru: GraduationCap, kelas: School, wali: UserCog, tu: Wallet, alumni: GraduationCap };
 const SETTINGS_ICONS = { jam: Clock, poin: AlertOctagon, prestasi: Trophy, libur: CalendarDays };
@@ -34,6 +35,7 @@ export default function AdminDashboard() {
   const [openDropdown, setOpenDropdown] = useState(null); // 'master' | 'pengaturan' | null
   const [collapsed, setCollapsed] = useState(false); // toggle sidebar desktop
   const [mobileOpen, setMobileOpen] = useState(false); // toggle dropdown menu di HP
+  const [showEditProfil, setShowEditProfil] = useState(false);
 
   const active = TABS.find((t) => t.key === activeTab);
   const ActiveComponent = active?.component;
@@ -147,6 +149,12 @@ export default function AdminDashboard() {
             {navItems('mobile')}
             <div className="pt-2 mt-2 border-t border-white/10">
               <button
+                onClick={() => { setShowEditProfil(true); setMobileOpen(false); }}
+                className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm text-white/70 hover:bg-white/5 hover:text-[#F2B705] transition"
+              >
+                <Pencil className="w-4 h-4" /> Edit Profil
+              </button>
+              <button
                 onClick={logout}
                 className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm text-white/70 hover:bg-white/5 hover:text-[#F2B705] transition"
               >
@@ -188,9 +196,18 @@ export default function AdminDashboard() {
             {initial}
           </div>
           {!collapsed && (
-            <div className="min-w-0">
-              <p className="text-sm font-medium text-white truncate">{user.name}</p>
-              <p className="text-xs text-white/50">Administrator</p>
+            <div className="min-w-0 flex-1 flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-white truncate">{user.name}</p>
+                <p className="text-xs text-white/50">Administrator</p>
+              </div>
+              <button
+                onClick={() => setShowEditProfil(true)}
+                title="Edit Profil"
+                className="shrink-0 text-white/50 hover:text-[#F2B705] transition"
+              >
+                <Pencil className="w-3.5 h-3.5" />
+              </button>
             </div>
           )}
         </div>
@@ -228,6 +245,10 @@ export default function AdminDashboard() {
           )}
         </div>
       </div>
+
+      {showEditProfil && (
+        <EditProfileModal onClose={() => setShowEditProfil(false)} />
+      )}
     </div>
   );
 }

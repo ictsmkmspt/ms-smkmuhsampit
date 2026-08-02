@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import QRCode from 'qrcode';
 import {
-  LogOut, Clock, ChevronDown, KeyRound, ChevronLeft, ChevronRight,
+  LogOut, Clock, ChevronDown, UserCog, ChevronLeft, ChevronRight,
   Award, AlertTriangle, Home, ClipboardCheck, NotebookPen,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api/axios';
 import PklSiswaView from './PklSiswaView';
-import ChangePasswordModal from '../../components/ChangePasswordModal';
+import EditProfileModal from '../../components/EditProfileModal';
 import LeaderboardPrestasi from '../../components/LeaderboardPrestasi';
 
 const PAGE_SIZE = 5;
@@ -23,7 +23,7 @@ export default function SiswaDashboard() {
   const [absensiPage, setAbsensiPage] = useState(1);
 
   const [menuOpen, setMenuOpen] = useState(false);
-  const [showGantiPassword, setShowGantiPassword] = useState(false);
+  const [showEditProfil, setShowEditProfil] = useState(false);
   const menuRef = useRef(null);
 
   // Sub-menu dipakai cuma saat sedang PKL: 'beranda' | 'absensi' | 'jurnal'
@@ -313,10 +313,10 @@ export default function SiswaDashboard() {
           {menuOpen && (
             <div className="absolute right-0 z-20 mt-2 w-44 surface-card overflow-hidden">
               <button
-                onClick={() => { setShowGantiPassword(true); setMenuOpen(false); }}
+                onClick={() => { setShowEditProfil(true); setMenuOpen(false); }}
                 className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-left text-ink-700 hover:bg-mist-50 transition"
               >
-                <KeyRound className="w-4 h-4" /> Ganti Password
+                <UserCog className="w-4 h-4" /> Edit Profil
               </button>
               <button
                 onClick={logout}
@@ -361,8 +361,8 @@ export default function SiswaDashboard() {
         </div>
       )}
 
-      {showGantiPassword && (
-        <ChangePasswordModal onClose={() => setShowGantiPassword(false)} />
+      {showEditProfil && (
+        <EditProfileModal onClose={() => setShowEditProfil(false)} />
       )}
     </div>
   );

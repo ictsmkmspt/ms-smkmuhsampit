@@ -99,13 +99,15 @@ class DudiController extends Controller
         if (!$dudi) {
             return response()->json(['message' => 'Akun ini belum terhubung ke profil DUDI.'], 404);
         }
-        return $dudi;
+        return $dudi->load('user');
     }
 
     /**
-     * DUDI mengubah data profil perusahaannya sendiri (bukan admin) — dipakai
-     * menu "Edit Profil" di dashboard DUDI. Sengaja tidak termasuk email/password
-     * di sini, itu urusan terpisah supaya tidak tercampur dengan data profil biasa.
+     * DUDI mengubah data profilnya sendiri (bukan admin) — dipakai menu
+     * "Edit Profil" di dashboard DUDI. Sengaja dibatasi cuma nama instruktur
+     * & no HP (bukan nama perusahaan/alamat, itu data resmi yang tetap
+     * dikelola admin lewat Master Data > DUDI). Sengaja tidak termasuk
+     * email/password di sini juga, itu urusan terpisah.
      */
     public function updateProfile(Request $request)
     {
@@ -115,17 +117,16 @@ class DudiController extends Controller
         }
 
         $data = $request->validate([
-            'nama_perusahaan'  => 'sometimes|string|max:150',
-            'alamat'           => 'nullable|string|max:255',
-            'penanggung_jawab' => 'nullable|string|max:100',
-            'telepon'          => 'nullable|string|max:30',
+            'name'    => 'required|string|max:100',
+            'telepon' => 'nullable|string|max:30',
         ]);
 
-        $dudi->update($data);
+        $dudi->user->update(['name' => $data['name']]);
+        $dudi->update(['telepon' => $data['telepon'] ?? null]);
 
         return response()->json([
             'message' => 'Profil berhasil diperbarui.',
-            'dudi'    => $dudi->fresh(),
+            'dudi'    => $dudi->fresh('user'),
         ]);
     }
 

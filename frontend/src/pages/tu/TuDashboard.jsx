@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { LogOut, LayoutDashboard, Receipt, GraduationCap, Settings, Menu, X } from 'lucide-react';
+import { LogOut, LayoutDashboard, Receipt, GraduationCap, Settings, Menu, X, Pencil } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import DashboardTab from './tabs/DashboardTab';
 import TagihanTab from './tabs/TagihanTab';
 import AlumniTab from './tabs/AlumniTab';
 import PengaturanTab from './tabs/PengaturanTab';
+import EditProfileModal from '../../components/EditProfileModal';
 
 const TABS = [
   { key: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, component: DashboardTab },
@@ -17,6 +18,7 @@ export default function TuDashboard() {
   const { user, logout } = useAuth();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [showEditProfil, setShowEditProfil] = useState(false);
 
   const active = TABS.find((t) => t.key === activeTab);
   const ActiveComponent = active?.component;
@@ -62,6 +64,12 @@ export default function TuDashboard() {
             {navItems()}
             <div className="pt-2 mt-2 border-t border-white/10">
               <button
+                onClick={() => { setShowEditProfil(true); setMobileOpen(false); }}
+                className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm text-white/70 hover:bg-white/5 hover:text-[#F2B705] transition"
+              >
+                <Pencil className="w-4 h-4" /> Edit Profil
+              </button>
+              <button
                 onClick={logout}
                 className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm text-white/70 hover:bg-white/5 hover:text-[#F2B705] transition"
               >
@@ -88,9 +96,18 @@ export default function TuDashboard() {
           <div className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-white font-display font-semibold text-sm shrink-0">
             {initial}
           </div>
-          <div className="min-w-0">
-            <p className="text-sm font-medium text-white truncate">{user.name}</p>
-            <p className="text-xs text-white/50">Tata Usaha</p>
+          <div className="min-w-0 flex-1 flex items-center justify-between gap-2">
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-white truncate">{user.name}</p>
+              <p className="text-xs text-white/50">Tata Usaha</p>
+            </div>
+            <button
+              onClick={() => setShowEditProfil(true)}
+              title="Edit Profil"
+              className="shrink-0 text-white/50 hover:text-[#F2B705] transition"
+            >
+              <Pencil className="w-3.5 h-3.5" />
+            </button>
           </div>
         </div>
 
@@ -114,6 +131,10 @@ export default function TuDashboard() {
           {ActiveComponent && <ActiveComponent />}
         </div>
       </div>
+
+      {showEditProfil && (
+        <EditProfileModal onClose={() => setShowEditProfil(false)} />
+      )}
     </div>
   );
 }

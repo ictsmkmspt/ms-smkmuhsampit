@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
-import { LogOut, Building2, ClipboardCheck, NotebookPen, ChevronDown, UserCog, KeyRound, Star } from 'lucide-react';
+import { LogOut, Building2, ClipboardCheck, NotebookPen, ChevronDown, UserCog, PenTool, Star } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api/axios';
 import DudiAbsensiTab from './tabs/DudiAbsensiTab';
 import DudiJurnalPembimbinganTab from './tabs/DudiJurnalPembimbinganTab';
 import DudiPenilaianTab from './tabs/DudiPenilaianTab';
 import TandaTanganModal from '../../components/TandaTanganModal';
-import ChangePasswordModal from '../../components/ChangePasswordModal';
+import DudiProfileModal from '../../components/DudiProfileModal';
 
 const TABS = [
   { key: 'absensi', label: 'Absensi', icon: ClipboardCheck, component: DudiAbsensiTab },
@@ -21,7 +21,7 @@ export default function DudiDashboard() {
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [showEditProfil, setShowEditProfil] = useState(false);
-  const [showGantiPassword, setShowGantiPassword] = useState(false);
+  const [showTandaTangan, setShowTandaTangan] = useState(false);
   const menuRef = useRef(null);
 
   const loadProfile = () => api.get('/my-dudi-profile').then((res) => setProfile(res.data));
@@ -77,10 +77,10 @@ export default function DudiDashboard() {
                   <UserCog className="w-4 h-4" /> Edit Profil
                 </button>
                 <button
-                  onClick={() => { setShowGantiPassword(true); setMenuOpen(false); }}
+                  onClick={() => { setShowTandaTangan(true); setMenuOpen(false); }}
                   className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-left text-ink-700 hover:bg-mist-50 transition"
                 >
-                  <KeyRound className="w-4 h-4" /> Ganti Password
+                  <PenTool className="w-4 h-4" /> Tanda Tangan
                 </button>
                 <button
                   onClick={logout}
@@ -125,17 +125,21 @@ export default function DudiDashboard() {
         </div>
       </div>
 
-      {(showEditProfil || wajibIsiTandaTangan) && (
-        <TandaTanganModal
+      {showEditProfil && (
+        <DudiProfileModal
           dudi={profile}
           onClose={() => setShowEditProfil(false)}
           onSaved={(updated) => setProfile(updated)}
-          forced={wajibIsiTandaTangan}
         />
       )}
 
-      {showGantiPassword && (
-        <ChangePasswordModal onClose={() => setShowGantiPassword(false)} />
+      {(showTandaTangan || wajibIsiTandaTangan) && (
+        <TandaTanganModal
+          dudi={profile}
+          onClose={() => setShowTandaTangan(false)}
+          onSaved={(updated) => setProfile(updated)}
+          forced={wajibIsiTandaTangan}
+        />
       )}
     </div>
   );

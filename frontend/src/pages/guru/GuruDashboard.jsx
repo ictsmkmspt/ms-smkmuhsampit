@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
-import { LogOut, ClipboardCheck, AlertTriangle, FileText, Briefcase, ChevronDown, KeyRound, Home } from 'lucide-react';
+import { LogOut, ClipboardCheck, AlertTriangle, FileText, Briefcase, ChevronDown, UserCog, Home } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import BerandaTab from './tabs/BerandaTab';
 import AbsensiTab from './tabs/AbsensiTab';
 import PoinPelanggaranTab from './tabs/PoinPelanggaranTab';
 import LaporanTab from './tabs/LaporanTab';
 import BimbinganPklTab from './tabs/BimbinganPklTab';
-import ChangePasswordModal from '../../components/ChangePasswordModal';
+import EditProfileModal from '../../components/EditProfileModal';
 
 const TABS = [
   { key: 'beranda', label: 'Beranda',          icon: Home,           component: BerandaTab },
@@ -21,7 +21,7 @@ export default function GuruDashboard() {
   const [activeTab, setActiveTab] = useState('beranda');
 
   const [menuOpen, setMenuOpen] = useState(false);
-  const [showGantiPassword, setShowGantiPassword] = useState(false);
+  const [showEditProfil, setShowEditProfil] = useState(false);
   const menuRef = useRef(null);
 
   useEffect(() => {
@@ -59,10 +59,10 @@ export default function GuruDashboard() {
             {menuOpen && (
               <div className="absolute right-0 z-20 mt-2 w-44 surface-card overflow-hidden">
                 <button
-                  onClick={() => { setShowGantiPassword(true); setMenuOpen(false); }}
+                  onClick={() => { setShowEditProfil(true); setMenuOpen(false); }}
                   className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-left text-ink-700 hover:bg-mist-50 transition"
                 >
-                  <KeyRound className="w-4 h-4" /> Ganti Password
+                  <UserCog className="w-4 h-4" /> Edit Profil
                 </button>
                 <button
                   onClick={logout}
@@ -108,8 +108,8 @@ export default function GuruDashboard() {
         </div>
       </div>
 
-      {showGantiPassword && (
-        <ChangePasswordModal onClose={() => setShowGantiPassword(false)} />
+      {showEditProfil && (
+        <EditProfileModal onClose={() => setShowEditProfil(false)} />
       )}
     </div>
   );
