@@ -31,6 +31,7 @@ export default function AbsensiReportSection() {
       .finally(() => setLoading(false));
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- hanya load sekali saat mount, perubahan tanggal dipicu manual lewat tombol
   useEffect(() => { loadReport(); }, []);
 
   const handleDelete = async (r) => {

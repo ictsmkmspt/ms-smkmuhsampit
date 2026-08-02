@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { HandHeart, CheckCircle2, AlertTriangle, ClipboardEdit } from 'lucide-react';
+import { ClipboardEdit } from 'lucide-react';
 import BarcodeScanner from '../../../../components/BarcodeScanner';
 import api from '../../../../api/axios';
 

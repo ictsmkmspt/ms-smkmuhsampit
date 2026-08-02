@@ -32,6 +32,7 @@ export default function AttendanceReportTab() {
       .finally(() => setLoading(false));
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- hanya load sekali saat mount, perubahan filter dipicu manual lewat tombol
   useEffect(() => { loadReport(); }, []);
 
   const handlePrint = () => {

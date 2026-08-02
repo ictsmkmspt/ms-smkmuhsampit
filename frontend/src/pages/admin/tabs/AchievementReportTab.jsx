@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Search, Award, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import api from '../../../api/axios';
 import StudentAchievementModal from '../../../components/StudentAchievementModal';
 

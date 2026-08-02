@@ -22,7 +22,7 @@ export default function Login() {
       else if (user.role === 'wali') navigate('/wali');
       else if (user.role === 'dudi') navigate('/dudi');
       else navigate('/siswa');
-    } catch (err) {
+    } catch {
       setError('Email/No. HP atau password salah.');
     } finally {
       setLoading(false);

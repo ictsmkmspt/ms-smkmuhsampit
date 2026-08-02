@@ -9,6 +9,7 @@ export default function BarcodeScanner({ onDecode }) {
   const scannerRef = useRef(null);
   const isProcessing = useRef(false);
   const isRunning = useRef(false);
+  const onScanSuccessRef = useRef(null);
 
   useEffect(() => {
     const scanner = new Html5Qrcode('reader');
@@ -17,7 +18,7 @@ export default function BarcodeScanner({ onDecode }) {
     scanner.start(
       { facingMode: 'environment' },
       { fps: 10, qrbox: 250 },
-      onScanSuccess,
+      (decodedText) => onScanSuccessRef.current(decodedText),
       () => {}
     ).then(() => {
       isRunning.current = true;
@@ -65,6 +66,8 @@ export default function BarcodeScanner({ onDecode }) {
 
     setTimeout(() => { isProcessing.current = false; }, 2500);
   };
+
+  onScanSuccessRef.current = onScanSuccess;
 
   return (
     <div className="max-w-md mx-auto">

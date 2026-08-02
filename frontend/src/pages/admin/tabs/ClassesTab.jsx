@@ -28,7 +28,7 @@ export default function ClassesTab() {
       await api.post('/classes', { name });
       setName('');
       loadClasses();
-    } catch (err) {
+    } catch {
       setError('Gagal menambah kelas.');
     } finally {
       setLoading(false);
