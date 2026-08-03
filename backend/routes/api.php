@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\PklPenilaianController;
 use App\Http\Controllers\Api\PklPembimbinganJournalController;
 use App\Http\Controllers\Api\PklPlacementController;
 use App\Http\Controllers\Api\PrayerAttendanceController;
+use App\Http\Controllers\Api\SchoolProfileController;
 use App\Http\Controllers\Api\SettingController;
 use App\Http\Controllers\Api\SppController;
 use App\Http\Controllers\Api\StudentController;
@@ -25,6 +26,10 @@ use App\Http\Controllers\Api\WaliController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/login', [AuthController::class, 'login']);
+
+// Publik (tanpa login) — dipakai halaman Login, favicon, dan judul tab
+// browser, yang semuanya perlu tampil sebelum user berhasil login.
+Route::get('/school-profile', [SchoolProfileController::class, 'show']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
@@ -60,6 +65,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::apiResource('teachers', TeacherController::class);
         Route::get('/settings', [SettingController::class, 'index']);
         Route::put('/settings', [SettingController::class, 'update']);
+        Route::put('/school-profile', [SchoolProfileController::class, 'update']);
+        Route::post('/school-profile/logo', [SchoolProfileController::class, 'uploadLogo']);
         Route::apiResource('violation-types', ViolationTypeController::class)->except(['show']);
         Route::post('/violations/reset-all', [AttendanceController::class, 'violationResetAll']);
         Route::apiResource('holidays', HolidayController::class)->only(['index', 'store', 'destroy']);

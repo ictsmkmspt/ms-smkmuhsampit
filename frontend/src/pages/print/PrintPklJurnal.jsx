@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { Printer } from 'lucide-react';
 import api from '../../api/axios';
 import { useAuth } from '../../context/AuthContext';
+import { useSchoolProfile } from '../../context/SchoolProfileContext';
 
 const HARI = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
 const BULAN = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
@@ -10,6 +11,7 @@ const STATUS_LABEL = { izin: 'Izin', sakit: 'Sakit', alpa: 'Alpa' };
 
 export default function PrintPklJurnal() {
   const { user } = useAuth();
+  const { profile } = useSchoolProfile();
   const [params] = useSearchParams();
   const placementId = params.get('placement_id');
 
@@ -96,7 +98,7 @@ export default function PrintPklJurnal() {
 
       <div className="mb-6 text-sm">
         <p className="font-bold flex items-center gap-1.5">
-          <span>◆</span> SMK MUHAMMADIYAH SAMPIT
+          <span>◆</span> {profile.nama_sekolah.toUpperCase()}
         </p>
         <p className="font-bold text-xs ml-4">JURNAL PRAKTIK KERJA LAPANGAN {tahun}</p>
       </div>

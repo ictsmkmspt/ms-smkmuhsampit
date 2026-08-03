@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Printer } from 'lucide-react';
 import api from '../../api/axios';
+import { useSchoolProfile } from '../../context/SchoolProfileContext';
 
 const BULAN = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
 const formatRupiah = (n) => 'Rp' + Number(n || 0).toLocaleString('id-ID');
@@ -14,6 +15,7 @@ const formatTanggal = (iso) => {
 export default function PrintSppNota() {
   const [params] = useSearchParams();
   const sppId = params.get('spp_id');
+  const { profile } = useSchoolProfile();
 
   const [spp, setSpp] = useState(null);
   const [error, setError] = useState('');
@@ -36,7 +38,7 @@ export default function PrintSppNota() {
   }
 
   return (
-    <div className="p-6 max-w-md mx-auto bg-white text-ink-900">
+    <div className="p-4 bg-white text-ink-900 text-sm" style={{ maxWidth: '105mm' }}>
       <div className="no-print flex justify-end mb-4">
         <button
           onClick={() => window.print()}
@@ -46,66 +48,65 @@ export default function PrintSppNota() {
         </button>
       </div>
 
-      <div className="text-center mb-5">
-        <p className="font-bold flex items-center justify-center gap-1.5">
-          <span>◆</span> SMK MUHAMMADIYAH SAMPIT
-        </p>
-        <h1 className="font-bold text-lg mt-1">NOTA PEMBAYARAN SPP</h1>
+      <div className="mb-3 text-center">
+        <div className="flex items-center justify-center gap-2">
+          {profile.logo_url && (
+            <img src={profile.logo_url} alt="Logo Sekolah" className="w-8 h-8 object-contain shrink-0" />
+          )}
+          <p className="font-bold text-base">{profile.nama_sekolah.toUpperCase()}</p>
+        </div>
+        <h1 className="font-bold text-sm mt-1">NOTA PEMBAYARAN SPP</h1>
       </div>
 
-      <table className="w-full text-sm mb-5">
+      <table className="w-full text-xs mb-3">
         <tbody>
           <tr>
-            <td className="pr-3 py-0.5 align-top w-36">No. Nota</td>
-            <td className="pr-2 py-0.5 align-top">:</td>
-            <td className="py-0.5">SPP-{String(spp.id).padStart(5, '0')}</td>
-          </tr>
-          <tr>
-            <td className="pr-3 py-0.5 align-top">Nama Siswa</td>
+            <td className="pr-2 py-0.5 align-top w-24">Nama Siswa</td>
             <td className="pr-2 py-0.5 align-top">:</td>
             <td className="py-0.5">{spp.student?.user?.name}</td>
           </tr>
           <tr>
-            <td className="pr-3 py-0.5 align-top">Kelas</td>
+            <td className="pr-2 py-0.5 align-top">Kelas</td>
             <td className="pr-2 py-0.5 align-top">:</td>
             <td className="py-0.5">{spp.student?.class_room?.name || '-'}</td>
           </tr>
           <tr>
-            <td className="pr-3 py-0.5 align-top">NIS</td>
+            <td className="pr-2 py-0.5 align-top">NIS</td>
             <td className="pr-2 py-0.5 align-top">:</td>
             <td className="py-0.5">{spp.student?.nis}</td>
           </tr>
           <tr>
-            <td className="pr-3 py-0.5 align-top">Untuk Bulan</td>
+            <td className="pr-2 py-0.5 align-top">Untuk Bulan</td>
             <td className="pr-2 py-0.5 align-top">:</td>
             <td className="py-0.5">{BULAN[spp.bulan - 1]} {spp.tahun}</td>
           </tr>
           <tr>
-            <td className="pr-3 py-0.5 align-top">Tanggal Bayar</td>
+            <td className="pr-2 py-0.5 align-top">Tanggal Bayar</td>
             <td className="pr-2 py-0.5 align-top">:</td>
             <td className="py-0.5">{formatTanggal(spp.tanggal_bayar)}</td>
           </tr>
         </tbody>
       </table>
 
-      <div className="border-t border-b border-ink-400 py-3 mb-8 flex items-center justify-between">
+      <div className="border-t border-b border-ink-400 py-2 mb-4 flex items-center justify-between text-xs">
         <span className="font-medium">Jumlah Dibayar</span>
-        <span className="font-bold text-lg">{formatRupiah(spp.nominal)}</span>
+        <span className="font-bold text-sm">{formatRupiah(spp.nominal)}</span>
       </div>
 
-      <div className="flex justify-end text-sm">
+      <div className="flex justify-end text-xs">
         <div className="text-center">
           <p>Petugas TU,</p>
-          <div className="h-16" />
-          <p className="border-t border-ink-400 pt-1 inline-block px-4">{spp.dicatat_oleh?.name || '( ..................................... )'}</p>
+          <div className="h-10" />
+          <p className="border-t border-ink-400 pt-1 inline-block px-4">{spp.dicatat_oleh?.name || '( ..................... )'}</p>
         </div>
       </div>
 
       <style>{`
         @media print {
           .no-print { display: none !important; }
+          body { margin: 0; }
         }
-        @page { size: A5; margin: 15mm; }
+        @page { size: A6; margin: 5mm 5mm 5mm 5mm; }
       `}</style>
     </div>
   );

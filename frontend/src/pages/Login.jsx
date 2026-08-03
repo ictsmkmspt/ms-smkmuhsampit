@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Mail, Lock } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useSchoolProfile } from '../context/SchoolProfileContext';
 
 export default function Login() {
   const [identifier, setIdentifier] = useState('');
@@ -9,6 +10,7 @@ export default function Login() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
+  const { profile } = useSchoolProfile();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -54,8 +56,11 @@ export default function Login() {
 
           <div className="p-8">
             <div className="flex flex-col items-center mb-6">
+              {profile.logo_url && (
+                <img src={profile.logo_url} alt="Logo Sekolah" className="w-16 h-16 object-contain mb-3" />
+              )}
               <h1 className="font-display text-lg font-bold text-[#0B1B3A] text-center">
-                SMK MUHAMMADIYAH SAMPIT
+                {profile.nama_sekolah.toUpperCase()}
               </h1>
               <p className="text-xs text-ink-500 mt-1">Sistem Informasi Sekolah</p>
               <span className="mt-3 h-1 w-10 rounded-full bg-[#F2B705]" />

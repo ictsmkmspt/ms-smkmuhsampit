@@ -2,9 +2,10 @@ import { useState } from 'react';
 import {
   LogOut, Database, ClipboardList, Settings, ChevronDown, ChevronLeft, ChevronRight, Menu, X,
   Users, GraduationCap, School, UserCog, Briefcase, LayoutDashboard, Building2, ClipboardCheck,
-  Clock, AlertOctagon, Trophy, CalendarDays, Wallet, Pencil,
+  Clock, AlertOctagon, Trophy, CalendarDays, Wallet, Pencil, Image,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { useSchoolProfile } from '../../context/SchoolProfileContext';
 import MasterDataTab, { MASTER_DATA_SUBMENU } from './tabs/MasterDataTab';
 import ReportTab, { REPORT_SUBMENU } from './tabs/ReportTab';
 import SettingsTab, { SETTINGS_SUBMENU } from './tabs/SettingsTab';
@@ -13,7 +14,7 @@ import DashboardHomeTab from './tabs/DashboardHomeTab';
 import EditProfileModal from '../../components/EditProfileModal';
 
 const MASTER_ICONS = { siswa: Users, guru: GraduationCap, kelas: School, wali: UserCog, tu: Wallet, alumni: GraduationCap };
-const SETTINGS_ICONS = { jam: Clock, poin: AlertOctagon, prestasi: Trophy, libur: CalendarDays };
+const SETTINGS_ICONS = { sekolah: Image, jam: Clock, poin: AlertOctagon, prestasi: Trophy, libur: CalendarDays };
 const PKL_ICONS = { dudi: Building2, penempatan: ClipboardList };
 const REPORT_ICONS = { absensi: ClipboardCheck, poin: AlertOctagon, prestasi: Trophy };
 
@@ -27,6 +28,7 @@ const TABS = [
 
 export default function AdminDashboard() {
   const { user, logout } = useAuth();
+  const { profile } = useSchoolProfile();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [activeMasterSub, setActiveMasterSub] = useState('siswa');
   const [activeSettingsSub, setActiveSettingsSub] = useState('jam');
@@ -130,10 +132,14 @@ export default function AdminDashboard() {
       <div className="md:hidden fixed top-0 left-0 right-0 bg-[#0B1B3A] z-40">
         <div className="flex items-center justify-between px-4 py-3">
           <div className="flex items-center gap-2 min-w-0">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#F2B705] to-[#15803D] flex items-center justify-center shrink-0">
-              <span className="font-display font-bold text-[#0B1B3A] text-[10px]">SM</span>
-            </div>
-            <p className="font-display font-bold text-white text-xs truncate">SMK MUHAMMADIYAH SAMPIT</p>
+            {profile.logo_url ? (
+              <img src={profile.logo_url} alt="Logo Sekolah" className="w-8 h-8 rounded-full object-contain bg-white shrink-0" />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#F2B705] to-[#15803D] flex items-center justify-center shrink-0">
+                <span className="font-display font-bold text-[#0B1B3A] text-[10px]">SM</span>
+              </div>
+            )}
+            <p className="font-display font-bold text-white text-xs truncate">{profile.nama_sekolah.toUpperCase()}</p>
           </div>
           <button
             onClick={() => setMobileOpen((v) => !v)}
@@ -171,13 +177,16 @@ export default function AdminDashboard() {
       >
         <div className="relative">
           <div className={`px-5 py-5 flex items-center gap-3 border-b border-white/10 shrink-0 ${collapsed ? 'justify-center px-0' : ''}`}>
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#F2B705] to-[#15803D] flex items-center justify-center shrink-0">
-              <span className="font-display font-bold text-[#0B1B3A] text-xs">SM</span>
-            </div>
+            {profile.logo_url ? (
+              <img src={profile.logo_url} alt="Logo Sekolah" className="w-10 h-10 rounded-full object-contain bg-white shrink-0" />
+            ) : (
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#F2B705] to-[#15803D] flex items-center justify-center shrink-0">
+                <span className="font-display font-bold text-[#0B1B3A] text-xs">SM</span>
+              </div>
+            )}
             {!collapsed && (
               <div className="leading-tight min-w-0">
-                <p className="font-display font-bold text-white text-xs tracking-wide truncate">SMK MUHAMMADIYAH</p>
-                <p className="font-display font-bold text-[#F2B705] text-xs tracking-wide">SAMPIT</p>
+                <p className="font-display font-bold text-white text-xs tracking-wide">{profile.nama_sekolah}</p>
               </div>
             )}
           </div>

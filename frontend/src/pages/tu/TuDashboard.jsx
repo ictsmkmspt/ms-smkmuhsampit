@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { LogOut, LayoutDashboard, Receipt, GraduationCap, Settings, Menu, X, Pencil } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { useSchoolProfile } from '../../context/SchoolProfileContext';
 import DashboardTab from './tabs/DashboardTab';
 import TagihanTab from './tabs/TagihanTab';
 import AlumniTab from './tabs/AlumniTab';
@@ -16,6 +17,7 @@ const TABS = [
 
 export default function TuDashboard() {
   const { user, logout } = useAuth();
+  const { profile } = useSchoolProfile();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [mobileOpen, setMobileOpen] = useState(false);
   const [showEditProfil, setShowEditProfil] = useState(false);
@@ -46,10 +48,14 @@ export default function TuDashboard() {
       <div className="md:hidden fixed top-0 left-0 right-0 bg-[#0B1B3A] z-40">
         <div className="flex items-center justify-between px-4 py-3">
           <div className="flex items-center gap-2 min-w-0">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#F2B705] to-[#15803D] flex items-center justify-center shrink-0">
-              <span className="font-display font-bold text-[#0B1B3A] text-[10px]">SM</span>
-            </div>
-            <p className="font-display font-bold text-white text-xs truncate">SMK MUHAMMADIYAH SAMPIT</p>
+            {profile.logo_url ? (
+              <img src={profile.logo_url} alt="Logo Sekolah" className="w-8 h-8 rounded-full object-contain bg-white shrink-0" />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#F2B705] to-[#15803D] flex items-center justify-center shrink-0">
+                <span className="font-display font-bold text-[#0B1B3A] text-[10px]">SM</span>
+              </div>
+            )}
+            <p className="font-display font-bold text-white text-xs truncate">{profile.nama_sekolah.toUpperCase()}</p>
           </div>
           <button
             onClick={() => setMobileOpen((v) => !v)}
@@ -83,12 +89,15 @@ export default function TuDashboard() {
       {/* ===== Sidebar kiri — desktop saja (hidden md:flex) ===== */}
       <aside className="hidden md:flex w-64 shrink-0 bg-[#0B1B3A] fixed left-0 top-0 bottom-0 flex-col z-30">
         <div className="px-5 py-5 flex items-center gap-3 border-b border-white/10 shrink-0">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#F2B705] to-[#15803D] flex items-center justify-center shrink-0">
-            <span className="font-display font-bold text-[#0B1B3A] text-xs">SM</span>
-          </div>
+          {profile.logo_url ? (
+            <img src={profile.logo_url} alt="Logo Sekolah" className="w-10 h-10 rounded-full object-contain bg-white shrink-0" />
+          ) : (
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#F2B705] to-[#15803D] flex items-center justify-center shrink-0">
+              <span className="font-display font-bold text-[#0B1B3A] text-xs">SM</span>
+            </div>
+          )}
           <div className="leading-tight min-w-0">
-            <p className="font-display font-bold text-white text-xs tracking-wide truncate">SMK MUHAMMADIYAH</p>
-            <p className="font-display font-bold text-[#F2B705] text-xs tracking-wide">SAMPIT</p>
+            <p className="font-display font-bold text-white text-xs tracking-wide">{profile.nama_sekolah}</p>
           </div>
         </div>
 
