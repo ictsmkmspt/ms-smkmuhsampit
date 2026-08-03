@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Search, Trash2, Pencil, Printer } from 'lucide-react';
 import api from '../../../api/axios';
 import EditAttendanceModal from '../../../components/EditAttendanceModal';
+import TruncateText from '../../../components/TruncateText';
 
 const BULAN = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
 
@@ -158,7 +159,7 @@ export default function AttendanceReportTab() {
             <tbody>
               {report.map((r) => (
                 <tr key={r.id} className="border-t border-line-200">
-                  <td className="py-2.5 text-ink-900">{r.student?.user?.name}</td>
+                  <td className="py-2.5 text-ink-900"><TruncateText text={r.student?.user?.name} /></td>
                   <td className="text-ink-700">{r.student?.class_room?.name || '-'}</td>
                   <td className="font-mono text-xs text-ink-700">{r.time_in || '-'}</td>
                   <td>

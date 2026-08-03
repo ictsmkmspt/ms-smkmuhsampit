@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Plus, Trash2, Save, Building2, MapPin } from 'lucide-react';
 import api from '../../../../api/axios';
+import TruncateText from '../../../../components/TruncateText';
 
 const emptyForm = {
   name: '', email: '', password: '',
@@ -195,11 +196,11 @@ export default function DudiTab() {
               ) : (
                 <tr key={d.id} className="border-t border-line-200">
                   <td className="py-2.5">
-                    <p className="text-ink-900 font-medium">{d.nama_perusahaan}</p>
-                    <p className="text-xs text-ink-500">{d.alamat || '-'}</p>
+                    <p className="text-ink-900 font-medium"><TruncateText text={d.nama_perusahaan} /></p>
+                    <p className="text-xs text-ink-500"><TruncateText text={d.alamat} /></p>
                   </td>
                   <td className="text-ink-700">
-                    <p>{d.penanggung_jawab || '-'}</p>
+                    <p><TruncateText text={d.penanggung_jawab} /></p>
                     <p className="text-xs text-ink-500">{d.telepon || '-'}</p>
                   </td>
                   <td className="text-ink-700 text-xs">

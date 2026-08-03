@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Plus, Trash2, Pencil, X, Check, GraduationCap } from 'lucide-react';
 import api from '../../../api/axios';
+import TruncateText from '../../../components/TruncateText';
 
 export default function ClassesTab() {
   const [classes, setClasses]   = useState([]);
@@ -172,7 +173,7 @@ export default function ClassesTab() {
                 <tr key={c.id} className="border-t border-line-200">
                   <td className="py-2.5 text-ink-900">{c.name}</td>
                   <td><span className="badge-soft badge-brand">{c.students_count ?? 0} siswa</span></td>
-                  <td className="text-ink-700">{c.homeroom_teacher?.user?.name || <span className="text-ink-300">— Belum ada —</span>}</td>
+                  <td className="text-ink-700">{c.homeroom_teacher?.user?.name ? <TruncateText text={c.homeroom_teacher.user.name} /> : <span className="text-ink-300">— Belum ada —</span>}</td>
                   <td className="text-right">
                     <div className="flex justify-end gap-3">
                       <button onClick={() => startEdit(c)} className="text-ink-300 hover:text-brand-600" title="Edit Kelas">

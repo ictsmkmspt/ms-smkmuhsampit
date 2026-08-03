@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Plus, Trash2, UserPlus, Link2, Download, Upload } from 'lucide-react';
 import api from '../../../api/axios';
+import TruncateText from '../../../components/TruncateText';
 
 export default function WaliTab() {
   const [parents, setParents] = useState([]);
@@ -150,7 +151,7 @@ export default function WaliTab() {
                   <tr key={i} className="border-t border-line-200">
                     <td className="py-2 text-ink-900">{g.baris}</td>
                     <td className="text-ink-700">{g.kolom}</td>
-                    <td className="text-honey-700">{g.alasan}</td>
+                    <td className="text-honey-700"><TruncateText text={g.alasan} maxWidth="16rem" /></td>
                   </tr>
                 ))}
               </tbody>

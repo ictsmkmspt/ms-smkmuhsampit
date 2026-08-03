@@ -3,6 +3,7 @@ import { History } from 'lucide-react';
 import api from '../../../../api/axios';
 import PklAttendanceDetailModal from '../../../../components/PklAttendanceDetailModal';
 import PklJournalModal from '../../../../components/PklJournalModal';
+import TruncateText from '../../../../components/TruncateText';
 
 export default function BimbinganSiswaTab() {
   const [list, setList] = useState([]);
@@ -61,10 +62,10 @@ export default function BimbinganSiswaTab() {
               {aktif.map((p) => (
                 <tr key={p.id} className="border-t border-line-200">
                   <td className="py-2.5">
-                    <p className="text-ink-900 font-medium">{p.student?.user?.name}</p>
+                    <p className="text-ink-900 font-medium"><TruncateText text={p.student?.user?.name} /></p>
                     <p className="text-xs text-ink-500">{p.student?.class_room?.name || '-'}</p>
                   </td>
-                  <td className="text-ink-700">{p.dudi?.nama_perusahaan}</td>
+                  <td className="text-ink-700"><TruncateText text={p.dudi?.nama_perusahaan} /></td>
                   <td className="text-ink-700 text-xs">{p.tanggal_mulai} s/d {p.tanggal_selesai}</td>
                   <td className="text-right py-2">
                     <TombolAksi p={p} />
@@ -104,10 +105,10 @@ export default function BimbinganSiswaTab() {
               {selesai.map((p) => (
                 <tr key={p.id} className="border-t border-line-200">
                   <td className="py-2.5">
-                    <p className="text-ink-900 font-medium">{p.student?.user?.name}</p>
+                    <p className="text-ink-900 font-medium"><TruncateText text={p.student?.user?.name} /></p>
                     <p className="text-xs text-ink-500">{p.student?.class_room?.name || '-'}</p>
                   </td>
-                  <td className="text-ink-700">{p.dudi?.nama_perusahaan}</td>
+                  <td className="text-ink-700"><TruncateText text={p.dudi?.nama_perusahaan} /></td>
                   <td className="text-ink-700 text-xs">{p.tanggal_mulai} s/d {p.tanggal_selesai}</td>
                   <td className="text-right py-2">
                     <TombolAksi p={p} />

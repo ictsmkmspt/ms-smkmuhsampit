@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { GraduationCap, ChevronRight, ChevronLeft, RotateCcw, Undo2 } from 'lucide-react';
 import api from '../../../api/axios';
+import TruncateText from '../../../components/TruncateText';
 
 export default function AlumniTab() {
   const [classes, setClasses] = useState([]);
@@ -93,7 +94,7 @@ export default function AlumniTab() {
                 <tbody>
                   {students.map((s) => (
                     <tr key={s.id} className="border-t border-line-200">
-                      <td className="py-2.5 text-ink-900">{s.user?.name}</td>
+                      <td className="py-2.5 text-ink-900"><TruncateText text={s.user?.name} /></td>
                       <td className="text-ink-700">{s.nis}</td>
                       <td className="text-ink-700">{s.tanggal_lulus || '-'}</td>
                       <td className="text-right">
@@ -132,7 +133,7 @@ export default function AlumniTab() {
                     <GraduationCap className="w-4 h-4 text-ink-500" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-ink-900 truncate">{c.name}</p>
+                    <p className="text-sm font-medium text-ink-900"><TruncateText text={c.name} clickable={false} /></p>
                     <p className="text-xs text-ink-500">{c.students_count ?? 0} alumni</p>
                   </div>
                   <ChevronRight className="w-4 h-4 text-ink-300 shrink-0" />

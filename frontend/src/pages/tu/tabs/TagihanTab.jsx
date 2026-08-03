@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Search, Pencil, Check, X, RefreshCw, Trash2, Receipt, Info, CheckCircle, Printer } from 'lucide-react';
 import api from '../../../api/axios';
 import { BULAN, formatRupiah, Avatar } from '../shared';
+import TruncateText from '../../../components/TruncateText';
 
 export default function TagihanTab() {
   const now = new Date();
@@ -242,7 +243,7 @@ export default function TagihanTab() {
                   <td className="py-2.5">
                     <div className="flex items-center gap-2.5">
                       <Avatar name={s.student?.user?.name} />
-                      <span className="text-ink-900">{s.student?.user?.name}</span>
+                      <span className="text-ink-900 min-w-0"><TruncateText text={s.student?.user?.name} /></span>
                     </div>
                   </td>
                   <td className="text-ink-700">{s.student?.class_room?.name || '-'}</td>

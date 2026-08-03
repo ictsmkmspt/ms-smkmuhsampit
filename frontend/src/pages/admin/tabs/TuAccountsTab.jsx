@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 import api from '../../../api/axios';
+import TruncateText from '../../../components/TruncateText';
 
 export default function TuAccountsTab() {
   const [accounts, setAccounts] = useState([]);
@@ -66,8 +67,8 @@ export default function TuAccountsTab() {
           <tbody>
             {accounts.map((a) => (
               <tr key={a.id} className="border-t border-line-200">
-                <td className="py-2.5 text-ink-900">{a.name}</td>
-                <td className="text-ink-700">{a.email}</td>
+                <td className="py-2.5 text-ink-900"><TruncateText text={a.name} /></td>
+                <td className="text-ink-700"><TruncateText text={a.email} /></td>
                 <td className="text-right">
                   <button onClick={() => handleDelete(a.id, a.name)} className="text-ink-300 hover:text-honey-700">
                     <Trash2 className="w-4 h-4" />

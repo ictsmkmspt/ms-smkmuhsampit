@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Plus, Trash2, ClipboardList, PowerOff, AlertTriangle, RotateCcw } from 'lucide-react';
 import api from '../../../../api/axios';
+import TruncateText from '../../../../components/TruncateText';
 
 const emptyForm = {
   student_id: '', dudi_id: '', guru_pembimbing_id: '',
@@ -242,11 +243,11 @@ export default function PenempatanTab() {
             {list.map((p) => (
               <tr key={p.id} className="border-t border-line-200">
                 <td className="py-2.5">
-                  <p className="text-ink-900 font-medium">{p.student?.user?.name}</p>
+                  <p className="text-ink-900 font-medium"><TruncateText text={p.student?.user?.name} /></p>
                   <p className="text-xs text-ink-500">{p.student?.class_room?.name || '-'}</p>
                 </td>
-                <td className="text-ink-700">{p.dudi?.nama_perusahaan}</td>
-                <td className="text-ink-700">{p.guru_pembimbing?.user?.name || '-'}</td>
+                <td className="text-ink-700"><TruncateText text={p.dudi?.nama_perusahaan} /></td>
+                <td className="text-ink-700"><TruncateText text={p.guru_pembimbing?.user?.name} /></td>
                 <td className="text-ink-700 text-xs">{p.tanggal_mulai} s/d {p.tanggal_selesai}</td>
                 <td>
                   <button onClick={() => handleUbahStatus(p, p.status === 'aktif' ? 'selesai' : 'aktif')}>

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { X, Pencil, Trash2 } from 'lucide-react';
 import api from '../api/axios';
+import TruncateText from './TruncateText';
 
 export default function StudentAchievementModal({ student, onClose, onChanged }) {
   const [achievementTypes, setAchievementTypes] = useState([]);
@@ -164,7 +165,7 @@ export default function StudentAchievementModal({ student, onClose, onChanged })
                       <td className="py-2.5 text-ink-700 align-top">{a.date}</td>
                       <td className="text-ink-900 align-top">
                         {a.achievement_type?.name || '-'}
-                        {a.note && <p className="text-xs text-ink-400 mt-0.5">{a.note}</p>}
+                        {a.note && <p className="text-xs text-ink-400 mt-0.5"><TruncateText text={a.note} maxWidth="16rem" /></p>}
                       </td>
                       <td className="text-right text-brand-700 font-medium align-top">+{a.poin}</td>
                       <td className="text-right align-top">

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import api from '../../../../api/axios';
 import StudentViolationModal from '../../../../components/StudentViolationModal';
+import TruncateText from '../../../../components/TruncateText';
 
 const PAGE_SIZE = 5;
 const SUMMARY_PAGE_SIZE = 40;
@@ -71,8 +72,8 @@ export default function PoinReportSection() {
                 {paginatedSummary.map((s) => (
                   <tr key={s.id} className="border-t border-line-200">
                     <td className="py-2.5">
-                      <button onClick={() => setSelectedStudent(s)} className="text-ink-900 font-medium hover:text-brand-600 hover:underline transition text-left">
-                        {s.user?.name}
+                      <button onClick={() => setSelectedStudent(s)} className="text-ink-900 font-medium hover:text-brand-600 hover:underline transition text-left max-w-[12rem]">
+                        <TruncateText text={s.user?.name} clickable={false} />
                       </button>
                     </td>
                     <td className="text-right">

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { ClipboardEdit, AlertTriangle, CheckCircle2, PlusCircle } from 'lucide-react';
 import BarcodeScanner from '../../../../components/BarcodeScanner';
 import StudentAchievementModal from '../../../../components/StudentAchievementModal';
+import TruncateText from '../../../../components/TruncateText';
 import api from '../../../../api/axios';
 
 export default function PoinPrestasiSection() {
@@ -175,9 +176,9 @@ export default function PoinPrestasiSection() {
                     <td className="py-2.5">
                       <button
                         onClick={() => setSelectedStudent(s)}
-                        className="text-ink-900 font-medium hover:text-brand-600 hover:underline transition text-left"
+                        className="text-ink-900 font-medium hover:text-brand-600 hover:underline transition text-left max-w-[12rem]"
                       >
-                        {s.user?.name}
+                        <TruncateText text={s.user?.name} clickable={false} />
                       </button>
                       {msg && <p className={`text-xs mt-0.5 ${msg.error ? 'text-honey-700' : 'text-brand-600'}`}>{msg.text}</p>}
                     </td>

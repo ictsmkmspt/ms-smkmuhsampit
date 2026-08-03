@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Plus, Trash2, Download, Upload, Save } from 'lucide-react';
 import api from '../../../api/axios';
+import TruncateText from '../../../components/TruncateText';
 
 const JK_LABEL = { L: 'Laki-laki', P: 'Perempuan' };
 
@@ -147,7 +148,7 @@ export default function TeachersTab() {
                   <tr key={i} className="border-t border-line-200">
                     <td className="py-2 text-ink-900">{g.baris}</td>
                     <td className="text-ink-700">{g.kolom}</td>
-                    <td className="text-honey-700">{g.alasan}</td>
+                    <td className="text-honey-700"><TruncateText text={g.alasan} maxWidth="16rem" /></td>
                   </tr>
                 ))}
               </tbody>
@@ -177,7 +178,9 @@ export default function TeachersTab() {
 
       <div className="surface-card p-5">
         <h2 className="font-display font-semibold text-ink-900 mb-4">Daftar Guru <span className="text-ink-500 font-sans font-normal text-sm">({teachers.length})</span></h2>
-        <table className="w-full text-sm">
+        <p className="md:hidden text-xs text-ink-400 mb-1.5">← Geser tabel untuk lihat kolom lainnya →</p>
+        <div className="table-scroll">
+        <table className="w-full text-sm min-w-[560px]">
           <thead>
             <tr className="text-left text-ink-500 border-b border-line-200">
               <th className="pb-2 font-medium">Nama</th><th className="font-medium">Email</th><th className="font-medium">NIP</th><th className="font-medium">Jenis Kelamin</th><th></th>
@@ -206,8 +209,8 @@ export default function TeachersTab() {
                 </tr>
               ) : (
                 <tr key={t.id} className="border-t border-line-200">
-                  <td className="py-2.5 text-ink-900">{t.user?.name}</td>
-                  <td className="text-ink-700">{t.user?.email}</td>
+                  <td className="py-2.5 text-ink-900"><TruncateText text={t.user?.name} /></td>
+                  <td className="text-ink-700"><TruncateText text={t.user?.email} /></td>
                   <td className="text-ink-700">{t.nip}</td>
                   <td className="text-ink-700">{JK_LABEL[t.jenis_kelamin] || '-'}</td>
                   <td className="text-right">
@@ -228,6 +231,7 @@ export default function TeachersTab() {
             )}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   );

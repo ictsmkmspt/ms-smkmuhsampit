@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { ClipboardEdit } from 'lucide-react';
 import BarcodeScanner from '../../../../components/BarcodeScanner';
 import api from '../../../../api/axios';
+import TruncateText from '../../../../components/TruncateText';
 
 export default function SholatZuhurSection() {
   const [classes, setClasses]             = useState([]);
@@ -118,7 +119,7 @@ export default function SholatZuhurSection() {
                 return (
                   <tr key={s.id} className="border-t border-line-200">
                     <td className="py-2.5">
-                      <p className="text-ink-900 font-medium">{s.user?.name}</p>
+                      <p className="text-ink-900 font-medium"><TruncateText text={s.user?.name} /></p>
                       {msg && (
                         <p className={`text-xs mt-0.5 ${msg.error ? 'text-honey-700' : 'text-brand-600'}`}>
                           {msg.text}

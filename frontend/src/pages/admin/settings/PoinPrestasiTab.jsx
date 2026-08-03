@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Plus, Save, Trash2, Trophy, RotateCcw } from 'lucide-react';
 import api from '../../../api/axios';
+import TruncateText from '../../../components/TruncateText';
 
 export default function PoinPrestasiTab() {
   const [types, setTypes]           = useState([]);
@@ -130,7 +131,7 @@ export default function PoinPrestasiTab() {
                       onChange={(e) => setEditData((p) => ({ ...p, [t.id]: { ...p[t.id], name: e.target.value } }))}
                       className="field-input py-1" />
                   ) : (
-                    <span className="text-ink-900">{t.name}</span>
+                    <TruncateText text={t.name} className="text-ink-900" />
                   )}
                 </td>
                 <td className="text-center">

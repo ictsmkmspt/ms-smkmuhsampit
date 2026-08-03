@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { X, Pencil, Trash2 } from 'lucide-react';
 import api from '../api/axios';
+import TruncateText from './TruncateText';
 
 export default function StudentViolationModal({ student, onClose, onChanged }) {
   const [violationTypes, setViolationTypes] = useState([]);
@@ -166,7 +167,7 @@ export default function StudentViolationModal({ student, onClose, onChanged }) {
                       <td className="py-2.5 text-ink-700 align-top">{v.date}</td>
                       <td className="text-ink-900 align-top">
                         {v.violation_type?.name || (v.type === 'alpa' ? 'Tidak Hadir' : v.type === 'telat' ? 'Terlambat' : '-')}
-                        {v.note && <p className="text-xs text-ink-400 mt-0.5">{v.note}</p>}
+                        {v.note && <p className="text-xs text-ink-400 mt-0.5"><TruncateText text={v.note} maxWidth="16rem" /></p>}
                       </td>
                       <td className="text-right text-honey-700 font-medium align-top">+{v.poin}</td>
                       <td className="text-right align-top">

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Plus, Save, Trash2, Lock, AlertOctagon, RotateCcw } from 'lucide-react';
 import api from '../../../api/axios';
+import TruncateText from '../../../components/TruncateText';
 
 export default function PoinPelanggaranTab() {
   const [types, setTypes] = useState([]);
@@ -133,7 +134,7 @@ export default function PoinPelanggaranTab() {
                       className="field-input py-1"
                     />
                   ) : (
-                    <span className="text-ink-900">{t.name}</span>
+                    <TruncateText text={t.name} className="text-ink-900" />
                   )}
                 </td>
                 <td className="text-center">

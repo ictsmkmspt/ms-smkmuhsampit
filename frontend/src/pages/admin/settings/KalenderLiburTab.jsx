@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Plus, Trash2, CalendarDays } from 'lucide-react';
 import api from '../../../api/axios';
+import TruncateText from '../../../components/TruncateText';
 
 export default function KalenderLiburTab() {
   const [holidays, setHolidays] = useState([]);
@@ -170,7 +171,7 @@ export default function KalenderLiburTab() {
             {holidays.map((h) => (
               <tr key={h.id} className="border-t border-line-200">
                 <td className="py-2.5 font-mono text-ink-900">{h.date}</td>
-                <td className="text-ink-700">{h.keterangan}</td>
+                <td className="text-ink-700"><TruncateText text={h.keterangan} maxWidth="16rem" /></td>
                 <td className="text-right">
                   <button onClick={() => handleDelete(h.id, h.keterangan)} className="text-ink-300 hover:text-honey-700">
                     <Trash2 className="w-4 h-4" />

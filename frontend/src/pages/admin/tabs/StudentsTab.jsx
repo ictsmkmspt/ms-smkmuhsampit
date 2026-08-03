@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Plus, Trash2, Download, Upload } from 'lucide-react';
 import api from '../../../api/axios';
+import TruncateText from '../../../components/TruncateText';
 
 import QRCode from "qrcode";
 import JSZip from "jszip";
@@ -170,7 +171,7 @@ export default function StudentsTab() {
                   <tr key={i} className="border-t border-line-200">
                     <td className="py-2 text-ink-900">{g.baris}</td>
                     <td className="text-ink-700">{g.kolom}</td>
-                    <td className="text-honey-700">{g.alasan}</td>
+                    <td className="text-honey-700"><TruncateText text={g.alasan} maxWidth="16rem" /></td>
                   </tr>
                 ))}
               </tbody>
@@ -212,7 +213,9 @@ export default function StudentsTab() {
 	  >
 	    Download Semua QR
 	</button>
-        <table className="w-full text-sm">
+        <p className="md:hidden text-xs text-ink-400 mb-1.5">← Geser tabel untuk lihat kolom lainnya →</p>
+        <div className="table-scroll">
+        <table className="w-full text-sm min-w-[640px]">
           <thead>
             <tr className="text-left text-ink-500 border-b border-line-200">
               <th className="pb-2 font-medium">Nama</th><th className="font-medium">NIS</th><th className="font-medium">Jenis Kelamin</th><th className="font-medium">Kelas</th><th className="font-medium">Barcode</th><th></th>
@@ -245,7 +248,7 @@ export default function StudentsTab() {
                 }
                 rows.push(
                   <tr key={s.id} className="border-t border-line-200">
-                    <td className="py-2.5 text-ink-900">{s.user?.name}</td>
+                    <td className="py-2.5 text-ink-900"><TruncateText text={s.user?.name} /></td>
                     <td className="text-ink-700">{s.nis}</td>
                     <td className="text-ink-700">{JK_LABEL[s.jenis_kelamin] || '-'}</td>
                     <td className="text-ink-700">{s.class_room?.name || '-'}</td>
@@ -265,6 +268,7 @@ export default function StudentsTab() {
             )}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   );

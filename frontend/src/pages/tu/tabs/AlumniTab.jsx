@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { GraduationCap, ChevronRight, ChevronLeft } from 'lucide-react';
 import api from '../../../api/axios';
+import TruncateText from '../../../components/TruncateText';
 import { formatRupiah, Avatar } from '../shared';
 import StudentSppPanel from '../StudentSppPanel';
 
@@ -74,7 +75,7 @@ export default function AlumniTab() {
                   >
                     <Avatar name={a.student.user?.name} />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-ink-900 truncate">{a.student.user?.name}</p>
+                      <p className="text-sm font-medium text-ink-900"><TruncateText text={a.student.user?.name} clickable={false} /></p>
                       <p className="text-xs text-ink-500">NIS {a.student.nis} · {a.jumlah_tunggakan} bulan belum bayar</p>
                     </div>
                     <span className="text-sm font-display font-semibold text-honey-700 shrink-0">{formatRupiah(a.total_tunggakan)}</span>
@@ -106,7 +107,7 @@ export default function AlumniTab() {
                     <GraduationCap className="w-4 h-4 text-ink-500" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-ink-900 truncate">{k.nama}</p>
+                    <p className="text-sm font-medium text-ink-900"><TruncateText text={k.nama} clickable={false} /></p>
                     <p className="text-xs text-ink-500">{k.alumni.length} alumni bertunggakan</p>
                   </div>
                   <span className="text-sm font-display font-semibold text-honey-700 shrink-0">{formatRupiah(k.total)}</span>
