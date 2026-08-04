@@ -99,14 +99,16 @@ class TagihanLainController extends Controller
     }
 
     /**
-     * Buat 1 tagihan yang sama sekaligus untuk BANYAK siswa — pilih 1 kelas
-     * (semua siswa aktif di kelas itu) atau daftar siswa manual. Dipakai
-     * kalau ada biaya yang berlaku untuk sekelompok siswa sekaligus (misal
-     * study tour 1 angkatan, seragam 1 kelas).
+     * Buat 1 tagihan yang sama sekaligus untuk BANYAK siswa — pilih SEMUA
+     * siswa aktif, 1 kelas (semua siswa aktif di kelas itu), atau daftar
+     * siswa manual. Dipakai kalau ada biaya yang berlaku untuk sekelompok
+     * siswa sekaligus (misal study tour 1 angkatan, daftar ulang semua
+     * siswa, seragam 1 kelas).
      */
     public function storeBulk(Request $request)
     {
         $data = $request->validate([
+            'semua_siswa' => 'nullable|boolean',
             'class_room_id' => 'nullable|exists:class_rooms,id',
             'student_ids' => 'nullable|array|min:1',
             'student_ids.*' => 'exists:students,id',
@@ -115,11 +117,13 @@ class TagihanLainController extends Controller
             'keterangan' => 'nullable|string|max:500',
         ]);
 
-        if (empty($data['class_room_id']) && empty($data['student_ids'])) {
-            return response()->json(['message' => 'Pilih kelas atau siswa dulu.'], 422);
+        if (empty($data['semua_siswa']) && empty($data['class_room_id']) && empty($data['student_ids'])) {
+            return response()->json(['message' => 'Pilih semua siswa, kelas, atau siswa tertentu dulu.'], 422);
         }
 
-        if (!empty($data['class_room_id'])) {
+        if (!empty($data['semua_siswa'])) {
+            $studentIds = Student::where('status', 'aktif')->pluck('id');
+        } elseif (!empty($data['class_room_id'])) {
             $studentIds = Student::where('class_room_id', $data['class_room_id'])
                 ->where('status', 'aktif')->pluck('id');
         } else {

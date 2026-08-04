@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Users, CheckCircle2, AlertCircle, Wallet, Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Users, CheckCircle2, AlertCircle, Wallet, Search, ChevronLeft, ChevronRight, Receipt } from 'lucide-react';
 import api from '../../../api/axios';
 import { BULAN, formatRupiah, StatTile, Avatar } from '../shared';
 import StudentSppPanel from '../StudentSppPanel';
@@ -18,6 +18,11 @@ export default function DashboardTab() {
   const [search, setSearch] = useState('');
   const [selectedStudent, setSelectedStudent] = useState(null);
 
+  const [tagihanLainList, setTagihanLainList] = useState([]);
+  const [daftarNamaTagihan, setDaftarNamaTagihan] = useState([]);
+  const [namaTagihanFilter, setNamaTagihanFilter] = useState(''); // '' = semua jenis
+  const [loadingTagihanLain, setLoadingTagihanLain] = useState(true);
+
   useEffect(() => {
     api.get('/students').then((res) => setStudents(res.data));
   }, []);
@@ -33,6 +38,18 @@ export default function DashboardTab() {
       setNominalDefault(settings.data.nominal_default);
     }).finally(() => setLoadingRingkasan(false));
   }, [bulan, tahun]);
+
+  useEffect(() => {
+    setLoadingTagihanLain(true);
+    const params = {};
+    if (namaTagihanFilter) params.nama_tagihan = namaTagihanFilter;
+    api.get('/tagihan-lain', { params })
+      .then((res) => {
+        setTagihanLainList(res.data.data);
+        setDaftarNamaTagihan(res.data.daftar_nama_tagihan);
+      })
+      .finally(() => setLoadingTagihanLain(false));
+  }, [namaTagihanFilter]);
 
   const gantiBulan = (delta) => {
     let b = bulan + delta;
@@ -57,9 +74,14 @@ export default function DashboardTab() {
   };
 
   const sppLunas = spps.filter((s) => s.status === 'lunas');
-  const sppBelum = spps.filter((s) => s.status === 'belum_bayar');
-  const totalTerkumpul = sppLunas.reduce((sum, s) => sum + Number(s.nominal || 0), 0);
-  const totalTunggakan = sppBelum.reduce((sum, s) => sum + Number(s.nominal || 0), 0);
+  const sppBelum = spps.filter((s) => s.status !== 'lunas'); // termasuk "sebagian"
+  const totalTerkumpul = spps.reduce((sum, s) => sum + Number(s.jumlah_dibayar || 0), 0);
+  const totalTunggakan = sppBelum.reduce((sum, s) => sum + Number(s.nominal || 0) - Number(s.jumlah_dibayar || 0), 0);
+
+  const tlLunas = tagihanLainList.filter((t) => t.status === 'lunas');
+  const tlBelumLunas = tagihanLainList.filter((t) => t.status !== 'lunas');
+  const tlTerkumpul = tagihanLainList.reduce((sum, t) => sum + Number(t.jumlah_dibayar || 0), 0);
+  const tlTunggakan = tlBelumLunas.reduce((sum, t) => sum + Number(t.nominal || 0) - Number(t.jumlah_dibayar || 0), 0);
 
   return (
     <div className="space-y-6">
@@ -136,6 +158,42 @@ export default function DashboardTab() {
             {spps.length === 0 && (
               <div className="surface-card p-5 text-sm text-ink-500 mt-3">
                 Tagihan SPP bulan {BULAN[bulan - 1]} {tahun} belum dibuat. Buka menu <span className="font-medium text-ink-700">Tagihan SPP</span> untuk membuatnya.
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
+      {/* Ringkasan Tagihan Lain */}
+      <div>
+        <div className="flex items-center justify-between gap-3 mb-3">
+          <h3 className="font-display font-semibold text-ink-900">Ringkasan Tagihan Lain</h3>
+          <select
+            value={namaTagihanFilter}
+            onChange={(e) => setNamaTagihanFilter(e.target.value)}
+            className="field-input text-sm text-ink-700 w-60"
+          >
+            <option value="">Semua Jenis Tagihan</option>
+            {daftarNamaTagihan.map((n) => <option key={n} value={n}>{n}</option>)}
+          </select>
+        </div>
+
+        {loadingTagihanLain ? (
+          <p className="text-center text-ink-300 py-6">Memuat...</p>
+        ) : (
+          <>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <StatTile icon={Receipt} tone="neutral" label="Total Tagihan" value={tagihanLainList.length} sub={namaTagihanFilter || 'Semua jenis'} />
+              <StatTile icon={CheckCircle2} tone="brand" label="Sudah Lunas" value={tlLunas.length} sub={formatRupiah(tlTerkumpul) + ' terkumpul'} />
+              <StatTile icon={AlertCircle} tone="rose" label="Belum Lunas" value={tlBelumLunas.length} sub={formatRupiah(tlTunggakan) + ' tunggakan'} />
+              <StatTile icon={Wallet} tone="neutral" label="Jenis Tagihan" value={daftarNamaTagihan.length} sub="jenis tercatat" />
+            </div>
+
+            {tagihanLainList.length === 0 && (
+              <div className="surface-card p-5 text-sm text-ink-500 mt-3">
+                {namaTagihanFilter
+                  ? `Belum ada tagihan "${namaTagihanFilter}" tercatat.`
+                  : <>Belum ada Tagihan Lain tercatat. Buka menu <span className="font-medium text-ink-700">Tagihan Lain</span> untuk membuatnya.</>}
               </div>
             )}
           </>

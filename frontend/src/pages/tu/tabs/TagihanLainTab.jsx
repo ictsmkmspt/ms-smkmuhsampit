@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useState } from 'react';
-import { Search, Pencil, Check, X, Trash2, Receipt, Info, CheckCircle, Printer, Plus, Users, User } from 'lucide-react';
+import { Search, Pencil, Check, X, Trash2, Receipt, Info, CheckCircle, Printer, Plus, Users, User, UsersRound } from 'lucide-react';
 import api from '../../../api/axios';
 import { formatRupiah, Avatar } from '../shared';
 import TruncateText from '../../../components/TruncateText';
@@ -20,7 +20,7 @@ export default function TagihanLainTab() {
   const [loading, setLoading] = useState(false);
   const [deletingNama, setDeletingNama] = useState(false);
 
-  const [target, setTarget] = useState('satu'); // 'satu' | 'kelas' | 'pilih'
+  const [target, setTarget] = useState('satu'); // 'satu' | 'kelas' | 'pilih' | 'semua'
   const [studentId, setStudentId] = useState('');
   const [bulkClassRoomId, setBulkClassRoomId] = useState('');
   const [pickedIds, setPickedIds] = useState([]);
@@ -70,6 +70,10 @@ export default function TagihanLainTab() {
     if (!form.nama_tagihan.trim()) { setFormError('Nama tagihan wajib diisi.'); return; }
     if (form.nominal === '' || Number(form.nominal) < 0) { setFormError('Nominal wajib diisi.'); return; }
 
+    if (target === 'semua' && !confirm(`Buat tagihan "${form.nama_tagihan.trim()}" untuk SEMUA siswa aktif (${students.length} siswa)?`)) {
+      return;
+    }
+
     setSaving(true);
     try {
       if (target === 'satu') {
@@ -78,7 +82,9 @@ export default function TagihanLainTab() {
         notify('success', 'Tagihan berhasil dibuat.');
       } else {
         const payload = { ...form, nominal: Number(form.nominal) };
-        if (target === 'kelas') {
+        if (target === 'semua') {
+          payload.semua_siswa = true;
+        } else if (target === 'kelas') {
           if (!bulkClassRoomId) { setFormError('Pilih kelas dulu.'); setSaving(false); return; }
           payload.class_room_id = bulkClassRoomId;
         } else {
@@ -226,7 +232,7 @@ export default function TagihanLainTab() {
         <h3 className="font-display font-semibold text-ink-900 mb-4">Buat Tagihan Baru</h3>
         {formError && <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2 mb-3">{formError}</p>}
 
-        <div className="flex gap-2 mb-4">
+        <div className="flex flex-wrap gap-2 mb-4">
           <button
             type="button" onClick={() => setTarget('satu')}
             className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border transition ${target === 'satu' ? 'bg-brand-600 text-white border-transparent' : 'text-ink-600 border-line-200 hover:bg-mist-50'}`}
@@ -244,6 +250,12 @@ export default function TagihanLainTab() {
             className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border transition ${target === 'pilih' ? 'bg-brand-600 text-white border-transparent' : 'text-ink-600 border-line-200 hover:bg-mist-50'}`}
           >
             <Users className="w-3.5 h-3.5" /> Pilih Beberapa Siswa
+          </button>
+          <button
+            type="button" onClick={() => setTarget('semua')}
+            className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border transition ${target === 'semua' ? 'bg-brand-600 text-white border-transparent' : 'text-ink-600 border-line-200 hover:bg-mist-50'}`}
+          >
+            <UsersRound className="w-3.5 h-3.5" /> Semua Siswa
           </button>
         </div>
 
@@ -275,6 +287,15 @@ export default function TagihanLainTab() {
               ))}
               {students.length === 0 && <p className="text-xs text-ink-400">Belum ada data siswa.</p>}
               {pickedIds.length > 0 && <p className="text-xs text-brand-600 pt-1 border-t border-line-200 mt-1">{pickedIds.length} siswa dipilih</p>}
+            </div>
+          )}
+
+          {target === 'semua' && (
+            <div className="flex items-start gap-2 bg-mist-50 border border-line-200 rounded-xl p-3">
+              <UsersRound className="w-4 h-4 text-ink-400 shrink-0 mt-0.5" />
+              <p className="text-xs text-ink-600">
+                Tagihan ini akan dibuat untuk <b>semua siswa aktif</b> ({students.length} siswa), tanpa terkecuali kelas.
+              </p>
             </div>
           )}
 

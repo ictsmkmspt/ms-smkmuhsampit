@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { LogOut, School, Trophy, AlertOctagon, Clock, ChevronDown, ChevronLeft, ChevronRight, Wallet, UserCog } from 'lucide-react';
+import { LogOut, School, Trophy, AlertOctagon, Clock, ChevronDown, ChevronLeft, ChevronRight, Wallet, UserCog, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api/axios';
 import LeaderboardPrestasi from '../../components/LeaderboardPrestasi';
@@ -27,7 +27,8 @@ export default function ParentDashboard() {
   const [activityPage, setActivityPage] = useState(1);
   const [spp, setSpp] = useState([]);
   const [tagihanLain, setTagihanLain] = useState([]);
-  const [showTagihanDetail, setShowTagihanDetail] = useState(false);
+  const [showSppDetail, setShowSppDetail] = useState(false);
+  const [showTagihanLainDetail, setShowTagihanLainDetail] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [showEditProfil, setShowEditProfil] = useState(false);
   const menuRef = useRef(null);
@@ -56,7 +57,8 @@ export default function ParentDashboard() {
     if (!selectedId) return;
     setLoading(true);
     setActivityPage(1);
-    setShowTagihanDetail(false);
+    setShowSppDetail(false);
+    setShowTagihanLainDetail(false);
     api.get(`/my-children/${selectedId}/activity`)
       .then((res) => setActivity(res.data))
       .catch(() => setError('Gagal memuat aktivitas.'))
@@ -76,22 +78,13 @@ export default function ParentDashboard() {
   const timelineTotalPages = Math.max(1, Math.ceil((activity?.timeline?.length || 0) / PAGE_SIZE));
   const timelinePaginated = (activity?.timeline || []).slice((activityPage - 1) * PAGE_SIZE, activityPage * PAGE_SIZE);
 
-  // Gabungan SPP + Tagihan Lain jadi 1 daftar tunggal, supaya orang tua lihat
-  // semua kewajiban bayar dalam 1 tabel — SPP diberi label "SPP Bulan Tahun",
-  // Tagihan Lain pakai nama tagihannya sendiri.
-  const gabunganTagihan = [
-    ...spp.map((s) => ({ ...s, _jenis: 'SPP', _label: `SPP ${BULAN[s.bulan - 1]} ${s.tahun}` })),
-    ...tagihanLain.map((t) => ({ ...t, _jenis: 'Lain', _label: t.nama_tagihan })),
-  ];
-
-  const belumLunas = gabunganTagihan.filter((t) => t.status !== 'lunas');
-  const belumLunasCount = belumLunas.length;
-
   const sppBelumLunas = spp.filter((s) => s.status !== 'lunas');
   const sppTunggakan = sppBelumLunas.reduce((sum, s) => sum + Number(s.nominal || 0) - Number(s.jumlah_dibayar || 0), 0);
 
   const tagihanLainBelumLunas = tagihanLain.filter((t) => t.status !== 'lunas');
   const tagihanLainTunggakan = tagihanLainBelumLunas.reduce((sum, t) => sum + Number(t.nominal || 0) - Number(t.jumlah_dibayar || 0), 0);
+
+  const belumLunasCount = sppBelumLunas.length + tagihanLainBelumLunas.length;
 
   const statusBadge = (status) => {
     if (status === 'lunas') return <span className="badge-soft badge-brand">Lunas</span>;
@@ -203,39 +196,20 @@ export default function ParentDashboard() {
                 )}
               </div>
 
-              <button
-                onClick={() => setShowTagihanDetail((v) => !v)}
-                className="w-full mt-4 flex items-center justify-center gap-1.5 text-sm font-medium text-ink-700 bg-mist-50 hover:bg-mist-100 border border-line-200 rounded-xl px-4 py-2 transition"
-              >
-                Detail Tagihan
-                <ChevronDown className={`w-4 h-4 transition-transform ${showTagihanDetail ? 'rotate-180' : ''}`} />
-              </button>
-
-              {showTagihanDetail && (
-                gabunganTagihan.length === 0 ? (
-                  <p className="text-sm text-ink-500 text-center py-3">Belum ada tagihan tercatat.</p>
-                ) : (
-                  <ul className="divide-y divide-line-200 mt-2">
-                    {gabunganTagihan.map((t) => (
-                      <li key={`${t._jenis}-${t.id}`} className="py-2.5 flex items-center justify-between gap-3">
-                        <div className="min-w-0">
-                          <p className="text-sm font-medium text-ink-900 truncate">
-                            {t._label}
-                            <span className="ml-1.5 text-xs font-normal text-ink-400">· {t._jenis}</span>
-                          </p>
-                          <p className="text-xs text-ink-500">
-                            {formatRupiah(t.nominal)}
-                            {t.status === 'sebagian' && (
-                              <span className="text-honey-700"> · sisa {formatRupiah(t.nominal - t.jumlah_dibayar)}</span>
-                            )}
-                          </p>
-                        </div>
-                        {statusBadge(t.status)}
-                      </li>
-                    ))}
-                  </ul>
-                )
-              )}
+              <div className="grid grid-cols-2 gap-3 mt-4">
+                <button
+                  onClick={() => setShowSppDetail(true)}
+                  className="flex items-center justify-center gap-1.5 text-sm font-medium text-ink-700 bg-mist-50 hover:bg-mist-100 border border-line-200 rounded-xl px-4 py-2 transition"
+                >
+                  Detail SPP
+                </button>
+                <button
+                  onClick={() => setShowTagihanLainDetail(true)}
+                  className="flex items-center justify-center gap-1.5 text-sm font-medium text-ink-700 bg-mist-50 hover:bg-mist-100 border border-line-200 rounded-xl px-4 py-2 transition"
+                >
+                  Detail Tagihan Lain
+                </button>
+              </div>
             </div>
 
             {/* Aktivitas terkini */}
@@ -323,6 +297,75 @@ export default function ParentDashboard() {
       {showEditProfil && (
         <EditProfileModal onClose={() => setShowEditProfil(false)} />
       )}
+
+      {showSppDetail && (
+        <TagihanDetailModal title="Detail SPP" onClose={() => setShowSppDetail(false)}>
+          {spp.length === 0 ? (
+            <p className="text-sm text-ink-500 text-center py-6">Belum ada tagihan SPP tercatat.</p>
+          ) : (
+            <ul className="divide-y divide-line-200">
+              {spp.map((s) => (
+                <li key={s.id} className="py-2.5 flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-ink-900 truncate">{BULAN[s.bulan - 1]} {s.tahun}</p>
+                    <p className="text-xs text-ink-500">
+                      {formatRupiah(s.nominal)}
+                      {s.status === 'sebagian' && (
+                        <span className="text-honey-700"> · sisa {formatRupiah(s.nominal - s.jumlah_dibayar)}</span>
+                      )}
+                    </p>
+                  </div>
+                  {statusBadge(s.status)}
+                </li>
+              ))}
+            </ul>
+          )}
+        </TagihanDetailModal>
+      )}
+
+      {showTagihanLainDetail && (
+        <TagihanDetailModal title="Detail Tagihan Lain" onClose={() => setShowTagihanLainDetail(false)}>
+          {tagihanLain.length === 0 ? (
+            <p className="text-sm text-ink-500 text-center py-6">Belum ada tagihan lain tercatat.</p>
+          ) : (
+            <ul className="divide-y divide-line-200">
+              {tagihanLain.map((t) => (
+                <li key={t.id} className="py-2.5 flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-ink-900 truncate">{t.nama_tagihan}</p>
+                    <p className="text-xs text-ink-500">
+                      {formatRupiah(t.nominal)}
+                      {t.status === 'sebagian' && (
+                        <span className="text-honey-700"> · sisa {formatRupiah(t.nominal - t.jumlah_dibayar)}</span>
+                      )}
+                    </p>
+                  </div>
+                  {statusBadge(t.status)}
+                </li>
+              ))}
+            </ul>
+          )}
+        </TagihanDetailModal>
+      )}
+    </div>
+  );
+}
+
+function TagihanDetailModal({ title, onClose, children }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-ink-900/40" onClick={onClose} />
+      <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[80vh] flex flex-col">
+        <div className="flex items-center justify-between p-5 border-b border-line-200 shrink-0">
+          <h3 className="font-display font-semibold text-ink-900">{title}</h3>
+          <button onClick={onClose} className="text-ink-300 hover:text-ink-600">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        <div className="overflow-y-auto p-5">
+          {children}
+        </div>
+      </div>
     </div>
   );
 }
