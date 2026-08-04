@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\AdminAccountController;
 use App\Http\Controllers\Api\AttendanceController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ClassRoomController;
+use App\Http\Controllers\Api\DashboardChartController;
 use App\Http\Controllers\Api\DudiController;
 use App\Http\Controllers\Api\HolidayController;
 use App\Http\Controllers\Api\LaporanController;
@@ -125,6 +126,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/teachers/{teacher}', [TeacherController::class, 'show']);
         Route::get('/tu', [TuController::class, 'index']);
         Route::get('/tahun-ajaran', [TahunAjaranController::class, 'index']);
+        Route::get('/dashboard/grafik', [DashboardChartController::class, 'grafik']);
     });
 
     Route::middleware('role:admin,guru')->group(function () {
