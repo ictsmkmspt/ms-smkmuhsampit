@@ -46,7 +46,7 @@ export default function App() {
             } />
 
             <Route path="/admin/*" element={
-              <ProtectedRoute allowedRoles={['admin']}><AdminDashboard /></ProtectedRoute>
+              <ProtectedRoute allowedRoles={['admin', 'waka']}><AdminDashboard /></ProtectedRoute>
             } />
 
             <Route path="/guru/*" element={

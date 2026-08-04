@@ -121,6 +121,12 @@ export default function PenilaianPklModal({ placement, canIsi, showActions = tru
     window.URL.revokeObjectURL(url);
   };
 
+  // Edit & hapus dikunci begitu PKL siswa ditandai "selesai" — nilai yang
+  // sudah final tidak boleh diubah lagi. Mengisi penilaian baru (belum
+  // pernah dinilai) tetap boleh walau statusnya sudah selesai.
+  const sudahSelesaiPkl = placement.status === 'selesai';
+  const bolehUbahHapus = canIsi && !sudahSelesaiPkl;
+
   const tampilkanForm = isEditing || (canIsi && !(existing && existing.nilai_akhir != null));
 
   return (
@@ -182,7 +188,13 @@ export default function PenilaianPklModal({ placement, canIsi, showActions = tru
                 </button>
               )}
 
-              {showActions && canIsi && (
+              {showActions && canIsi && sudahSelesaiPkl && (
+                <p className="text-xs text-ink-400 text-center bg-mist-50 border border-line-200 rounded-lg px-3 py-2">
+                  Nilai terkunci karena PKL siswa ini sudah ditandai selesai.
+                </p>
+              )}
+
+              {showActions && bolehUbahHapus && (
                 <div className="flex gap-2">
                   <button
                     onClick={mulaiEdit}

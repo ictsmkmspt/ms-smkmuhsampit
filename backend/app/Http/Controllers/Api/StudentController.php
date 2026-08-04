@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Exports\StudentTemplateExport;
+use App\Http\Controllers\Api\Concerns\ResetsPasswordToDefault;
 use App\Http\Controllers\Controller;
 use App\Imports\StudentsImport;
 use App\Models\Student;
@@ -14,6 +15,8 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class StudentController extends Controller
 {
+    use ResetsPasswordToDefault;
+
     /**
      * Default cuma siswa aktif (dipakai hampir semua fitur: absensi, dropdown,
      * daftar Master Data > Siswa, dst). Kirim ?status=lulus untuk menu Alumni,
@@ -37,7 +40,7 @@ class StudentController extends Controller
         $data = $request->validate([
             'name' => 'required|string|max:100',
             'email' => 'required|email|unique:users,email',
-            'password' => 'required|min:6',
+            'password' => 'nullable|min:6',
             'nis' => 'required|string|unique:students,nis',
             'jenis_kelamin' => 'nullable|in:L,P',
             'class_room_id' => 'nullable|exists:class_rooms,id',
@@ -47,7 +50,7 @@ class StudentController extends Controller
             $user = User::create([
                 'name' => $data['name'],
                 'email' => $data['email'],
-                'password' => bcrypt($data['password']),
+                'password' => bcrypt($data['password'] ?? '123456'),
                 'role' => 'siswa',
             ]);
 
@@ -83,6 +86,12 @@ class StudentController extends Controller
     {
         $student->user->delete();
         return response()->json(['message' => 'Siswa dihapus.']);
+    }
+
+    public function resetPassword(Student $student)
+    {
+        $this->resetToDefaultPassword($student->user);
+        return response()->json(['message' => 'Password siswa "' . $student->user->name . '" berhasil direset ke default (123456).']);
     }
 
     /**
@@ -125,7 +134,9 @@ class StudentController extends Controller
 
     /**
      * Import banyak siswa sekaligus dari file Excel (.xlsx) yang diupload.
-     * Format kolom harus sesuai template (nama, email, password, nis, jenis_kelamin, kelas).
+     * Format kolom harus sesuai template (nama, email, nis, jenis_kelamin, kelas). Kolom
+     * "password" opsional — kalau ditambahkan manual & diisi, dipakai; kalau tidak ada / kosong,
+     * password default "123456" (wajib diganti siswa saat login pertama).
      * Baris yang gagal tidak menghentikan proses, cukup dilaporkan di akhir.
      */
     public function import(Request $request)

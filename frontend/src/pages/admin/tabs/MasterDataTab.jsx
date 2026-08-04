@@ -4,6 +4,7 @@ import ClassesTab from './ClassesTab';
 import WaliTab from './WaliTab';
 import TuAccountsTab from './TuAccountsTab';
 import AlumniTab from './AlumniTab';
+import AdminAccountsTab from './AdminAccountsTab';
 
 export const MASTER_DATA_SUBMENU = [
   { key: 'guru',  label: 'Guru',  component: TeachersTab },
@@ -12,6 +13,7 @@ export const MASTER_DATA_SUBMENU = [
   { key: 'siswa', label: 'Siswa', component: StudentsTab },
   { key: 'wali',  label: 'Wali Siswa', component: WaliTab },
   { key: 'alumni', label: 'Alumni', component: AlumniTab },
+  { key: 'admin', label: 'Kelola Admin', component: AdminAccountsTab, adminOnly: true },
 ];
 
 export default function MasterDataTab({ activeSub }) {

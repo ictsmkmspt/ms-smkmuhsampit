@@ -2,8 +2,11 @@ import { useEffect, useRef, useState } from 'react';
 import { Save, School, Image, Upload, Plus, CheckCircle2, Trash2, CalendarRange, Info } from 'lucide-react';
 import api from '../../../api/axios';
 import { useSchoolProfile } from '../../../context/SchoolProfileContext';
+import { useAuth } from '../../../context/AuthContext';
 
 export default function ProfilSekolahTab() {
+  const { user } = useAuth();
+  const isAdmin = user.role === 'admin';
   const { profile, reload } = useSchoolProfile();
   const fileInputRef = useRef(null);
 
@@ -67,6 +70,12 @@ export default function ProfilSekolahTab() {
 
   return (
     <div className="space-y-6">
+      {!isAdmin && (
+        <div className="surface-card p-4 border-l-4 border-l-brand-400">
+          <p className="text-sm text-ink-700">Profil Sekolah &amp; Tahun Ajaran hanya bisa dilihat di sini — perubahannya dikelola oleh Admin.</p>
+        </div>
+      )}
+
       <div className="surface-card p-5">
         <div className="flex items-center gap-2 mb-4">
           <Image className="w-4 h-4 text-brand-600" />
@@ -86,15 +95,17 @@ export default function ProfilSekolahTab() {
               <School className="w-8 h-8 text-ink-300" />
             )}
           </div>
-          <div>
-            <button
-              type="button" onClick={handlePickLogo} disabled={uploading}
-              className="flex items-center gap-1.5 text-sm font-medium text-ink-700 bg-mist-50 hover:bg-mist-100 border border-line-200 rounded-xl px-4 py-2 transition disabled:opacity-60"
-            >
-              <Upload className="w-4 h-4" /> {uploading ? 'Mengunggah...' : (profile.logo_url ? 'Ganti Logo' : 'Unggah Logo')}
-            </button>
-            <p className="text-xs text-ink-400 mt-1.5">Format gambar, maks 2MB.</p>
-          </div>
+          {isAdmin && (
+            <div>
+              <button
+                type="button" onClick={handlePickLogo} disabled={uploading}
+                className="flex items-center gap-1.5 text-sm font-medium text-ink-700 bg-mist-50 hover:bg-mist-100 border border-line-200 rounded-xl px-4 py-2 transition disabled:opacity-60"
+              >
+                <Upload className="w-4 h-4" /> {uploading ? 'Mengunggah...' : (profile.logo_url ? 'Ganti Logo' : 'Unggah Logo')}
+              </button>
+              <p className="text-xs text-ink-400 mt-1.5">Format gambar, maks 2MB.</p>
+            </div>
+          )}
           <input
             ref={fileInputRef} type="file" accept="image/*"
             onChange={handleLogoChange} className="hidden"
@@ -111,7 +122,7 @@ export default function ProfilSekolahTab() {
           <input
             value={form.nama_sekolah}
             onChange={(e) => setForm({ ...form, nama_sekolah: e.target.value })}
-            className="field-input" required maxLength={150}
+            className="field-input" required maxLength={150} disabled={!isAdmin}
           />
         </div>
 
@@ -120,7 +131,7 @@ export default function ProfilSekolahTab() {
           <textarea
             value={form.visi}
             onChange={(e) => setForm({ ...form, visi: e.target.value })}
-            className="field-input" rows={3} maxLength={2000}
+            className="field-input" rows={3} maxLength={2000} disabled={!isAdmin}
           />
         </div>
 
@@ -131,24 +142,27 @@ export default function ProfilSekolahTab() {
             onChange={(e) => setForm({ ...form, misi: e.target.value })}
             className="field-input" rows={5} maxLength={4000}
             placeholder="Bisa ditulis per poin, satu baris satu poin."
+            disabled={!isAdmin}
           />
         </div>
 
-        <div className="pt-2">
-          <button type="submit" disabled={saving} className="btn-primary">
-            <Save className="w-4 h-4" />
-            {saving ? 'Menyimpan...' : 'Simpan Profil Sekolah'}
-          </button>
-          {saved && <span className="ml-3 text-sm text-brand-600 font-medium">✓ Tersimpan!</span>}
-        </div>
+        {isAdmin && (
+          <div className="pt-2">
+            <button type="submit" disabled={saving} className="btn-primary">
+              <Save className="w-4 h-4" />
+              {saving ? 'Menyimpan...' : 'Simpan Profil Sekolah'}
+            </button>
+            {saved && <span className="ml-3 text-sm text-brand-600 font-medium">✓ Tersimpan!</span>}
+          </div>
+        )}
       </form>
 
-      <TahunAjaranSection />
+      <TahunAjaranSection isAdmin={isAdmin} />
     </div>
   );
 }
 
-function TahunAjaranSection() {
+function TahunAjaranSection({ isAdmin }) {
   const { reload: reloadSchoolProfile } = useSchoolProfile();
   const [list, setList] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -224,20 +238,22 @@ function TahunAjaranSection() {
         </p>
       </div>
 
-      <form onSubmit={handleAdd} className="surface-card p-5 space-y-3">
-        <h2 className="font-display font-semibold text-ink-900">Tambah Tahun Ajaran</h2>
-        {error && <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2">{error}</p>}
-        <div className="flex gap-3">
-          <input
-            placeholder="Contoh: 2027/2028"
-            value={nama} onChange={(e) => setNama(e.target.value)}
-            className="field-input flex-1" required
-          />
-          <button disabled={saving} className="btn-primary whitespace-nowrap">
-            <Plus className="w-4 h-4" /> {saving ? 'Menyimpan...' : 'Tambah'}
-          </button>
-        </div>
-      </form>
+      {isAdmin && (
+        <form onSubmit={handleAdd} className="surface-card p-5 space-y-3">
+          <h2 className="font-display font-semibold text-ink-900">Tambah Tahun Ajaran</h2>
+          {error && <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2">{error}</p>}
+          <div className="flex gap-3">
+            <input
+              placeholder="Contoh: 2027/2028"
+              value={nama} onChange={(e) => setNama(e.target.value)}
+              className="field-input flex-1" required
+            />
+            <button disabled={saving} className="btn-primary whitespace-nowrap">
+              <Plus className="w-4 h-4" /> {saving ? 'Menyimpan...' : 'Tambah'}
+            </button>
+          </div>
+        </form>
+      )}
 
       <div className="surface-card p-5">
         <h2 className="font-display font-semibold text-ink-900 mb-4">
@@ -262,7 +278,7 @@ function TahunAjaranSection() {
                   )}
                 </div>
                 <div className="flex items-center gap-2">
-                  {ta.status !== 'aktif' && (
+                  {isAdmin && ta.status !== 'aktif' && (
                     <>
                       <button
                         onClick={() => handleAktifkan(ta)}

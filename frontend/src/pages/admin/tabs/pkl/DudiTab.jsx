@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Plus, Trash2, Save, Building2, MapPin } from 'lucide-react';
+import { Plus, Trash2, Save, Building2, MapPin, KeyRound } from 'lucide-react';
 import api from '../../../../api/axios';
 import TruncateText from '../../../../components/TruncateText';
 
 const emptyForm = {
-  name: '', email: '', password: '',
+  name: '', email: '',
   nama_perusahaan: '', alamat: '', penanggung_jawab: '', telepon: '',
   latitude: '', longitude: '', radius_meter: '100',
 };
@@ -96,6 +96,16 @@ export default function DudiTab() {
     }
   };
 
+  const handleResetPassword = async (d) => {
+    if (!confirm(`Reset password akun IDUKA "${d.nama_perusahaan}" ke default (123456)?`)) return;
+    try {
+      const res = await api.put(`/dudi/${d.id}/reset-password`);
+      alert(res.data.message);
+    } catch (err) {
+      alert(err.response?.data?.message || 'Gagal mereset password.');
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="surface-card p-4 border-l-4 border-l-brand-400 flex gap-2">
@@ -110,9 +120,9 @@ export default function DudiTab() {
         {error && <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2 mb-3">{error}</p>}
 
         <p className="text-xs font-medium text-ink-500 mb-2">Akun login</p>
+        <p className="text-xs text-ink-500 mb-2">Password akun otomatis dibuat "123456" — wajib diganti saat login pertama.</p>
         <div className="grid grid-cols-2 gap-3 mb-4">
           <input placeholder="Email login" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="field-input col-span-2" required autoComplete="off" />
-          <input placeholder="Password" type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} className="field-input col-span-2" required autoComplete="new-password" />
         </div>
 
         <p className="text-xs font-medium text-ink-500 mb-2">Profil perusahaan</p>
@@ -215,6 +225,9 @@ export default function DudiTab() {
                     <div className="flex justify-end gap-2">
                       <button onClick={() => startEdit(d)} className="text-xs text-ink-500 hover:text-brand-600 font-medium border border-line-200 rounded-lg px-2 py-1">
                         <Save className="w-3.5 h-3.5" />
+                      </button>
+                      <button onClick={() => handleResetPassword(d)} className="text-ink-400 hover:text-brand-600" title="Reset Password ke default (123456)">
+                        <KeyRound className="w-4 h-4" />
                       </button>
                       <button onClick={() => handleDelete(d)} className="text-ink-300 hover:text-honey-700">
                         <Trash2 className="w-4 h-4" />

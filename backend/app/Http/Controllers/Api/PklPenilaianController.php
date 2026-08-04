@@ -128,6 +128,10 @@ class PklPenilaianController extends Controller
             return response()->json(['message' => 'Belum ada penilaian untuk diedit.'], 404);
         }
 
+        if ($pklPlacement->status === 'selesai') {
+            return response()->json(['message' => 'Penilaian tidak bisa diubah karena PKL siswa ini sudah ditandai selesai.'], 422);
+        }
+
         $data = $request->validate([
             'skor_disiplin'              => 'required|integer|min:1|max:4',
             'skor_sikap'                 => 'required|integer|min:1|max:4',
@@ -195,6 +199,10 @@ class PklPenilaianController extends Controller
         $penilaian = $pklPlacement->penilaian;
         if (!$penilaian) {
             return response()->json(['message' => 'Belum ada penilaian untuk dihapus.'], 404);
+        }
+
+        if ($pklPlacement->status === 'selesai') {
+            return response()->json(['message' => 'Penilaian tidak bisa dihapus karena PKL siswa ini sudah ditandai selesai.'], 422);
         }
 
         $penilaian->delete();

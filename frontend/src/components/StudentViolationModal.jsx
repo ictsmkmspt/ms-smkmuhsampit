@@ -3,7 +3,7 @@ import { X, Pencil, Trash2 } from 'lucide-react';
 import api from '../api/axios';
 import TruncateText from './TruncateText';
 
-export default function StudentViolationModal({ student, onClose, onChanged }) {
+export default function StudentViolationModal({ student, onClose, onChanged, readOnly = false }) {
   const [violationTypes, setViolationTypes] = useState([]);
   const [dateFrom, setDateFrom]     = useState('');
   const [dateTo, setDateTo]         = useState('');
@@ -123,7 +123,7 @@ export default function StudentViolationModal({ student, onClose, onChanged }) {
                   <th className="pb-2 font-medium">Tanggal</th>
                   <th className="font-medium">Jenis Pelanggaran</th>
                   <th className="font-medium text-right">Poin</th>
-                  <th className="font-medium text-right">Aksi</th>
+                  {!readOnly && <th className="font-medium text-right">Aksi</th>}
                 </tr>
               </thead>
               <tbody>
@@ -170,20 +170,22 @@ export default function StudentViolationModal({ student, onClose, onChanged }) {
                         {v.note && <p className="text-xs text-ink-400 mt-0.5"><TruncateText text={v.note} maxWidth="16rem" /></p>}
                       </td>
                       <td className="text-right text-honey-700 font-medium align-top">+{v.poin}</td>
-                      <td className="text-right align-top">
-                        {v.type === 'alpa' ? (
-                          <span className="text-xs text-ink-300">otomatis</span>
-                        ) : (
-                          <div className="flex gap-2 justify-end">
-                            <button onClick={() => startEdit(v)} className="text-ink-400 hover:text-brand-600" title="Ubah">
-                              <Pencil className="w-3.5 h-3.5" />
-                            </button>
-                            <button onClick={() => handleDelete(v)} className="text-ink-400 hover:text-rose-600" title="Hapus">
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        )}
-                      </td>
+                      {!readOnly && (
+                        <td className="text-right align-top">
+                          {v.type === 'alpa' ? (
+                            <span className="text-xs text-ink-300">otomatis</span>
+                          ) : (
+                            <div className="flex gap-2 justify-end">
+                              <button onClick={() => startEdit(v)} className="text-ink-400 hover:text-brand-600" title="Ubah">
+                                <Pencil className="w-3.5 h-3.5" />
+                              </button>
+                              <button onClick={() => handleDelete(v)} className="text-ink-400 hover:text-rose-600" title="Hapus">
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          )}
+                        </td>
+                      )}
                     </tr>
                   )
                 ))}

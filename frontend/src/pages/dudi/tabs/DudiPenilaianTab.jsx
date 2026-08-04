@@ -32,7 +32,7 @@ export default function DudiPenilaianTab() {
         <h2 className="font-display font-semibold text-ink-900">Penilaian PKL</h2>
       </div>
       <p className="text-xs text-ink-500 mb-4">
-        Isi penilaian akhir untuk siswa magang di tempat Anda. Setelah dikirim, nilai masih bisa diedit atau dihapus lagi kalau ada yang perlu diperbaiki.
+        Isi penilaian akhir untuk siswa magang di tempat Anda. Setelah dikirim, nilai masih bisa diedit atau dihapus lagi kalau ada yang perlu diperbaiki — selama PKL siswa belum ditandai selesai oleh sekolah.
       </p>
 
       {loading ? (

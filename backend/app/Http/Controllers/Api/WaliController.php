@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Exports\WaliTemplateExport;
+use App\Http\Controllers\Api\Concerns\ResetsPasswordToDefault;
 use App\Http\Controllers\Controller;
 use App\Imports\WaliImport;
 use App\Models\User;
@@ -11,6 +12,8 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class WaliController extends Controller
 {
+    use ResetsPasswordToDefault;
+
     public function index()
     {
         return User::where('role', 'wali')
@@ -23,13 +26,13 @@ class WaliController extends Controller
         $data = $request->validate([
             'name'     => 'required|string|max:100',
             'phone'    => 'required|string|max:20|unique:users,phone',
-            'password' => 'required|min:6',
+            'password' => 'nullable|min:6',
         ]);
 
         $user = User::create([
             'name'     => $data['name'],
             'phone'    => $data['phone'],
-            'password' => bcrypt($data['password']),
+            'password' => bcrypt($data['password'] ?? '123456'),
             'role'     => 'wali',
         ]);
 
@@ -66,6 +69,13 @@ class WaliController extends Controller
         $parent->delete();
 
         return response()->json(['message' => 'Akun wali dihapus.']);
+    }
+
+    public function resetPassword($id)
+    {
+        $parent = User::where('role', 'wali')->findOrFail($id);
+        $this->resetToDefaultPassword($parent);
+        return response()->json(['message' => 'Password akun wali "' . $parent->name . '" berhasil direset ke default (123456).']);
     }
 
     public function downloadTemplate()

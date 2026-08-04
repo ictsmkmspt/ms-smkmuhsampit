@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Plus, Trash2, Download, Upload } from 'lucide-react';
+import { Plus, Trash2, Download, Upload, KeyRound } from 'lucide-react';
 import api from '../../../api/axios';
 import TruncateText from '../../../components/TruncateText';
 
@@ -12,7 +12,7 @@ const JK_LABEL = { L: 'Laki-laki', P: 'Perempuan' };
 export default function StudentsTab() {
   const [students, setStudents] = useState([]);
   const [classes, setClasses] = useState([]);
-  const [form, setForm] = useState({ name: '', email: '', password: '', nis: '', jenis_kelamin: '', class_room_id: '' });
+  const [form, setForm] = useState({ name: '', email: '', nis: '', jenis_kelamin: '', class_room_id: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -34,7 +34,7 @@ export default function StudentsTab() {
     setLoading(true);
     try {
       await api.post('/students', form);
-      setForm({ name: '', email: '', password: '', nis: '', class_room_id: '' });
+      setForm({ name: '', email: '', nis: '', class_room_id: '' });
       loadStudents();
     } catch (err) {
       const msgs = err.response?.data?.errors;
@@ -48,6 +48,16 @@ export default function StudentsTab() {
     if (!confirm(`Hapus siswa "${name}"? Data absensi siswa ini juga akan terhapus.`)) return;
     await api.delete(`/students/${id}`);
     loadStudents();
+  };
+
+  const handleResetPassword = async (id, name) => {
+    if (!confirm(`Reset password siswa "${name}" ke default (123456)?`)) return;
+    try {
+      const res = await api.put(`/students/${id}/reset-password`);
+      alert(res.data.message);
+    } catch (err) {
+      alert(err.response?.data?.message || 'Gagal mereset password.');
+    }
   };
 
   const handleDownloadTemplate = async () => {
@@ -181,12 +191,12 @@ export default function StudentsTab() {
       )}
 
       <form onSubmit={handleAdd} className="surface-card p-5">
-        <h2 className="font-display font-semibold text-ink-900 mb-4">Tambah Siswa Baru</h2>
+        <h2 className="font-display font-semibold text-ink-900 mb-1">Tambah Siswa Baru</h2>
+        <p className="text-xs text-ink-500 mb-4">Password akun otomatis dibuat "123456" — wajib diganti siswa saat login pertama.</p>
         {error && <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2 mb-3">{error}</p>}
         <div className="grid grid-cols-2 gap-3">
           <input placeholder="Nama" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="field-input" required />
           <input placeholder="Email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="field-input" required autoComplete="off" />
-          <input placeholder="Password" type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} className="field-input" required autoComplete="new-password" />
           <input placeholder="NIS" value={form.nis} onChange={(e) => setForm({ ...form, nis: e.target.value })} className="field-input" required />
           <select value={form.jenis_kelamin} onChange={(e) => setForm({ ...form, jenis_kelamin: e.target.value })} className="field-input text-ink-700">
             <option value="">— Jenis Kelamin —</option>
@@ -254,9 +264,14 @@ export default function StudentsTab() {
                     <td className="text-ink-700">{s.class_room?.name || '-'}</td>
                     <td className="font-mono text-xs text-brand-600">{s.barcode_code}</td>
                     <td className="text-right">
-                      <button onClick={() => handleDelete(s.id, s.user?.name)} className="text-ink-300 hover:text-honey-700">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      <div className="flex justify-end gap-2">
+                        <button onClick={() => handleResetPassword(s.id, s.user?.name)} className="text-ink-400 hover:text-brand-600" title="Reset Password ke default (123456)">
+                          <KeyRound className="w-4 h-4" />
+                        </button>
+                        <button onClick={() => handleDelete(s.id, s.user?.name)} className="text-ink-300 hover:text-honey-700">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );

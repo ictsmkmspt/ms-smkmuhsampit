@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\TahunAjaran;
+use App\Models\Teacher;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -10,6 +12,29 @@ use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
+    /**
+     * Tambahkan flag is_wali_kelas & is_pembimbing_pkl khusus untuk guru —
+     * dipakai frontend (GuruDashboard) buat menyembunyikan menu Laporan &
+     * PKL kalau guru yang login tidak ditugaskan sebagai wali kelas / tidak
+     * sedang membimbing siswa PKL manapun di tahun ajaran aktif.
+     */
+    private function withGuruFlags(User $user): User|array
+    {
+        if ($user->role !== 'guru') {
+            return $user;
+        }
+
+        $teacher = Teacher::where('user_id', $user->id)->first();
+
+        $data = $user->toArray();
+        $data['is_wali_kelas'] = $teacher ? $teacher->homeroomOf()->exists() : false;
+        $data['is_pembimbing_pkl'] = $teacher
+            ? $teacher->pklPlacements()->where('tahun_ajaran_id', TahunAjaran::aktifId())->exists()
+            : false;
+
+        return $data;
+    }
+
     /**
      * Login pakai email ATAU nomor HP — dipakai bareng: siswa/guru/admin/IDUKA
      * biasanya pakai email, sedangkan wali (orang tua) khusus pakai nomor HP
@@ -34,7 +59,7 @@ class AuthController extends Controller
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
-            'user' => $user,
+            'user' => $this->withGuruFlags($user),
             'token' => $token,
             'must_change_password' => $request->password === '123456',
         ]);
@@ -42,7 +67,7 @@ class AuthController extends Controller
 
     public function me(Request $request)
     {
-        return response()->json($request->user());
+        return response()->json($this->withGuruFlags($request->user()));
     }
 
     public function logout(Request $request)

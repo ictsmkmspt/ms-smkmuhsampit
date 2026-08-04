@@ -4,7 +4,8 @@ import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
 
 const ROLE_LABEL = {
-  admin: 'Administrator',
+  admin: 'Super Admin',
+  waka: 'Admin',
   guru: 'Guru',
   siswa: 'Siswa',
   wali: 'Wali Siswa',

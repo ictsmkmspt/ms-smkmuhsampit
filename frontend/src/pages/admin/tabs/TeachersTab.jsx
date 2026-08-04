@@ -1,13 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
-import { Plus, Trash2, Download, Upload, Save } from 'lucide-react';
+import { Plus, Trash2, Download, Upload, Save, KeyRound } from 'lucide-react';
 import api from '../../../api/axios';
 import TruncateText from '../../../components/TruncateText';
+import { useAuth } from '../../../context/AuthContext';
 
 const JK_LABEL = { L: 'Laki-laki', P: 'Perempuan' };
 
 export default function TeachersTab() {
+  const { user } = useAuth();
+  const isAdmin = user.role === 'admin';
   const [teachers, setTeachers] = useState([]);
-  const [form, setForm] = useState({ name: '', email: '', password: '', nip: '', jenis_kelamin: '' });
+  const [form, setForm] = useState({ name: '', email: '', nip: '', jenis_kelamin: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -28,7 +31,7 @@ export default function TeachersTab() {
     setLoading(true);
     try {
       await api.post('/teachers', form);
-      setForm({ name: '', email: '', password: '', nip: '', jenis_kelamin: '' });
+      setForm({ name: '', email: '', nip: '', jenis_kelamin: '' });
       loadTeachers();
     } catch (err) {
       const msgs = err.response?.data?.errors;
@@ -42,6 +45,16 @@ export default function TeachersTab() {
     if (!confirm(`Hapus guru "${name}"?`)) return;
     await api.delete(`/teachers/${id}`);
     loadTeachers();
+  };
+
+  const handleResetPassword = async (id, name) => {
+    if (!confirm(`Reset password guru "${name}" ke default (123456)?`)) return;
+    try {
+      const res = await api.put(`/teachers/${id}/reset-password`);
+      alert(res.data.message);
+    } catch (err) {
+      alert(err.response?.data?.message || 'Gagal mereset password.');
+    }
   };
 
   const startEdit = (t) => {
@@ -105,6 +118,13 @@ export default function TeachersTab() {
 
   return (
     <div className="space-y-6">
+      {!isAdmin && (
+        <div className="surface-card p-4 border-l-4 border-l-brand-400">
+          <p className="text-sm text-ink-700">Data Guru hanya bisa dilihat di sini — perubahan data guru dikelola oleh Admin.</p>
+        </div>
+      )}
+
+      {isAdmin && (
       <div className="surface-card p-5 flex flex-wrap items-center gap-3">
         <h2 className="font-display font-semibold text-ink-900 mr-auto">Import Data Guru dari Excel</h2>
         <button
@@ -128,8 +148,9 @@ export default function TeachersTab() {
           className="hidden"
         />
       </div>
+      )}
 
-      {importResult && (
+      {isAdmin && importResult && (
         <div className="surface-card p-5">
           <p className={`text-sm font-medium ${importResult.gagal?.length > 0 ? 'text-honey-700' : 'text-brand-600'}`}>
             {importResult.message}
@@ -157,14 +178,15 @@ export default function TeachersTab() {
         </div>
       )}
 
+      {isAdmin && (
       <form onSubmit={handleAdd} className="surface-card p-5">
-        <h2 className="font-display font-semibold text-ink-900 mb-4">Tambah Guru Baru</h2>
+        <h2 className="font-display font-semibold text-ink-900 mb-1">Tambah Guru Baru</h2>
+        <p className="text-xs text-ink-500 mb-4">Password akun otomatis dibuat "123456" — wajib diganti guru saat login pertama.</p>
         {error && <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2 mb-3">{error}</p>}
         <div className="grid grid-cols-2 gap-3">
           <input placeholder="Nama" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="field-input" required />
           <input placeholder="Email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="field-input" required autoComplete="off" />
-          <input placeholder="Password" type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} className="field-input" required autoComplete="new-password" />
-          <input placeholder="NIP" value={form.nip} onChange={(e) => setForm({ ...form, nip: e.target.value })} className="field-input" required />
+          <input placeholder="NIP" value={form.nip} onChange={(e) => setForm({ ...form, nip: e.target.value })} className="field-input col-span-2" required />
           <select value={form.jenis_kelamin} onChange={(e) => setForm({ ...form, jenis_kelamin: e.target.value })} className="field-input col-span-2 text-ink-700">
             <option value="">— Jenis Kelamin —</option>
             <option value="L">Laki-laki</option>
@@ -175,6 +197,7 @@ export default function TeachersTab() {
           <Plus className="w-4 h-4" /> {loading ? 'Menyimpan...' : 'Tambah Guru'}
         </button>
       </form>
+      )}
 
       <div className="surface-card p-5">
         <h2 className="font-display font-semibold text-ink-900 mb-4">Daftar Guru <span className="text-ink-500 font-sans font-normal text-sm">({teachers.length})</span></h2>
@@ -183,7 +206,7 @@ export default function TeachersTab() {
         <table className="w-full text-sm min-w-[560px]">
           <thead>
             <tr className="text-left text-ink-500 border-b border-line-200">
-              <th className="pb-2 font-medium">Nama</th><th className="font-medium">Email</th><th className="font-medium">NIP</th><th className="font-medium">Jenis Kelamin</th><th></th>
+              <th className="pb-2 font-medium">Nama</th><th className="font-medium">Email</th><th className="font-medium">NIP</th><th className="font-medium">Jenis Kelamin</th>{isAdmin && <th></th>}
             </tr>
           </thead>
           <tbody>
@@ -213,16 +236,21 @@ export default function TeachersTab() {
                   <td className="text-ink-700"><TruncateText text={t.user?.email} /></td>
                   <td className="text-ink-700">{t.nip}</td>
                   <td className="text-ink-700">{JK_LABEL[t.jenis_kelamin] || '-'}</td>
-                  <td className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <button onClick={() => startEdit(t)} className="text-ink-400 hover:text-brand-600 text-xs border border-line-200 rounded-lg px-2 py-1">
-                        Edit
-                      </button>
-                      <button onClick={() => handleDelete(t.id, t.user?.name)} className="text-ink-300 hover:text-honey-700">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </td>
+                  {isAdmin && (
+                    <td className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <button onClick={() => startEdit(t)} className="text-ink-400 hover:text-brand-600 text-xs border border-line-200 rounded-lg px-2 py-1">
+                          Edit
+                        </button>
+                        <button onClick={() => handleResetPassword(t.id, t.user?.name)} className="text-ink-400 hover:text-brand-600" title="Reset Password ke default (123456)">
+                          <KeyRound className="w-4 h-4" />
+                        </button>
+                        <button onClick={() => handleDelete(t.id, t.user?.name)} className="text-ink-300 hover:text-honey-700">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  )}
                 </tr>
               )
             ))}

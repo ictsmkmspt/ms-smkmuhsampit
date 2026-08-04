@@ -3,10 +3,13 @@ import { Search, Trash2, Pencil, Printer } from 'lucide-react';
 import api from '../../../api/axios';
 import EditAttendanceModal from '../../../components/EditAttendanceModal';
 import TruncateText from '../../../components/TruncateText';
+import { useAuth } from '../../../context/AuthContext';
 
 const BULAN = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
 
 export default function AttendanceReportTab() {
+  const { user } = useAuth();
+  const isAdmin = user.role === 'admin';
   const [report, setReport] = useState([]);
   const [classes, setClasses] = useState([]);
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
@@ -153,7 +156,7 @@ export default function AttendanceReportTab() {
                 <th className="font-medium">Kelas</th>
                 <th className="font-medium">Jam Masuk</th>
                 <th className="font-medium">Status</th>
-                <th className="font-medium text-right">Aksi</th>
+                {isAdmin && <th className="font-medium text-right">Aksi</th>}
               </tr>
             </thead>
             <tbody>
@@ -165,37 +168,39 @@ export default function AttendanceReportTab() {
                   <td>
                     <span className={`badge-soft ${badgeClass(r.status)}`}>{r.status === 'pkl' ? 'PKL' : r.status}</span>
                   </td>
-                  <td className="text-right">
-                    {r.status === 'libur' ? (
-                      <span className="text-xs text-ink-300 italic">Hari libur</span>
-                    ) : r.status === 'pkl' ? (
-                      <span className="text-xs text-ink-300 italic">Sedang PKL</span>
-                    ) : (
-                      <div className="flex justify-end gap-3">
-                        <button
-                          onClick={() => setEditingRecord(r)}
-                          className="text-ink-300 hover:text-brand-600"
-                          title="Edit data kehadiran"
-                        >
-                          <Pencil className="w-4 h-4" />
-                        </button>
-                        {r.status !== 'alpa' && (
+                  {isAdmin && (
+                    <td className="text-right">
+                      {r.status === 'libur' ? (
+                        <span className="text-xs text-ink-300 italic">Hari libur</span>
+                      ) : r.status === 'pkl' ? (
+                        <span className="text-xs text-ink-300 italic">Sedang PKL</span>
+                      ) : (
+                        <div className="flex justify-end gap-3">
                           <button
-                            onClick={() => handleDelete(r)}
-                            disabled={deletingId === r.id}
-                            className="text-ink-300 hover:text-honey-700 disabled:opacity-40"
-                            title="Hapus data kehadiran"
+                            onClick={() => setEditingRecord(r)}
+                            className="text-ink-300 hover:text-brand-600"
+                            title="Edit data kehadiran"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Pencil className="w-4 h-4" />
                           </button>
-                        )}
-                      </div>
-                    )}
-                  </td>
+                          {r.status !== 'alpa' && (
+                            <button
+                              onClick={() => handleDelete(r)}
+                              disabled={deletingId === r.id}
+                              className="text-ink-300 hover:text-honey-700 disabled:opacity-40"
+                              title="Hapus data kehadiran"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </td>
+                  )}
                 </tr>
               ))}
               {report.length === 0 && (
-                <tr><td colSpan="5" className="py-6 text-center text-ink-300">Tidak ada data absensi untuk filter ini.</td></tr>
+                <tr><td colSpan={isAdmin ? 5 : 4} className="py-6 text-center text-ink-300">Tidak ada data absensi untuk filter ini.</td></tr>
               )}
             </tbody>
           </table>

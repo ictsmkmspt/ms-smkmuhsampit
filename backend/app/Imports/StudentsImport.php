@@ -49,10 +49,11 @@ class StudentsImport implements ToModel, WithHeadingRow, WithValidation, SkipsOn
                 $classRoomId = $classRoom?->id;
             }
 
+            $password = !empty($row['password']) ? trim((string) $row['password']) : '123456';
             $user = User::create([
                 'name'     => $row['nama'],
                 'email'    => $row['email'],
-                'password' => bcrypt($row['password']),
+                'password' => bcrypt($password),
                 'role'     => 'siswa',
             ]);
 
@@ -75,7 +76,7 @@ class StudentsImport implements ToModel, WithHeadingRow, WithValidation, SkipsOn
         return [
             'nama'     => 'required|string|max:100',
             'email'    => 'required|email|unique:users,email',
-            'password' => 'required|min:6',
+            'password' => 'nullable|min:6',
             'nis'      => 'required|string|unique:students,nis',
             'jenis_kelamin' => 'nullable|in:L,P,l,p',
             'kelas'    => ['nullable', function ($attribute, $value, $fail) {

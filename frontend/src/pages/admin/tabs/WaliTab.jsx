@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
-import { Plus, Trash2, UserPlus, Link2, Download, Upload } from 'lucide-react';
+import { Plus, Trash2, UserPlus, Link2, Download, Upload, KeyRound } from 'lucide-react';
 import api from '../../../api/axios';
 import TruncateText from '../../../components/TruncateText';
 
 export default function WaliTab() {
   const [parents, setParents] = useState([]);
   const [students, setStudents] = useState([]);
-  const [form, setForm] = useState({ name: '', phone: '', password: '' });
+  const [form, setForm] = useState({ name: '', phone: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -32,7 +32,7 @@ export default function WaliTab() {
     setLoading(true);
     try {
       await api.post('/parents', form);
-      setForm({ name: '', phone: '', password: '' });
+      setForm({ name: '', phone: '' });
       loadParents();
     } catch (err) {
       const msgs = err.response?.data?.errors;
@@ -46,6 +46,16 @@ export default function WaliTab() {
     if (!confirm(`Hapus akun wali "${name}"? Semua hubungan ke anak juga akan terhapus.`)) return;
     await api.delete(`/parents/${id}`);
     loadParents();
+  };
+
+  const handleResetPassword = async (id, name) => {
+    if (!confirm(`Reset password akun wali "${name}" ke default (123456)?`)) return;
+    try {
+      const res = await api.put(`/parents/${id}/reset-password`);
+      alert(res.data.message);
+    } catch (err) {
+      alert(err.response?.data?.message || 'Gagal mereset password.');
+    }
   };
 
   const openLinkForm = (parentId) => {
@@ -161,14 +171,14 @@ export default function WaliTab() {
       )}
 
       <form onSubmit={handleAdd} className="surface-card p-5">
-        <h2 className="font-display font-semibold text-ink-900 mb-4 flex items-center gap-2">
+        <h2 className="font-display font-semibold text-ink-900 mb-1 flex items-center gap-2">
           <UserPlus className="w-4 h-4 text-brand-600" /> Tambah Akun Wali Baru
         </h2>
+        <p className="text-xs text-ink-500 mb-4">Password akun otomatis dibuat "123456" — wajib diganti saat login pertama.</p>
         {error && <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2 mb-3">{error}</p>}
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 gap-3">
           <input placeholder="Nama" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="field-input" required />
           <input placeholder="No. HP" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="field-input" required autoComplete="off" />
-          <input placeholder="Password" type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} className="field-input" required autoComplete="new-password" />
         </div>
         <button disabled={loading} className="btn-primary mt-4">
           <Plus className="w-4 h-4" /> {loading ? 'Menyimpan...' : 'Tambah Akun Wali'}
@@ -194,6 +204,9 @@ export default function WaliTab() {
                     className="flex items-center gap-1 text-xs font-medium text-brand-700 bg-brand-50 hover:bg-brand-100 border border-brand-200 rounded-lg px-3 py-1.5 transition"
                   >
                     <Link2 className="w-3.5 h-3.5" /> Hubungkan Anak
+                  </button>
+                  <button onClick={() => handleResetPassword(p.id, p.name)} className="text-ink-400 hover:text-brand-600" title="Reset Password ke default (123456)">
+                    <KeyRound className="w-4 h-4" />
                   </button>
                   <button onClick={() => handleDeleteParent(p.id, p.name)} className="text-ink-300 hover:text-honey-700">
                     <Trash2 className="w-4 h-4" />

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AchievementController;
 use App\Http\Controllers\Api\AchievementTypeController;
+use App\Http\Controllers\Api\AdminAccountController;
 use App\Http\Controllers\Api\AttendanceController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ClassRoomController;
@@ -53,7 +54,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/pkl-placements/{pklPlacement}/penilaian', [PklPenilaianController::class, 'destroy']);
     });
 
-    Route::middleware('role:admin')->group(function () {
+    // Kelas, Siswa, Wali Siswa, jenis Poin Pelanggaran/Prestasi, Kalender
+    // Libur, Jam Masuk, IDUKA, dan Penempatan PKL — role "waka" (label di
+    // UI: "Admin") diberi akses TULIS penuh yang sama seperti Super Admin
+    // di sini, karena ini memang bagian yang jadi tanggung jawabnya.
+    Route::middleware('role:admin,waka')->group(function () {
         Route::apiResource('classes', ClassRoomController::class)->parameters(['classes' => 'classRoom']);
         Route::post('/classes/{classRoom}/luluskan', [ClassRoomController::class, 'luluskan']);
         Route::post('/classes/{classRoom}/aktifkan', [ClassRoomController::class, 'aktifkan']);
@@ -61,35 +66,57 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/students/import', [StudentController::class, 'import']);
         Route::apiResource('students', StudentController::class);
         Route::put('/students/{student}/kembalikan-aktif', [StudentController::class, 'kembalikanAktif']);
-        Route::get('/teachers/import/template', [TeacherController::class, 'downloadTemplate']);
-        Route::post('/teachers/import', [TeacherController::class, 'import']);
-        Route::apiResource('teachers', TeacherController::class);
+        Route::put('/students/{student}/reset-password', [StudentController::class, 'resetPassword']);
         Route::get('/settings', [SettingController::class, 'index']);
         Route::put('/settings', [SettingController::class, 'update']);
-        Route::put('/school-profile', [SchoolProfileController::class, 'update']);
-        Route::post('/school-profile/logo', [SchoolProfileController::class, 'uploadLogo']);
         Route::apiResource('violation-types', ViolationTypeController::class)->except(['show']);
         Route::apiResource('holidays', HolidayController::class)->only(['index', 'store', 'destroy']);
         Route::post('/holidays/range', [HolidayController::class, 'storeRange']);
         Route::apiResource('achievement-types', AchievementTypeController::class)->except(['show']);
-        Route::get('/tahun-ajaran', [TahunAjaranController::class, 'index']);
-        Route::post('/tahun-ajaran', [TahunAjaranController::class, 'store']);
-        Route::post('/tahun-ajaran/{id}/aktifkan', [TahunAjaranController::class, 'aktifkan']);
-        Route::delete('/tahun-ajaran/{id}', [TahunAjaranController::class, 'destroy']);
         Route::get('/parents', [WaliController::class, 'index']);
         Route::post('/parents', [WaliController::class, 'store']);
         Route::post('/parents/{parentId}/link', [WaliController::class, 'link']);
         Route::delete('/parents/{parentId}/link/{studentId}', [WaliController::class, 'unlink']);
         Route::delete('/parents/{id}', [WaliController::class, 'destroy']);
+        Route::put('/parents/{id}/reset-password', [WaliController::class, 'resetPassword']);
         Route::get('/parents/import/template', [WaliController::class, 'downloadTemplate']);
         Route::post('/parents/import', [WaliController::class, 'import']);
         Route::apiResource('dudi', DudiController::class)->except(['show']);
-        Route::get('/tu', [TuController::class, 'index']);
-        Route::post('/tu', [TuController::class, 'store']);
-        Route::delete('/tu/{id}', [TuController::class, 'destroy']);
+        Route::put('/dudi/{dudi}/reset-password', [DudiController::class, 'resetPassword']);
         Route::post('/pkl-placements/tutup-semua-aktif', [PklPlacementController::class, 'tutupSemuaAktif']);
         Route::post('/pkl-placements/aktifkan-semua-selesai', [PklPlacementController::class, 'aktifkanSemuaSelesai']);
         Route::apiResource('pkl-placements', PklPlacementController::class)->except(['show']);
+    });
+
+    // Guru, Akun TU, Profil Sekolah, dan Tahun Ajaran TETAP khusus Super
+    // Admin — role "waka" (label di UI: "Admin") cuma boleh LIHAT bagian
+    // ini (lewat grup read-only di bawah), tidak boleh mengubah.
+    Route::middleware('role:admin')->group(function () {
+        Route::get('/teachers/import/template', [TeacherController::class, 'downloadTemplate']);
+        Route::post('/teachers/import', [TeacherController::class, 'import']);
+        Route::apiResource('teachers', TeacherController::class)->except(['index', 'show']);
+        Route::put('/teachers/{teacher}/reset-password', [TeacherController::class, 'resetPassword']);
+        Route::put('/school-profile', [SchoolProfileController::class, 'update']);
+        Route::post('/school-profile/logo', [SchoolProfileController::class, 'uploadLogo']);
+        Route::post('/tahun-ajaran', [TahunAjaranController::class, 'store']);
+        Route::post('/tahun-ajaran/{id}/aktifkan', [TahunAjaranController::class, 'aktifkan']);
+        Route::delete('/tahun-ajaran/{id}', [TahunAjaranController::class, 'destroy']);
+        Route::post('/tu', [TuController::class, 'store']);
+        Route::delete('/tu/{id}', [TuController::class, 'destroy']);
+        Route::put('/tu/{id}/reset-password', [TuController::class, 'resetPassword']);
+        Route::get('/admin-accounts', [AdminAccountController::class, 'index']);
+        Route::post('/admin-accounts', [AdminAccountController::class, 'store']);
+        Route::delete('/admin-accounts/{id}', [AdminAccountController::class, 'destroy']);
+        Route::put('/admin-accounts/{id}/reset-password', [AdminAccountController::class, 'resetPassword']);
+    });
+
+    // Read-only untuk role "waka" (label di UI: "Admin") di bagian yang
+    // bukan tanggung jawabnya.
+    Route::middleware('role:admin,waka')->group(function () {
+        Route::get('/teachers', [TeacherController::class, 'index']);
+        Route::get('/teachers/{teacher}', [TeacherController::class, 'show']);
+        Route::get('/tu', [TuController::class, 'index']);
+        Route::get('/tahun-ajaran', [TahunAjaranController::class, 'index']);
     });
 
     Route::middleware('role:admin,guru')->group(function () {
@@ -99,12 +126,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/attendance/process-alpa', [AttendanceController::class, 'processAlpa']);
         Route::post('/attendance/record-manual', [AttendanceController::class, 'recordManual']);
         Route::post('/attendance/update-status', [AttendanceController::class, 'updateStatus']);
-        Route::get('/attendance/report', [AttendanceController::class, 'report']);
         Route::get('/attendance/my-class-report', [AttendanceController::class, 'myClassReport']);
-        Route::get('/attendance/monthly-report', [AttendanceController::class, 'monthlyReport']);
-        Route::get('/violations/summary', [AttendanceController::class, 'violationReport']);
-        Route::get('/violations/detail', [AttendanceController::class, 'violationDetail']);
-        Route::get('/students/{studentId}/violations', [AttendanceController::class, 'studentViolations']);
         Route::delete('/violations/{id}', [AttendanceController::class, 'violationDestroy']);
         Route::put('/violations/{id}', [AttendanceController::class, 'violationUpdate']);
         Route::get('/violation-types', [ViolationTypeController::class, 'index']);
@@ -113,12 +135,24 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/prayer/report', [PrayerAttendanceController::class, 'report']);
         Route::get('/achievement-types', [AchievementController::class, 'types']);
         Route::post('/achievements/record', [AchievementController::class, 'record']);
-        Route::get('/achievements/summary', [AchievementController::class, 'summary']);
-        Route::get('/achievements/detail', [AchievementController::class, 'detail']);
-        Route::get('/students/{studentId}/achievements', [AchievementController::class, 'studentAchievements']);
         Route::delete('/achievements/{id}', [AchievementController::class, 'destroy']);
         Route::put('/achievements/{id}', [AchievementController::class, 'update']);
         Route::get('/pkl-placements/my-bimbingan', [PklPlacementController::class, 'bimbinganSaya']);
+    });
+
+    // Laporan (Rekap Absensi/Poin Pelanggaran/Poin Prestasi) — role "waka"
+    // (label di UI: "Admin") boleh lihat isinya, tapi tidak lewat rute
+    // admin,guru di atas yang bisa mengubah data (scan, catat manual, edit,
+    // hapus).
+    Route::middleware('role:admin,guru,waka')->group(function () {
+        Route::get('/attendance/report', [AttendanceController::class, 'report']);
+        Route::get('/attendance/monthly-report', [AttendanceController::class, 'monthlyReport']);
+        Route::get('/violations/summary', [AttendanceController::class, 'violationReport']);
+        Route::get('/violations/detail', [AttendanceController::class, 'violationDetail']);
+        Route::get('/students/{studentId}/violations', [AttendanceController::class, 'studentViolations']);
+        Route::get('/achievements/summary', [AchievementController::class, 'summary']);
+        Route::get('/achievements/detail', [AchievementController::class, 'detail']);
+        Route::get('/students/{studentId}/achievements', [AchievementController::class, 'studentAchievements']);
     });
 
     Route::middleware('role:admin,guru,dudi,siswa')->group(function () {
@@ -189,7 +223,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Dipisah dari grup role:admin,guru di atas supaya TU juga bisa akses
     // (butuh daftar kelas & siswa buat filter menu SPP), tanpa memberi TU
     // akses ke rute lain di grup itu (absensi, pelanggaran, dll).
-    Route::middleware('role:admin,guru,tu')->group(function () {
+    Route::middleware('role:admin,guru,tu,waka')->group(function () {
         Route::get('/classes', [ClassRoomController::class, 'index']);
         Route::get('/students', [StudentController::class, 'index']);
     });

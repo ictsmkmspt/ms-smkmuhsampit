@@ -3,11 +3,14 @@ import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import api from '../../../api/axios';
 import StudentViolationModal from '../../../components/StudentViolationModal';
 import TruncateText from '../../../components/TruncateText';
+import { useAuth } from '../../../context/AuthContext';
 
 const PAGE_SIZE = 5;
 const SUMMARY_PAGE_SIZE = 40;
 
 export default function ViolationReportTab() {
+  const { user } = useAuth();
+  const isAdmin = user.role === 'admin';
   const [summary, setSummary] = useState([]);
   const [detail, setDetail] = useState([]);
   const [classes, setClasses] = useState([]);
@@ -203,6 +206,7 @@ export default function ViolationReportTab() {
           student={selectedStudent}
           onClose={() => setSelectedStudent(null)}
           onChanged={loadAll}
+          readOnly={!isAdmin}
         />
       )}
     </div>

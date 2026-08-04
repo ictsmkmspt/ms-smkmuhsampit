@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Exports\TeacherTemplateExport;
+use App\Http\Controllers\Api\Concerns\ResetsPasswordToDefault;
 use App\Http\Controllers\Controller;
 use App\Imports\TeachersImport;
 use App\Models\Teacher;
@@ -13,6 +14,8 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class TeacherController extends Controller
 {
+    use ResetsPasswordToDefault;
+
     public function index()
     {
         return Teacher::with('user')->get();
@@ -23,7 +26,7 @@ class TeacherController extends Controller
         $data = $request->validate([
             'name' => 'required|string|max:100',
             'email' => 'required|email|unique:users,email',
-            'password' => 'required|min:6',
+            'password' => 'nullable|min:6',
             'nip' => 'required|string|unique:teachers,nip',
             'jenis_kelamin' => 'nullable|in:L,P',
         ]);
@@ -32,7 +35,7 @@ class TeacherController extends Controller
             $user = User::create([
                 'name' => $data['name'],
                 'email' => $data['email'],
-                'password' => bcrypt($data['password']),
+                'password' => bcrypt($data['password'] ?? '123456'),
                 'role' => 'guru',
             ]);
 
@@ -63,6 +66,12 @@ class TeacherController extends Controller
     {
         $teacher->user->delete();
         return response()->json(['message' => 'Guru dihapus.']);
+    }
+
+    public function resetPassword(Teacher $teacher)
+    {
+        $this->resetToDefaultPassword($teacher->user);
+        return response()->json(['message' => 'Password guru "' . $teacher->user->name . '" berhasil direset ke default (123456).']);
     }
 
     public function downloadTemplate()

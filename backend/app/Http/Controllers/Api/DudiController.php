@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Api\Concerns\ResetsPasswordToDefault;
 use App\Http\Controllers\Controller;
 use App\Models\Dudi;
 use App\Models\User;
@@ -11,6 +12,9 @@ use Illuminate\Support\Facades\Storage;
 
 class DudiController extends Controller
 {
+    use ResetsPasswordToDefault;
+
+
     /**
      * Daftar semua DUDI (dipakai admin untuk kelola daftar, dan sebagai
      * pilihan dropdown saat membuat penempatan PKL).
@@ -29,7 +33,7 @@ class DudiController extends Controller
         $data = $request->validate([
             'name'             => 'required|string|max:100',
             'email'            => 'required|email|unique:users,email',
-            'password'         => 'required|min:6',
+            'password'         => 'nullable|min:6',
             'nama_perusahaan'  => 'required|string|max:150',
             'alamat'           => 'nullable|string|max:255',
             'penanggung_jawab' => 'nullable|string|max:100',
@@ -43,7 +47,7 @@ class DudiController extends Controller
             $user = User::create([
                 'name'     => $data['name'],
                 'email'    => $data['email'],
-                'password' => bcrypt($data['password']),
+                'password' => bcrypt($data['password'] ?? '123456'),
                 'role'     => 'dudi',
             ]);
 
@@ -88,6 +92,12 @@ class DudiController extends Controller
     {
         $dudi->user->delete();
         return response()->json(['message' => 'Akun DUDI dihapus.']);
+    }
+
+    public function resetPassword(Dudi $dudi)
+    {
+        $this->resetToDefaultPassword($dudi->user);
+        return response()->json(['message' => 'Password akun IDUKA "' . $dudi->nama_perusahaan . '" berhasil direset ke default (123456).']);
     }
 
     /**

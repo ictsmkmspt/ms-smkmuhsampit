@@ -2,7 +2,7 @@ import { useState } from 'react';
 import {
   LogOut, Database, ClipboardList, Settings, ChevronDown, ChevronLeft, ChevronRight, Menu, X,
   Users, GraduationCap, School, UserCog, Briefcase, LayoutDashboard, Building2, ClipboardCheck,
-  Clock, AlertOctagon, Trophy, CalendarDays, Wallet, Pencil, Image,
+  Clock, AlertOctagon, Trophy, CalendarDays, Wallet, Pencil, Image, ShieldCheck,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useSchoolProfile } from '../../context/SchoolProfileContext';
@@ -13,23 +13,27 @@ import PklTab, { PKL_SUBMENU } from './tabs/PklTab';
 import DashboardHomeTab from './tabs/DashboardHomeTab';
 import EditProfileModal from '../../components/EditProfileModal';
 
-const MASTER_ICONS = { siswa: Users, guru: GraduationCap, kelas: School, wali: UserCog, tu: Wallet, alumni: GraduationCap };
+const MASTER_ICONS = { siswa: Users, guru: GraduationCap, kelas: School, wali: UserCog, tu: Wallet, alumni: GraduationCap, admin: ShieldCheck };
 const SETTINGS_ICONS = { sekolah: Image, jam: Clock, poin: AlertOctagon, prestasi: Trophy, libur: CalendarDays };
 const PKL_ICONS = { dudi: Building2, penempatan: ClipboardList };
 const REPORT_ICONS = { absensi: ClipboardCheck, poin: AlertOctagon, prestasi: Trophy };
-
-const TABS = [
-  { key: 'dashboard',  label: 'Dashboard',   icon: LayoutDashboard, component: DashboardHomeTab },
-  { key: 'master',     label: 'Master Data', icon: Database,        hasDropdown: true, submenu: MASTER_DATA_SUBMENU, subIcons: MASTER_ICONS },
-  { key: 'laporan',    label: 'Laporan',     icon: ClipboardList,   hasDropdown: true, submenu: REPORT_SUBMENU, subIcons: REPORT_ICONS },
-  { key: 'pkl',        label: 'PKL',         icon: Briefcase,       hasDropdown: true, submenu: PKL_SUBMENU, subIcons: PKL_ICONS },
-  { key: 'pengaturan', label: 'Pengaturan',  icon: Settings,        hasDropdown: true, submenu: SETTINGS_SUBMENU, subIcons: SETTINGS_ICONS },
-];
 
 export default function AdminDashboard() {
   const { user, logout } = useAuth();
   const { profile } = useSchoolProfile();
   const [activeTab, setActiveTab] = useState('dashboard');
+
+  // Menu "Kelola Admin" (di dalam Master Data) khusus Super Admin — Admin
+  // (role "waka") tidak boleh lihat apalagi mengubah akun admin lain.
+  const masterDataSubmenu = MASTER_DATA_SUBMENU.filter((s) => !s.adminOnly || user.role === 'admin');
+
+  const TABS = [
+    { key: 'dashboard',  label: 'Dashboard',   icon: LayoutDashboard, component: DashboardHomeTab },
+    { key: 'master',     label: 'Master Data', icon: Database,        hasDropdown: true, submenu: masterDataSubmenu, subIcons: MASTER_ICONS },
+    { key: 'laporan',    label: 'Laporan',     icon: ClipboardList,   hasDropdown: true, submenu: REPORT_SUBMENU, subIcons: REPORT_ICONS },
+    { key: 'pkl',        label: 'PKL',         icon: Briefcase,       hasDropdown: true, submenu: PKL_SUBMENU, subIcons: PKL_ICONS },
+    { key: 'pengaturan', label: 'Pengaturan',  icon: Settings,        hasDropdown: true, submenu: SETTINGS_SUBMENU, subIcons: SETTINGS_ICONS },
+  ];
   const [activeMasterSub, setActiveMasterSub] = useState('siswa');
   const [activeSettingsSub, setActiveSettingsSub] = useState('jam');
   const [activePklSub, setActivePklSub] = useState('dudi');
@@ -208,7 +212,7 @@ export default function AdminDashboard() {
             <div className="min-w-0 flex-1 flex items-center justify-between gap-2">
               <div className="min-w-0">
                 <p className="text-sm font-medium text-white truncate">{user.name}</p>
-                <p className="text-xs text-white/50">Administrator</p>
+                <p className="text-xs text-white/50">{user.role === 'waka' ? 'Admin' : 'Super Admin'}</p>
               </div>
               <button
                 onClick={() => setShowEditProfil(true)}

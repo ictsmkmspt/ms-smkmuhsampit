@@ -3,7 +3,7 @@ import { X, Pencil, Trash2 } from 'lucide-react';
 import api from '../api/axios';
 import TruncateText from './TruncateText';
 
-export default function StudentAchievementModal({ student, onClose, onChanged }) {
+export default function StudentAchievementModal({ student, onClose, onChanged, readOnly = false }) {
   const [achievementTypes, setAchievementTypes] = useState([]);
   const [dateFrom, setDateFrom]     = useState('');
   const [dateTo, setDateTo]         = useState('');
@@ -121,7 +121,7 @@ export default function StudentAchievementModal({ student, onClose, onChanged })
                   <th className="pb-2 font-medium">Tanggal</th>
                   <th className="font-medium">Jenis Prestasi</th>
                   <th className="font-medium text-right">Poin</th>
-                  <th className="font-medium text-right">Aksi</th>
+                  {!readOnly && <th className="font-medium text-right">Aksi</th>}
                 </tr>
               </thead>
               <tbody>
@@ -168,16 +168,18 @@ export default function StudentAchievementModal({ student, onClose, onChanged })
                         {a.note && <p className="text-xs text-ink-400 mt-0.5"><TruncateText text={a.note} maxWidth="16rem" /></p>}
                       </td>
                       <td className="text-right text-brand-700 font-medium align-top">+{a.poin}</td>
-                      <td className="text-right align-top">
-                        <div className="flex gap-2 justify-end">
-                          <button onClick={() => startEdit(a)} className="text-ink-400 hover:text-brand-600" title="Ubah">
-                            <Pencil className="w-3.5 h-3.5" />
-                          </button>
-                          <button onClick={() => handleDelete(a)} className="text-ink-400 hover:text-rose-600" title="Hapus">
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </td>
+                      {!readOnly && (
+                        <td className="text-right align-top">
+                          <div className="flex gap-2 justify-end">
+                            <button onClick={() => startEdit(a)} className="text-ink-400 hover:text-brand-600" title="Ubah">
+                              <Pencil className="w-3.5 h-3.5" />
+                            </button>
+                            <button onClick={() => handleDelete(a)} className="text-ink-400 hover:text-rose-600" title="Hapus">
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </td>
+                      )}
                     </tr>
                   )
                 ))}

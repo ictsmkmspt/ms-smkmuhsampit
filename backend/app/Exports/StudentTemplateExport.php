@@ -12,18 +12,22 @@ class StudentTemplateExport implements FromArray, WithHeadings, WithStyles
     /**
      * Isi contoh (baris ke-2). Kolom "kelas" diisi NAMA kelas persis seperti
      * yang ada di Master Data > Kelas (misal "X TKJ"), boleh dikosongkan
-     * kalau siswa belum mau dimasukkan ke kelas manapun.
+     * kalau siswa belum mau dimasukkan ke kelas manapun. Kolom "password"
+     * sengaja TIDAK disertakan di template — semua siswa dibuat dengan
+     * password default "123456" (wajib diganti saat login pertama). Kalau
+     * mau tetap set password sendiri per siswa, boleh tambahkan kembali
+     * kolom "password" secara manual — sistem tetap membacanya kalau ada.
      */
     public function array(): array
     {
         return [
-            ['Contoh Nama Siswa', 'siswa1@sekolah.sch.id', 'password123', '2025010001', 'L', 'X TKJ'],
+            ['Contoh Nama Siswa', 'siswa1@sekolah.sch.id', '2025010001', 'L', 'X TKJ'],
         ];
     }
 
     public function headings(): array
     {
-        return ['nama', 'email', 'password', 'nis', 'jenis_kelamin', 'kelas'];
+        return ['nama', 'email', 'nis', 'jenis_kelamin', 'kelas'];
     }
 
     public function styles(Worksheet $sheet)

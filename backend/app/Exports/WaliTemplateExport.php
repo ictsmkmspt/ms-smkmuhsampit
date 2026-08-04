@@ -9,17 +9,22 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 class WaliTemplateExport implements FromArray, WithHeadings, WithStyles
 {
+    /**
+     * Kolom "password" sengaja TIDAK disertakan di template — wali dibuat
+     * dengan password default "123456" (wajib diganti saat login pertama).
+     * Kalau mau tetap set password sendiri per wali, boleh tambahkan kembali
+     * kolom "password" secara manual — sistem tetap membacanya kalau ada.
+     */
     public function array(): array
     {
         return [
-            ['Contoh Nama Wali', '081234567890', '123456', '2025010001', 'Ayah'],
-            ['Contoh Nama Wali', '081234567890', '', '2025010002', 'Ayah'],
+            ['Contoh Nama Wali', '081234567890', '2025010001', 'Ayah'],
         ];
     }
 
     public function headings(): array
     {
-        return ['nama', 'no_hp', 'password', 'nis_siswa', 'hubungan'];
+        return ['nama', 'no_hp', 'nis_siswa', 'hubungan'];
     }
 
     public function styles(Worksheet $sheet)

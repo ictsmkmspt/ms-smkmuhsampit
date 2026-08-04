@@ -11,11 +11,15 @@ class TeacherTemplateExport implements FromArray, WithHeadings, WithStyles
 {
     /**
      * Isi contoh (baris ke-2), supaya admin tahu format yang benar sebelum diisi data asli.
+     * Kolom "password" sengaja TIDAK disertakan — semua guru dibuat dengan
+     * password default "123456" (wajib diganti saat login pertama). Kalau
+     * mau tetap set password sendiri per guru, boleh tambahkan kembali kolom
+     * "password" secara manual — sistem tetap membacanya kalau ada.
      */
     public function array(): array
     {
         return [
-            ['Contoh Nama Guru', 'guru1@sekolah.sch.id', 'password123', '198501012010011001'],
+            ['Contoh Nama Guru', 'guru1@sekolah.sch.id', '198501012010011001'],
         ];
     }
 
@@ -24,7 +28,7 @@ class TeacherTemplateExport implements FromArray, WithHeadings, WithStyles
      */
     public function headings(): array
     {
-        return ['nama', 'email', 'password', 'nip'];
+        return ['nama', 'email', 'nip'];
     }
 
     /**

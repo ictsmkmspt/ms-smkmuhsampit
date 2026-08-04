@@ -8,7 +8,7 @@ import LaporanTab from './tabs/LaporanTab';
 import BimbinganPklTab from './tabs/BimbinganPklTab';
 import EditProfileModal from '../../components/EditProfileModal';
 
-const TABS = [
+const ALL_TABS = [
   { key: 'beranda', label: 'Beranda',          icon: Home,           component: BerandaTab },
   { key: 'absensi', label: 'Absensi',          icon: ClipboardCheck, component: AbsensiTab },
   { key: 'poin',    label: 'Poin',  icon: AlertTriangle,  component: PoinPelanggaranTab },
@@ -33,6 +33,23 @@ export default function GuruDashboard() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Menu Laporan cuma relevan buat wali kelas (isinya rekap kelas walinya
+  // sendiri), dan menu PKL cuma relevan buat guru yang sedang membimbing
+  // siswa PKL — disembunyikan kalau tidak berlaku, supaya guru lain tidak
+  // bingung lihat menu kosong. Absensi & Poin tetap tampil untuk semua guru
+  // karena bisa dipakai mencatat siswa manapun, bukan cuma kelas sendiri.
+  const TABS = ALL_TABS.filter((tab) => {
+    if (tab.key === 'laporan') return !!user.is_wali_kelas;
+    if (tab.key === 'pkl') return !!user.is_pembimbing_pkl;
+    return true;
+  });
+
+  useEffect(() => {
+    if (!TABS.find((t) => t.key === activeTab)) {
+      setActiveTab('beranda');
+    }
+  }, [TABS, activeTab]);
 
   const active = TABS.find((t) => t.key === activeTab);
   const ActiveComponent = active?.component;

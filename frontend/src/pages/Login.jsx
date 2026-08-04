@@ -20,6 +20,7 @@ export default function Login() {
     try {
       const user = await login(identifier, password);
       if (user.role === 'admin') navigate('/admin');
+      else if (user.role === 'waka') navigate('/admin');
       else if (user.role === 'guru') navigate('/guru');
       else if (user.role === 'wali') navigate('/wali');
       else if (user.role === 'dudi') navigate('/dudi');
