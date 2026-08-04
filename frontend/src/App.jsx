@@ -15,6 +15,7 @@ import PrintPklJurnal from './pages/print/PrintPklJurnal';
 import PrintPklJurnalKegiatan from './pages/print/PrintPklJurnalKegiatan';
 import PrintPklPembimbingan from './pages/print/PrintPklPembimbingan';
 import PrintSppNota from './pages/print/PrintSppNota';
+import PrintTagihanLainNota from './pages/print/PrintTagihanLainNota';
 
 export default function App() {
   return (
@@ -43,6 +44,10 @@ export default function App() {
 
             <Route path="/print/spp-nota" element={
               <ProtectedRoute allowedRoles={['tu']}><PrintSppNota /></ProtectedRoute>
+            } />
+
+            <Route path="/print/tagihan-lain-nota" element={
+              <ProtectedRoute allowedRoles={['tu']}><PrintTagihanLainNota /></ProtectedRoute>
             } />
 
             <Route path="/admin/*" element={

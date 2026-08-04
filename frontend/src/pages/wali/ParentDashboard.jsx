@@ -26,7 +26,8 @@ export default function ParentDashboard() {
   const [error, setError] = useState('');
   const [activityPage, setActivityPage] = useState(1);
   const [spp, setSpp] = useState([]);
-  const [showSppDetail, setShowSppDetail] = useState(false);
+  const [tagihanLain, setTagihanLain] = useState([]);
+  const [showTagihanDetail, setShowTagihanDetail] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [showEditProfil, setShowEditProfil] = useState(false);
   const menuRef = useRef(null);
@@ -55,7 +56,7 @@ export default function ParentDashboard() {
     if (!selectedId) return;
     setLoading(true);
     setActivityPage(1);
-    setShowSppDetail(false);
+    setShowTagihanDetail(false);
     api.get(`/my-children/${selectedId}/activity`)
       .then((res) => setActivity(res.data))
       .catch(() => setError('Gagal memuat aktivitas.'))
@@ -64,6 +65,10 @@ export default function ParentDashboard() {
     api.get(`/my-children/${selectedId}/spp`)
       .then((res) => setSpp(res.data))
       .catch(() => setSpp([]));
+
+    api.get(`/my-children/${selectedId}/tagihan-lain`)
+      .then((res) => setTagihanLain(res.data))
+      .catch(() => setTagihanLain([]));
   }, [selectedId]);
 
   const selectedChild = children.find((c) => c.id === selectedId);
@@ -71,9 +76,28 @@ export default function ParentDashboard() {
   const timelineTotalPages = Math.max(1, Math.ceil((activity?.timeline?.length || 0) / PAGE_SIZE));
   const timelinePaginated = (activity?.timeline || []).slice((activityPage - 1) * PAGE_SIZE, activityPage * PAGE_SIZE);
 
-  const sppBelumBayar = spp.filter((s) => s.status === 'belum_bayar');
-  const sppTunggakan = sppBelumBayar.reduce((sum, s) => sum + Number(s.nominal || 0), 0);
-  const sppBelumBayarCount = sppBelumBayar.length;
+  // Gabungan SPP + Tagihan Lain jadi 1 daftar tunggal, supaya orang tua lihat
+  // semua kewajiban bayar dalam 1 tabel — SPP diberi label "SPP Bulan Tahun",
+  // Tagihan Lain pakai nama tagihannya sendiri.
+  const gabunganTagihan = [
+    ...spp.map((s) => ({ ...s, _jenis: 'SPP', _label: `SPP ${BULAN[s.bulan - 1]} ${s.tahun}` })),
+    ...tagihanLain.map((t) => ({ ...t, _jenis: 'Lain', _label: t.nama_tagihan })),
+  ];
+
+  const belumLunas = gabunganTagihan.filter((t) => t.status !== 'lunas');
+  const belumLunasCount = belumLunas.length;
+
+  const sppBelumLunas = spp.filter((s) => s.status !== 'lunas');
+  const sppTunggakan = sppBelumLunas.reduce((sum, s) => sum + Number(s.nominal || 0) - Number(s.jumlah_dibayar || 0), 0);
+
+  const tagihanLainBelumLunas = tagihanLain.filter((t) => t.status !== 'lunas');
+  const tagihanLainTunggakan = tagihanLainBelumLunas.reduce((sum, t) => sum + Number(t.nominal || 0) - Number(t.jumlah_dibayar || 0), 0);
+
+  const statusBadge = (status) => {
+    if (status === 'lunas') return <span className="badge-soft badge-brand">Lunas</span>;
+    if (status === 'sebagian') return <span className="badge-soft badge-honey">Sebagian</span>;
+    return <span className="badge-soft badge-rose">Belum Bayar</span>;
+  };
 
   return (
     <div className="min-h-screen bg-mist-50">
@@ -151,48 +175,62 @@ export default function ParentDashboard() {
               </div>
             )}
 
-            {/* SPP */}
+            {/* Tagihan (SPP + Tagihan Lain digabung 1 tabel) */}
             <div className="surface-card p-5 mb-6">
               <h2 className="font-display font-semibold text-ink-900 mb-4 flex items-center gap-2">
-                <Wallet className="w-4 h-4 text-ink-500" /> SPP
+                <Wallet className="w-4 h-4 text-ink-500" /> Tagihan
               </h2>
 
-              <div className="flex items-center justify-between flex-wrap gap-3">
-                <div>
-                  <p className="text-xs text-ink-500">Total Tunggakan</p>
-                  <p className={`text-xl font-display font-semibold ${sppTunggakan > 0 ? 'text-honey-700' : 'text-brand-600'}`}>
-                    {formatRupiah(sppTunggakan)}
-                  </p>
+              <div className="flex items-center justify-between flex-wrap gap-4">
+                <div className="flex flex-wrap gap-6">
+                  <div>
+                    <p className="text-xs text-ink-500">Tunggakan SPP</p>
+                    <p className={`text-xl font-display font-semibold ${sppTunggakan > 0 ? 'text-honey-700' : 'text-brand-600'}`}>
+                      {formatRupiah(sppTunggakan)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-ink-500">Tunggakan Tagihan Lain</p>
+                    <p className={`text-xl font-display font-semibold ${tagihanLainTunggakan > 0 ? 'text-honey-700' : 'text-brand-600'}`}>
+                      {formatRupiah(tagihanLainTunggakan)}
+                    </p>
+                  </div>
                 </div>
-                {sppBelumBayarCount > 0 ? (
-                  <span className="badge-soft badge-rose">{sppBelumBayarCount} bulan belum bayar</span>
+                {belumLunasCount > 0 ? (
+                  <span className="badge-soft badge-rose">{belumLunasCount} tagihan belum lunas</span>
                 ) : (
-                  <span className="badge-soft badge-brand">Semua SPP lunas</span>
+                  <span className="badge-soft badge-brand">Semua tagihan lunas</span>
                 )}
               </div>
 
               <button
-                onClick={() => setShowSppDetail((v) => !v)}
+                onClick={() => setShowTagihanDetail((v) => !v)}
                 className="w-full mt-4 flex items-center justify-center gap-1.5 text-sm font-medium text-ink-700 bg-mist-50 hover:bg-mist-100 border border-line-200 rounded-xl px-4 py-2 transition"
               >
                 Detail Tagihan
-                <ChevronDown className={`w-4 h-4 transition-transform ${showSppDetail ? 'rotate-180' : ''}`} />
+                <ChevronDown className={`w-4 h-4 transition-transform ${showTagihanDetail ? 'rotate-180' : ''}`} />
               </button>
 
-              {showSppDetail && (
-                spp.length === 0 ? (
-                  <p className="text-sm text-ink-500 text-center py-3">Belum ada tagihan SPP tercatat.</p>
+              {showTagihanDetail && (
+                gabunganTagihan.length === 0 ? (
+                  <p className="text-sm text-ink-500 text-center py-3">Belum ada tagihan tercatat.</p>
                 ) : (
                   <ul className="divide-y divide-line-200 mt-2">
-                    {spp.map((s) => (
-                      <li key={s.id} className="py-2.5 flex items-center justify-between gap-3">
-                        <div>
-                          <p className="text-sm font-medium text-ink-900">{BULAN[s.bulan - 1]} {s.tahun}</p>
-                          <p className="text-xs text-ink-500">{formatRupiah(s.nominal)}</p>
+                    {gabunganTagihan.map((t) => (
+                      <li key={`${t._jenis}-${t.id}`} className="py-2.5 flex items-center justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-ink-900 truncate">
+                            {t._label}
+                            <span className="ml-1.5 text-xs font-normal text-ink-400">· {t._jenis}</span>
+                          </p>
+                          <p className="text-xs text-ink-500">
+                            {formatRupiah(t.nominal)}
+                            {t.status === 'sebagian' && (
+                              <span className="text-honey-700"> · sisa {formatRupiah(t.nominal - t.jumlah_dibayar)}</span>
+                            )}
+                          </p>
                         </div>
-                        <span className={`badge-soft ${s.status === 'lunas' ? 'badge-brand' : 'badge-rose'}`}>
-                          {s.status === 'lunas' ? 'Lunas' : 'Belum Bayar'}
-                        </span>
+                        {statusBadge(t.status)}
                       </li>
                     ))}
                   </ul>

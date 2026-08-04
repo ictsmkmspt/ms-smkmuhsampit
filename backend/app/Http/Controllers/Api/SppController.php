@@ -64,7 +64,7 @@ class SppController extends Controller
             'bulan' => 'required|integer|min:1|max:12',
             'tahun' => 'required|integer|min:2020|max:2100',
             'class_room_id' => 'nullable|exists:class_rooms,id',
-            'status' => 'nullable|in:belum_bayar,lunas',
+            'status' => 'nullable|in:belum_bayar,sebagian,lunas',
             'search' => 'nullable|string|max:100',
         ]);
 
@@ -205,7 +205,39 @@ class SppController extends Controller
 
         $spp->update([
             'status' => $data['status'],
+            'jumlah_dibayar' => $data['status'] === 'lunas' ? $spp->nominal : 0,
             'tanggal_bayar' => $data['status'] === 'lunas' ? now()->toDateString() : null,
+            'dicatat_oleh' => $request->user()->id,
+        ]);
+
+        return $spp->load(['student.user', 'student.classRoom']);
+    }
+
+    /**
+     * Catat pembayaran SEBAGIAN (cicilan) — jumlah yang dibayar ditambahkan
+     * ke akumulasi jumlah_dibayar. Status otomatis jadi "lunas" begitu
+     * akumulasinya mencapai nominal penuh, atau "sebagian" kalau masih kurang.
+     */
+    public function bayarSebagian(Request $request, Spp $spp)
+    {
+        $sisa = $spp->nominal - $spp->jumlah_dibayar;
+
+        if ($sisa <= 0) {
+            return response()->json(['message' => 'Tagihan ini sudah lunas.'], 422);
+        }
+
+        $data = $request->validate([
+            'jumlah' => "required|integer|min:1|max:{$sisa}",
+        ], [
+            'jumlah.max' => "Jumlah bayar melebihi sisa tagihan (Rp" . number_format($sisa, 0, ',', '.') . ").",
+        ]);
+
+        $jumlahBaru = $spp->jumlah_dibayar + $data['jumlah'];
+
+        $spp->update([
+            'jumlah_dibayar' => $jumlahBaru,
+            'status' => $jumlahBaru >= $spp->nominal ? 'lunas' : 'sebagian',
+            'tanggal_bayar' => now()->toDateString(),
             'dicatat_oleh' => $request->user()->id,
         ]);
 

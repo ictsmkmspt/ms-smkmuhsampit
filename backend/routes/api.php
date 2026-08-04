@@ -20,6 +20,7 @@ use App\Http\Controllers\Api\SettingController;
 use App\Http\Controllers\Api\SppController;
 use App\Http\Controllers\Api\StudentController;
 use App\Http\Controllers\Api\StudentSelfController;
+use App\Http\Controllers\Api\TagihanLainController;
 use App\Http\Controllers\Api\TahunAjaranController;
 use App\Http\Controllers\Api\TeacherController;
 use App\Http\Controllers\Api\TuController;
@@ -203,6 +204,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/my-children', [ParentController::class, 'children']);
         Route::get('/my-children/{studentId}/activity', [ParentController::class, 'activity']);
         Route::get('/my-children/{studentId}/spp', [ParentController::class, 'spp']);
+        Route::get('/my-children/{studentId}/tagihan-lain', [ParentController::class, 'tagihanLain']);
     });
 
     Route::middleware('role:tu')->group(function () {
@@ -216,8 +218,25 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/spp/bayar-dimuka', [SppController::class, 'bayarDimuka']);
         Route::put('/spp/{spp}', [SppController::class, 'update']);
         Route::put('/spp/{spp}/status', [SppController::class, 'updateStatus']);
+        Route::put('/spp/{spp}/bayar-sebagian', [SppController::class, 'bayarSebagian']);
         Route::delete('/spp/bulan', [SppController::class, 'destroyBulan']);
         Route::delete('/spp/{spp}', [SppController::class, 'destroy']);
+
+        // Tagihan di luar SPP bulanan (biaya tidak tetap/insidental). Rute
+        // literal (siswa/{id}, bulk, nama) WAJIB didaftarkan sebelum rute
+        // wildcard ({tagihanLain}) yang segmen-nya sama panjang — sama
+        // seperti pola /spp/bulan vs /spp/{spp} di atas — supaya tidak
+        // ketiban rute wildcard itu.
+        Route::get('/tagihan-lain', [TagihanLainController::class, 'index']);
+        Route::get('/tagihan-lain/siswa/{studentId}', [TagihanLainController::class, 'byStudent']);
+        Route::post('/tagihan-lain/bulk', [TagihanLainController::class, 'storeBulk']);
+        Route::post('/tagihan-lain', [TagihanLainController::class, 'store']);
+        Route::put('/tagihan-lain/{tagihanLain}/status', [TagihanLainController::class, 'updateStatus']);
+        Route::put('/tagihan-lain/{tagihanLain}/bayar-sebagian', [TagihanLainController::class, 'bayarSebagian']);
+        Route::put('/tagihan-lain/{tagihanLain}', [TagihanLainController::class, 'update']);
+        Route::delete('/tagihan-lain/nama', [TagihanLainController::class, 'destroyByNama']);
+        Route::delete('/tagihan-lain/{tagihanLain}', [TagihanLainController::class, 'destroy']);
+        Route::get('/tagihan-lain/{tagihanLain}', [TagihanLainController::class, 'show']);
     });
 
     // Dipisah dari grup role:admin,guru di atas supaya TU juga bisa akses

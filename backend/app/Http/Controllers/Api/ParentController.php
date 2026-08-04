@@ -7,6 +7,7 @@ use App\Models\Achievement;
 use App\Models\Attendance;
 use App\Models\Spp;
 use App\Models\Student;
+use App\Models\TagihanLain;
 use App\Models\Violation;
 use Illuminate\Http\Request;
 
@@ -93,6 +94,23 @@ class ParentController extends Controller
 
         return Spp::where('student_id', $studentId)
             ->orderByDesc('tahun')->orderByDesc('bulan')
+            ->get();
+    }
+
+    /**
+     * Riwayat Tagihan Lain (biaya di luar SPP) 1 anak. Selalu dicek dulu
+     * bahwa $studentId ini benar anak dari wali yang login.
+     */
+    public function tagihanLain(Request $request, $studentId)
+    {
+        $isMyChild = $request->user()->children()->where('students.id', $studentId)->exists();
+
+        if (!$isMyChild) {
+            return response()->json(['message' => 'Anda tidak berwenang melihat data siswa ini.'], 403);
+        }
+
+        return TagihanLain::where('student_id', $studentId)
+            ->orderByDesc('created_at')
             ->get();
     }
 }

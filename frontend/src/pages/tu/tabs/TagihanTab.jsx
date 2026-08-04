@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { Search, Pencil, Check, X, RefreshCw, Trash2, Receipt, Info, CheckCircle, Printer } from 'lucide-react';
 import api from '../../../api/axios';
 import { BULAN, formatRupiah, Avatar } from '../shared';
@@ -22,6 +22,10 @@ export default function TagihanTab() {
   const [editingId, setEditingId] = useState(null);
   const [editNominal, setEditNominal] = useState('');
   const [savingId, setSavingId] = useState(null);
+
+  const [partialId, setPartialId] = useState(null);
+  const [partialAmount, setPartialAmount] = useState('');
+  const [payingPartial, setPayingPartial] = useState(false);
 
   const [feedback, setFeedback] = useState(null); // { type: 'success' | 'error', message }
 
@@ -107,6 +111,28 @@ export default function TagihanTab() {
     }
   };
 
+  const openPartial = (s) => {
+    setPartialId(s.id);
+    setPartialAmount('');
+  };
+
+  const submitPartial = async (s) => {
+    const jumlah = Number(partialAmount);
+    if (!jumlah || jumlah < 1) return;
+    setPayingPartial(true);
+    try {
+      const res = await api.put(`/spp/${s.id}/bayar-sebagian`, { jumlah });
+      setSpps((prev) => prev.map((x) => (x.id === s.id ? res.data : x)));
+      setPartialId(null);
+      setPartialAmount('');
+      notify('success', `Pembayaran sebagian Rp${jumlah.toLocaleString('id-ID')} untuk SPP ${s.student?.user?.name} tercatat.`);
+    } catch (err) {
+      notify('error', err.response?.data?.message || 'Gagal mencatat pembayaran sebagian.');
+    } finally {
+      setPayingPartial(false);
+    }
+  };
+
   const toggleStatus = async (s) => {
     const next = s.status === 'lunas' ? 'belum_bayar' : 'lunas';
     if (next === 'belum_bayar' && !confirm(`Tandai SPP ${s.student?.user?.name} bulan ini jadi "Belum Bayar" lagi?`)) return;
@@ -123,7 +149,19 @@ export default function TagihanTab() {
   };
 
   const totalLunas = spps.filter((s) => s.status === 'lunas').length;
+  const totalSebagian = spps.filter((s) => s.status === 'sebagian').length;
   const totalBelum = spps.filter((s) => s.status === 'belum_bayar').length;
+
+  const statusBadgeClass = (status) => {
+    if (status === 'lunas') return 'badge-brand';
+    if (status === 'sebagian') return 'badge-honey';
+    return 'badge-rose';
+  };
+  const statusLabel = (status) => {
+    if (status === 'lunas') return 'Lunas';
+    if (status === 'sebagian') return 'Sebagian';
+    return 'Belum Bayar';
+  };
 
   return (
     <div className="space-y-6">
@@ -167,6 +205,7 @@ export default function TagihanTab() {
           <select value={status} onChange={(e) => setStatus(e.target.value)} className="field-input text-ink-700">
             <option value="">Semua Status</option>
             <option value="lunas">Lunas</option>
+            <option value="sebagian">Sebagian</option>
             <option value="belum_bayar">Belum Bayar</option>
           </select>
         </div>
@@ -182,6 +221,7 @@ export default function TagihanTab() {
         </button>
         <div className="ml-auto flex gap-2">
           <span className="badge-soft badge-brand">Lunas: {totalLunas}</span>
+          <span className="badge-soft badge-honey">Sebagian: {totalSebagian}</span>
           <span className="badge-soft badge-rose">Belum Bayar: {totalBelum}</span>
         </div>
       </div>
@@ -239,7 +279,8 @@ export default function TagihanTab() {
             </thead>
             <tbody>
               {spps.map((s) => (
-                <tr key={s.id} className="border-t border-line-200">
+                <Fragment key={s.id}>
+                <tr className="border-t border-line-200">
                   <td className="py-2.5">
                     <div className="flex items-center gap-2.5">
                       <Avatar name={s.student?.user?.name} />
@@ -270,13 +311,25 @@ export default function TagihanTab() {
                     )}
                   </td>
                   <td>
-                    <span className={`badge-soft ${s.status === 'lunas' ? 'badge-brand' : 'badge-rose'}`}>
-                      {s.status === 'lunas' ? 'Lunas' : 'Belum Bayar'}
+                    <span className={`badge-soft ${statusBadgeClass(s.status)}`}>
+                      {statusLabel(s.status)}
                     </span>
+                    {s.status === 'sebagian' && (
+                      <p className="text-xs text-ink-400 mt-0.5">sisa {formatRupiah(s.nominal - s.jumlah_dibayar)}</p>
+                    )}
                   </td>
                   <td className="text-ink-700 text-xs">{s.tanggal_bayar || '-'}</td>
                   <td className="text-right">
                     <div className="flex justify-end items-center gap-2">
+                      {s.status !== 'lunas' && (
+                        <button
+                          onClick={() => openPartial(s)}
+                          disabled={savingId === s.id}
+                          className="text-xs font-medium text-brand-700 bg-brand-50 hover:bg-brand-100 disabled:opacity-40 rounded-lg px-3 py-1.5 transition"
+                        >
+                          Bayar Sebagian
+                        </button>
+                      )}
                       <button
                         onClick={() => toggleStatus(s)}
                         disabled={savingId === s.id}
@@ -308,6 +361,33 @@ export default function TagihanTab() {
                     </div>
                   </td>
                 </tr>
+                {partialId === s.id && (
+                  <tr className="bg-mist-50">
+                    <td colSpan="6" className="py-2 px-2">
+                      <div className="flex items-center gap-2 justify-end">
+                        <span className="text-xs text-ink-500 mr-auto">
+                          Bayar sebagian SPP {s.student?.user?.name} — sisa {formatRupiah(s.nominal - s.jumlah_dibayar)}
+                        </span>
+                        <input
+                          type="number" autoFocus min={1} max={s.nominal - s.jumlah_dibayar}
+                          value={partialAmount} onChange={(e) => setPartialAmount(e.target.value)}
+                          placeholder="Jumlah bayar" className="field-input w-40 py-1 text-sm"
+                        />
+                        <button
+                          onClick={() => submitPartial(s)}
+                          disabled={payingPartial || !partialAmount}
+                          className="text-xs font-medium text-white bg-brand-600 hover:bg-brand-700 disabled:opacity-50 rounded-lg px-3 py-1.5"
+                        >
+                          {payingPartial ? 'Menyimpan...' : 'Simpan'}
+                        </button>
+                        <button onClick={() => setPartialId(null)} className="text-xs font-medium text-ink-500 hover:text-ink-700 px-2 py-1.5">
+                          Batal
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+                </Fragment>
               ))}
             </tbody>
           </table>

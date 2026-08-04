@@ -48,6 +48,11 @@ class Student extends Model
         return $this->hasMany(Spp::class);
     }
 
+    public function tagihanLains()
+    {
+        return $this->hasMany(TagihanLain::class);
+    }
+
     /**
      * Penempatan PKL yang sedang berjalan sekarang (kalau ada). Dipakai untuk
      * menentukan apakah menu PKL perlu muncul di dashboard siswa, dan sebagai

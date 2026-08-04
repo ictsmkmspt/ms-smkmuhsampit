@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Spp extends Model
 {
     protected $fillable = [
-        'student_id', 'bulan', 'tahun', 'nominal', 'status', 'tanggal_bayar', 'dicatat_oleh',
+        'student_id', 'bulan', 'tahun', 'nominal', 'jumlah_dibayar', 'status', 'tanggal_bayar', 'dicatat_oleh',
     ];
 
     protected $casts = [
