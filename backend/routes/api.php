@@ -19,6 +19,7 @@ use App\Http\Controllers\Api\SettingController;
 use App\Http\Controllers\Api\SppController;
 use App\Http\Controllers\Api\StudentController;
 use App\Http\Controllers\Api\StudentSelfController;
+use App\Http\Controllers\Api\TahunAjaranController;
 use App\Http\Controllers\Api\TeacherController;
 use App\Http\Controllers\Api\TuController;
 use App\Http\Controllers\Api\ViolationTypeController;
@@ -68,11 +69,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/school-profile', [SchoolProfileController::class, 'update']);
         Route::post('/school-profile/logo', [SchoolProfileController::class, 'uploadLogo']);
         Route::apiResource('violation-types', ViolationTypeController::class)->except(['show']);
-        Route::post('/violations/reset-all', [AttendanceController::class, 'violationResetAll']);
         Route::apiResource('holidays', HolidayController::class)->only(['index', 'store', 'destroy']);
         Route::post('/holidays/range', [HolidayController::class, 'storeRange']);
         Route::apiResource('achievement-types', AchievementTypeController::class)->except(['show']);
-        Route::post('/achievements/reset-all', [AchievementController::class, 'resetAll']);
+        Route::get('/tahun-ajaran', [TahunAjaranController::class, 'index']);
+        Route::post('/tahun-ajaran', [TahunAjaranController::class, 'store']);
+        Route::post('/tahun-ajaran/{id}/aktifkan', [TahunAjaranController::class, 'aktifkan']);
+        Route::delete('/tahun-ajaran/{id}', [TahunAjaranController::class, 'destroy']);
         Route::get('/parents', [WaliController::class, 'index']);
         Route::post('/parents', [WaliController::class, 'store']);
         Route::post('/parents/{parentId}/link', [WaliController::class, 'link']);
@@ -86,7 +89,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/tu/{id}', [TuController::class, 'destroy']);
         Route::post('/pkl-placements/tutup-semua-aktif', [PklPlacementController::class, 'tutupSemuaAktif']);
         Route::post('/pkl-placements/aktifkan-semua-selesai', [PklPlacementController::class, 'aktifkanSemuaSelesai']);
-        Route::post('/pkl-placements/reset-semua', [PklPlacementController::class, 'resetSemuaPkl']);
         Route::apiResource('pkl-placements', PklPlacementController::class)->except(['show']);
     });
 

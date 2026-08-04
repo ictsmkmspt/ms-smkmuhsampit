@@ -3,36 +3,17 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Api\Concerns\RestrictsGuruToOwnClass;
 use App\Models\Achievement;
 use App\Models\AchievementType;
-use App\Models\ClassRoom;
 use App\Models\Student;
-use App\Models\Teacher;
+use App\Models\TahunAjaran;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class AchievementController extends Controller
 {
-    /**
-     * Kalau user yang login adalah guru, kembalikan ID kelas di mana dia jadi wali kelas
-     * (atau -1 kalau belum ditugaskan sama sekali, supaya query jadi "tidak ada hasil"
-     * bukan malah bocor lihat semua kelas). Kalau bukan guru (misal admin), kembalikan null
-     * yang artinya "tidak ada pembatasan".
-     */
-    private function guruClassRoomId(Request $request): ?int
-    {
-        if ($request->user()->role !== 'guru') {
-            return null;
-        }
-
-        $teacher = Teacher::where('user_id', $request->user()->id)->first();
-        if (!$teacher) {
-            return -1;
-        }
-
-        $classRoom = ClassRoom::where('homeroom_teacher_id', $teacher->id)->first();
-        return $classRoom?->id ?? -1;
-    }
+    use RestrictsGuruToOwnClass;
 
     public function types()
     {
@@ -84,6 +65,8 @@ class AchievementController extends Controller
 
     /**
      * Riwayat kejadian prestasi. Kalau yang login guru, dipaksa hanya kelas walinya sendiri.
+     * Default cuma tahun ajaran yang sedang aktif (sama seperti PklPlacementController::index) —
+     * kirim ?semua_tahun=1 untuk lihat semua tahun ajaran sekaligus.
      */
     public function detail(Request $request)
     {
@@ -93,6 +76,9 @@ class AchievementController extends Controller
         $query = Achievement::with('student.user', 'student.classRoom', 'achievementType');
         if ($request->date) $query->where('date', $request->date);
         if ($classRoomId) $query->whereHas('student', fn ($q) => $q->where('class_room_id', $classRoomId));
+        if (!$request->boolean('semua_tahun')) {
+            $query->where('tahun_ajaran_id', TahunAjaran::aktifId());
+        }
         return $query->orderByDesc('date')->orderByDesc('created_at')->get();
     }
 
@@ -101,6 +87,7 @@ class AchievementController extends Controller
      * rentang tanggal (date_from/date_to) dan jenis prestasi (achievement_type_id).
      * Dipakai oleh popup riwayat prestasi di halaman Rekap Poin Prestasi.
      * Kalau yang login guru, hanya boleh melihat siswa di kelas walinya sendiri.
+     * Default cuma tahun ajaran yang sedang aktif — kirim ?semua_tahun=1 untuk lihat semua.
      */
     public function studentAchievements(Request $request, $studentId)
     {
@@ -124,6 +111,9 @@ class AchievementController extends Controller
         if ($request->achievement_type_id) {
             $query->where('achievement_type_id', $request->achievement_type_id);
         }
+        if (!$request->boolean('semua_tahun')) {
+            $query->where('tahun_ajaran_id', TahunAjaran::aktifId());
+        }
 
         return $query->orderByDesc('date')->orderByDesc('created_at')->get();
     }
@@ -142,6 +132,10 @@ class AchievementController extends Controller
         $restricted = $this->guruClassRoomId($request);
         if ($restricted !== null && $achievement->student->class_room_id !== $restricted) {
             return response()->json(['message' => 'Anda tidak berwenang menghapus data siswa ini.'], 403);
+        }
+
+        if ($achievement->tahun_ajaran_id !== TahunAjaran::aktifId()) {
+            return response()->json(['message' => 'Catatan ini milik tahun ajaran yang tidak aktif dan tidak bisa dihapus. Aktifkan dulu tahun ajaran tersebut kalau perlu mengoreksinya.'], 422);
         }
 
         DB::transaction(function () use ($achievement) {
@@ -170,6 +164,10 @@ class AchievementController extends Controller
             return response()->json(['message' => 'Anda tidak berwenang mengubah data siswa ini.'], 403);
         }
 
+        if ($achievement->tahun_ajaran_id !== TahunAjaran::aktifId()) {
+            return response()->json(['message' => 'Catatan ini milik tahun ajaran yang tidak aktif dan tidak bisa diubah. Aktifkan dulu tahun ajaran tersebut kalau perlu mengoreksinya.'], 422);
+        }
+
         $data = $request->validate([
             'achievement_type_id' => 'required|exists:achievement_types,id',
             'note'                => 'nullable|string|max:255',
@@ -192,28 +190,6 @@ class AchievementController extends Controller
         ]);
     }
 
-    /**
-     * RESET TOTAL: hapus SELURUH riwayat prestasi dan kembalikan total_prestasi SEMUA
-     * siswa ke 0. Dipakai admin di awal tahun pelajaran baru supaya siswa mulai dari
-     * poin bersih. Tindakan ini permanen dan tidak bisa dibatalkan, jadi wajib mengirim
-     * confirm=true.
-     */
-    public function resetAll(Request $request)
-    {
-        $request->validate(['confirm' => 'accepted']);
-
-        $jumlahRiwayat = Achievement::count();
-        $jumlahSiswa   = Student::count();
-
-        DB::transaction(function () {
-            Achievement::query()->delete();
-            Student::query()->update(['total_prestasi' => 0]);
-        });
-
-        return response()->json([
-            'message' => "Reset berhasil: {$jumlahSiswa} siswa dikembalikan ke 0 poin prestasi, {$jumlahRiwayat} catatan riwayat dihapus permanen.",
-        ]);
-    }
 
     /**
      * 10 siswa dengan poin prestasi tertinggi — dipakai kartu "Leaderboard"

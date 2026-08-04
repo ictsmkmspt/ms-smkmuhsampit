@@ -3,23 +3,26 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\PklPembimbinganJournal;
 use App\Models\PklPlacement;
-use App\Models\Student;
 use App\Models\Teacher;
+use App\Models\TahunAjaran;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class PklPlacementController extends Controller
 {
     /**
      * Semua penempatan PKL (admin), dengan filter opsional by status.
+     * Default cuma tahun ajaran yang sedang aktif — kirim ?semua_tahun=1
+     * untuk lihat semua tahun ajaran sekaligus (misal buat cari data lama).
      */
     public function index(Request $request)
     {
         $query = PklPlacement::with(['student.user', 'student.classRoom', 'dudi', 'guruPembimbing.user']);
         if ($request->status) {
             $query->where('status', $request->status);
+        }
+        if (!$request->boolean('semua_tahun')) {
+            $query->where('tahun_ajaran_id', TahunAjaran::aktifId());
         }
         return $query->orderByDesc('tanggal_mulai')->get();
     }
@@ -105,9 +108,10 @@ class PklPlacementController extends Controller
      */
     public function tutupSemuaAktif()
     {
-        $jumlah = PklPlacement::where('status', 'aktif')->count();
+        $query = PklPlacement::where('status', 'aktif')->where('tahun_ajaran_id', TahunAjaran::aktifId());
+        $jumlah = $query->count();
 
-        PklPlacement::where('status', 'aktif')->update([
+        $query->update([
             'status' => 'selesai',
             'tanggal_selesai' => now()->format('Y-m-d'),
         ]);
@@ -124,37 +128,15 @@ class PklPlacementController extends Controller
      */
     public function aktifkanSemuaSelesai()
     {
-        $jumlah = PklPlacement::where('status', 'selesai')->count();
+        $query = PklPlacement::where('status', 'selesai')->where('tahun_ajaran_id', TahunAjaran::aktifId());
+        $jumlah = $query->count();
 
-        PklPlacement::where('status', 'selesai')->update(['status' => 'aktif']);
+        $query->update(['status' => 'aktif']);
 
         return response()->json([
             'message' => "$jumlah penempatan PKL berhasil diaktifkan kembali.",
             'jumlah'  => $jumlah,
         ]);
-    }
-
-    /**
-     * RESET TOTAL untuk mulai tahun ajaran baru — MENGHAPUS PERMANEN semua
-     * penempatan PKL beserta absensi, jurnal kegiatan, dan nilainya (otomatis
-     * ikut terhapus lewat cascade database), ditambah SEMUA jurnal pembimbing
-     * (yang terpisah dari penempatan, jadi dihapus manual di sini). Akun
-     * IDUKA (dan datanya seperti nama perusahaan, tanda tangan, dsb) TIDAK
-     * disentuh sama sekali — cuma riwayat kegiatan PKL-nya yang dibersihkan.
-     */
-    public function resetSemuaPkl()
-    {
-        return DB::transaction(function () {
-            $jumlahPenempatan = PklPlacement::count();
-            $jumlahJurnalPembimbing = PklPembimbinganJournal::count();
-
-            PklPembimbinganJournal::query()->delete();
-            PklPlacement::query()->delete();
-
-            return response()->json([
-                'message' => "Reset berhasil. $jumlahPenempatan penempatan PKL (beserta absensi, jurnal kegiatan, dan nilai) serta $jumlahJurnalPembimbing catatan jurnal pembimbing telah dihapus permanen. Akun IDUKA tetap ada dan tidak berubah.",
-            ]);
-        });
     }
 
     /**
@@ -169,6 +151,7 @@ class PklPlacementController extends Controller
 
         return PklPlacement::with(['student.user', 'student.classRoom', 'dudi'])
             ->where('guru_pembimbing_id', $teacher->id)
+            ->where('tahun_ajaran_id', TahunAjaran::aktifId())
             ->orderByDesc('status')
             ->orderByDesc('tanggal_mulai')
             ->get();
@@ -186,6 +169,7 @@ class PklPlacementController extends Controller
 
         return PklPlacement::with(['student.user', 'student.classRoom', 'guruPembimbing.user'])
             ->where('dudi_id', $dudi->id)
+            ->where('tahun_ajaran_id', TahunAjaran::aktifId())
             ->orderByDesc('status')
             ->orderByDesc('tanggal_mulai')
             ->get();

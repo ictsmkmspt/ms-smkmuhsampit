@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, Save, Trash2, Trophy, RotateCcw } from 'lucide-react';
+import { Plus, Save, Trash2, Trophy } from 'lucide-react';
 import api from '../../../api/axios';
 import TruncateText from '../../../components/TruncateText';
 
@@ -11,10 +11,6 @@ export default function PoinPrestasiTab() {
   const [error, setError]           = useState('');
   const [addLoading, setAddLoading] = useState(false);
   const [saveLoading, setSaveLoading] = useState({});
-
-  const [resetConfirmText, setResetConfirmText] = useState('');
-  const [resetLoading, setResetLoading] = useState(false);
-  const [resetMessage, setResetMessage] = useState('');
 
   const load = () => api.get('/achievement-types').then((res) => setTypes(res.data));
   useEffect(() => { load(); }, []);
@@ -63,21 +59,6 @@ export default function PoinPrestasiTab() {
   const startEdit = (type) => {
     setEditId(type.id);
     setEditData((p) => ({ ...p, [type.id]: { name: type.name, poin: type.poin } }));
-  };
-
-  const handleResetAll = async () => {
-    if (!confirm('Ini akan menghapus SEMUA riwayat prestasi dan mengembalikan poin SEMUA siswa ke 0. Tindakan ini PERMANEN dan tidak bisa dibatalkan. Lanjutkan?')) return;
-    setResetLoading(true);
-    setResetMessage('');
-    try {
-      const res = await api.post('/achievements/reset-all', { confirm: true });
-      setResetMessage(res.data.message);
-      setResetConfirmText('');
-    } catch (err) {
-      alert(err.response?.data?.message || 'Gagal mereset poin prestasi.');
-    } finally {
-      setResetLoading(false);
-    }
   };
 
   return (
@@ -172,33 +153,6 @@ export default function PoinPrestasiTab() {
             )}
           </tbody>
         </table>
-      </div>
-
-      <div className="surface-card p-5 border-2 border-rose-200 bg-rose-50/40">
-        <h2 className="font-display font-semibold text-rose-700 mb-1">Zona Berbahaya — Tahun Pelajaran Baru</h2>
-        <p className="text-sm text-ink-600 mb-4">
-          Kembalikan poin prestasi <b>SEMUA siswa</b> ke 0 dan hapus <b>SELURUH riwayat prestasi</b> secara permanen. Biasanya dipakai di awal tahun pelajaran baru. <b>Tindakan ini tidak bisa dibatalkan.</b>
-        </p>
-        <div className="flex flex-wrap gap-3 items-center">
-          <input
-            type="text"
-            value={resetConfirmText}
-            onChange={(e) => setResetConfirmText(e.target.value)}
-            placeholder='Ketik "RESET" untuk mengaktifkan tombol'
-            className="field-input flex-1 min-w-[220px]"
-          />
-          <button
-            onClick={handleResetAll}
-            disabled={resetConfirmText !== 'RESET' || resetLoading}
-            className="flex items-center gap-2 text-sm font-medium text-white bg-rose-600 hover:bg-rose-700 disabled:opacity-40 disabled:cursor-not-allowed rounded-lg px-4 py-2.5 whitespace-nowrap"
-          >
-            <RotateCcw className="w-4 h-4" />
-            {resetLoading ? 'Mereset...' : 'Reset Semua Poin Prestasi'}
-          </button>
-        </div>
-        {resetMessage && (
-          <p className="text-sm text-brand-700 bg-brand-50 border border-brand-200 rounded-lg px-3 py-2 mt-3">{resetMessage}</p>
-        )}
       </div>
     </div>
   );

@@ -8,6 +8,7 @@ const DEFAULT_PROFILE = {
   visi: '',
   misi: '',
   logo_url: null,
+  tahun_ajaran: null,
 };
 
 /**

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Setting;
+use App\Models\TahunAjaran;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -11,7 +12,8 @@ class SchoolProfileController extends Controller
 {
     /**
      * Publik (tanpa login) — dipakai halaman Login, favicon, dan judul tab
-     * browser, yang semuanya perlu tampil SEBELUM user login.
+     * browser, yang semuanya perlu tampil SEBELUM user login. Sekalian
+     * sertakan nama tahun ajaran aktif, supaya tampil juga di halaman Login.
      */
     public function show()
     {
@@ -22,6 +24,7 @@ class SchoolProfileController extends Controller
             'visi' => Setting::get('visi', ''),
             'misi' => Setting::get('misi', ''),
             'logo_url' => $logo ? '/storage/' . $logo : null,
+            'tahun_ajaran' => TahunAjaran::where('status', 'aktif')->value('nama'),
         ]);
     }
 

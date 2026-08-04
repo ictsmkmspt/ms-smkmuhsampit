@@ -63,6 +63,9 @@ export default function Login() {
                 {profile.nama_sekolah.toUpperCase()}
               </h1>
               <p className="text-xs text-ink-500 mt-1">Sistem Informasi Sekolah</p>
+              {profile.tahun_ajaran && (
+                <p className="text-xs text-ink-400 mt-0.5">Tahun Ajaran {profile.tahun_ajaran}</p>
+              )}
               <span className="mt-3 h-1 w-10 rounded-full bg-[#F2B705]" />
             </div>
 

@@ -3,12 +3,14 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Api\Concerns\RestrictsGuruToOwnClass;
 use App\Models\Attendance;
 use App\Models\ClassRoom;
 use App\Models\Holiday;
 use App\Models\PklPlacement;
 use App\Models\Setting;
 use App\Models\Student;
+use App\Models\TahunAjaran;
 use App\Models\Teacher;
 use App\Models\Violation;
 use App\Models\ViolationType;
@@ -19,26 +21,7 @@ use Illuminate\Validation\ValidationException;
 
 class AttendanceController extends Controller
 {
-    /**
-     * Kalau user yang login adalah guru, kembalikan ID kelas di mana dia jadi wali kelas
-     * (atau -1 kalau belum ditugaskan sama sekali, supaya query jadi "tidak ada hasil"
-     * bukan malah bocor lihat semua kelas). Kalau bukan guru (misal admin), kembalikan null
-     * yang artinya "tidak ada pembatasan".
-     */
-    private function guruClassRoomId(Request $request): ?int
-    {
-        if ($request->user()->role !== 'guru') {
-            return null;
-        }
-
-        $teacher = Teacher::where('user_id', $request->user()->id)->first();
-        if (!$teacher) {
-            return -1;
-        }
-
-        $classRoom = ClassRoom::where('homeroom_teacher_id', $teacher->id)->first();
-        return $classRoom?->id ?? -1;
-    }
+    use RestrictsGuruToOwnClass;
 
     public function scan(Request $request)
     {
@@ -461,6 +444,8 @@ class AttendanceController extends Controller
 
     /**
      * Riwayat kejadian pelanggaran. Kalau yang login guru, dipaksa hanya kelas walinya sendiri.
+     * Default cuma tahun ajaran yang sedang aktif (sama seperti PklPlacementController::index) —
+     * kirim ?semua_tahun=1 untuk lihat semua tahun ajaran sekaligus.
      */
     public function violationDetail(Request $request)
     {
@@ -470,6 +455,9 @@ class AttendanceController extends Controller
         $query = Violation::with('student.user', 'student.classRoom', 'violationType');
         if ($request->date) $query->where('date', $request->date);
         if ($classRoomId) $query->whereHas('student', fn ($q) => $q->where('class_room_id', $classRoomId));
+        if (!$request->boolean('semua_tahun')) {
+            $query->where('tahun_ajaran_id', TahunAjaran::aktifId());
+        }
         return $query->orderByDesc('date')->orderByDesc('created_at')->get();
     }
 
@@ -478,6 +466,7 @@ class AttendanceController extends Controller
      * rentang tanggal (date_from/date_to) dan jenis pelanggaran (violation_type_id).
      * Dipakai oleh popup riwayat pelanggaran di halaman Rekap Poin Pelanggaran.
      * Kalau yang login guru, hanya boleh melihat siswa di kelas walinya sendiri.
+     * Default cuma tahun ajaran yang sedang aktif — kirim ?semua_tahun=1 untuk lihat semua.
      */
     public function studentViolations(Request $request, $studentId)
     {
@@ -500,6 +489,9 @@ class AttendanceController extends Controller
         }
         if ($request->violation_type_id) {
             $query->where('violation_type_id', $request->violation_type_id);
+        }
+        if (!$request->boolean('semua_tahun')) {
+            $query->where('tahun_ajaran_id', TahunAjaran::aktifId());
         }
 
         return $query->orderByDesc('date')->orderByDesc('created_at')->get();
@@ -524,6 +516,10 @@ class AttendanceController extends Controller
         $restricted = $this->guruClassRoomId($request);
         if ($restricted !== null && $violation->student->class_room_id !== $restricted) {
             return response()->json(['message' => 'Anda tidak berwenang menghapus data siswa ini.'], 403);
+        }
+
+        if ($violation->tahun_ajaran_id !== TahunAjaran::aktifId()) {
+            return response()->json(['message' => 'Catatan ini milik tahun ajaran yang tidak aktif dan tidak bisa dihapus. Aktifkan dulu tahun ajaran tersebut kalau perlu mengoreksinya.'], 422);
         }
 
         DB::transaction(function () use ($violation) {
@@ -556,6 +552,10 @@ class AttendanceController extends Controller
             return response()->json(['message' => 'Anda tidak berwenang mengubah data siswa ini.'], 403);
         }
 
+        if ($violation->tahun_ajaran_id !== TahunAjaran::aktifId()) {
+            return response()->json(['message' => 'Catatan ini milik tahun ajaran yang tidak aktif dan tidak bisa diubah. Aktifkan dulu tahun ajaran tersebut kalau perlu mengoreksinya.'], 422);
+        }
+
         $data = $request->validate([
             'violation_type_id' => 'required|exists:violation_types,id',
             'note'              => 'nullable|string|max:255',
@@ -578,28 +578,6 @@ class AttendanceController extends Controller
         ]);
     }
 
-    /**
-     * RESET TOTAL: hapus SELURUH riwayat pelanggaran (termasuk yang otomatis dari alpa)
-     * dan kembalikan total_poin SEMUA siswa ke 0. Dipakai admin di awal tahun pelajaran
-     * baru supaya siswa mulai dari poin bersih. Tindakan ini permanen dan tidak bisa
-     * dibatalkan, jadi wajib mengirim confirm=true.
-     */
-    public function violationResetAll(Request $request)
-    {
-        $request->validate(['confirm' => 'accepted']);
-
-        $jumlahRiwayat = Violation::count();
-        $jumlahSiswa   = Student::count();
-
-        DB::transaction(function () {
-            Violation::query()->delete();
-            Student::query()->update(['total_poin' => 0]);
-        });
-
-        return response()->json([
-            'message' => "Reset berhasil: {$jumlahSiswa} siswa dikembalikan ke 0 poin pelanggaran, {$jumlahRiwayat} catatan riwayat dihapus permanen.",
-        ]);
-    }
 
     /**
      * Catat kehadiran secara manual (hadir/izin/sakit) tanpa scan barcode.

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, Trash2, ClipboardList, PowerOff, AlertTriangle, RotateCcw } from 'lucide-react';
+import { Plus, Trash2, ClipboardList, PowerOff } from 'lucide-react';
 import api from '../../../../api/axios';
 import TruncateText from '../../../../components/TruncateText';
 
@@ -80,40 +80,14 @@ export default function PenempatanTab() {
     }
   };
 
-  const [resetting, setResetting] = useState(false);
-  const [resetConfirmText, setResetConfirmText] = useState('');
-  const [resetMessage, setResetMessage] = useState('');
-
-  const handleResetSemua = async () => {
-    if (resetConfirmText !== 'RESET') return;
-
-    if (!confirm(
-      'Terakhir kali — Anda YAKIN mau menghapus SELURUH data kegiatan PKL secara permanen?\n\n' +
-      'Ini akan menghapus semua penempatan, absensi, jurnal kegiatan, jurnal pembimbing, dan nilai PKL. Akun IDUKA tidak terhapus. Tidak ada cara mengembalikan data setelah ini.'
-    )) return;
-
-    setResetting(true);
-    setResetMessage('');
-    try {
-      const res = await api.post('/pkl-placements/reset-semua');
-      setResetMessage(res.data.message);
-      setResetConfirmText('');
-      load();
-      loadAktifCount();
-    } catch (err) {
-      alert(err.response?.data?.message || 'Gagal mereset data PKL.');
-    } finally {
-      setResetting(false);
-    }
-  };
-
   useEffect(() => {
     api.get('/students').then((res) => setStudents(res.data));
     api.get('/dudi').then((res) => setDudiList(res.data));
     api.get('/teachers').then((res) => setTeachers(res.data));
   }, []);
 
-  useEffect(() => { load(); }, [filterStatus]); // eslint-disable-line
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- load() didefinisikan ulang tiap render, sengaja tidak dimasukkan ke deps
+  useEffect(() => { load(); }, [filterStatus]);
   useEffect(() => { loadAktifCount(); }, []);
   useEffect(() => { loadSelesaiCount(); }, []);
 
@@ -200,7 +174,7 @@ export default function PenempatanTab() {
       </form>
 
       <div className="surface-card p-5">
-        <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
+        <div className="flex items-center justify-between mb-1 flex-wrap gap-3">
           <h2 className="font-display font-semibold text-ink-900">
             Daftar Penempatan <span className="text-ink-500 font-sans font-normal text-sm">({list.length})</span>
           </h2>
@@ -228,6 +202,7 @@ export default function PenempatanTab() {
             </button>
           </div>
         </div>
+        <p className="text-xs text-ink-400 mb-4">Cuma menampilkan penempatan tahun ajaran yang sedang aktif. Data tahun ajaran sebelumnya tidak dihapus, cuma disembunyikan dari daftar ini.</p>
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-ink-500 border-b border-line-200">
@@ -270,34 +245,6 @@ export default function PenempatanTab() {
         </table>
       </div>
 
-      <div className="surface-card p-5 border-2 border-rose-200 bg-rose-50/40">
-        <h2 className="font-display font-semibold text-rose-700 mb-1 flex items-center gap-2">
-          <AlertTriangle className="w-4 h-4" /> Zona Berbahaya — Mulai Tahun Ajaran Baru
-        </h2>
-        <p className="text-sm text-ink-600 mb-4">
-          Menghapus PERMANEN <b>semua penempatan PKL</b> (semua status), beserta <b>seluruh riwayat absensi, jurnal kegiatan, jurnal pembimbing, dan nilai PKL</b>. Akun IDUKA (perusahaan, tanda tangan, dll) <b>TIDAK</b> ikut terhapus. <b>Tindakan ini tidak bisa dibatalkan.</b>
-        </p>
-        <div className="flex flex-wrap gap-3 items-center">
-          <input
-            type="text"
-            value={resetConfirmText}
-            onChange={(e) => setResetConfirmText(e.target.value)}
-            placeholder='Ketik "RESET" untuk mengaktifkan tombol'
-            className="field-input flex-1 min-w-[220px]"
-          />
-          <button
-            onClick={handleResetSemua}
-            disabled={resetConfirmText !== 'RESET' || resetting}
-            className="flex items-center gap-2 text-sm font-medium text-white bg-rose-600 hover:bg-rose-700 disabled:opacity-40 disabled:cursor-not-allowed rounded-lg px-4 py-2.5 whitespace-nowrap"
-          >
-            <RotateCcw className="w-4 h-4" />
-            {resetting ? 'Mereset...' : 'Reset Kegiatan PKL'}
-          </button>
-        </div>
-        {resetMessage && (
-          <p className="text-sm text-brand-700 bg-brand-50 border border-brand-200 rounded-lg px-3 py-2 mt-3">{resetMessage}</p>
-        )}
-      </div>
     </div>
   );
 }

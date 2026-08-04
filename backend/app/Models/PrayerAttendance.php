@@ -6,7 +6,25 @@ use Illuminate\Database\Eloquent\Model;
 
 class PrayerAttendance extends Model
 {
-    protected $fillable = ['student_id', 'class_room_id', 'date', 'status', 'recorded_by'];
+    protected $fillable = ['student_id', 'class_room_id', 'date', 'status', 'recorded_by', 'tahun_ajaran_id'];
+
+    /**
+     * Otomatis tandai tahun ajaran yang sedang aktif kalau tidak diisi
+     * manual — sama seperti Violation/Achievement/PklPlacement/Attendance.
+     */
+    protected static function booted(): void
+    {
+        static::creating(function (PrayerAttendance $prayerAttendance) {
+            if (empty($prayerAttendance->tahun_ajaran_id)) {
+                $prayerAttendance->tahun_ajaran_id = TahunAjaran::aktifId();
+            }
+        });
+    }
+
+    public function tahunAjaran()
+    {
+        return $this->belongsTo(TahunAjaran::class);
+    }
 
     public function student()
     {

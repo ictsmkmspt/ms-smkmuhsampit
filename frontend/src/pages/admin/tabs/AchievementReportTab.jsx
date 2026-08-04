@@ -135,9 +135,10 @@ export default function AchievementReportTab() {
 
       <div className="lg:col-span-2">
         <div className="surface-card p-5 h-full flex flex-col">
-          <h2 className="font-display font-semibold text-ink-900 mb-3">
+          <h2 className="font-display font-semibold text-ink-900 mb-1">
             Riwayat Kejadian Prestasi
           </h2>
+          <p className="text-xs text-ink-400 mb-2">Cuma menampilkan riwayat tahun ajaran yang sedang aktif.</p>
 
           <div className="flex gap-2 mb-3">
             <input
