@@ -14,7 +14,7 @@ const PAD_RIGHT = 8;
  * berwarna tetap. Dipakai untuk Absensi Bulanan supaya hadir/izin/sakit/alpa
  * tetap terlihat sebagai batang sendiri-sendiri, bukan 1 batang bertumpuk.
  */
-export default function DailyGroupedBarChart({ title, subtitle, labels, series, showTableToggle = false, headerExtra = null }) {
+export default function DailyGroupedBarChart({ title, subtitle, labels, series, showTableToggle = false }) {
   const [hover, setHover] = useState(null); // index label
   const [showTable, setShowTable] = useState(false);
 
@@ -42,7 +42,6 @@ export default function DailyGroupedBarChart({ title, subtitle, labels, series, 
           {subtitle && <p className="text-xs text-ink-500 mt-0.5">{subtitle}</p>}
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          {headerExtra}
           {showTableToggle && (
             <button
               onClick={() => setShowTable((v) => !v)}
@@ -183,7 +182,10 @@ function niceScale(maxValue, targetTicks = 4) {
   const rawStep = Math.max(maxValue, 1) / targetTicks;
   const magnitude = 10 ** Math.floor(Math.log10(rawStep));
   const normalized = rawStep / magnitude;
-  const step = (normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 5 ? 5 : 10) * magnitude;
+  const stepMentah = (normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 5 ? 5 : 10) * magnitude;
+  // Data selalu bilangan bulat, jadi step tidak boleh < 1 — kalau tidak,
+  // beberapa tick akan dibulatkan ke nilai integer yang sama (key duplikat).
+  const step = Math.max(1, Math.round(stepMentah));
   const yMax = Math.ceil(Math.max(maxValue, 1) / step) * step;
   const yTicks = [];
   for (let v = 0; v <= yMax + 1e-9; v += step) yTicks.push(Math.round(v));

@@ -220,21 +220,21 @@ export default function DashboardHomeTab() {
               categories={warnaiKategoriTipe(grafik.prestasi)}
             />
           </div>
+          <div className="flex items-center justify-end gap-3">
+            <div className="flex items-center gap-1 bg-white border border-line-200 rounded-xl px-1 py-1">
+              <button onClick={() => gantiBulanAbsensi(-1)} className="w-7 h-7 flex items-center justify-center rounded-lg text-ink-500 hover:bg-mist-50" title="Bulan sebelumnya">
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <span className="text-sm font-medium text-ink-900 px-2 min-w-[8rem] text-center">{NAMA_BULAN[bulanAbsensi - 1]} {tahunAbsensi}</span>
+              <button onClick={() => gantiBulanAbsensi(1)} className="w-7 h-7 flex items-center justify-center rounded-lg text-ink-500 hover:bg-mist-50" title="Bulan berikutnya">
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
           <DailyGroupedBarChart
             title="Absensi Bulanan"
             subtitle={`Komposisi kehadiran siswa per tanggal, ${NAMA_BULAN[grafik.bulan - 1]} ${grafik.tahun}`}
             showTableToggle
-            headerExtra={
-              <div className="flex items-center gap-1 bg-white border border-line-200 rounded-xl px-1 py-1">
-                <button onClick={() => gantiBulanAbsensi(-1)} className="w-7 h-7 flex items-center justify-center rounded-lg text-ink-500 hover:bg-mist-50" title="Bulan sebelumnya">
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-                <span className="text-sm font-medium text-ink-900 px-2 min-w-[8rem] text-center">{NAMA_BULAN[bulanAbsensi - 1]} {tahunAbsensi}</span>
-                <button onClick={() => gantiBulanAbsensi(1)} className="w-7 h-7 flex items-center justify-center rounded-lg text-ink-500 hover:bg-mist-50" title="Bulan berikutnya">
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
-            }
             labels={grafik.absensi.hadir.map((_, i) => i + 1)}
             series={[
               { name: 'Hadir', color: '#15803D', data: grafik.absensi.hadir },
