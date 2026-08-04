@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ClassRoomController;
 use App\Http\Controllers\Api\DudiController;
 use App\Http\Controllers\Api\HolidayController;
+use App\Http\Controllers\Api\LaporanController;
 use App\Http\Controllers\Api\ParentController;
 use App\Http\Controllers\Api\PklAttendanceController;
 use App\Http\Controllers\Api\PklJournalController;
@@ -20,6 +21,7 @@ use App\Http\Controllers\Api\SettingController;
 use App\Http\Controllers\Api\SppController;
 use App\Http\Controllers\Api\StudentController;
 use App\Http\Controllers\Api\StudentSelfController;
+use App\Http\Controllers\Api\SystemBackupController;
 use App\Http\Controllers\Api\TagihanLainController;
 use App\Http\Controllers\Api\TahunAjaranController;
 use App\Http\Controllers\Api\TeacherController;
@@ -109,6 +111,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/admin-accounts', [AdminAccountController::class, 'store']);
         Route::delete('/admin-accounts/{id}', [AdminAccountController::class, 'destroy']);
         Route::put('/admin-accounts/{id}/reset-password', [AdminAccountController::class, 'resetPassword']);
+
+        // Backup & impor (timpa total) database — paling sensitif dari
+        // semua fitur admin, sengaja TIDAK dibagi ke role "waka" sama sekali.
+        Route::get('/system/backup', [SystemBackupController::class, 'backup']);
+        Route::post('/system/restore', [SystemBackupController::class, 'restore']);
     });
 
     // Read-only untuk role "waka" (label di UI: "Admin") di bagian yang
@@ -237,6 +244,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/tagihan-lain/nama', [TagihanLainController::class, 'destroyByNama']);
         Route::delete('/tagihan-lain/{tagihanLain}', [TagihanLainController::class, 'destroy']);
         Route::get('/tagihan-lain/{tagihanLain}', [TagihanLainController::class, 'show']);
+
+        // Menu Laporan — rekap keuangan bulanan (gabungan SPP + Tagihan Lain
+        // berdasarkan tanggal_bayar) dan daftar tunggakan per siswa.
+        Route::get('/laporan/keuangan', [LaporanController::class, 'keuangan']);
+        Route::get('/laporan/keuangan/export', [LaporanController::class, 'keuanganExport']);
+        Route::get('/laporan/tunggakan', [LaporanController::class, 'tunggakan']);
+        Route::get('/laporan/tunggakan/export', [LaporanController::class, 'tunggakanExport']);
     });
 
     // Dipisah dari grup role:admin,guru di atas supaya TU juga bisa akses

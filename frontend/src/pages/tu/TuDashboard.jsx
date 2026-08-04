@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { LogOut, LayoutDashboard, Receipt, Wallet, GraduationCap, Settings, Menu, X, Pencil } from 'lucide-react';
+import { LogOut, LayoutDashboard, Receipt, Wallet, GraduationCap, Settings, Menu, X, Pencil, FileBarChart } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useSchoolProfile } from '../../context/SchoolProfileContext';
 import DashboardTab from './tabs/DashboardTab';
 import TagihanTab from './tabs/TagihanTab';
 import TagihanLainTab from './tabs/TagihanLainTab';
 import AlumniTab from './tabs/AlumniTab';
+import LaporanTab from './tabs/LaporanTab';
 import PengaturanTab from './tabs/PengaturanTab';
 import EditProfileModal from '../../components/EditProfileModal';
 
@@ -13,6 +14,7 @@ const TABS = [
   { key: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, component: DashboardTab },
   { key: 'tagihan', label: 'Tagihan SPP', icon: Receipt, component: TagihanTab },
   { key: 'tagihan-lain', label: 'Tagihan Lain', icon: Wallet, component: TagihanLainTab },
+  { key: 'laporan', label: 'Laporan', icon: FileBarChart, component: LaporanTab },
   { key: 'alumni', label: 'Alumni', icon: GraduationCap, component: AlumniTab },
   { key: 'pengaturan', label: 'Pengaturan', icon: Settings, component: PengaturanTab },
 ];
