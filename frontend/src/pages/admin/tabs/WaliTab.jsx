@@ -3,6 +3,11 @@ import { Plus, Trash2, UserPlus, Link2, Download, Upload, KeyRound } from 'lucid
 import api from '../../../api/axios';
 import TruncateText from '../../../components/TruncateText';
 
+// Wali yang semua anaknya sudah lulus tidak ditampilkan di sini lagi —
+// datanya pindah tampil di menu Alumni > Wali Siswa Alumni (tetap tidak
+// pernah terhapus, cuma dikelompokkan beda sesuai status siswa).
+const isWaliAlumni = (p) => (p.children?.length ?? 0) > 0 && p.children.every((c) => c.status === 'lulus');
+
 export default function WaliTab() {
   const [parents, setParents] = useState([]);
   const [students, setStudents] = useState([]);
@@ -122,6 +127,8 @@ export default function WaliTab() {
     }
   };
 
+  const parentsAktif = parents.filter((p) => !isWaliAlumni(p));
+
   return (
     <div className="space-y-6">
       <div className="surface-card p-5 flex flex-wrap items-center gap-3">
@@ -187,11 +194,11 @@ export default function WaliTab() {
 
       <div className="surface-card p-5">
         <h2 className="font-display font-semibold text-ink-900 mb-4">
-          Daftar Wali <span className="text-ink-500 font-sans font-normal text-sm">({parents.length})</span>
+          Daftar Wali <span className="text-ink-500 font-sans font-normal text-sm">({parentsAktif.length})</span>
         </h2>
 
         <div className="space-y-4">
-          {parents.map((p) => (
+          {parentsAktif.map((p) => (
             <div key={p.id} className="border border-line-200 rounded-xl p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -270,7 +277,7 @@ export default function WaliTab() {
               )}
             </div>
           ))}
-          {parents.length === 0 && (
+          {parentsAktif.length === 0 && (
             <p className="py-6 text-center text-ink-300 text-sm">Belum ada akun wali.</p>
           )}
         </div>

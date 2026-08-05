@@ -6,6 +6,10 @@ import { useAuth } from '../context/AuthContext';
 const ROLE_LABEL = {
   admin: 'Super Admin',
   waka: 'Admin',
+  waka_kesiswaan: 'Waka Kesiswaan',
+  waka_kurikulum: 'Waka Kurikulum',
+  waka_humas: 'Waka Humas',
+  waka_sarpras: 'Waka Sarpras',
   guru: 'Guru',
   siswa: 'Siswa',
   wali: 'Wali Siswa',

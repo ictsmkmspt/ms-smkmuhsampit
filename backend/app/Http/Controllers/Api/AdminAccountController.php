@@ -11,9 +11,11 @@ class AdminAccountController extends Controller
 {
     use ResetsPasswordToDefault;
 
+    private const ROLES = ['admin', 'waka', 'waka_kesiswaan', 'waka_kurikulum', 'waka_humas', 'waka_sarpras'];
+
     public function index()
     {
-        return User::whereIn('role', ['admin', 'waka'])->orderBy('name')->get();
+        return User::whereIn('role', self::ROLES)->orderBy('name')->get();
     }
 
     public function store(Request $request)
@@ -22,7 +24,7 @@ class AdminAccountController extends Controller
             'name' => 'required|string|max:100',
             'email' => 'required|email|unique:users,email',
             'password' => 'nullable|min:6',
-            'role' => 'required|in:admin,waka',
+            'role' => 'required|in:admin,waka_kesiswaan,waka_kurikulum,waka_humas,waka_sarpras',
         ]);
 
         $user = User::create([
@@ -43,7 +45,7 @@ class AdminAccountController extends Controller
      */
     public function destroy(Request $request, $id)
     {
-        $user = User::whereIn('role', ['admin', 'waka'])->findOrFail($id);
+        $user = User::whereIn('role', self::ROLES)->findOrFail($id);
 
         if ($user->id === $request->user()->id) {
             return response()->json(['message' => 'Tidak bisa menghapus akun yang sedang Anda pakai sendiri.'], 422);
@@ -60,7 +62,7 @@ class AdminAccountController extends Controller
 
     public function resetPassword($id)
     {
-        $user = User::whereIn('role', ['admin', 'waka'])->findOrFail($id);
+        $user = User::whereIn('role', self::ROLES)->findOrFail($id);
         $this->resetToDefaultPassword($user);
         return response()->json(['message' => 'Password akun "' . $user->name . '" berhasil direset ke default (123456).']);
     }

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Plus, Trash2, Save, Building2, MapPin, KeyRound } from 'lucide-react';
 import api from '../../../../api/axios';
 import TruncateText from '../../../../components/TruncateText';
+import { useAuth } from '../../../../context/AuthContext';
 
 const emptyForm = {
   name: '', email: '',
@@ -10,6 +11,12 @@ const emptyForm = {
 };
 
 export default function DudiTab() {
+  const { user } = useAuth();
+  // Waka Kurikulum cuma boleh lihat daftar IDUKA (dipakai buat pilih IDUKA
+  // di form Penempatan PKL) — kelola IDUKA (tambah/edit/hapus/reset
+  // password) sekarang eksklusif milik Waka Humas, backend-nya juga sudah
+  // menolak Kurikulum di endpoint-endpoint tersebut.
+  const canEdit = user.role === 'admin' || user.role === 'waka_humas';
   const [list, setList] = useState([]);
   const [form, setForm] = useState(emptyForm);
   const [error, setError] = useState('');
@@ -115,45 +122,47 @@ export default function DudiTab() {
         </p>
       </div>
 
-      <form onSubmit={handleAdd} className="surface-card p-5">
-        <h2 className="font-display font-semibold text-ink-900 mb-4">Tambah Akun IDUKA</h2>
-        {error && <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2 mb-3">{error}</p>}
+      {canEdit && (
+        <form onSubmit={handleAdd} className="surface-card p-5">
+          <h2 className="font-display font-semibold text-ink-900 mb-4">Tambah Akun IDUKA</h2>
+          {error && <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2 mb-3">{error}</p>}
 
-        <p className="text-xs font-medium text-ink-500 mb-2">Akun login</p>
-        <p className="text-xs text-ink-500 mb-2">Password akun otomatis dibuat "123456" — wajib diganti saat login pertama.</p>
-        <div className="grid grid-cols-2 gap-3 mb-4">
-          <input placeholder="Email login" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="field-input col-span-2" required autoComplete="off" />
-        </div>
+          <p className="text-xs font-medium text-ink-500 mb-2">Akun login</p>
+          <p className="text-xs text-ink-500 mb-2">Password akun otomatis dibuat "123456" — wajib diganti saat login pertama.</p>
+          <div className="grid grid-cols-2 gap-3 mb-4">
+            <input placeholder="Email login" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="field-input col-span-2" required autoComplete="off" />
+          </div>
 
-        <p className="text-xs font-medium text-ink-500 mb-2">Profil perusahaan</p>
-        <div className="grid grid-cols-2 gap-3 mb-4">
-          <input placeholder="Nama perusahaan/instansi" value={form.nama_perusahaan} onChange={(e) => setForm({ ...form, nama_perusahaan: e.target.value })} className="field-input col-span-2" required />
-          <input placeholder="Alamat" value={form.alamat} onChange={(e) => setForm({ ...form, alamat: e.target.value })} className="field-input col-span-2" />
-          <input placeholder="Nama Instruktur" value={form.penanggung_jawab} onChange={(e) => setForm({ ...form, penanggung_jawab: e.target.value })} className="field-input" required />
-          <input placeholder="Telepon" value={form.telepon} onChange={(e) => setForm({ ...form, telepon: e.target.value })} className="field-input" />
-        </div>
+          <p className="text-xs font-medium text-ink-500 mb-2">Profil perusahaan</p>
+          <div className="grid grid-cols-2 gap-3 mb-4">
+            <input placeholder="Nama perusahaan/instansi" value={form.nama_perusahaan} onChange={(e) => setForm({ ...form, nama_perusahaan: e.target.value })} className="field-input col-span-2" required />
+            <input placeholder="Alamat" value={form.alamat} onChange={(e) => setForm({ ...form, alamat: e.target.value })} className="field-input col-span-2" />
+            <input placeholder="Nama Instruktur" value={form.penanggung_jawab} onChange={(e) => setForm({ ...form, penanggung_jawab: e.target.value })} className="field-input" required />
+            <input placeholder="Telepon" value={form.telepon} onChange={(e) => setForm({ ...form, telepon: e.target.value })} className="field-input" />
+          </div>
 
-        <div className="flex items-center justify-between mb-2">
-          <p className="text-xs font-medium text-ink-500">Lokasi &amp; radius absensi (GPS)</p>
-          <button
-            type="button"
-            onClick={() => ambilLokasi({ set: (loc) => setForm((f) => ({ ...f, ...loc })), setLocating })}
-            disabled={locating}
-            className="flex items-center gap-1.5 text-xs font-medium text-brand-600 hover:text-brand-700 disabled:opacity-50"
-          >
-            <MapPin className="w-3.5 h-3.5" /> {locating ? 'Mengambil lokasi...' : 'Gunakan lokasi saat ini'}
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-xs font-medium text-ink-500">Lokasi &amp; radius absensi (GPS)</p>
+            <button
+              type="button"
+              onClick={() => ambilLokasi({ set: (loc) => setForm((f) => ({ ...f, ...loc })), setLocating })}
+              disabled={locating}
+              className="flex items-center gap-1.5 text-xs font-medium text-brand-600 hover:text-brand-700 disabled:opacity-50"
+            >
+              <MapPin className="w-3.5 h-3.5" /> {locating ? 'Mengambil lokasi...' : 'Gunakan lokasi saat ini'}
+            </button>
+          </div>
+          <div className="grid grid-cols-3 gap-3">
+            <input placeholder="Latitude" value={form.latitude} onChange={(e) => setForm({ ...form, latitude: e.target.value })} className="field-input" required />
+            <input placeholder="Longitude" value={form.longitude} onChange={(e) => setForm({ ...form, longitude: e.target.value })} className="field-input" required />
+            <input placeholder="Radius (meter)" type="number" value={form.radius_meter} onChange={(e) => setForm({ ...form, radius_meter: e.target.value })} className="field-input" required />
+          </div>
+
+          <button disabled={loading} className="btn-primary mt-4">
+            <Plus className="w-4 h-4" /> {loading ? 'Menyimpan...' : 'Tambah IDUKA'}
           </button>
-        </div>
-        <div className="grid grid-cols-3 gap-3">
-          <input placeholder="Latitude" value={form.latitude} onChange={(e) => setForm({ ...form, latitude: e.target.value })} className="field-input" required />
-          <input placeholder="Longitude" value={form.longitude} onChange={(e) => setForm({ ...form, longitude: e.target.value })} className="field-input" required />
-          <input placeholder="Radius (meter)" type="number" value={form.radius_meter} onChange={(e) => setForm({ ...form, radius_meter: e.target.value })} className="field-input" required />
-        </div>
-
-        <button disabled={loading} className="btn-primary mt-4">
-          <Plus className="w-4 h-4" /> {loading ? 'Menyimpan...' : 'Tambah IDUKA'}
-        </button>
-      </form>
+        </form>
+      )}
 
       <div className="surface-card p-5">
         <h2 className="font-display font-semibold text-ink-900 mb-4">
@@ -165,7 +174,7 @@ export default function DudiTab() {
               <th className="pb-2 font-medium">Perusahaan</th>
               <th className="font-medium">Kontak</th>
               <th className="font-medium">Lokasi</th>
-              <th className="pb-2 w-24"></th>
+              {canEdit && <th className="pb-2 w-24"></th>}
             </tr>
           </thead>
           <tbody>
@@ -221,19 +230,21 @@ export default function DudiTab() {
                       </>
                     ) : '-'}
                   </td>
-                  <td className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <button onClick={() => startEdit(d)} className="text-xs text-ink-500 hover:text-brand-600 font-medium border border-line-200 rounded-lg px-2 py-1">
-                        <Save className="w-3.5 h-3.5" />
-                      </button>
-                      <button onClick={() => handleResetPassword(d)} className="text-ink-400 hover:text-brand-600" title="Reset Password ke default (123456)">
-                        <KeyRound className="w-4 h-4" />
-                      </button>
-                      <button onClick={() => handleDelete(d)} className="text-ink-300 hover:text-honey-700">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </td>
+                  {canEdit && (
+                    <td className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <button onClick={() => startEdit(d)} className="text-xs text-ink-500 hover:text-brand-600 font-medium border border-line-200 rounded-lg px-2 py-1">
+                          <Save className="w-3.5 h-3.5" />
+                        </button>
+                        <button onClick={() => handleResetPassword(d)} className="text-ink-400 hover:text-brand-600" title="Reset Password ke default (123456)">
+                          <KeyRound className="w-4 h-4" />
+                        </button>
+                        <button onClick={() => handleDelete(d)} className="text-ink-300 hover:text-honey-700">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  )}
                 </tr>
               )
             ))}

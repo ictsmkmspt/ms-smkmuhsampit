@@ -20,13 +20,39 @@ class TahunAjaranController extends Controller
 
         $data = $request->validate([
             'nama' => ['required', 'string', 'max:20', 'regex:/^\d{4}\/\d{4}$/', 'unique:tahun_ajarans,nama'],
+            'tanggal_mulai' => 'nullable|date',
+            'tanggal_selesai' => 'nullable|date|after_or_equal:tanggal_mulai',
         ], [
             'nama.regex' => 'Format nama tahun ajaran harus "YYYY/YYYY", contoh: 2027/2028.',
         ]);
 
-        $tahunAjaran = TahunAjaran::create(['nama' => $data['nama'], 'status' => 'nonaktif']);
+        $tahunAjaran = TahunAjaran::create([
+            'nama' => $data['nama'],
+            'status' => 'nonaktif',
+            'tanggal_mulai' => $data['tanggal_mulai'] ?? null,
+            'tanggal_selesai' => $data['tanggal_selesai'] ?? null,
+        ]);
 
         return response()->json($tahunAjaran, 201);
+    }
+
+    /**
+     * Hanya tanggal mulai/selesai kalender akademik yang bisa diubah setelah
+     * dibuat — nama & status tetap lewat aktifkan()/destroy() supaya alur
+     * pengaktifan/penghapusan yang sudah ada tidak bercabang.
+     */
+    public function update(Request $request, $id)
+    {
+        $tahunAjaran = TahunAjaran::findOrFail($id);
+
+        $data = $request->validate([
+            'tanggal_mulai' => 'nullable|date',
+            'tanggal_selesai' => 'nullable|date|after_or_equal:tanggal_mulai',
+        ]);
+
+        $tahunAjaran->update($data);
+
+        return $tahunAjaran->fresh();
     }
 
     /**

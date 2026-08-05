@@ -1,41 +1,60 @@
 <?php
 
+use App\Http\Controllers\Api\AcademicEventController;
 use App\Http\Controllers\Api\AchievementController;
 use App\Http\Controllers\Api\AchievementTypeController;
 use App\Http\Controllers\Api\AdminAccountController;
+use App\Http\Controllers\Api\AssetController;
 use App\Http\Controllers\Api\AttendanceController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\BkCaseController;
 use App\Http\Controllers\Api\ClassRoomController;
 use App\Http\Controllers\Api\DashboardChartController;
 use App\Http\Controllers\Api\DudiController;
 use App\Http\Controllers\Api\HolidayController;
 use App\Http\Controllers\Api\LaporanController;
+use App\Http\Controllers\Api\MaintenanceRequestController;
 use App\Http\Controllers\Api\ParentController;
 use App\Http\Controllers\Api\PklAttendanceController;
 use App\Http\Controllers\Api\PklJournalController;
 use App\Http\Controllers\Api\PklPenilaianController;
 use App\Http\Controllers\Api\PklPembimbinganJournalController;
 use App\Http\Controllers\Api\PklPlacementController;
+use App\Http\Controllers\Api\PeriodController;
+use App\Http\Controllers\Api\PpdbController;
 use App\Http\Controllers\Api\PrayerAttendanceController;
+use App\Http\Controllers\Api\ProcurementController;
+use App\Http\Controllers\Api\RoomController;
+use App\Http\Controllers\Api\SanksiRuleController;
+use App\Http\Controllers\Api\ScheduleController;
+use App\Http\Controllers\Api\ScheduleExportController;
 use App\Http\Controllers\Api\SchoolProfileController;
 use App\Http\Controllers\Api\SettingController;
 use App\Http\Controllers\Api\SppController;
 use App\Http\Controllers\Api\StudentController;
 use App\Http\Controllers\Api\StudentSelfController;
+use App\Http\Controllers\Api\SubjectController;
 use App\Http\Controllers\Api\SystemBackupController;
 use App\Http\Controllers\Api\TagihanLainController;
 use App\Http\Controllers\Api\TahunAjaranController;
 use App\Http\Controllers\Api\TeacherController;
+use App\Http\Controllers\Api\TeachingAssignmentController;
 use App\Http\Controllers\Api\TuController;
 use App\Http\Controllers\Api\ViolationTypeController;
 use App\Http\Controllers\Api\WaliController;
 use Illuminate\Support\Facades\Route;
 
-Route::post('/login', [AuthController::class, 'login']);
+Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:login');
 
 // Publik (tanpa login) — dipakai halaman Login, favicon, dan judul tab
 // browser, yang semuanya perlu tampil sebelum user berhasil login.
 Route::get('/school-profile', [SchoolProfileController::class, 'show']);
+
+// PPDB (Penerimaan Peserta Didik Baru) — calon siswa belum punya akun sama
+// sekali, jadi formulir daftar & cek status WAJIB publik (tanpa auth:sanctum).
+Route::post('/ppdb/daftar', [PpdbController::class, 'daftar']);
+Route::get('/ppdb/status/{kode}', [PpdbController::class, 'status']);
+Route::get('/ppdb/pengaturan', [PpdbController::class, 'pengaturan']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
@@ -58,11 +77,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/pkl-placements/{pklPlacement}/penilaian', [PklPenilaianController::class, 'destroy']);
     });
 
-    // Kelas, Siswa, Wali Siswa, jenis Poin Pelanggaran/Prestasi, Kalender
-    // Libur, Jam Masuk, IDUKA, dan Penempatan PKL — role "waka" (label di
-    // UI: "Admin") diberi akses TULIS penuh yang sama seperti Super Admin
-    // di sini, karena ini memang bagian yang jadi tanggung jawabnya.
-    Route::middleware('role:admin,waka')->group(function () {
+    // Waka Kesiswaan — Kelas, Siswa, Wali Siswa, jenis Poin Pelanggaran/
+    // Prestasi, Kalender Libur, Jam Masuk, ditambah Catatan BK dan Aturan
+    // Sanksi Bertingkat (eskalasi otomatis dari akumulasi poin siswa).
+    Route::middleware('role:admin,waka_kesiswaan')->group(function () {
         Route::apiResource('classes', ClassRoomController::class)->parameters(['classes' => 'classRoom']);
         Route::post('/classes/{classRoom}/luluskan', [ClassRoomController::class, 'luluskan']);
         Route::post('/classes/{classRoom}/aktifkan', [ClassRoomController::class, 'aktifkan']);
@@ -73,11 +91,18 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/students/{student}/reset-password', [StudentController::class, 'resetPassword']);
         Route::get('/settings', [SettingController::class, 'index']);
         Route::put('/settings', [SettingController::class, 'update']);
-        Route::apiResource('violation-types', ViolationTypeController::class)->except(['show']);
-        Route::apiResource('holidays', HolidayController::class)->only(['index', 'store', 'destroy']);
-        Route::post('/holidays/range', [HolidayController::class, 'storeRange']);
-        Route::apiResource('achievement-types', AchievementTypeController::class)->except(['show']);
-        Route::get('/parents', [WaliController::class, 'index']);
+        // "index" DIKECUALIKAN di sini dan didaftarkan terpisah di bawah
+        // (grup role:admin,guru,waka_kesiswaan) — bukan basa-basi, tapi
+        // supaya Guru (yang butuh baca daftar ini buat mencatat pelanggaran/
+        // prestasi manual) tidak perlu 1 rute GET terpisah dengan URI SAMA;
+        // 2 rute berbeda dengan URI+method identik akan membuat Laravel
+        // cuma menyimpan yang terdaftar PALING TERAKHIR (yang lama ketiban,
+        // bukan digabung), jadi role di rute pertama seolah kehilangan akses.
+        Route::apiResource('violation-types', ViolationTypeController::class)->except(['show', 'index']);
+        Route::apiResource('achievement-types', AchievementTypeController::class)->except(['show', 'index']);
+        // "index" DIKECUALIKAN di sini juga — didaftarkan terpisah di bawah
+        // supaya Waka Humas (menu Alumni, cuma baca) ikut bisa akses tanpa
+        // bentrok URI ganda dengan rute ini.
         Route::post('/parents', [WaliController::class, 'store']);
         Route::post('/parents/{parentId}/link', [WaliController::class, 'link']);
         Route::delete('/parents/{parentId}/link/{studentId}', [WaliController::class, 'unlink']);
@@ -85,25 +110,94 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/parents/{id}/reset-password', [WaliController::class, 'resetPassword']);
         Route::get('/parents/import/template', [WaliController::class, 'downloadTemplate']);
         Route::post('/parents/import', [WaliController::class, 'import']);
-        Route::apiResource('dudi', DudiController::class)->except(['show']);
-        Route::put('/dudi/{dudi}/reset-password', [DudiController::class, 'resetPassword']);
-        Route::post('/pkl-placements/tutup-semua-aktif', [PklPlacementController::class, 'tutupSemuaAktif']);
-        Route::post('/pkl-placements/aktifkan-semua-selesai', [PklPlacementController::class, 'aktifkanSemuaSelesai']);
-        Route::apiResource('pkl-placements', PklPlacementController::class)->except(['show']);
+
+        Route::apiResource('bk-cases', BkCaseController::class)->except(['show']);
+        Route::apiResource('sanksi-rules', SanksiRuleController::class)->except(['show']);
+        Route::get('/sanksi-rules/siswa', [SanksiRuleController::class, 'siswa']);
     });
 
-    // Guru, Akun TU, Profil Sekolah, dan Tahun Ajaran TETAP khusus Super
-    // Admin — role "waka" (label di UI: "Admin") cuma boleh LIHAT bagian
-    // ini (lewat grup read-only di bawah), tidak boleh mengubah.
-    Route::middleware('role:admin')->group(function () {
+    // Kalender Libur dipindah ke menu Kurikulum (berdampingan dengan Kalender
+    // Akademik), jadi ditulis Kesiswaan MAUPUN Kurikulum — datanya sama-sama
+    // dipakai kedua bidang (Kesiswaan: proses alpa otomatis, Kurikulum:
+    // tampilan kalender akademik).
+    Route::middleware('role:admin,waka_kesiswaan,waka_kurikulum')->group(function () {
+        Route::apiResource('holidays', HolidayController::class)->only(['store', 'destroy']);
+        Route::post('/holidays/range', [HolidayController::class, 'storeRange']);
+    });
+
+    // Waka Kurikulum — Guru (kelola penuh, beda dari role lain yang cuma
+    // lihat), dan Kalender Akademik (tanggal tahun ajaran + agenda
+    // semester/ujian). Mata Pelajaran/Tugas Mengajar/Jadwal Pelajaran
+    // dipindah ke grup "Pengembangan" (admin-only) di bawah.
+    Route::middleware('role:admin,waka_kurikulum')->group(function () {
         Route::get('/teachers/import/template', [TeacherController::class, 'downloadTemplate']);
         Route::post('/teachers/import', [TeacherController::class, 'import']);
         Route::apiResource('teachers', TeacherController::class)->except(['index', 'show']);
         Route::put('/teachers/{teacher}/reset-password', [TeacherController::class, 'resetPassword']);
+
+        Route::apiResource('academic-events', AcademicEventController::class)->except(['show']);
+
+        Route::post('/tahun-ajaran', [TahunAjaranController::class, 'store']);
+        Route::put('/tahun-ajaran/{id}', [TahunAjaranController::class, 'update']);
+        Route::post('/tahun-ajaran/{id}/aktifkan', [TahunAjaranController::class, 'aktifkan']);
+    });
+
+    // Waka Humas (merangkap Hubin) — Kelola IDUKA penuh. Waka Kurikulum cuma
+    // boleh baca (dipakai buat pilih IDUKA di form Penempatan PKL — index-nya
+    // didaftarkan di grup shared read-only di bawah). Verifikasi pendaftar
+    // PPDB dipindah ke grup "Pengembangan" (admin-only) di bawah.
+    Route::middleware('role:admin,waka_humas')->group(function () {
+        Route::apiResource('dudi', DudiController::class)->except(['show', 'index']);
+        Route::put('/dudi/{dudi}/reset-password', [DudiController::class, 'resetPassword']);
+    });
+
+    // Penempatan PKL — cuma admin & Waka Kurikulum yang boleh tulis. Waka
+    // Humas cuma boleh baca (index-nya didaftarkan di grup shared read-only
+    // di bawah, gabung dengan /teachers, /students, dst).
+    Route::middleware('role:admin,waka_kurikulum')->group(function () {
+        Route::post('/pkl-placements/tutup-semua-aktif', [PklPlacementController::class, 'tutupSemuaAktif']);
+        Route::post('/pkl-placements/aktifkan-semua-selesai', [PklPlacementController::class, 'aktifkanSemuaSelesai']);
+        Route::apiResource('pkl-placements', PklPlacementController::class)->except(['show', 'index']);
+    });
+
+    // Waka Sarpras — Ruang/Lab/Bengkel dan Inventaris Aset. Pemeliharaan &
+    // Pengadaan Barang dipindah ke grup "Pengembangan" (admin-only) di bawah.
+    Route::middleware('role:admin,waka_sarpras')->group(function () {
+        Route::apiResource('rooms', RoomController::class)->except(['show']);
+        Route::apiResource('assets', AssetController::class)->except(['show']);
+    });
+
+    // Menu "Pengembangan" — fitur yang masih tahap uji coba, sengaja cuma
+    // dibuka untuk Super Admin dulu (belum dibagikan ke Waka terkait):
+    // PPDB, Mata Pelajaran, Tugas Mengajar, Jadwal Pelajaran, Pemeliharaan,
+    // dan Pengadaan Barang.
+    Route::middleware('role:admin')->group(function () {
+        Route::get('/ppdb', [PpdbController::class, 'index']);
+        Route::put('/ppdb/pengaturan', [PpdbController::class, 'updatePengaturan']);
+        Route::put('/ppdb/{ppdbPendaftar}', [PpdbController::class, 'update']);
+        Route::delete('/ppdb/{ppdbPendaftar}', [PpdbController::class, 'destroy']);
+
+        Route::apiResource('subjects', SubjectController::class)->except(['show']);
+        Route::apiResource('teaching-assignments', TeachingAssignmentController::class)->except(['show']);
+        Route::post('/periods/seed-default', [PeriodController::class, 'seedDefault']);
+        Route::apiResource('periods', PeriodController::class)->except(['show']);
+        Route::get('/schedules/grid', [ScheduleController::class, 'grid']);
+        Route::get('/schedules/export-word', [ScheduleExportController::class, 'exportWord']);
+        Route::apiResource('schedules', ScheduleController::class)->except(['show', 'index']);
+
+        Route::apiResource('maintenance-requests', MaintenanceRequestController::class)->except(['show']);
+        Route::apiResource('procurements', ProcurementController::class)->except(['show']);
+    });
+
+    // Guru, Akun TU, Profil Sekolah TETAP khusus Super Admin. Tahun Ajaran
+    // (aktifkan/tanggal) sudah dibagi ke Waka Kurikulum di atas — tapi hapus
+    // tahun ajaran tetap di sini karena efeknya permanen ke seluruh riwayat.
+    // Backup & impor (timpa total) database — paling sensitif dari semua
+    // fitur admin, sengaja TIDAK dibagi ke role Waka manapun.
+    Route::middleware('role:admin')->group(function () {
         Route::put('/school-profile', [SchoolProfileController::class, 'update']);
         Route::post('/school-profile/logo', [SchoolProfileController::class, 'uploadLogo']);
-        Route::post('/tahun-ajaran', [TahunAjaranController::class, 'store']);
-        Route::post('/tahun-ajaran/{id}/aktifkan', [TahunAjaranController::class, 'aktifkan']);
+        Route::post('/students/reset-poin', [StudentController::class, 'resetPoin']);
         Route::delete('/tahun-ajaran/{id}', [TahunAjaranController::class, 'destroy']);
         Route::post('/tu', [TuController::class, 'store']);
         Route::delete('/tu/{id}', [TuController::class, 'destroy']);
@@ -113,20 +207,62 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/admin-accounts/{id}', [AdminAccountController::class, 'destroy']);
         Route::put('/admin-accounts/{id}/reset-password', [AdminAccountController::class, 'resetPassword']);
 
-        // Backup & impor (timpa total) database — paling sensitif dari
-        // semua fitur admin, sengaja TIDAK dibagi ke role "waka" sama sekali.
         Route::get('/system/backup', [SystemBackupController::class, 'backup']);
         Route::post('/system/restore', [SystemBackupController::class, 'restore']);
     });
 
-    // Read-only untuk role "waka" (label di UI: "Admin") di bagian yang
-    // bukan tanggung jawabnya.
-    Route::middleware('role:admin,waka')->group(function () {
+    // /teachers dibagi ke Waka Kesiswaan/Kurikulum/Humas (dipakai untuk
+    // pilih guru pembimbing PKL di menu Penempatan). Waka Sarpras TIDAK
+    // diikutkan — menunya sekarang cuma Sarana &amp; Prasarana (rooms/assets),
+    // tidak butuh data guru sama sekali.
+    Route::middleware('role:admin,waka_kesiswaan,waka_kurikulum,waka_humas')->group(function () {
         Route::get('/teachers', [TeacherController::class, 'index']);
         Route::get('/teachers/{teacher}', [TeacherController::class, 'show']);
-        Route::get('/tu', [TuController::class, 'index']);
+    });
+
+    // Daftar penempatan PKL — Waka Humas cuma boleh baca (tulisnya cuma
+    // admin & Waka Kurikulum, lihat grup di atas).
+    Route::middleware('role:admin,waka_humas,waka_kurikulum')->group(function () {
+        Route::get('/pkl-placements', [PklPlacementController::class, 'index']);
+    });
+
+    // Daftar IDUKA — Waka Kurikulum cuma boleh baca (dipakai buat pilih
+    // IDUKA di form Penempatan PKL — tulisnya cuma admin & Waka Humas,
+    // lihat grup di atas).
+    Route::middleware('role:admin,waka_humas,waka_kurikulum')->group(function () {
+        Route::get('/dudi', [DudiController::class, 'index']);
+    });
+
+    // Daftar wali (parents) — Waka Humas cuma boleh baca, dipakai buat menu
+    // Alumni > Wali Siswa Alumni (read-only, aksi hapus/reset/kembalikan
+    // aktif tetap eksklusif milik Kesiswaan di atas).
+    Route::middleware('role:admin,waka_kesiswaan,waka_humas')->group(function () {
+        Route::get('/parents', [WaliController::class, 'index']);
+    });
+
+    // Read-only lintas-modul yang TIDAK relevan ke tugas Humas (PKL/IDUKA
+    // saja) atau Sarpras (Sarana &amp; Prasarana saja) — sengaja tidak
+    // diikutkan di sini, biar keduanya cuma bisa lihat apa yang memang jadi
+    // tanggung jawabnya.
+    Route::middleware('role:admin,waka_kesiswaan,waka_kurikulum')->group(function () {
+        Route::get('/holidays', [HolidayController::class, 'index']);
         Route::get('/tahun-ajaran', [TahunAjaranController::class, 'index']);
+    });
+
+    // /tu dan /dashboard/grafik TIDAK diikutkan buat Waka Kurikulum/Sarpras —
+    // bukan bagian dari tanggung jawabnya.
+    Route::middleware('role:admin,waka_kesiswaan')->group(function () {
+        Route::get('/tu', [TuController::class, 'index']);
         Route::get('/dashboard/grafik', [DashboardChartController::class, 'grafik']);
+    });
+
+    // Daftar jenis Pelanggaran/Prestasi dibaca Guru (buat mencatat manual)
+    // DAN Waka Kesiswaan (pemilik menunya) — didaftarkan sekali di sini
+    // dengan role gabungan supaya tidak bentrok URI dengan rute index yang
+    // dikecualikan dari apiResource waka_kesiswaan di atas.
+    Route::middleware('role:admin,guru,waka_kesiswaan')->group(function () {
+        Route::get('/violation-types', [ViolationTypeController::class, 'index']);
+        Route::get('/achievement-types', [AchievementTypeController::class, 'index']);
     });
 
     Route::middleware('role:admin,guru')->group(function () {
@@ -139,22 +275,20 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/attendance/my-class-report', [AttendanceController::class, 'myClassReport']);
         Route::delete('/violations/{id}', [AttendanceController::class, 'violationDestroy']);
         Route::put('/violations/{id}', [AttendanceController::class, 'violationUpdate']);
-        Route::get('/violation-types', [ViolationTypeController::class, 'index']);
         Route::post('/prayer/scan', [PrayerAttendanceController::class, 'scan']);
         Route::post('/prayer/manual', [PrayerAttendanceController::class, 'manual']);
         Route::get('/prayer/report', [PrayerAttendanceController::class, 'report']);
-        Route::get('/achievement-types', [AchievementController::class, 'types']);
         Route::post('/achievements/record', [AchievementController::class, 'record']);
         Route::delete('/achievements/{id}', [AchievementController::class, 'destroy']);
         Route::put('/achievements/{id}', [AchievementController::class, 'update']);
         Route::get('/pkl-placements/my-bimbingan', [PklPlacementController::class, 'bimbinganSaya']);
     });
 
-    // Laporan (Rekap Absensi/Poin Pelanggaran/Poin Prestasi) — role "waka"
-    // (label di UI: "Admin") boleh lihat isinya, tapi tidak lewat rute
-    // admin,guru di atas yang bisa mengubah data (scan, catat manual, edit,
-    // hapus).
-    Route::middleware('role:admin,guru,waka')->group(function () {
+    // Laporan (Rekap Absensi/Poin Pelanggaran/Poin Prestasi) — Waka Humas &
+    // Waka Kurikulum & Sarpras sengaja tidak diikutkan, bukan bagian dari
+    // tanggung jawab mereka. Tidak lewat rute admin,guru di atas yang bisa
+    // mengubah data.
+    Route::middleware('role:admin,guru,waka_kesiswaan')->group(function () {
         Route::get('/attendance/report', [AttendanceController::class, 'report']);
         Route::get('/attendance/monthly-report', [AttendanceController::class, 'monthlyReport']);
         Route::get('/violations/summary', [AttendanceController::class, 'violationReport']);
@@ -255,10 +389,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/laporan/tunggakan/export', [LaporanController::class, 'tunggakanExport']);
     });
 
-    // Dipisah dari grup role:admin,guru di atas supaya TU juga bisa akses
-    // (butuh daftar kelas & siswa buat filter menu SPP), tanpa memberi TU
-    // akses ke rute lain di grup itu (absensi, pelanggaran, dll).
-    Route::middleware('role:admin,guru,tu,waka')->group(function () {
+    // Dipisah dari grup role:admin,guru di atas supaya TU & Waka lain juga
+    // bisa akses (butuh daftar kelas & siswa buat filter menu masing-masing),
+    // tanpa memberi TU akses ke rute lain di grup itu (absensi, pelanggaran,
+    // dll). Waka Sarpras TIDAK diikutkan — Sarana &amp; Prasarana tidak butuh
+    // data kelas/siswa sama sekali.
+    Route::middleware('role:admin,guru,tu,waka_kesiswaan,waka_kurikulum,waka_humas')->group(function () {
         Route::get('/classes', [ClassRoomController::class, 'index']);
         Route::get('/students', [StudentController::class, 'index']);
     });

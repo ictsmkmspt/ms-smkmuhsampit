@@ -3,17 +3,15 @@ import TeachersTab from './TeachersTab';
 import ClassesTab from './ClassesTab';
 import WaliTab from './WaliTab';
 import TuAccountsTab from './TuAccountsTab';
-import AlumniTab from './AlumniTab';
 import AdminAccountsTab from './AdminAccountsTab';
 
 export const MASTER_DATA_SUBMENU = [
-  { key: 'guru',  label: 'Guru',  component: TeachersTab },
-  { key: 'tu',    label: 'TU', component: TuAccountsTab },
-  { key: 'kelas', label: 'Kelas', component: ClassesTab },
-  { key: 'siswa', label: 'Siswa', component: StudentsTab },
-  { key: 'wali',  label: 'Wali Siswa', component: WaliTab },
-  { key: 'alumni', label: 'Alumni', component: AlumniTab },
-  { key: 'admin', label: 'Kelola Admin', component: AdminAccountsTab, adminOnly: true },
+  { key: 'admin', label: 'Admin', component: AdminAccountsTab, adminOnly: true },
+  { key: 'guru',  label: 'Guru',  component: TeachersTab, restrictTo: ['waka_kurikulum', 'waka_humas'] },
+  { key: 'tu',    label: 'TU', component: TuAccountsTab, restrictTo: ['waka_humas'] },
+  { key: 'kelas', label: 'Kelas', component: ClassesTab, restrictTo: ['waka_kesiswaan'] },
+  { key: 'siswa', label: 'Siswa', component: StudentsTab, restrictTo: ['waka_kesiswaan'] },
+  { key: 'wali',  label: 'Wali Siswa', component: WaliTab, restrictTo: ['waka_kesiswaan'] },
 ];
 
 export default function MasterDataTab({ activeSub }) {

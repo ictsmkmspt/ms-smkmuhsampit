@@ -6,8 +6,10 @@ use App\Exports\StudentTemplateExport;
 use App\Http\Controllers\Api\Concerns\ResetsPasswordToDefault;
 use App\Http\Controllers\Controller;
 use App\Imports\StudentsImport;
+use App\Models\Achievement;
 use App\Models\Student;
 use App\Models\User;
+use App\Models\Violation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -92,6 +94,27 @@ class StudentController extends Controller
     {
         $this->resetToDefaultPassword($student->user);
         return response()->json(['message' => 'Password siswa "' . $student->user->name . '" berhasil direset ke default (123456).']);
+    }
+
+    /**
+     * KHUSUS BANTU PENGEMBANGAN/TESTING — hapus TOTAL seluruh riwayat
+     * Violation & Achievement (semua siswa, termasuk alumni), lalu reset
+     * total_poin/total_prestasi semua siswa ke 0. BEDA dari
+     * TahunAjaranController::aktifkan() yang cuma menghitung ulang total
+     * tanpa menghapus riwayat apa pun — endpoint ini betul-betul
+     * menghapus data, sengaja TIDAK dipakai di alur operasional sekolah.
+     */
+    public function resetPoin()
+    {
+        DB::transaction(function () {
+            Violation::query()->delete();
+            Achievement::query()->delete();
+            Student::query()->update(['total_poin' => 0, 'total_prestasi' => 0]);
+        });
+
+        return response()->json([
+            'message' => 'Seluruh riwayat pelanggaran & prestasi dihapus, dan total poin semua siswa direset ke 0.',
+        ]);
     }
 
     /**

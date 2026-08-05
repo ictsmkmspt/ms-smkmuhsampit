@@ -2,8 +2,14 @@ import { useEffect, useState } from 'react';
 import { GraduationCap, ChevronRight, ChevronLeft, RotateCcw, Undo2 } from 'lucide-react';
 import api from '../../../api/axios';
 import TruncateText from '../../../components/TruncateText';
+import { useAuth } from '../../../context/AuthContext';
 
 export default function AlumniTab() {
+  const { user } = useAuth();
+  // Waka Humas cuma boleh lihat menu Alumni (buat keperluan Hubin/tracking
+  // alumni) — "Kembalikan ke Aktif" dan "Aktifkan Kelas Ini" tetap eksklusif
+  // milik Kesiswaan, backend-nya juga sudah menolak Humas di kedua endpoint.
+  const canEdit = user.role === 'admin' || user.role === 'waka_kesiswaan';
   const [classes, setClasses] = useState([]);
   const [loadingClasses, setLoadingClasses] = useState(true);
 
@@ -52,7 +58,7 @@ export default function AlumniTab() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="font-display font-semibold text-ink-900 text-lg">Alumni</h2>
+        <h2 className="font-display font-semibold text-ink-900 text-lg">Alumni Siswa</h2>
         <p className="text-sm text-ink-500">Kelas yang sudah diluluskan. Data & riwayatnya tetap tersimpan, hanya disembunyikan dari Master Data &gt; Kelas.</p>
       </div>
 
@@ -65,12 +71,14 @@ export default function AlumniTab() {
                 <p className="text-xs text-ink-500">{selectedClass.students_count ?? 0} alumni</p>
               </div>
               <div className="flex items-center gap-2">
-                <button
-                  onClick={() => handleAktifkanKelas(selectedClass)}
-                  className="flex items-center gap-1.5 text-xs font-medium text-white bg-[#15803D] hover:bg-[#116530] rounded-lg px-3 py-1.5"
-                >
-                  <Undo2 className="w-3.5 h-3.5" /> Aktifkan Kelas Ini
-                </button>
+                {canEdit && (
+                  <button
+                    onClick={() => handleAktifkanKelas(selectedClass)}
+                    className="flex items-center gap-1.5 text-xs font-medium text-white bg-[#15803D] hover:bg-[#116530] rounded-lg px-3 py-1.5"
+                  >
+                    <Undo2 className="w-3.5 h-3.5" /> Aktifkan Kelas Ini
+                  </button>
+                )}
                 <button onClick={backToClasses} className="flex items-center gap-1.5 text-xs font-medium text-ink-500 hover:text-ink-700 border border-line-200 rounded-lg px-3 py-1.5">
                   <ChevronLeft className="w-3.5 h-3.5" /> Kembali ke Daftar Kelas
                 </button>
@@ -88,7 +96,7 @@ export default function AlumniTab() {
                     <th className="pb-2 font-medium">Nama</th>
                     <th className="font-medium">NIS</th>
                     <th className="font-medium">Tanggal Lulus</th>
-                    <th className="font-medium text-right">Aksi</th>
+                    {canEdit && <th className="font-medium text-right">Aksi</th>}
                   </tr>
                 </thead>
                 <tbody>
@@ -97,14 +105,16 @@ export default function AlumniTab() {
                       <td className="py-2.5 text-ink-900"><TruncateText text={s.user?.name} /></td>
                       <td className="text-ink-700">{s.nis}</td>
                       <td className="text-ink-700">{s.tanggal_lulus || '-'}</td>
-                      <td className="text-right">
-                        <button
-                          onClick={() => handleKembalikan(s)}
-                          className="inline-flex items-center gap-1.5 text-xs font-medium text-ink-500 hover:text-brand-600 border border-line-200 rounded-lg px-3 py-1.5"
-                        >
-                          <RotateCcw className="w-3.5 h-3.5" /> Kembalikan ke Aktif
-                        </button>
-                      </td>
+                      {canEdit && (
+                        <td className="text-right">
+                          <button
+                            onClick={() => handleKembalikan(s)}
+                            className="inline-flex items-center gap-1.5 text-xs font-medium text-ink-500 hover:text-brand-600 border border-line-200 rounded-lg px-3 py-1.5"
+                          >
+                            <RotateCcw className="w-3.5 h-3.5" /> Kembalikan ke Aktif
+                          </button>
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>

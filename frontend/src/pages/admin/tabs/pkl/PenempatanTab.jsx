@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Plus, Trash2, ClipboardList, PowerOff } from 'lucide-react';
 import api from '../../../../api/axios';
 import TruncateText from '../../../../components/TruncateText';
+import { useAuth } from '../../../../context/AuthContext';
 
 const emptyForm = {
   student_id: '', dudi_id: '', guru_pembimbing_id: '',
@@ -9,6 +10,12 @@ const emptyForm = {
 };
 
 export default function PenempatanTab() {
+  const { user } = useAuth();
+  // Waka Humas cuma boleh baca data penempatan PKL (buat data IDUKA-nya
+  // sendiri) — yang boleh buat/ubah/hapus penempatan cuma admin & Waka
+  // Kurikulum, sesuai pembagian tanggung jawab yang backend-nya juga sudah
+  // batasi (POST/PUT/DELETE /pkl-placements ditolak buat waka_humas).
+  const canEdit = user.role === 'admin' || user.role === 'waka_kurikulum';
   const [list, setList] = useState([]);
   const [students, setStudents] = useState([]);
   const [dudiList, setDudiList] = useState([]);
@@ -137,41 +144,43 @@ export default function PenempatanTab() {
         </p>
       </div>
 
-      <form onSubmit={handleAdd} className="surface-card p-5">
-        <h2 className="font-display font-semibold text-ink-900 mb-4">Buat Penempatan PKL</h2>
-        {error && <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2 mb-3">{error}</p>}
-        <div className="grid grid-cols-2 gap-3">
-          <select value={form.student_id} onChange={(e) => setForm({ ...form, student_id: e.target.value })} className="field-input text-ink-700 col-span-2" required>
-            <option value="">— Pilih Siswa —</option>
-            {students.map((s) => (
-              <option key={s.id} value={s.id}>{s.user?.name} · {s.class_room?.name || 'Tanpa kelas'}</option>
-            ))}
-          </select>
-          <select value={form.dudi_id} onChange={(e) => setForm({ ...form, dudi_id: e.target.value })} className="field-input text-ink-700" required>
-            <option value="">— Pilih IDUKA —</option>
-            {dudiList.map((d) => (
-              <option key={d.id} value={d.id}>{d.nama_perusahaan}</option>
-            ))}
-          </select>
-          <select value={form.guru_pembimbing_id} onChange={(e) => setForm({ ...form, guru_pembimbing_id: e.target.value })} className="field-input text-ink-700">
-            <option value="">— Pilih Guru Pembimbing (opsional) —</option>
-            {teachers.map((t) => (
-              <option key={t.id} value={t.id}>{t.user?.name}</option>
-            ))}
-          </select>
-          <div>
-            <label className="block text-xs font-medium text-ink-500 mb-1">Tanggal Mulai</label>
-            <input type="date" value={form.tanggal_mulai} onChange={(e) => setForm({ ...form, tanggal_mulai: e.target.value })} className="field-input w-full" required />
+      {canEdit && (
+        <form onSubmit={handleAdd} className="surface-card p-5">
+          <h2 className="font-display font-semibold text-ink-900 mb-4">Buat Penempatan PKL</h2>
+          {error && <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2 mb-3">{error}</p>}
+          <div className="grid grid-cols-2 gap-3">
+            <select value={form.student_id} onChange={(e) => setForm({ ...form, student_id: e.target.value })} className="field-input text-ink-700 col-span-2" required>
+              <option value="">— Pilih Siswa —</option>
+              {students.map((s) => (
+                <option key={s.id} value={s.id}>{s.user?.name} · {s.class_room?.name || 'Tanpa kelas'}</option>
+              ))}
+            </select>
+            <select value={form.dudi_id} onChange={(e) => setForm({ ...form, dudi_id: e.target.value })} className="field-input text-ink-700" required>
+              <option value="">— Pilih IDUKA —</option>
+              {dudiList.map((d) => (
+                <option key={d.id} value={d.id}>{d.nama_perusahaan}</option>
+              ))}
+            </select>
+            <select value={form.guru_pembimbing_id} onChange={(e) => setForm({ ...form, guru_pembimbing_id: e.target.value })} className="field-input text-ink-700">
+              <option value="">— Pilih Guru Pembimbing (opsional) —</option>
+              {teachers.map((t) => (
+                <option key={t.id} value={t.id}>{t.user?.name}</option>
+              ))}
+            </select>
+            <div>
+              <label className="block text-xs font-medium text-ink-500 mb-1">Tanggal Mulai</label>
+              <input type="date" value={form.tanggal_mulai} onChange={(e) => setForm({ ...form, tanggal_mulai: e.target.value })} className="field-input w-full" required />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-ink-500 mb-1">Tanggal Selesai</label>
+              <input type="date" value={form.tanggal_selesai} onChange={(e) => setForm({ ...form, tanggal_selesai: e.target.value })} className="field-input w-full" required />
+            </div>
           </div>
-          <div>
-            <label className="block text-xs font-medium text-ink-500 mb-1">Tanggal Selesai</label>
-            <input type="date" value={form.tanggal_selesai} onChange={(e) => setForm({ ...form, tanggal_selesai: e.target.value })} className="field-input w-full" required />
-          </div>
-        </div>
-        <button disabled={loading} className="btn-primary mt-4">
-          <Plus className="w-4 h-4" /> {loading ? 'Menyimpan...' : 'Buat Penempatan'}
-        </button>
-      </form>
+          <button disabled={loading} className="btn-primary mt-4">
+            <Plus className="w-4 h-4" /> {loading ? 'Menyimpan...' : 'Buat Penempatan'}
+          </button>
+        </form>
+      )}
 
       <div className="surface-card p-5">
         <div className="flex items-center justify-between mb-1 flex-wrap gap-3">
@@ -184,22 +193,26 @@ export default function PenempatanTab() {
               <option value="aktif">Aktif</option>
               <option value="selesai">Selesai</option>
             </select>
-            <button
-              onClick={handleTutupSemuaAktif}
-              disabled={closingAll || aktifCount === 0}
-              className="flex items-center gap-1.5 text-sm font-medium text-honey-700 bg-honey-50 hover:bg-honey-100 disabled:opacity-40 border border-honey-200 rounded-xl px-3 py-2 transition whitespace-nowrap"
-              title="Tutup semua penempatan yang masih aktif (ditandai Selesai) — data riwayatnya tetap tersimpan."
-            >
-              <PowerOff className="w-4 h-4" /> Tutup PKL ({aktifCount})
-            </button>
-            <button
-              onClick={handleAktifkanSemuaSelesai}
-              disabled={activatingAll || selesaiCount === 0}
-              className="flex items-center gap-1.5 text-sm font-medium text-brand-700 bg-brand-50 hover:bg-brand-100 disabled:opacity-40 border border-brand-200 rounded-xl px-3 py-2 transition whitespace-nowrap"
-              title="Aktifkan kembali semua penempatan yang berstatus Selesai."
-            >
-              <PowerOff className="w-4 h-4 rotate-180" /> Aktif PKL ({selesaiCount})
-            </button>
+            {canEdit && (
+              <button
+                onClick={handleTutupSemuaAktif}
+                disabled={closingAll || aktifCount === 0}
+                className="flex items-center gap-1.5 text-sm font-medium text-honey-700 bg-honey-50 hover:bg-honey-100 disabled:opacity-40 border border-honey-200 rounded-xl px-3 py-2 transition whitespace-nowrap"
+                title="Tutup semua penempatan yang masih aktif (ditandai Selesai) — data riwayatnya tetap tersimpan."
+              >
+                <PowerOff className="w-4 h-4" /> Tutup PKL ({aktifCount})
+              </button>
+            )}
+            {canEdit && (
+              <button
+                onClick={handleAktifkanSemuaSelesai}
+                disabled={activatingAll || selesaiCount === 0}
+                className="flex items-center gap-1.5 text-sm font-medium text-brand-700 bg-brand-50 hover:bg-brand-100 disabled:opacity-40 border border-brand-200 rounded-xl px-3 py-2 transition whitespace-nowrap"
+                title="Aktifkan kembali semua penempatan yang berstatus Selesai."
+              >
+                <PowerOff className="w-4 h-4 rotate-180" /> Aktif PKL ({selesaiCount})
+              </button>
+            )}
           </div>
         </div>
         <p className="text-xs text-ink-400 mb-4">Cuma menampilkan penempatan tahun ajaran yang sedang aktif. Data tahun ajaran sebelumnya tidak dihapus, cuma disembunyikan dari daftar ini.</p>
@@ -211,7 +224,7 @@ export default function PenempatanTab() {
               <th className="font-medium">Pembimbing</th>
               <th className="font-medium">Periode</th>
               <th className="font-medium">Status</th>
-              <th className="pb-2 w-20"></th>
+              {canEdit && <th className="pb-2 w-20"></th>}
             </tr>
           </thead>
           <tbody>
@@ -225,17 +238,25 @@ export default function PenempatanTab() {
                 <td className="text-ink-700"><TruncateText text={p.guru_pembimbing?.user?.name} /></td>
                 <td className="text-ink-700 text-xs">{p.tanggal_mulai} s/d {p.tanggal_selesai}</td>
                 <td>
-                  <button onClick={() => handleUbahStatus(p, p.status === 'aktif' ? 'selesai' : 'aktif')}>
+                  {canEdit ? (
+                    <button onClick={() => handleUbahStatus(p, p.status === 'aktif' ? 'selesai' : 'aktif')}>
+                      <span className={`badge-soft ${p.status === 'aktif' ? 'badge-brand' : 'badge-soft'}`}>
+                        {p.status === 'aktif' ? 'Aktif' : 'Selesai'}
+                      </span>
+                    </button>
+                  ) : (
                     <span className={`badge-soft ${p.status === 'aktif' ? 'badge-brand' : 'badge-soft'}`}>
                       {p.status === 'aktif' ? 'Aktif' : 'Selesai'}
                     </span>
-                  </button>
+                  )}
                 </td>
-                <td className="text-right">
-                  <button onClick={() => handleDelete(p)} className="text-ink-300 hover:text-honey-700">
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </td>
+                {canEdit && (
+                  <td className="text-right">
+                    <button onClick={() => handleDelete(p)} className="text-ink-300 hover:text-honey-700">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </td>
+                )}
               </tr>
             ))}
             {list.length === 0 && (

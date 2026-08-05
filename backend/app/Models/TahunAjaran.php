@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class TahunAjaran extends Model
 {
-    protected $fillable = ['nama', 'status'];
+    protected $fillable = ['nama', 'status', 'tanggal_mulai', 'tanggal_selesai'];
 
     public function violations()
     {
@@ -31,6 +31,31 @@ class TahunAjaran extends Model
     public function prayerAttendances()
     {
         return $this->hasMany(PrayerAttendance::class);
+    }
+
+    public function academicEvents()
+    {
+        return $this->hasMany(AcademicEvent::class);
+    }
+
+    public function teachingAssignments()
+    {
+        return $this->hasMany(TeachingAssignment::class);
+    }
+
+    public function schedules()
+    {
+        return $this->hasMany(Schedule::class);
+    }
+
+    public function periods()
+    {
+        return $this->hasMany(Period::class);
+    }
+
+    public function bkCases()
+    {
+        return $this->hasMany(BkCase::class);
     }
 
     /**

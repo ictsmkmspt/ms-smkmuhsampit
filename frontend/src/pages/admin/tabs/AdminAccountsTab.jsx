@@ -4,12 +4,19 @@ import api from '../../../api/axios';
 import TruncateText from '../../../components/TruncateText';
 import { useAuth } from '../../../context/AuthContext';
 
-const ROLE_LABEL = { admin: 'Super Admin', waka: 'Admin' };
+const ROLE_LABEL = {
+  admin: 'Super Admin',
+  waka: 'Admin',
+  waka_kesiswaan: 'Waka Kesiswaan',
+  waka_kurikulum: 'Waka Kurikulum',
+  waka_humas: 'Waka Humas',
+  waka_sarpras: 'Waka Sarpras',
+};
 
 export default function AdminAccountsTab() {
   const { user } = useAuth();
   const [accounts, setAccounts] = useState([]);
-  const [form, setForm] = useState({ name: '', email: '', role: 'waka' });
+  const [form, setForm] = useState({ name: '', email: '', role: 'waka_kesiswaan' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -22,7 +29,7 @@ export default function AdminAccountsTab() {
     setLoading(true);
     try {
       await api.post('/admin-accounts', form);
-      setForm({ name: '', email: '', role: 'waka' });
+      setForm({ name: '', email: '', role: 'waka_kesiswaan' });
       loadAccounts();
     } catch (err) {
       const msgs = err.response?.data?.errors;
@@ -57,13 +64,16 @@ export default function AdminAccountsTab() {
       <form onSubmit={handleAdd} className="surface-card p-5">
         <h2 className="font-display font-semibold text-ink-900 mb-1">Tambah Akun Admin</h2>
         <p className="text-xs text-ink-500 mb-4">
-          <b>Super Admin</b> punya akses penuh ke semua menu. <b>Admin</b> hanya bisa mengelola Kelas/Siswa/Wali/Alumni, Jam Masuk/Poin/Libur, dan PKL — menu Guru, Akun TU, Profil Sekolah, Tahun Ajaran, dan Laporan hanya bisa dilihat, tidak bisa diubah. Password akun otomatis dibuat "123456" — wajib diganti saat login pertama.
+          <b>Super Admin</b> punya akses penuh ke semua menu. Tiap <b>Waka</b> hanya melihat & mengelola menu sesuai bidangnya sendiri — Kesiswaan (Kelas/Siswa/Wali/Poin/BK/Sanksi), Kurikulum (Guru/Mapel/Jadwal/Kalender Akademik), Humas (IDUKA/PKL/PPDB), atau Sarpras (Ruang/Aset/Pemeliharaan/Pengadaan). Password akun otomatis dibuat "123456" — wajib diganti saat login pertama.
         </p>
         {error && <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2 mb-3">{error}</p>}
         <div className="grid grid-cols-2 gap-3">
           <input placeholder="Nama" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="field-input" required />
           <select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })} className="field-input text-ink-700">
-            <option value="waka">Admin</option>
+            <option value="waka_kesiswaan">Waka Kesiswaan</option>
+            <option value="waka_kurikulum">Waka Kurikulum</option>
+            <option value="waka_humas">Waka Humas</option>
+            <option value="waka_sarpras">Waka Sarpras</option>
             <option value="admin">Super Admin</option>
           </select>
           <input placeholder="Email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="field-input col-span-2" required autoComplete="off" />

@@ -1,60 +1,117 @@
 import { useState } from 'react';
 import {
-  LogOut, Database, ClipboardList, Settings, ChevronDown, ChevronLeft, ChevronRight, Menu, X,
-  Users, GraduationCap, School, UserCog, Briefcase, LayoutDashboard, Building2, ClipboardCheck,
+  LogOut, Database, ClipboardList, ClipboardCheck, Settings, ChevronDown, ChevronLeft, ChevronRight, Menu, X,
+  Users, GraduationCap, School, UserCog, Briefcase, LayoutDashboard, Building2,
   Clock, AlertOctagon, Trophy, CalendarDays, Wallet, Pencil, Image, ShieldCheck,
+  AlertTriangle, BookOpen, CalendarClock, CalendarRange, Warehouse, Boxes, Wrench, PackagePlus, UserPlus, DatabaseBackup, FlaskConical,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useSchoolProfile } from '../../context/SchoolProfileContext';
 import MasterDataTab, { MASTER_DATA_SUBMENU } from './tabs/MasterDataTab';
-import ReportTab, { REPORT_SUBMENU } from './tabs/ReportTab';
+import AlumniMenuTab, { ALUMNI_SUBMENU } from './tabs/AlumniMenuTab';
+import PoinTab, { POIN_SUBMENU } from './tabs/PoinTab';
 import SettingsTab, { SETTINGS_SUBMENU } from './tabs/SettingsTab';
 import PklTab, { PKL_SUBMENU } from './tabs/PklTab';
+import PengembanganTab, { PENGEMBANGAN_SUBMENU } from './tabs/PengembanganTab';
+import KurikulumTab, { KURIKULUM_SUBMENU } from './tabs/KurikulumTab';
+import SarprasTab, { SARPRAS_SUBMENU } from './tabs/SarprasTab';
 import DashboardHomeTab from './tabs/DashboardHomeTab';
+import AttendanceReportTab from './tabs/AttendanceReportTab';
 import EditProfileModal from '../../components/EditProfileModal';
 
-const MASTER_ICONS = { siswa: Users, guru: GraduationCap, kelas: School, wali: UserCog, tu: Wallet, alumni: GraduationCap, admin: ShieldCheck };
-const SETTINGS_ICONS = { sekolah: Image, jam: Clock, poin: AlertOctagon, prestasi: Trophy, libur: CalendarDays };
+const ROLE_LABEL = {
+  admin: 'Super Admin',
+  waka: 'Admin',
+  waka_kesiswaan: 'Waka Kesiswaan',
+  waka_kurikulum: 'Waka Kurikulum',
+  waka_humas: 'Waka Humas',
+  waka_sarpras: 'Waka Sarpras',
+};
+
+const MASTER_ICONS = { siswa: Users, guru: GraduationCap, kelas: School, wali: UserCog, tu: Wallet, admin: ShieldCheck };
+const ALUMNI_ICONS = { siswa: GraduationCap, wali: UserCog };
+const SETTINGS_ICONS = { sekolah: Image, jam: Clock, backup: DatabaseBackup };
 const PKL_ICONS = { dudi: Building2, penempatan: ClipboardList };
-const REPORT_ICONS = { absensi: ClipboardCheck, poin: AlertOctagon, prestasi: Trophy };
+const POIN_ICONS = { 'rekap-pelanggaran': AlertOctagon, 'rekap-prestasi': Trophy, 'jenis-pelanggaran': AlertOctagon, 'jenis-prestasi': Trophy, sanksi: AlertTriangle };
+const KURIKULUM_ICONS = { kalender: CalendarRange, libur: CalendarDays };
+const SARPRAS_ICONS = { ruang: Warehouse, aset: Boxes };
+const PENGEMBANGAN_ICONS = { ppdb: UserPlus, mapel: BookOpen, tugas: UserCog, jadwal: CalendarClock, pemeliharaan: Wrench, pengadaan: PackagePlus };
 
 export default function AdminDashboard() {
   const { user, logout } = useAuth();
   const { profile } = useSchoolProfile();
   const [activeTab, setActiveTab] = useState('dashboard');
 
-  // Menu "Kelola Admin" (di dalam Master Data) khusus Super Admin — Admin
-  // (role "waka") tidak boleh lihat apalagi mengubah akun admin lain.
-  const masterDataSubmenu = MASTER_DATA_SUBMENU.filter((s) => !s.adminOnly || user.role === 'admin');
+  // Tiap peran Waka cuma lihat menu & sub-menu sesuai bidangnya sendiri —
+  // Super Admin (role "admin") selalu lihat semuanya. `restrictTo` di tiap
+  // entri submenu (dan `roles` di tiap tab) berisi daftar role waka_* yang
+  // boleh melihatnya, selain admin.
+  const bisaLihat = (allowed) => !allowed || user.role === 'admin' || allowed.includes(user.role);
+  const masterDataSubmenu = MASTER_DATA_SUBMENU
+    .filter((s) => !s.adminOnly || user.role === 'admin')
+    .filter((s) => bisaLihat(s.restrictTo));
+  const settingsSubmenu = SETTINGS_SUBMENU.filter((s) => bisaLihat(s.restrictTo));
+  const pklSubmenu = PKL_SUBMENU.filter((s) => bisaLihat(s.restrictTo));
+  const poinSubmenu = POIN_SUBMENU.filter((s) => bisaLihat(s.restrictTo));
 
   const TABS = [
     { key: 'dashboard',  label: 'Dashboard',   icon: LayoutDashboard, component: DashboardHomeTab },
-    { key: 'master',     label: 'Master Data', icon: Database,        hasDropdown: true, submenu: masterDataSubmenu, subIcons: MASTER_ICONS },
-    { key: 'laporan',    label: 'Laporan',     icon: ClipboardList,   hasDropdown: true, submenu: REPORT_SUBMENU, subIcons: REPORT_ICONS },
-    { key: 'pkl',        label: 'PKL',         icon: Briefcase,       hasDropdown: true, submenu: PKL_SUBMENU, subIcons: PKL_ICONS },
-    { key: 'pengaturan', label: 'Pengaturan',  icon: Settings,        hasDropdown: true, submenu: SETTINGS_SUBMENU, subIcons: SETTINGS_ICONS },
-  ];
-  const [activeMasterSub, setActiveMasterSub] = useState('siswa');
+    { key: 'master',     label: 'Master Data', icon: Database,        hasDropdown: true, submenu: masterDataSubmenu, subIcons: MASTER_ICONS, roles: ['waka_kesiswaan', 'waka_kurikulum'] },
+    { key: 'alumni',     label: 'Alumni',      icon: GraduationCap,   hasDropdown: true, submenu: ALUMNI_SUBMENU, subIcons: ALUMNI_ICONS, roles: ['waka_kesiswaan', 'waka_humas'] },
+    { key: 'absensi',    label: 'Rekap Absensi', icon: ClipboardCheck, component: AttendanceReportTab, roles: ['waka_kesiswaan'] },
+    { key: 'poin',       label: 'Poin',        icon: ClipboardList,   hasDropdown: true, submenu: poinSubmenu, subIcons: POIN_ICONS, roles: ['waka_kesiswaan'] },
+    { key: 'pkl',        label: 'PKL',         icon: Briefcase,       hasDropdown: true, submenu: pklSubmenu, subIcons: PKL_ICONS, roles: ['waka_humas', 'waka_kurikulum'] },
+    { key: 'kurikulum',  label: 'Pelajaran',   icon: BookOpen,        hasDropdown: true, submenu: KURIKULUM_SUBMENU, subIcons: KURIKULUM_ICONS, roles: ['waka_kurikulum'] },
+    { key: 'sarpras',    label: 'Sarana dan Prasarana', icon: Wrench, hasDropdown: true, submenu: SARPRAS_SUBMENU, subIcons: SARPRAS_ICONS, roles: ['waka_sarpras'] },
+    { key: 'pengaturan', label: 'Pengaturan',  icon: Settings,        hasDropdown: true, submenu: settingsSubmenu, subIcons: SETTINGS_ICONS, roles: [] },
+    { key: 'pengembangan', label: 'Pengembangan', icon: FlaskConical, hasDropdown: true, submenu: PENGEMBANGAN_SUBMENU, subIcons: PENGEMBANGAN_ICONS, roles: [] },
+  ].filter((t) => bisaLihat(t.roles));
+  // Default sub Master Data beda per peran karena "guru"/"tu" disembunyikan
+  // dari Kesiswaan (dan sebaliknya siswa/kelas/wali/alumni cuma milik
+  // Kesiswaan) — kalau dipaksa 1 default yang sama, submenu yang aktif saat
+  // pertama buka bisa jadi tidak kelihatan di sidebar peran tersebut.
+  const [activeMasterSub, setActiveMasterSub] = useState(user.role === 'waka_kesiswaan' ? 'kelas' : 'guru');
+  const [activeAlumniSub, setActiveAlumniSub] = useState('siswa');
   const [activeSettingsSub, setActiveSettingsSub] = useState('jam');
   const [activePklSub, setActivePklSub] = useState('dudi');
-  const [activeReportSub, setActiveReportSub] = useState('absensi');
+  const [activePengembanganSub, setActivePengembanganSub] = useState('ppdb');
+  // "rekap-pelanggaran" dipakai sebagai default karena satu-satunya sub-menu
+  // Poin yang kelihatan oleh SEMUA peran — sub lain (jenis-pelanggaran,
+  // jenis-prestasi, sanksi) direstriksi ke Kesiswaan saja.
+  const [activePoinSub, setActivePoinSub] = useState('rekap-pelanggaran');
+  const [activeKurikulumSub, setActiveKurikulumSub] = useState('mapel');
+  const [activeSarprasSub, setActiveSarprasSub] = useState('ruang');
   const [openDropdown, setOpenDropdown] = useState(null); // 'master' | 'pengaturan' | null
   const [collapsed, setCollapsed] = useState(false); // toggle sidebar desktop
   const [mobileOpen, setMobileOpen] = useState(false); // toggle dropdown menu di HP
   const [showEditProfil, setShowEditProfil] = useState(false);
 
-  const active = TABS.find((t) => t.key === activeTab);
+  const active = TABS.find((t) => t.key === activeTab) || TABS[0];
   const ActiveComponent = active?.component;
   const initial = user.name?.charAt(0)?.toUpperCase() || '?';
 
-  // Tiap tab yang punya dropdown (Master Data, Pengaturan) punya "sub aktif"
-  // masing-masing sendiri, disimpan terpisah supaya tidak saling menimpa.
+  // Tiap tab yang punya dropdown punya "sub aktif" masing-masing sendiri,
+  // disimpan terpisah supaya tidak saling menimpa.
   const subStateFor = (key) => {
     if (key === 'master') return [activeMasterSub, setActiveMasterSub];
+    if (key === 'alumni') return [activeAlumniSub, setActiveAlumniSub];
     if (key === 'pengaturan') return [activeSettingsSub, setActiveSettingsSub];
     if (key === 'pkl') return [activePklSub, setActivePklSub];
-    if (key === 'laporan') return [activeReportSub, setActiveReportSub];
+    if (key === 'pengembangan') return [activePengembanganSub, setActivePengembanganSub];
+    if (key === 'poin') return [activePoinSub, setActivePoinSub];
+    if (key === 'kurikulum') return [activeKurikulumSub, setActiveKurikulumSub];
+    if (key === 'sarpras') return [activeSarprasSub, setActiveSarprasSub];
     return [null, () => {}];
+  };
+
+  // Dipakai tombol pintasan di Dashboard (mis. panduan awal per role) buat
+  // langsung pindah ke tab+sub tertentu tanpa user harus cari sendiri di sidebar.
+  const gotoTab = (tabKey, subKey) => {
+    setActiveTab(tabKey);
+    if (subKey) {
+      const [, setSub] = subStateFor(tabKey);
+      setSub(subKey);
+    }
   };
 
   const handleTabClick = (tab) => {
@@ -212,7 +269,7 @@ export default function AdminDashboard() {
             <div className="min-w-0 flex-1 flex items-center justify-between gap-2">
               <div className="min-w-0">
                 <p className="text-sm font-medium text-white truncate">{user.name}</p>
-                <p className="text-xs text-white/50">{user.role === 'waka' ? 'Admin' : 'Super Admin'}</p>
+                <p className="text-xs text-white/50">{ROLE_LABEL[user.role] || 'Super Admin'}</p>
               </div>
               <button
                 onClick={() => setShowEditProfil(true)}
@@ -247,14 +304,22 @@ export default function AdminDashboard() {
         <div className="px-4 md:px-8 py-6 max-w-6xl mx-auto">
           {activeTab === 'master' ? (
             <MasterDataTab activeSub={activeMasterSub} />
+          ) : activeTab === 'alumni' ? (
+            <AlumniMenuTab activeSub={activeAlumniSub} />
           ) : activeTab === 'pengaturan' ? (
             <SettingsTab activeSub={activeSettingsSub} />
           ) : activeTab === 'pkl' ? (
             <PklTab activeSub={activePklSub} />
-          ) : activeTab === 'laporan' ? (
-            <ReportTab activeSub={activeReportSub} />
+          ) : activeTab === 'pengembangan' ? (
+            <PengembanganTab activeSub={activePengembanganSub} />
+          ) : activeTab === 'poin' ? (
+            <PoinTab activeSub={activePoinSub} />
+          ) : activeTab === 'kurikulum' ? (
+            <KurikulumTab activeSub={activeKurikulumSub} />
+          ) : activeTab === 'sarpras' ? (
+            <SarprasTab activeSub={activeSarprasSub} />
           ) : (
-            ActiveComponent && <ActiveComponent />
+            ActiveComponent && <ActiveComponent onNavigate={gotoTab} />
           )}
         </div>
       </div>

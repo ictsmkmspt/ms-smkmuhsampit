@@ -4,6 +4,7 @@ import { SchoolProfileProvider } from './context/SchoolProfileContext';
 import ProtectedRoute from './components/ProtectedRoute';
 
 import Login from './pages/Login';
+import PpdbPublic from './pages/PpdbPublic';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import GuruDashboard from './pages/guru/GuruDashboard';
 import SiswaDashboard from './pages/siswa/SiswaDashboard';
@@ -16,6 +17,7 @@ import PrintPklJurnalKegiatan from './pages/print/PrintPklJurnalKegiatan';
 import PrintPklPembimbingan from './pages/print/PrintPklPembimbingan';
 import PrintSppNota from './pages/print/PrintSppNota';
 import PrintTagihanLainNota from './pages/print/PrintTagihanLainNota';
+import PrintKalenderAkademik from './pages/print/PrintKalenderAkademik';
 
 export default function App() {
   return (
@@ -25,6 +27,7 @@ export default function App() {
           <Routes>
             <Route path="/" element={<Login />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/ppdb" element={<PpdbPublic />} />
 
             <Route path="/print/absensi-bulanan" element={
               <ProtectedRoute allowedRoles={['admin', 'guru']}><PrintMonthlyAttendance /></ProtectedRoute>
@@ -50,8 +53,12 @@ export default function App() {
               <ProtectedRoute allowedRoles={['tu']}><PrintTagihanLainNota /></ProtectedRoute>
             } />
 
+            <Route path="/print/kalender-akademik" element={
+              <ProtectedRoute allowedRoles={['admin', 'waka_kurikulum']}><PrintKalenderAkademik /></ProtectedRoute>
+            } />
+
             <Route path="/admin/*" element={
-              <ProtectedRoute allowedRoles={['admin', 'waka']}><AdminDashboard /></ProtectedRoute>
+              <ProtectedRoute allowedRoles={['admin', 'waka', 'waka_kesiswaan', 'waka_kurikulum', 'waka_humas', 'waka_sarpras']}><AdminDashboard /></ProtectedRoute>
             } />
 
             <Route path="/guru/*" element={

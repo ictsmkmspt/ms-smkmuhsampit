@@ -8,7 +8,7 @@ const JK_LABEL = { L: 'Laki-laki', P: 'Perempuan' };
 
 export default function TeachersTab() {
   const { user } = useAuth();
-  const isAdmin = user.role === 'admin';
+  const canEdit = user.role === 'admin' || user.role === 'waka_kurikulum';
   const [teachers, setTeachers] = useState([]);
   const [form, setForm] = useState({ name: '', email: '', nip: '', jenis_kelamin: '' });
   const [error, setError] = useState('');
@@ -118,13 +118,13 @@ export default function TeachersTab() {
 
   return (
     <div className="space-y-6">
-      {!isAdmin && (
+      {!canEdit && (
         <div className="surface-card p-4 border-l-4 border-l-brand-400">
           <p className="text-sm text-ink-700">Data Guru hanya bisa dilihat di sini — perubahan data guru dikelola oleh Admin.</p>
         </div>
       )}
 
-      {isAdmin && (
+      {canEdit && (
       <div className="surface-card p-5 flex flex-wrap items-center gap-3">
         <h2 className="font-display font-semibold text-ink-900 mr-auto">Import Data Guru dari Excel</h2>
         <button
@@ -150,7 +150,7 @@ export default function TeachersTab() {
       </div>
       )}
 
-      {isAdmin && importResult && (
+      {canEdit && importResult && (
         <div className="surface-card p-5">
           <p className={`text-sm font-medium ${importResult.gagal?.length > 0 ? 'text-honey-700' : 'text-brand-600'}`}>
             {importResult.message}
@@ -178,7 +178,7 @@ export default function TeachersTab() {
         </div>
       )}
 
-      {isAdmin && (
+      {canEdit && (
       <form onSubmit={handleAdd} className="surface-card p-5">
         <h2 className="font-display font-semibold text-ink-900 mb-1">Tambah Guru Baru</h2>
         <p className="text-xs text-ink-500 mb-4">Password akun otomatis dibuat "123456" — wajib diganti guru saat login pertama.</p>
@@ -206,7 +206,7 @@ export default function TeachersTab() {
         <table className="w-full text-sm min-w-[560px]">
           <thead>
             <tr className="text-left text-ink-500 border-b border-line-200">
-              <th className="pb-2 font-medium">Nama</th><th className="font-medium">Email</th><th className="font-medium">NIP</th><th className="font-medium">Jenis Kelamin</th>{isAdmin && <th></th>}
+              <th className="pb-2 font-medium">Nama</th><th className="font-medium">Email</th><th className="font-medium">NIP</th><th className="font-medium">Jenis Kelamin</th>{canEdit && <th></th>}
             </tr>
           </thead>
           <tbody>
@@ -236,7 +236,7 @@ export default function TeachersTab() {
                   <td className="text-ink-700"><TruncateText text={t.user?.email} /></td>
                   <td className="text-ink-700">{t.nip}</td>
                   <td className="text-ink-700">{JK_LABEL[t.jenis_kelamin] || '-'}</td>
-                  {isAdmin && (
+                  {canEdit && (
                     <td className="text-right">
                       <div className="flex justify-end gap-2">
                         <button onClick={() => startEdit(t)} className="text-ink-400 hover:text-brand-600 text-xs border border-line-200 rounded-lg px-2 py-1">

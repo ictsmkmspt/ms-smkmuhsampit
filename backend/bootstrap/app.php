@@ -17,6 +17,12 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role' => CheckRole::class,
         ]);
+        $middleware->throttleApi();
+        // API-only app, tidak punya rute bernama "login" — default Laravel
+        // (redirectGuestsTo(route('login'))) bikin request tanpa token/token
+        // basi CRASH 500 "Route [login] not defined" alih-alih 401 JSON yang
+        // bersih (dan ditangkap interceptor axios di frontend buat auto-logout).
+        $middleware->redirectGuestsTo(fn () => null);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

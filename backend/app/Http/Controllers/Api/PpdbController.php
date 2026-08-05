@@ -1,0 +1,123 @@
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
+use App\Models\PpdbPendaftar;
+use App\Models\Setting;
+use Illuminate\Http\Request;
+
+class PpdbController extends Controller
+{
+    private const SETTING_KEY = 'ppdb_dibuka';
+
+    /**
+     * Status buka/tutup pendaftaran online — publik, dipakai halaman
+     * formulir buat tahu apakah formulir boleh ditampilkan/dikirim.
+     */
+    public function pengaturan()
+    {
+        return response()->json(['dibuka' => Setting::get(self::SETTING_KEY, '1') === '1']);
+    }
+
+    /**
+     * Waka Humas menyalakan/mematikan pendaftaran online — dipisah dari
+     * SettingController (yang isinya jam masuk, punya Waka Kesiswaan) supaya
+     * tiap Waka cuma punya endpoint pengaturan di domainnya sendiri.
+     */
+    public function updatePengaturan(Request $request)
+    {
+        $data = $request->validate(['dibuka' => 'required|boolean']);
+
+        Setting::set(self::SETTING_KEY, $data['dibuka'] ? '1' : '0');
+
+        return response()->json([
+            'message' => $data['dibuka'] ? 'Pendaftaran online PPDB dibuka.' : 'Pendaftaran online PPDB ditutup.',
+            'dibuka' => $data['dibuka'],
+        ]);
+    }
+
+    /**
+     * Formulir pendaftaran publik — calon siswa belum punya akun sama
+     * sekali di sistem, jadi endpoint ini sengaja TIDAK dilindungi auth.
+     */
+    public function daftar(Request $request)
+    {
+        if (Setting::get(self::SETTING_KEY, '1') !== '1') {
+            return response()->json(['message' => 'Pendaftaran online sedang ditutup.'], 422);
+        }
+
+        $data = $request->validate([
+            'nama_lengkap' => 'required|string|max:150',
+            'nisn' => 'nullable|string|max:20',
+            'jenis_kelamin' => 'required|in:L,P',
+            'tempat_lahir' => 'nullable|string|max:100',
+            'tanggal_lahir' => 'nullable|date',
+            'alamat' => 'nullable|string',
+            'asal_sekolah' => 'nullable|string|max:150',
+            'nama_orang_tua' => 'nullable|string|max:150',
+            'no_hp_orang_tua' => 'required|string|max:20',
+            'jurusan_pilihan' => 'nullable|string|max:100',
+        ]);
+
+        $data['kode_pendaftaran'] = PpdbPendaftar::buatKodePendaftaran();
+        $data['status'] = 'mendaftar';
+
+        $pendaftar = PpdbPendaftar::create($data);
+
+        return response()->json([
+            'message' => 'Pendaftaran berhasil. Simpan kode pendaftaran untuk mengecek status.',
+            'kode_pendaftaran' => $pendaftar->kode_pendaftaran,
+        ], 201);
+    }
+
+    /**
+     * Cek status publik pakai kode pendaftaran — cuma info yang aman
+     * ditampilkan ke publik, bukan seluruh data pribadi pendaftar.
+     */
+    public function status($kode)
+    {
+        $pendaftar = PpdbPendaftar::where('kode_pendaftaran', $kode)->first();
+
+        if (!$pendaftar) {
+            return response()->json(['message' => 'Kode pendaftaran tidak ditemukan.'], 404);
+        }
+
+        return response()->json([
+            'kode_pendaftaran' => $pendaftar->kode_pendaftaran,
+            'nama_lengkap' => $pendaftar->nama_lengkap,
+            'status' => $pendaftar->status,
+            'catatan' => $pendaftar->catatan,
+        ]);
+    }
+
+    public function index(Request $request)
+    {
+        $query = PpdbPendaftar::orderByDesc('created_at');
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        return $query->get();
+    }
+
+    public function update(Request $request, PpdbPendaftar $ppdbPendaftar)
+    {
+        $data = $request->validate([
+            'status' => 'required|in:mendaftar,verifikasi,diterima,ditolak',
+            'catatan' => 'nullable|string',
+        ]);
+
+        $ppdbPendaftar->update($data);
+
+        return $ppdbPendaftar->fresh();
+    }
+
+    public function destroy(PpdbPendaftar $ppdbPendaftar)
+    {
+        $ppdbPendaftar->delete();
+
+        return response()->json(['message' => 'Data pendaftar PPDB dihapus.']);
+    }
+}

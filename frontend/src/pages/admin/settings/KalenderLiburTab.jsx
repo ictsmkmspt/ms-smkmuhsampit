@@ -1,7 +1,13 @@
 import { useEffect, useState } from 'react';
-import { Plus, Trash2, CalendarDays } from 'lucide-react';
+import { Plus, Trash2, CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react';
 import api from '../../../api/axios';
 import TruncateText from '../../../components/TruncateText';
+
+// Tampilan tabel pakai dd-mm-yyyy (format tanggal Indonesia) — data tetap
+// format ISO (yyyy-mm-dd), cuma tampilannya yang dibalik.
+const fmtDMY = (tanggalIso) => tanggalIso.split('-').reverse().join('-');
+
+const LIBUR_PER_HALAMAN = 10;
 
 export default function KalenderLiburTab() {
   const [holidays, setHolidays] = useState([]);
@@ -11,6 +17,7 @@ export default function KalenderLiburTab() {
   const [error, setError] = useState('');
   const [info, setInfo] = useState('');
   const [loading, setLoading] = useState(false);
+  const [halaman, setHalaman] = useState(1);
 
   const loadHolidays = () => api.get('/holidays').then((res) => setHolidays(res.data));
   useEffect(() => { loadHolidays(); }, []);
@@ -53,6 +60,11 @@ export default function KalenderLiburTab() {
     await api.delete(`/holidays/${id}`);
     loadHolidays();
   };
+
+  // Terbaru dulu, dipotong 10 per halaman.
+  const holidaysUrut = [...holidays].sort((a, b) => b.date.localeCompare(a.date));
+  const totalHalaman = Math.max(1, Math.ceil(holidaysUrut.length / LIBUR_PER_HALAMAN));
+  const holidaysHalamanIni = holidaysUrut.slice((halaman - 1) * LIBUR_PER_HALAMAN, halaman * LIBUR_PER_HALAMAN);
 
   return (
     <div className="space-y-6">
@@ -156,9 +168,8 @@ export default function KalenderLiburTab() {
       </div>
 
       <div className="surface-card p-5">
-        <h2 className="font-display font-semibold text-ink-900 mb-4">
-          Daftar Hari Libur <span className="text-ink-500 font-sans font-normal text-sm">({holidays.length})</span>
-        </h2>
+        <h2 className="font-display font-semibold text-ink-900 mb-1">Daftar Hari Libur</h2>
+        <p className="text-xs text-ink-500 mb-4">Terbaru lebih dulu.</p>
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-ink-500 border-b border-line-200">
@@ -168,9 +179,9 @@ export default function KalenderLiburTab() {
             </tr>
           </thead>
           <tbody>
-            {holidays.map((h) => (
+            {holidaysHalamanIni.map((h) => (
               <tr key={h.id} className="border-t border-line-200">
-                <td className="py-2.5 font-mono text-ink-900">{h.date}</td>
+                <td className="py-2.5 font-mono text-ink-900">{fmtDMY(h.date)}</td>
                 <td className="text-ink-700"><TruncateText text={h.keterangan} maxWidth="16rem" /></td>
                 <td className="text-right">
                   <button onClick={() => handleDelete(h.id, h.keterangan)} className="text-ink-300 hover:text-honey-700">
@@ -184,6 +195,25 @@ export default function KalenderLiburTab() {
             )}
           </tbody>
         </table>
+        {holidaysUrut.length > LIBUR_PER_HALAMAN && (
+          <div className="flex items-center justify-end gap-2 mt-4">
+            <span className="text-xs text-ink-500 mr-2">Halaman {halaman} dari {totalHalaman}</span>
+            <button
+              onClick={() => setHalaman((p) => Math.max(1, p - 1))}
+              disabled={halaman === 1}
+              className="flex items-center gap-1 text-xs font-medium text-ink-600 border border-line-200 rounded-lg px-3 py-1.5 disabled:opacity-40"
+            >
+              <ChevronLeft className="w-3.5 h-3.5" /> Sebelumnya
+            </button>
+            <button
+              onClick={() => setHalaman((p) => Math.min(totalHalaman, p + 1))}
+              disabled={halaman === totalHalaman}
+              className="flex items-center gap-1 text-xs font-medium text-ink-600 border border-line-200 rounded-lg px-3 py-1.5 disabled:opacity-40"
+            >
+              Berikutnya <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
