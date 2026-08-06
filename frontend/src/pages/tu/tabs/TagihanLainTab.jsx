@@ -391,6 +391,7 @@ export default function TagihanLainTab() {
             <p className="text-sm font-medium text-ink-700">Belum ada tagihan untuk filter ini.</p>
           </div>
         ) : (
+          <div className="table-scroll">
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-ink-500 border-b border-line-200">
@@ -516,6 +517,7 @@ export default function TagihanLainTab() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </div>
     </div>

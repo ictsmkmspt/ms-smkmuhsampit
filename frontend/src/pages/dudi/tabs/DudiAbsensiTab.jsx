@@ -129,6 +129,7 @@ export default function DudiAbsensiTab() {
         {loading ? (
           <p className="text-center text-ink-300 py-6">Memuat...</p>
         ) : (
+          <div className="table-scroll">
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-ink-500 border-b border-line-200">
@@ -155,6 +156,7 @@ export default function DudiAbsensiTab() {
               )}
             </tbody>
           </table>
+          </div>
         )}
       </div>
 
@@ -171,6 +173,7 @@ export default function DudiAbsensiTab() {
         ) : selesai.length === 0 ? (
           <p className="text-center text-ink-300 py-6 text-sm">Belum ada siswa yang menyelesaikan PKL.</p>
         ) : (
+          <div className="table-scroll">
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-ink-500 border-b border-line-200">
@@ -194,6 +197,7 @@ export default function DudiAbsensiTab() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </div>
 

@@ -84,6 +84,7 @@ export default function AlumniTab() {
             ) : students.length === 0 ? (
               <p className="text-center text-ink-300 py-6">Tidak ada alumni di kelas ini.</p>
             ) : (
+              <div className="table-scroll">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-left text-ink-500 border-b border-line-200">
@@ -102,6 +103,7 @@ export default function AlumniTab() {
                   ))}
                 </tbody>
               </table>
+              </div>
             )}
           </>
         ) : loadingClasses ? (

@@ -2,17 +2,23 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Api\Concerns\RestrictsToOwnRoom;
 use App\Http\Controllers\Controller;
 use App\Models\Asset;
 use Illuminate\Http\Request;
 
 class AssetController extends Controller
 {
+    use RestrictsToOwnRoom;
+
     public function index(Request $request)
     {
         $query = Asset::with('room')->orderBy('nama');
 
-        if ($request->filled('room_id')) {
+        $roomId = $this->ownRoomId($request);
+        if ($roomId !== null) {
+            $query->where('room_id', $roomId);
+        } elseif ($request->filled('room_id')) {
             $query->where('room_id', $request->room_id);
         }
         if ($request->filled('kondisi')) {
@@ -22,9 +28,16 @@ class AssetController extends Controller
         return $query->get();
     }
 
-    public function findByBarcode(string $code)
+    public function findByBarcode(Request $request, string $code)
     {
-        $asset = Asset::with('room')->where('kode_aset', $code)->first();
+        $query = Asset::with('room')->where('kode_aset', $code);
+
+        $roomId = $this->ownRoomId($request);
+        if ($roomId !== null) {
+            $query->where('room_id', $roomId);
+        }
+
+        $asset = $query->first();
 
         if (!$asset) {
             return response()->json([
@@ -48,11 +61,21 @@ class AssetController extends Controller
             'keterangan' => 'nullable|string',
         ]);
 
+        $roomId = $this->ownRoomId($request);
+        if ($roomId !== null) {
+            $data['room_id'] = $roomId;
+        }
+
         return response()->json(Asset::create($data)->load('room'), 201);
     }
 
     public function update(Request $request, Asset $asset)
     {
+        $roomId = $this->ownRoomId($request);
+        if ($roomId !== null && $asset->room_id !== $roomId) {
+            abort(403, 'Aset ini bukan tanggung jawab ruang Anda.');
+        }
+
         $data = $request->validate([
             'kode_aset' => 'required|string|max:50|unique:assets,kode_aset,' . $asset->id,
             'nama' => 'required|string|max:150',
@@ -63,6 +86,10 @@ class AssetController extends Controller
             'tanggal_perolehan' => 'nullable|date',
             'keterangan' => 'nullable|string',
         ]);
+
+        if ($roomId !== null) {
+            $data['room_id'] = $roomId;
+        }
 
         $asset->update($data);
 

@@ -88,6 +88,7 @@ export default function BkCasesTab() {
         <h2 className="font-display font-semibold text-ink-900 mb-4">
           Riwayat Catatan BK <span className="text-ink-500 font-sans font-normal text-sm">({cases.length})</span>
         </h2>
+        <div className="table-scroll">
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-ink-500 border-b border-line-200">
@@ -144,6 +145,7 @@ export default function BkCasesTab() {
             )}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   );

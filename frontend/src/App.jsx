@@ -11,6 +11,7 @@ import SiswaDashboard from './pages/siswa/SiswaDashboard';
 import ParentDashboard from './pages/wali/ParentDashboard';
 import DudiDashboard from './pages/dudi/DudiDashboard';
 import TuDashboard from './pages/tu/TuDashboard';
+import RoomStaffDashboard from './pages/sarpras-staff/RoomStaffDashboard';
 import PrintMonthlyAttendance from './pages/print/PrintMonthlyAttendance';
 import PrintPklJurnal from './pages/print/PrintPklJurnal';
 import PrintPklJurnalKegiatan from './pages/print/PrintPklJurnalKegiatan';
@@ -18,6 +19,7 @@ import PrintPklPembimbingan from './pages/print/PrintPklPembimbingan';
 import PrintSppNota from './pages/print/PrintSppNota';
 import PrintTagihanLainNota from './pages/print/PrintTagihanLainNota';
 import PrintKalenderAkademik from './pages/print/PrintKalenderAkademik';
+import PrintAssetLabels from './pages/print/PrintAssetLabels';
 
 export default function App() {
   return (
@@ -57,6 +59,10 @@ export default function App() {
               <ProtectedRoute allowedRoles={['admin', 'waka_kurikulum']}><PrintKalenderAkademik /></ProtectedRoute>
             } />
 
+            <Route path="/print/aset-label" element={
+              <ProtectedRoute allowedRoles={['admin', 'waka_sarpras', 'teknisi', 'kepala_bengkel']}><PrintAssetLabels /></ProtectedRoute>
+            } />
+
             <Route path="/admin/*" element={
               <ProtectedRoute allowedRoles={['admin', 'waka', 'waka_kesiswaan', 'waka_kurikulum', 'waka_humas', 'waka_sarpras']}><AdminDashboard /></ProtectedRoute>
             } />
@@ -79,6 +85,10 @@ export default function App() {
 
             <Route path="/tu/*" element={
               <ProtectedRoute allowedRoles={['tu']}><TuDashboard /></ProtectedRoute>
+            } />
+
+            <Route path="/staf-ruang/*" element={
+              <ProtectedRoute allowedRoles={['teknisi', 'kepala_bengkel']}><RoomStaffDashboard /></ProtectedRoute>
             } />
 
             <Route path="*" element={<Login />} />

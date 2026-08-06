@@ -2,16 +2,24 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Api\Concerns\RestrictsToOwnRoom;
 use App\Http\Controllers\Controller;
+use App\Models\Asset;
 use App\Models\MaintenanceRequest;
 use Illuminate\Http\Request;
 
 class MaintenanceRequestController extends Controller
 {
+    use RestrictsToOwnRoom;
+
     public function index(Request $request)
     {
         $query = MaintenanceRequest::with(['asset', 'room'])->orderByDesc('tanggal_lapor');
 
+        $roomId = $this->ownRoomId($request);
+        if ($roomId !== null) {
+            $query->where('room_id', $roomId);
+        }
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
@@ -29,6 +37,19 @@ class MaintenanceRequestController extends Controller
             'tanggal_lapor' => 'required|date',
         ]);
 
+        $roomId = $this->ownRoomId($request);
+        if ($roomId !== null) {
+            if (!empty($data['asset_id']) && Asset::find($data['asset_id'])?->room_id !== $roomId) {
+                abort(403, 'Aset ini bukan tanggung jawab ruang Anda.');
+            }
+            $data['room_id'] = $roomId;
+        } elseif (!empty($data['asset_id'])) {
+            // Ruang laporan selalu ikut ruang asetnya kalau aset dipilih —
+            // penting buat Teknisi (tidak terikat ruang) supaya laporannya
+            // tetap tercatat di ruang yang benar.
+            $data['room_id'] = Asset::find($data['asset_id'])?->room_id;
+        }
+
         $data['status'] = 'dilaporkan';
 
         return response()->json(MaintenanceRequest::create($data)->load(['asset', 'room']), 201);
@@ -36,6 +57,11 @@ class MaintenanceRequestController extends Controller
 
     public function update(Request $request, MaintenanceRequest $maintenanceRequest)
     {
+        $roomId = $this->ownRoomId($request);
+        if ($roomId !== null && $maintenanceRequest->room_id !== $roomId) {
+            abort(403, 'Laporan ini bukan tanggung jawab ruang Anda.');
+        }
+
         $data = $request->validate([
             'status' => 'required|in:dilaporkan,diproses,selesai',
             'tanggal_selesai' => 'nullable|date',

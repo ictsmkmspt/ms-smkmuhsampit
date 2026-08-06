@@ -165,6 +165,7 @@ export default function PklAttendanceDetailModal({ placement, onClose, canVerify
             <p className="text-center text-ink-300 py-6">Belum ada riwayat absensi.</p>
           ) : (
             <>
+              <div className="table-scroll">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-left text-ink-500 border-b border-line-200">
@@ -214,6 +215,7 @@ export default function PklAttendanceDetailModal({ placement, onClose, canVerify
                   ))}
                 </tbody>
               </table>
+              </div>
 
               {attendances.length > PAGE_SIZE && (
                 <div className="flex items-center justify-between mt-4 pt-3 border-t border-line-200">

@@ -155,6 +155,7 @@ export default function WaliTab() {
             {importResult.message}
           </p>
           {importResult.gagal?.length > 0 && (
+            <div className="table-scroll">
             <table className="w-full text-sm mt-3">
               <thead>
                 <tr className="text-left text-ink-500 border-b border-line-200">
@@ -173,6 +174,7 @@ export default function WaliTab() {
                 ))}
               </tbody>
             </table>
+            </div>
           )}
         </div>
       )}

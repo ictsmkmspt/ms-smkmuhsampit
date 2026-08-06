@@ -25,6 +25,7 @@ export default function Login() {
       else if (user.role === 'wali') navigate('/wali');
       else if (user.role === 'dudi') navigate('/dudi');
       else if (user.role === 'tu') navigate('/tu');
+      else if (user.role === 'teknisi' || user.role === 'kepala_bengkel') navigate('/staf-ruang');
       else navigate('/siswa');
     } catch {
       setError('Email/No. HP atau password salah.');

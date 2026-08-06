@@ -11,7 +11,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
-#[Fillable(['name', 'email', 'phone', 'password', 'role'])]
+#[Fillable(['name', 'email', 'phone', 'password', 'role', 'room_id'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -44,6 +44,14 @@ class User extends Authenticatable
     public function dudi()
     {
         return $this->hasOne(Dudi::class);
+    }
+
+    /**
+     * Ruang yang jadi tanggung jawab akun ini, khusus role teknisi/kepala_bengkel.
+     */
+    public function room()
+    {
+        return $this->belongsTo(Room::class);
     }
 
     /**

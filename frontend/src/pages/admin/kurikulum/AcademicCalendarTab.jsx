@@ -121,6 +121,7 @@ export default function AcademicCalendarTab() {
 
       <div className="surface-card p-5">
         <h2 className="font-display font-semibold text-ink-900 mb-4">Daftar Agenda <span className="text-ink-500 font-sans font-normal text-sm">({events.length})</span></h2>
+        <div className="table-scroll">
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-ink-500 border-b border-line-200">
@@ -148,6 +149,7 @@ export default function AcademicCalendarTab() {
             {events.length === 0 && <tr><td colSpan="5" className="py-6 text-center text-ink-300">Belum ada agenda untuk tahun ajaran aktif.</td></tr>}
           </tbody>
         </table>
+        </div>
       </div>
 
       <div className="surface-card p-5">
@@ -155,6 +157,7 @@ export default function AcademicCalendarTab() {
         <p className="text-xs text-ink-500 mb-4">
           Tanggal yang tersorot merah di kalender di atas adalah hari libur — daftarnya berikut ini, diambil dari menu Kalender Libur, terbaru lebih dulu. Rentang tanggal berurutan dengan keterangan sama digabung jadi 1 baris.
         </p>
+        <div className="table-scroll">
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-ink-500 border-b border-line-200">
@@ -174,6 +177,7 @@ export default function AcademicCalendarTab() {
             {holidays.length === 0 && <tr><td colSpan="2" className="py-6 text-center text-ink-300">Belum ada hari libur tercatat.</td></tr>}
           </tbody>
         </table>
+        </div>
         {liburDikelompokkan.length > LIBUR_PER_HALAMAN && (
           <div className="flex items-center justify-end gap-2 mt-4">
             <span className="text-xs text-ink-500 mr-2">Halaman {halamanLibur} dari {totalHalamanLibur}</span>

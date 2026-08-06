@@ -73,6 +73,7 @@ export default function FormulirPpdbTab() {
 
       <div className="surface-card p-5">
         <h2 className="font-display font-semibold text-ink-900 mb-4">Daftar Pendaftar <span className="text-ink-500 font-sans font-normal text-sm">({pendaftar.length})</span></h2>
+        <div className="table-scroll">
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-ink-500 border-b border-line-200">
@@ -109,6 +110,7 @@ export default function FormulirPpdbTab() {
             {pendaftar.length === 0 && <tr><td colSpan="7" className="py-6 text-center text-ink-300">Belum ada pendaftar PPDB.</td></tr>}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   );

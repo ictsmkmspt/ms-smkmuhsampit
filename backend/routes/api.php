@@ -25,6 +25,7 @@ use App\Http\Controllers\Api\PpdbController;
 use App\Http\Controllers\Api\PrayerAttendanceController;
 use App\Http\Controllers\Api\ProcurementController;
 use App\Http\Controllers\Api\RoomController;
+use App\Http\Controllers\Api\RoomStaffController;
 use App\Http\Controllers\Api\SanksiRuleController;
 use App\Http\Controllers\Api\ScheduleController;
 use App\Http\Controllers\Api\ScheduleExportController;
@@ -169,11 +170,37 @@ Route::middleware('auth:sanctum')->group(function () {
     // Waka Sarpras — Ruang/Lab/Bengkel dan Inventaris Aset. Penanggung jawab
     // ruang terhubung ke data guru (lihat grup /teachers read-only di bawah).
     // Pemeliharaan & Pengadaan Barang dipindah ke grup "Pengembangan"
-    // (admin-only) di bawah.
+    // (admin-only) di bawah. Data ruang & hapus aset tetap khusus Waka
+    // Sarpras (lihat grup Teknisi/Kepala Bengkel di bawah untuk akses baca
+    // & kelola aset yang dibatasi per-ruang).
     Route::middleware('role:admin,waka_sarpras')->group(function () {
-        Route::apiResource('rooms', RoomController::class)->except(['show']);
+        Route::post('/rooms', [RoomController::class, 'store']);
+        Route::put('/rooms/{room}', [RoomController::class, 'update']);
+        Route::delete('/rooms/{room}', [RoomController::class, 'destroy']);
+        Route::delete('/assets/{asset}', [AssetController::class, 'destroy']);
+
+        // Akun Teknisi & Kepala Bengkel — masing-masing ditugaskan ke tepat
+        // 1 ruang, dikelola Waka Sarpras.
+        Route::get('/room-staff', [RoomStaffController::class, 'index']);
+        Route::post('/room-staff', [RoomStaffController::class, 'store']);
+        Route::put('/room-staff/{id}', [RoomStaffController::class, 'update']);
+        Route::delete('/room-staff/{id}', [RoomStaffController::class, 'destroy']);
+        Route::put('/room-staff/{id}/reset-password', [RoomStaffController::class, 'resetPassword']);
+    });
+
+    // Kepala Bengkel — baca/tulis Ruang & Aset dibuka untuk mereka, tapi
+    // DIBATASI cuma ke ruang yang jadi tanggung jawabnya (lihat trait
+    // RestrictsToOwnRoom). Teknisi CUMA baca (lihat grup di bawah) — tugas
+    // mereka lapor & tangani Pemeliharaan, bukan kelola data inventaris.
+    // Hapus data tetap khusus grup admin/waka_sarpras di atas.
+    Route::middleware('role:admin,waka_sarpras,teknisi,kepala_bengkel')->group(function () {
+        Route::get('/rooms', [RoomController::class, 'index']);
         Route::get('/assets/barcode/{code}', [AssetController::class, 'findByBarcode']);
-        Route::apiResource('assets', AssetController::class)->except(['show']);
+        Route::get('/assets', [AssetController::class, 'index']);
+    });
+    Route::middleware('role:admin,waka_sarpras,kepala_bengkel')->group(function () {
+        Route::post('/assets', [AssetController::class, 'store']);
+        Route::put('/assets/{asset}', [AssetController::class, 'update']);
     });
 
     // Mata Pelajaran, Tugas Mengajar, Template Jadwal, dan Jadwal Pelajaran
@@ -191,15 +218,26 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Menu "Pengembangan" — fitur yang masih tahap uji coba, sengaja cuma
     // dibuka untuk Super Admin dulu (belum dibagikan ke Waka terkait): PPDB,
-    // Pemeliharaan, dan Pengadaan Barang.
+    // Pengadaan Barang. Pemeliharaan sudah pindah jadi bagian tetap menu
+    // Sarana & Prasarana (grup di bawah) — bukan lagi di sini.
     Route::middleware('role:admin')->group(function () {
         Route::get('/ppdb', [PpdbController::class, 'index']);
         Route::put('/ppdb/pengaturan', [PpdbController::class, 'updatePengaturan']);
         Route::put('/ppdb/{ppdbPendaftar}', [PpdbController::class, 'update']);
         Route::delete('/ppdb/{ppdbPendaftar}', [PpdbController::class, 'destroy']);
 
-        Route::apiResource('maintenance-requests', MaintenanceRequestController::class)->except(['show']);
         Route::apiResource('procurements', ProcurementController::class)->except(['show']);
+    });
+
+    // Pemeliharaan — bagian tetap menu Sarana & Prasarana milik Waka Sarpras.
+    // Teknisi & Kepala Bengkel DIBATASI cuma ke ruang/aset tanggung jawabnya
+    // masing-masing (lihat RestrictsToOwnRoom); Teknisi tidak dibatasi ruang
+    // (lihat trait). Hapus data khusus admin/Waka Sarpras.
+    Route::middleware('role:admin,waka_sarpras,teknisi,kepala_bengkel')->group(function () {
+        Route::apiResource('maintenance-requests', MaintenanceRequestController::class)->except(['show', 'destroy']);
+    });
+    Route::middleware('role:admin,waka_sarpras')->group(function () {
+        Route::delete('/maintenance-requests/{maintenanceRequest}', [MaintenanceRequestController::class, 'destroy']);
     });
 
     // Guru, Akun TU, Profil Sekolah TETAP khusus Super Admin. Tahun Ajaran

@@ -216,6 +216,7 @@ export default function PenempatanTab() {
           </div>
         </div>
         <p className="text-xs text-ink-400 mb-4">Cuma menampilkan penempatan tahun ajaran yang sedang aktif. Data tahun ajaran sebelumnya tidak dihapus, cuma disembunyikan dari daftar ini.</p>
+        <div className="table-scroll">
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-ink-500 border-b border-line-200">
@@ -264,6 +265,7 @@ export default function PenempatanTab() {
             )}
           </tbody>
         </table>
+        </div>
       </div>
 
     </div>

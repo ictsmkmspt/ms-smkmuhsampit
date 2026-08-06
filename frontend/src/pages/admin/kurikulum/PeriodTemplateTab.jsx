@@ -90,6 +90,7 @@ export default function PeriodTemplateTab() {
           </button>
         </div>
 
+        <div className="table-scroll">
         <table className="w-full text-sm border-collapse">
           <thead>
             <tr className="text-left text-ink-500 border-b border-line-200">
@@ -124,6 +125,7 @@ export default function PeriodTemplateTab() {
             )}
           </tbody>
         </table>
+        </div>
       </div>
 
       {modal && (

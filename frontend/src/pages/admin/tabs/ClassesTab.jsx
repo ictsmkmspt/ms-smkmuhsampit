@@ -111,6 +111,7 @@ export default function ClassesTab() {
 
       <div className="surface-card p-5">
         <h2 className="font-display font-semibold text-ink-900 mb-4">Daftar Kelas <span className="text-ink-500 font-sans font-normal text-sm">({classes.length})</span></h2>
+        <div className="table-scroll">
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-ink-500 border-b border-line-200">
@@ -202,6 +203,7 @@ export default function ClassesTab() {
             )}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   );

@@ -2,15 +2,25 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Api\Concerns\RestrictsToOwnRoom;
 use App\Http\Controllers\Controller;
 use App\Models\Room;
 use Illuminate\Http\Request;
 
 class RoomController extends Controller
 {
-    public function index()
+    use RestrictsToOwnRoom;
+
+    public function index(Request $request)
     {
-        return Room::withCount('assets')->with('teacher.user')->orderBy('nama')->get();
+        $query = Room::withCount('assets')->with('teacher.user')->orderBy('nama');
+
+        $roomId = $this->ownRoomId($request);
+        if ($roomId !== null) {
+            $query->where('id', $roomId);
+        }
+
+        return $query->get();
     }
 
     public function store(Request $request)

@@ -66,6 +66,7 @@ export default function ProcurementsTab() {
 
       <div className="surface-card p-5">
         <h2 className="font-display font-semibold text-ink-900 mb-4">Daftar Pengajuan <span className="text-ink-500 font-sans font-normal text-sm">({items.length})</span></h2>
+        <div className="table-scroll">
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-ink-500 border-b border-line-200">
@@ -100,6 +101,7 @@ export default function ProcurementsTab() {
             {items.length === 0 && <tr><td colSpan="6" className="py-6 text-center text-ink-300">Belum ada pengajuan pengadaan.</td></tr>}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   );

@@ -3,7 +3,7 @@ import {
   LogOut, Database, ClipboardList, ClipboardCheck, Settings, ChevronDown, ChevronLeft, ChevronRight, Menu, X,
   Users, GraduationCap, School, UserCog, Briefcase, LayoutDashboard, Building2,
   Clock, AlertOctagon, Trophy, CalendarDays, Wallet, Pencil, Image, ShieldCheck,
-  AlertTriangle, BookOpen, CalendarClock, CalendarRange, Warehouse, Boxes, Wrench, PackagePlus, UserPlus, DatabaseBackup, FlaskConical, Sparkles,
+  AlertTriangle, BookOpen, CalendarClock, CalendarRange, Warehouse, Boxes, Wrench, PackagePlus, UserPlus, DatabaseBackup, FlaskConical, Sparkles, HardHat,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useSchoolProfile } from '../../context/SchoolProfileContext';
@@ -15,6 +15,7 @@ import PklTab, { PKL_SUBMENU } from './tabs/PklTab';
 import PengembanganTab, { PENGEMBANGAN_SUBMENU } from './tabs/PengembanganTab';
 import KurikulumTab, { KURIKULUM_SUBMENU } from './tabs/KurikulumTab';
 import SarprasTab, { SARPRAS_SUBMENU } from './tabs/SarprasTab';
+import RoomStaffTab from './sarpras/RoomStaffTab';
 import DashboardHomeTab from './tabs/DashboardHomeTab';
 import AttendanceReportTab from './tabs/AttendanceReportTab';
 import EditProfileModal from '../../components/EditProfileModal';
@@ -34,8 +35,8 @@ const SETTINGS_ICONS = { sekolah: Image, jam: Clock, backup: DatabaseBackup };
 const PKL_ICONS = { dudi: Building2, penempatan: ClipboardList };
 const POIN_ICONS = { 'rekap-pelanggaran': AlertOctagon, 'rekap-prestasi': Trophy, 'jenis-pelanggaran': AlertOctagon, 'jenis-prestasi': Trophy, sanksi: AlertTriangle };
 const KURIKULUM_ICONS = { kalender: CalendarRange, akademik: CalendarRange, libur: CalendarDays, mapel: BookOpen, tugas: UserCog, jadwal: CalendarClock, template: Sparkles };
-const SARPRAS_ICONS = { ruang: Warehouse, aset: Boxes };
-const PENGEMBANGAN_ICONS = { ppdb: UserPlus, pemeliharaan: Wrench, pengadaan: PackagePlus };
+const SARPRAS_ICONS = { ruang: Warehouse, aset: Boxes, pemeliharaan: Wrench };
+const PENGEMBANGAN_ICONS = { ppdb: UserPlus, pengadaan: PackagePlus };
 
 export default function AdminDashboard() {
   const { user, logout } = useAuth();
@@ -62,6 +63,7 @@ export default function AdminDashboard() {
     { key: 'poin',       label: 'Poin',        icon: ClipboardList,   hasDropdown: true, submenu: poinSubmenu, subIcons: POIN_ICONS, roles: ['waka_kesiswaan'] },
     { key: 'pkl',        label: 'PKL',         icon: Briefcase,       hasDropdown: true, submenu: pklSubmenu, subIcons: PKL_ICONS, roles: ['waka_humas', 'waka_kurikulum'] },
     { key: 'kurikulum',  label: 'Pembelajaran', icon: BookOpen,        hasDropdown: true, submenu: KURIKULUM_SUBMENU, subIcons: KURIKULUM_ICONS, roles: ['waka_kurikulum'] },
+    { key: 'sarpras-staf', label: 'Teknisi & Kepala Bengkel', icon: HardHat, component: RoomStaffTab, roles: ['waka_sarpras'] },
     { key: 'sarpras',    label: 'Sarana dan Prasarana', icon: Wrench, hasDropdown: true, submenu: SARPRAS_SUBMENU, subIcons: SARPRAS_ICONS, roles: ['waka_sarpras'] },
     { key: 'pengaturan', label: 'Pengaturan',  icon: Settings,        hasDropdown: true, submenu: settingsSubmenu, subIcons: SETTINGS_ICONS, roles: [] },
     { key: 'pengembangan', label: 'Pengembangan', icon: FlaskConical, hasDropdown: true, submenu: PENGEMBANGAN_SUBMENU, subIcons: PENGEMBANGAN_ICONS, roles: [] },

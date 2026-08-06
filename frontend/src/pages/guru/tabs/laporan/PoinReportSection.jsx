@@ -61,6 +61,7 @@ export default function PoinReportSection() {
           {loading ? (
             <p className="text-center text-ink-300 py-6">Memuat...</p>
           ) : (
+            <div className="table-scroll">
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left text-ink-500 border-b border-line-200">
@@ -86,6 +87,7 @@ export default function PoinReportSection() {
                 )}
               </tbody>
             </table>
+            </div>
           )}
 
           {sortedSummary.length > SUMMARY_PAGE_SIZE && (

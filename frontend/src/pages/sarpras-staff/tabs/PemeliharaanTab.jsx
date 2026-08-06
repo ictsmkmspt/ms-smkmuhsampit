@@ -1,17 +1,26 @@
 import { useEffect, useState } from 'react';
-import { Plus, Trash2, ScanBarcode, X } from 'lucide-react';
+import { Plus, ScanBarcode, X } from 'lucide-react';
 import api from '../../../api/axios';
 import AssetSearchSelect from '../../../components/AssetSearchSelect';
 import BarcodeScanner from '../../../components/BarcodeScanner';
+import { useAuth } from '../../../context/AuthContext';
 
 const STATUS_LABEL = { dilaporkan: 'Dilaporkan', diproses: 'Diproses', selesai: 'Selesai' };
 const STATUS_BADGE = { dilaporkan: 'badge-soft', diproses: 'badge-honey', selesai: 'badge-brand' };
+const FORM_KOSONG = { asset_id: '', deskripsi: '', pelapor: '', tanggal_lapor: new Date().toISOString().slice(0, 10) };
 
-export default function MaintenanceTab() {
+// Sama seperti Inventaris, laporan Kepala Bengkel otomatis dibatasi backend
+// cuma untuk ruang tanggung jawabnya. Teknisi tidak dibatasi ruang — pilih
+// aset dari ruang mana saja, ruang laporan otomatis ikut ruang asetnya.
+export default function PemeliharaanTab() {
+  const { user } = useAuth();
+  const isTeknisi = user.role === 'teknisi';
   const [requests, setRequests] = useState([]);
   const [assets, setAssets] = useState([]);
   const [rooms, setRooms] = useState([]);
-  const [form, setForm] = useState({ asset_id: '', room_id: '', deskripsi: '', pelapor: '', tanggal_lapor: new Date().toISOString().slice(0, 10) });
+  const [roomFilter, setRoomFilter] = useState('');
+  const [formRoomFilter, setFormRoomFilter] = useState('');
+  const [form, setForm] = useState(FORM_KOSONG);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [savingId, setSavingId] = useState(null);
@@ -21,15 +30,28 @@ export default function MaintenanceTab() {
   useEffect(() => {
     load();
     api.get('/assets').then((res) => setAssets(res.data));
-    api.get('/rooms').then((res) => setRooms(res.data));
-  }, []);
+    if (isTeknisi) api.get('/rooms').then((res) => setRooms(res.data));
+  }, [isTeknisi]);
+
+  const requestTersaring = roomFilter ? requests.filter((r) => String(r.room_id) === roomFilter) : requests;
+  const assetDiRuangTerpilih = formRoomFilter ? assets.filter((a) => String(a.room_id) === formRoomFilter) : assets;
+
+  // Ruang dipakai sebagai filter aset di form (bukan target laporan) — pilih
+  // ruang dulu untuk mempersempit daftar barang yang dicari.
+  const handleFormRoomChange = (roomId) => {
+    setFormRoomFilter(roomId);
+    setForm((f) => {
+      const asetMasihCocok = !f.asset_id || !roomId || assets.find((a) => String(a.id) === f.asset_id)?.room_id === Number(roomId);
+      return asetMasihCocok ? f : { ...f, asset_id: '' };
+    });
+  };
 
   const handleAdd = async (e) => {
     e.preventDefault();
     setError(''); setLoading(true);
     try {
-      await api.post('/maintenance-requests', { ...form, asset_id: form.asset_id || null, room_id: form.room_id || null });
-      setForm({ asset_id: '', room_id: '', deskripsi: '', pelapor: '', tanggal_lapor: new Date().toISOString().slice(0, 10) });
+      await api.post('/maintenance-requests', { ...form, asset_id: form.asset_id || null });
+      setForm(FORM_KOSONG);
       load();
     } catch (err) {
       const msgs = err.response?.data?.errors;
@@ -53,18 +75,13 @@ export default function MaintenanceTab() {
     }
   };
 
-  const handleDelete = async (r) => {
-    if (!confirm('Hapus laporan pemeliharaan ini?')) return;
-    await api.delete(`/maintenance-requests/${r.id}`);
-    load();
-  };
-
   const handleScan = async (code) => {
     try {
       const res = await api.get(`/assets/barcode/${code}`);
       const asset = res.data;
       setAssets((prev) => (prev.some((a) => a.id === asset.id) ? prev : [...prev, asset]));
-      setForm((f) => ({ ...f, asset_id: String(asset.id), room_id: asset.room_id ? String(asset.room_id) : f.room_id }));
+      setForm((f) => ({ ...f, asset_id: String(asset.id) }));
+      if (asset.room_id) setFormRoomFilter(String(asset.room_id));
       setScanning(false);
       return { message: `Aset ditemukan: ${asset.nama}, siap dilaporkan.`, error: false };
     } catch (err) {
@@ -72,34 +89,25 @@ export default function MaintenanceTab() {
     }
   };
 
-  // Ruang dipakai sebagai filter aset (bukan target laporan terpisah lagi) —
-  // pilih ruang dulu untuk mempersempit daftar barang yang dicari.
-  const handleRoomChange = (roomId) => {
-    setForm((f) => {
-      const asetMasihCocok = !f.asset_id || !roomId || assets.find((a) => String(a.id) === f.asset_id)?.room_id === Number(roomId);
-      return { ...f, room_id: roomId, asset_id: asetMasihCocok ? f.asset_id : '' };
-    });
-  };
-
-  const assetDiRuangTerpilih = form.room_id ? assets.filter((a) => String(a.room_id) === form.room_id) : assets;
-
   return (
     <div className="space-y-6">
       <form onSubmit={handleAdd} className="surface-card p-5 space-y-3">
         <h2 className="font-display font-semibold text-ink-900">Lapor Kerusakan / Pemeliharaan</h2>
         {error && <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2">{error}</p>}
         <div className="space-y-3">
-          <select value={form.room_id} onChange={(e) => handleRoomChange(e.target.value)} className="field-input text-ink-700">
-            <option value="">Semua ruang (filter aset)</option>
-            {rooms.map((r) => <option key={r.id} value={r.id}>{r.nama}</option>)}
-          </select>
+          {isTeknisi && (
+            <select value={formRoomFilter} onChange={(e) => handleFormRoomChange(e.target.value)} className="field-input text-ink-700">
+              <option value="">Semua ruang (filter aset)</option>
+              {rooms.map((r) => <option key={r.id} value={r.id}>{r.nama}</option>)}
+            </select>
+          )}
           <div className="flex items-center gap-2">
             <div className="flex-1">
               <AssetSearchSelect
                 assets={assetDiRuangTerpilih}
                 value={form.asset_id}
                 onChange={(id) => setForm({ ...form, asset_id: id })}
-                placeholder={form.room_id ? 'Cari aset di ruang ini…' : 'Cari kode / nama / kategori / ruang…'}
+                placeholder={formRoomFilter ? 'Cari aset di ruang ini…' : 'Cari kode / nama / kategori / ruang…'}
               />
             </div>
             <button type="button" onClick={() => setScanning(true)} title="Pindai barcode aset" className="w-11 h-11 flex items-center justify-center rounded-xl border border-line-200 text-ink-500 hover:text-brand-700 hover:bg-mist-50 transition shrink-0">
@@ -116,24 +124,33 @@ export default function MaintenanceTab() {
       </form>
 
       <div className="surface-card p-5">
-        <h2 className="font-display font-semibold text-ink-900 mb-4">Daftar Laporan <span className="text-ink-500 font-sans font-normal text-sm">({requests.length})</span></h2>
+        <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
+          <h2 className="font-display font-semibold text-ink-900">Daftar Laporan <span className="text-ink-500 font-sans font-normal text-sm">({requestTersaring.length}/{requests.length})</span></h2>
+          {isTeknisi && (
+            <select value={roomFilter} onChange={(e) => setRoomFilter(e.target.value)} className="field-input text-ink-700 w-44">
+              <option value="">Semua Ruang</option>
+              {rooms.map((r) => <option key={r.id} value={r.id}>{r.nama}</option>)}
+            </select>
+          )}
+        </div>
         <div className="table-scroll">
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-ink-500 border-b border-line-200">
               <th className="pb-2 font-medium">Tanggal Lapor</th>
-              <th className="font-medium">Aset / Ruang</th>
+              <th className="font-medium">Aset</th>
+              {isTeknisi && <th className="font-medium">Ruang</th>}
               <th className="font-medium">Deskripsi</th>
               <th className="font-medium">Pelapor</th>
               <th className="font-medium text-center">Status</th>
-              <th></th>
             </tr>
           </thead>
           <tbody>
-            {requests.map((r) => (
+            {requestTersaring.map((r) => (
               <tr key={r.id} className="border-t border-line-200">
                 <td className="py-2.5 font-mono text-ink-700">{r.tanggal_lapor}</td>
-                <td className="text-ink-700">{r.asset?.nama || r.room?.nama || '-'}</td>
+                <td className="text-ink-700">{r.asset?.nama || '-'}</td>
+                {isTeknisi && <td className="text-ink-700">{r.room?.nama || '-'}</td>}
                 <td className="text-ink-700 max-w-[16rem]">{r.deskripsi}</td>
                 <td className="text-ink-700">{r.pelapor || '-'}</td>
                 <td className="text-center">
@@ -146,10 +163,9 @@ export default function MaintenanceTab() {
                     {Object.entries(STATUS_LABEL).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
                   </select>
                 </td>
-                <td className="text-right"><button onClick={() => handleDelete(r)} className="text-ink-300 hover:text-honey-700"><Trash2 className="w-4 h-4" /></button></td>
               </tr>
             ))}
-            {requests.length === 0 && <tr><td colSpan="6" className="py-6 text-center text-ink-300">Belum ada laporan pemeliharaan.</td></tr>}
+            {requestTersaring.length === 0 && <tr><td colSpan={isTeknisi ? 6 : 5} className="py-6 text-center text-ink-300">{requests.length === 0 ? 'Belum ada laporan pemeliharaan.' : 'Tidak ada laporan di ruang ini.'}</td></tr>}
           </tbody>
         </table>
         </div>

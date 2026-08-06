@@ -170,6 +170,7 @@ export default function KalenderLiburTab() {
       <div className="surface-card p-5">
         <h2 className="font-display font-semibold text-ink-900 mb-1">Daftar Hari Libur</h2>
         <p className="text-xs text-ink-500 mb-4">Terbaru lebih dulu.</p>
+        <div className="table-scroll">
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-ink-500 border-b border-line-200">
@@ -195,6 +196,7 @@ export default function KalenderLiburTab() {
             )}
           </tbody>
         </table>
+        </div>
         {holidaysUrut.length > LIBUR_PER_HALAMAN && (
           <div className="flex items-center justify-end gap-2 mt-4">
             <span className="text-xs text-ink-500 mr-2">Halaman {halaman} dari {totalHalaman}</span>

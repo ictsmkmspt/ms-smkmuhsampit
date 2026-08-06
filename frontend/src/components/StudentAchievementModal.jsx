@@ -115,6 +115,7 @@ export default function StudentAchievementModal({ student, onClose, onChanged, r
           ) : achievements.length === 0 ? (
             <p className="text-center text-ink-300 py-6">Tidak ada riwayat prestasi untuk filter ini.</p>
           ) : (
+            <div className="table-scroll">
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left text-ink-500 border-b border-line-200">
@@ -185,6 +186,7 @@ export default function StudentAchievementModal({ student, onClose, onChanged, r
                 ))}
               </tbody>
             </table>
+            </div>
           )}
         </div>
       </div>

@@ -96,6 +96,7 @@ export default function TeachingAssignmentsTab() {
       <div className="surface-card p-5">
         <h2 className="font-display font-semibold text-ink-900 mb-1">Daftar Penugasan <span className="text-ink-500 font-sans font-normal text-sm">({assignments.length})</span></h2>
         <p className="text-xs text-ink-500 mb-4">Kolom "Terjadwal" menghitung otomatis dari isian di menu Jadwal Pelajaran. Target jam boleh dikosongkan kalau memang tidak dipatok rata per minggu (mis. mapel blok/kejuruan).</p>
+        <div className="table-scroll">
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-ink-500 border-b border-line-200">
@@ -139,6 +140,7 @@ export default function TeachingAssignmentsTab() {
             {assignments.length === 0 && <tr><td colSpan="5" className="py-6 text-center text-ink-300">Belum ada penugasan untuk tahun ajaran aktif.</td></tr>}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   );

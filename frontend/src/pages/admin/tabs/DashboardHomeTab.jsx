@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Users, GraduationCap, School, Building2, AlertTriangle, ChevronLeft, ChevronRight, ChevronDown, ArrowRight, Briefcase, ClipboardCheck, BookOpen, DoorOpen, Package } from 'lucide-react';
+import { Users, GraduationCap, School, Building2, AlertTriangle, ChevronLeft, ChevronRight, ChevronDown, ArrowRight, Briefcase, ClipboardCheck, BookOpen, DoorOpen, Package, CheckCircle2, XCircle, ClipboardList, Wrench } from 'lucide-react';
 import api from '../../../api/axios';
 import { useAuth } from '../../../context/AuthContext';
 import CategoryBarChart from '../../../components/CategoryBarChart';
@@ -202,7 +202,8 @@ function KurikulumDashboard({ onNavigate }) {
 // (aset opsional bisa dikaitkan ke ruang tertentu).
 const PANDUAN_SARPRAS = [
   { no: 1, judul: 'Tambah Ruangan', keterangan: 'Daftarkan ruang, lab, dan bengkel yang ada di sekolah.', tab: 'sarpras', sub: 'ruang' },
-  { no: 2, judul: 'Tambah Inventaris', keterangan: 'Catat aset/barang inventaris, opsional dikaitkan ke ruangan yang sudah dibuat.', tab: 'sarpras', sub: 'aset' },
+  { no: 2, judul: 'Input Data Teknisi / Kepala Bengkel', keterangan: 'Buat akun Teknisi dan Kepala Bengkel (penanggung jawab ruangan) untuk bantu kelola inventaris & pemeliharaan.', tab: 'sarpras-staf' },
+  { no: 3, judul: 'Tambah Inventaris', keterangan: 'Catat aset/barang inventaris, opsional dikaitkan ke ruangan yang sudah dibuat.', tab: 'sarpras', sub: 'aset' },
 ];
 
 // Dashboard Waka Sarpras — bidangnya sekarang cuma Sarana & Prasarana
@@ -210,17 +211,25 @@ const PANDUAN_SARPRAS = [
 // absensi (itu bukan urusan Sarpras lagi, backend-nya juga sudah tidak
 // mengizinkan Sarpras baca /dashboard/grafik).
 function SarprasDashboard({ onNavigate }) {
-  const [stats, setStats] = useState({ ruang: null, aset: null });
+  const [stats, setStats] = useState({ ruang: null, aset: null, baik: null, rusak_ringan: null, rusak_berat: null, dilaporkan: null, diproses: null });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     Promise.allSettled([
       api.get('/rooms').then((r) => r.data.length),
-      api.get('/assets').then((r) => r.data.length),
-    ]).then(([ruang, aset]) => {
+      api.get('/assets').then((r) => r.data),
+      api.get('/maintenance-requests').then((r) => r.data),
+    ]).then(([ruang, aset, laporan]) => {
+      const daftarAset = aset.status === 'fulfilled' ? aset.value : [];
+      const daftarLaporan = laporan.status === 'fulfilled' ? laporan.value : [];
       setStats({
         ruang: ruang.status === 'fulfilled' ? ruang.value : '!',
-        aset: aset.status === 'fulfilled' ? aset.value : '!',
+        aset: aset.status === 'fulfilled' ? daftarAset.length : '!',
+        baik: aset.status === 'fulfilled' ? daftarAset.filter((a) => a.kondisi === 'baik').length : '!',
+        rusak_ringan: aset.status === 'fulfilled' ? daftarAset.filter((a) => a.kondisi === 'rusak_ringan').length : '!',
+        rusak_berat: aset.status === 'fulfilled' ? daftarAset.filter((a) => a.kondisi === 'rusak_berat').length : '!',
+        dilaporkan: laporan.status === 'fulfilled' ? daftarLaporan.filter((l) => l.status === 'dilaporkan').length : '!',
+        diproses: laporan.status === 'fulfilled' ? daftarLaporan.filter((l) => l.status === 'diproses').length : '!',
       });
       setLoading(false);
     });
@@ -229,6 +238,11 @@ function SarprasDashboard({ onNavigate }) {
   const KARTU = [
     { key: 'ruang', label: 'Total Ruang & Lab', icon: DoorOpen, color: '#2a78d6' },
     { key: 'aset', label: 'Total Inventaris Aset', icon: Package, color: '#F2B705' },
+    { key: 'baik', label: 'Barang Baik', icon: CheckCircle2, color: '#15803D' },
+    { key: 'rusak_ringan', label: 'Rusak Ringan', icon: AlertTriangle, color: '#D9A52A' },
+    { key: 'rusak_berat', label: 'Rusak Berat', icon: XCircle, color: '#B9504F' },
+    { key: 'dilaporkan', label: 'Barang Dilaporkan', icon: ClipboardList, color: '#6B7280' },
+    { key: 'diproses', label: 'Barang Diproses', icon: Wrench, color: '#2a78d6' },
   ];
 
   return (
@@ -245,7 +259,7 @@ function SarprasDashboard({ onNavigate }) {
         <p className="text-sm text-ink-500 mt-1">Gambaran umum data sarana &amp; prasarana saat ini.</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {KARTU.map((k) => (
           <div key={k.key} className="surface-card p-5">
             <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-3" style={{ backgroundColor: `${k.color}1A` }}>
