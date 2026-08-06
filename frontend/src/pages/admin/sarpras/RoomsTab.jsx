@@ -6,19 +6,23 @@ const JENIS_LABEL = { kelas: 'Ruang Kelas', lab: 'Laboratorium', bengkel: 'Bengk
 
 export default function RoomsTab() {
   const [rooms, setRooms] = useState([]);
-  const [form, setForm] = useState({ nama: '', jenis: 'kelas', kapasitas: '', penanggung_jawab: '', keterangan: '' });
+  const [teachers, setTeachers] = useState([]);
+  const [form, setForm] = useState({ nama: '', jenis: 'kelas', kapasitas: '', teacher_id: '', keterangan: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const load = () => api.get('/rooms').then((res) => setRooms(res.data));
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+    api.get('/teachers').then((res) => setTeachers(res.data));
+  }, []);
 
   const handleAdd = async (e) => {
     e.preventDefault();
     setError(''); setLoading(true);
     try {
-      await api.post('/rooms', form);
-      setForm({ nama: '', jenis: 'kelas', kapasitas: '', penanggung_jawab: '', keterangan: '' });
+      await api.post('/rooms', { ...form, teacher_id: form.teacher_id || null });
+      setForm({ nama: '', jenis: 'kelas', kapasitas: '', teacher_id: '', keterangan: '' });
       load();
     } catch (err) {
       const msgs = err.response?.data?.errors;
@@ -49,7 +53,10 @@ export default function RoomsTab() {
             {Object.entries(JENIS_LABEL).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
           </select>
           <input type="number" min="0" placeholder="Kapasitas" value={form.kapasitas} onChange={(e) => setForm({ ...form, kapasitas: e.target.value })} className="field-input" />
-          <input placeholder="Penanggung jawab" value={form.penanggung_jawab} onChange={(e) => setForm({ ...form, penanggung_jawab: e.target.value })} className="field-input col-span-2" />
+          <select value={form.teacher_id} onChange={(e) => setForm({ ...form, teacher_id: e.target.value })} className="field-input col-span-2 text-ink-700">
+            <option value="">— Penanggung jawab (guru) —</option>
+            {teachers.map((t) => <option key={t.id} value={t.id}>{t.user?.name}</option>)}
+          </select>
           <input placeholder="Keterangan" value={form.keterangan} onChange={(e) => setForm({ ...form, keterangan: e.target.value })} className="field-input col-span-2" />
         </div>
         <button disabled={loading} className="btn-primary"><Plus className="w-4 h-4" /> {loading ? 'Menyimpan...' : 'Tambah Ruang'}</button>
@@ -74,7 +81,7 @@ export default function RoomsTab() {
                 <td className="py-2.5 text-ink-900">{r.nama}</td>
                 <td><span className="badge-soft badge-brand">{JENIS_LABEL[r.jenis]}</span></td>
                 <td className="text-center text-ink-700">{r.kapasitas ?? '-'}</td>
-                <td className="text-ink-700">{r.penanggung_jawab || '-'}</td>
+                <td className="text-ink-700">{r.teacher?.user?.name || '-'}</td>
                 <td className="text-center text-ink-700">{r.assets_count}</td>
                 <td className="text-right"><button onClick={() => handleDelete(r)} className="text-ink-300 hover:text-honey-700"><Trash2 className="w-4 h-4" /></button></td>
               </tr>

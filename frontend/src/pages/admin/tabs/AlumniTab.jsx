@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { GraduationCap, ChevronRight, ChevronLeft, RotateCcw, Undo2 } from 'lucide-react';
+import { GraduationCap, ChevronRight, ChevronLeft, Undo2 } from 'lucide-react';
 import api from '../../../api/axios';
 import TruncateText from '../../../components/TruncateText';
 import { useAuth } from '../../../context/AuthContext';
@@ -36,12 +36,6 @@ export default function AlumniTab() {
     setSelectedClass(null);
     setStudents([]);
     loadClasses();
-  };
-
-  const handleKembalikan = async (s) => {
-    if (!confirm(`Kembalikan "${s.user?.name}" jadi siswa aktif lagi?`)) return;
-    await api.put(`/students/${s.id}/kembalikan-aktif`);
-    setStudents((prev) => prev.filter((x) => x.id !== s.id));
   };
 
   const handleAktifkanKelas = async (c) => {
@@ -96,7 +90,6 @@ export default function AlumniTab() {
                     <th className="pb-2 font-medium">Nama</th>
                     <th className="font-medium">NIS</th>
                     <th className="font-medium">Tanggal Lulus</th>
-                    {canEdit && <th className="font-medium text-right">Aksi</th>}
                   </tr>
                 </thead>
                 <tbody>
@@ -105,16 +98,6 @@ export default function AlumniTab() {
                       <td className="py-2.5 text-ink-900"><TruncateText text={s.user?.name} /></td>
                       <td className="text-ink-700">{s.nis}</td>
                       <td className="text-ink-700">{s.tanggal_lulus || '-'}</td>
-                      {canEdit && (
-                        <td className="text-right">
-                          <button
-                            onClick={() => handleKembalikan(s)}
-                            className="inline-flex items-center gap-1.5 text-xs font-medium text-ink-500 hover:text-brand-600 border border-line-200 rounded-lg px-3 py-1.5"
-                          >
-                            <RotateCcw className="w-3.5 h-3.5" /> Kembalikan ke Aktif
-                          </button>
-                        </td>
-                      )}
                     </tr>
                   ))}
                 </tbody>

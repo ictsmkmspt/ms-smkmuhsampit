@@ -28,8 +28,10 @@ export default function LaporanTab() {
 
   useEffect(() => {
     setLoadingKeuangan(true);
+    setKeuangan(null);
     api.get('/laporan/keuangan', { params: { bulan, tahun } })
       .then((res) => setKeuangan(res.data))
+      .catch(() => setKeuangan(null))
       .finally(() => setLoadingKeuangan(false));
   }, [bulan, tahun]);
 
@@ -152,6 +154,8 @@ export default function LaporanTab() {
 
         {loadingKeuangan ? (
           <p className="text-center text-ink-300 py-6">Memuat...</p>
+        ) : !keuangan ? (
+          <p className="text-center text-honey-700 py-6">Gagal memuat laporan keuangan. Coba muat ulang halaman.</p>
         ) : (
           <>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">

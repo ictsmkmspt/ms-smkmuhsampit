@@ -1,19 +1,14 @@
 import FormulirPpdbTab from '../ppdb/FormulirPpdbTab';
-import SubjectsTab from '../kurikulum/SubjectsTab';
-import TeachingAssignmentsTab from '../kurikulum/TeachingAssignmentsTab';
-import SchedulesTab from '../kurikulum/SchedulesTab';
 import MaintenanceTab from '../sarpras/MaintenanceTab';
 import ProcurementsTab from '../sarpras/ProcurementsTab';
 
 // Fitur yang masih tahap uji coba — sengaja cuma dibuka untuk Super Admin
-// dulu, belum dibagikan ke Waka terkait (Humas/Kurikulum/Sarpras) sampai
-// dianggap siap. Backend-nya juga sudah dibatasi role:admin, bukan cuma
-// disembunyikan di menu ini.
+// dulu, belum dibagikan ke Waka terkait sampai dianggap siap. Mata
+// Pelajaran/Tugas Mengajar/Jadwal Pelajaran/Template Jadwal sudah pindah
+// jadi bagian tetap menu Pembelajaran (Waka Kurikulum). Backend menu ini
+// juga sudah dibatasi role:admin, bukan cuma disembunyikan di sini.
 export const PENGEMBANGAN_SUBMENU = [
   { key: 'ppdb',          label: 'Formulir PPDB',      component: FormulirPpdbTab },
-  { key: 'mapel',         label: 'Mata Pelajaran',     component: SubjectsTab },
-  { key: 'tugas',         label: 'Tugas Mengajar',     component: TeachingAssignmentsTab },
-  { key: 'jadwal',        label: 'Jadwal Pelajaran',   component: SchedulesTab },
   { key: 'pemeliharaan',  label: 'Pemeliharaan',       component: MaintenanceTab },
   { key: 'pengadaan',     label: 'Pengadaan Barang',   component: ProcurementsTab },
 ];

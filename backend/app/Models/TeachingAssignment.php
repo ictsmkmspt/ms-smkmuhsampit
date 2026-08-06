@@ -6,7 +6,12 @@ use Illuminate\Database\Eloquent\Model;
 
 class TeachingAssignment extends Model
 {
-    protected $fillable = ['teacher_id', 'subject_id', 'class_room_id', 'tahun_ajaran_id'];
+    protected $fillable = ['teacher_id', 'subject_id', 'class_room_id', 'tahun_ajaran_id', 'target_jam'];
+
+    public function schedules()
+    {
+        return $this->hasMany(Schedule::class);
+    }
 
     public function teacher()
     {

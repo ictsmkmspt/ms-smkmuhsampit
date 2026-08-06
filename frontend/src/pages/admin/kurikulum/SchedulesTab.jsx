@@ -1,28 +1,23 @@
 import { useEffect, useState } from 'react';
-import { Plus, Trash2, Pencil, X, Download, Clock, Sparkles } from 'lucide-react';
+import { Trash2, X, FileSpreadsheet } from 'lucide-react';
 import api from '../../../api/axios';
 
 const HARI_LIST = ['senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu'];
 const HARI_LABEL = { senin: 'Senin', selasa: 'Selasa', rabu: 'Rabu', kamis: 'Kamis', jumat: "Jum'at", sabtu: 'Sabtu' };
-
-const PERIOD_FORM_KOSONG = { hari: 'senin', jam_ke: '', waktu_mulai: '', waktu_selesai: '', tipe: 'pelajaran', label_khusus: '', warna: '#D4F5D4' };
-const CELL_FORM_KOSONG = { subject_id: '', teacher_id: '', kode: '' };
 
 export default function SchedulesTab() {
   const [selectedDay, setSelectedDay] = useState('senin');
   const [classes, setClasses] = useState([]);
   const [periods, setPeriods] = useState([]);
   const [schedules, setSchedules] = useState([]);
-  const [subjects, setSubjects] = useState([]);
-  const [teachers, setTeachers] = useState([]);
+  const [assignments, setAssignments] = useState([]);
 
-  const [periodModal, setPeriodModal] = useState(null); // null | { editing: Period|null }
-  const [periodForm, setPeriodForm] = useState(PERIOD_FORM_KOSONG);
-  const [periodError, setPeriodError] = useState('');
-  const [periodSaving, setPeriodSaving] = useState(false);
+  const [selectedClassId, setSelectedClassId] = useState(null);
+  const [armedAssignmentId, setArmedAssignmentId] = useState(null);
+  const [placing, setPlacing] = useState(false);
 
   const [cellModal, setCellModal] = useState(null); // null | { period, classRoom, existing }
-  const [cellForm, setCellForm] = useState(CELL_FORM_KOSONG);
+  const [cellKode, setCellKode] = useState('');
   const [cellError, setCellError] = useState('');
   const [cellSaving, setCellSaving] = useState(false);
 
@@ -36,110 +31,89 @@ export default function SchedulesTab() {
     setClasses(res.data.classes);
     setPeriods(res.data.periods);
     setSchedules(res.data.schedules);
+    setAssignments(res.data.assignments);
+    setSelectedClassId((prev) => prev ?? res.data.classes[0]?.id ?? null);
   });
 
-  useEffect(() => {
-    loadGrid();
-    api.get('/subjects').then((res) => setSubjects(res.data));
-    api.get('/teachers').then((res) => setTeachers(res.data));
-  }, []);
+  useEffect(() => { loadGrid(); }, []);
 
   const periodsForDay = periods.filter((p) => p.hari === selectedDay);
   const scheduleFor = (periodId, classId) => schedules.find((s) => s.period_id === periodId && s.class_room_id === classId);
 
-  // ===== Period (baris jam/slot) =====
-  const openAddPeriod = () => {
-    setPeriodForm({ ...PERIOD_FORM_KOSONG, hari: selectedDay });
-    setPeriodError('');
-    setPeriodModal({ editing: null });
-  };
-  const openEditPeriod = (p) => {
-    setPeriodForm({ hari: p.hari, jam_ke: p.jam_ke || '', waktu_mulai: p.waktu_mulai?.slice(0, 5) || '', waktu_selesai: p.waktu_selesai?.slice(0, 5) || '', tipe: p.tipe, label_khusus: p.label_khusus || '', warna: p.warna || '#D4F5D4' });
-    setPeriodError('');
-    setPeriodModal({ editing: p });
-  };
-  const handleSavePeriod = async (e) => {
-    e.preventDefault();
-    setPeriodError(''); setPeriodSaving(true);
-    try {
-      if (periodModal.editing) {
-        await api.put(`/periods/${periodModal.editing.id}`, periodForm);
-      } else {
-        await api.post('/periods', periodForm);
-      }
-      setPeriodModal(null);
-      loadGrid();
-    } catch (err) {
-      const msgs = err.response?.data?.errors;
-      setPeriodError(msgs ? Object.values(msgs).flat().join(', ') : err.response?.data?.message || 'Gagal menyimpan baris jadwal.');
-    } finally {
-      setPeriodSaving(false);
-    }
-  };
-  const handleDeletePeriod = async (p) => {
-    if (!confirm(`Hapus baris jam ${p.waktu_mulai?.slice(0, 5)}-${p.waktu_selesai?.slice(0, 5)}? Semua isian mapel di baris ini ikut terhapus.`)) return;
-    await api.delete(`/periods/${p.id}`);
-    loadGrid();
+  const kelasTerpilih = classes.find((c) => c.id === selectedClassId);
+  const assignmentsForClass = assignments.filter((a) => a.class_room_id === selectedClassId);
+  const armedAssignment = assignments.find((a) => a.id === armedAssignmentId) || null;
+  const armedPenuh = armedAssignment && armedAssignment.target_jam != null && armedAssignment.schedules_count >= armedAssignment.target_jam;
+
+  const pilihKelas = (id) => {
+    setSelectedClassId(id);
+    setArmedAssignmentId(null);
   };
 
-  // ===== Cell (isian mapel per kelas per period) =====
-  const openCell = (period, classRoom) => {
-    const existing = scheduleFor(period.id, classRoom.id);
-    setCellForm(existing ? { subject_id: existing.subject_id, teacher_id: existing.teacher_id || '', kode: existing.kode || '' } : CELL_FORM_KOSONG);
+  const toggleArm = (a) => {
+    const penuh = a.target_jam != null && a.schedules_count >= a.target_jam;
+    if (penuh && armedAssignmentId !== a.id) return;
+    setArmedAssignmentId((cur) => (cur === a.id ? null : a.id));
+  };
+
+  const handlePlace = async (period) => {
+    if (!armedAssignment || placing) return;
+    setPlacing(true);
+    try {
+      await api.post('/schedules', { period_id: period.id, teaching_assignment_id: armedAssignment.id });
+      // Jam penugasan ini baru saja genap terpenuhi — lepas status "armed"
+      // otomatis, supaya grid tidak terus menampilkan sel hijau yang
+      // sebenarnya sudah tidak bisa diisi lagi (ditolak backend kalau
+      // dipaksa klik).
+      const jamBaru = (armedAssignment.schedules_count ?? 0) + 1;
+      if (armedAssignment.target_jam != null && jamBaru >= armedAssignment.target_jam) {
+        setArmedAssignmentId(null);
+      }
+      await loadGrid();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Gagal menempatkan jadwal.');
+    } finally {
+      setPlacing(false);
+    }
+  };
+
+  // ===== Cell (lihat isian & hapus — isi baru cuma lewat "Tempatkan" di panel Tugas Mengajar) =====
+  const openCell = (period, classRoom, existing) => {
+    setCellKode(existing.kode || '');
     setCellError('');
     setCellModal({ period, classRoom, existing });
   };
-  const handleSaveCell = async (e) => {
+  const handleSaveCellKode = async (e) => {
     e.preventDefault();
     setCellError(''); setCellSaving(true);
     try {
-      const payload = { ...cellForm, teacher_id: cellForm.teacher_id || null };
-      if (cellModal.existing) {
-        await api.put(`/schedules/${cellModal.existing.id}`, payload);
-      } else {
-        await api.post('/schedules', { ...payload, period_id: cellModal.period.id, class_room_id: cellModal.classRoom.id });
-      }
+      await api.put(`/schedules/${cellModal.existing.id}`, { kode: cellKode });
       setCellModal(null);
       loadGrid();
     } catch (err) {
-      const msgs = err.response?.data?.errors;
-      setCellError(msgs ? Object.values(msgs).flat().join(', ') : err.response?.data?.message || 'Gagal menyimpan isian jadwal.');
+      setCellError(err.response?.data?.message || 'Gagal menyimpan.');
     } finally {
       setCellSaving(false);
     }
   };
   const handleDeleteCell = async () => {
     if (!cellModal.existing) return;
+    if (!confirm('Hapus isian jadwal ini? Jam yang sudah ditempatkan untuk penugasan ini akan berkurang.')) return;
     await api.delete(`/schedules/${cellModal.existing.id}`);
     setCellModal(null);
     loadGrid();
   };
 
-  // ===== Template default (waktu & jam ke- seperti jadwal master PDF) =====
-  const [seeding, setSeeding] = useState(false);
-  const handleSeedDefault = async () => {
-    if (!confirm('Muat template default (waktu & jam ke- seperti jadwal master)? Semua baris jam & isian mapel yang sudah ada di tahun ajaran aktif akan DIGANTI total dengan template ini.')) return;
-    setSeeding(true);
-    try {
-      await api.post('/periods/seed-default');
-      await loadGrid();
-    } catch (err) {
-      alert(err.response?.data?.message || 'Gagal memuat template default.');
-    } finally {
-      setSeeding(false);
-    }
-  };
-
-  // ===== Export Word =====
+  // ===== Export Excel =====
   const handleExport = async () => {
     localStorage.setItem('jadwal_export_ttd', JSON.stringify(exportForm));
     setExporting(true);
     try {
-      const res = await api.get('/schedules/export-word', { params: exportForm, responseType: 'blob' });
+      const res = await api.get('/schedules/export-excel', { params: exportForm, responseType: 'blob' });
       const url = window.URL.createObjectURL(new Blob([res.data]));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', 'Jadwal-Pelajaran.docx');
+      link.setAttribute('download', 'Jadwal-Pelajaran.xlsx');
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -154,24 +128,61 @@ export default function SchedulesTab() {
     <div className="space-y-6">
       <div className="surface-card p-4 border-l-4 border-l-brand-400 flex items-start justify-between gap-3 flex-wrap">
         <p className="text-sm text-ink-700 flex-1 min-w-[240px]">
-          Susun struktur jam per hari (jam pelajaran biasa atau blok kegiatan khusus seperti istirahat/upacara), lalu isi mata pelajaran tiap kelas. Hasilnya bisa diekspor ke Word dalam format jadwal master.
+          Struktur jam mengikuti menu <b>Template Jadwal</b> secara otomatis. Tempatkan Tugas Mengajar ke jam yang tersedia lewat panel di bawah — isian jadwal selalu mengikuti Tugas Mengajar, tidak bisa isi bebas mapel/guru lagi, supaya tidak ada guru yang kebentur jam mengajar di 2 kelas sekaligus.
         </p>
-        <div className="flex items-center gap-2">
-          <button onClick={handleSeedDefault} disabled={seeding} className="text-xs text-ink-600 hover:text-brand-700 font-medium border border-line-200 rounded-lg px-3 py-2 flex items-center gap-1.5 whitespace-nowrap">
-            <Sparkles className="w-3.5 h-3.5" /> {seeding ? 'Memuat...' : 'Muat Template Default'}
-          </button>
-          <button onClick={() => setExportModal(true)} className="btn-primary whitespace-nowrap">
-            <Download className="w-4 h-4" /> Export ke Word
-          </button>
+        <button onClick={() => setExportModal(true)} className="btn-primary whitespace-nowrap">
+          <FileSpreadsheet className="w-4 h-4" /> Export ke Excel
+        </button>
+      </div>
+
+      {/* ===== Panel: pool Tugas Mengajar per kelas ===== */}
+      <div className="surface-card p-5">
+        <div className="flex items-center justify-between mb-1 flex-wrap gap-2">
+          <h2 className="font-display font-semibold text-ink-900">Tempatkan Tugas Mengajar</h2>
+          <select
+            value={selectedClassId || ''}
+            onChange={(e) => pilihKelas(Number(e.target.value))}
+            className="field-input text-sm text-ink-700 w-48"
+          >
+            {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+        </div>
+        <p className="text-xs text-ink-500 mb-4">Pilih 1 penugasan, lalu klik jam kosong yang menyala hijau di tabel bawah pada kolom "{kelasTerpilih?.name}".</p>
+
+        <div className="space-y-2">
+          {assignmentsForClass.map((a) => {
+            const penuh = a.target_jam != null && a.schedules_count >= a.target_jam;
+            const armed = armedAssignmentId === a.id;
+            return (
+              <div key={a.id} className={`flex items-center justify-between gap-3 rounded-xl p-3 border transition ${armed ? 'border-brand-400 bg-brand-50' : 'border-line-200 bg-mist-50'}`}>
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-ink-900 truncate">{a.subject?.nama}</p>
+                  <p className="text-xs text-ink-500">{a.teacher?.user?.name || 'Belum ada guru'} · {a.schedules_count ?? 0}/{a.target_jam ?? '∞'} jam ditempatkan</p>
+                </div>
+                <button
+                  onClick={() => toggleArm(a)}
+                  disabled={penuh && !armed}
+                  className={`shrink-0 text-xs font-medium rounded-lg px-3 py-1.5 whitespace-nowrap transition disabled:opacity-40 ${
+                    armed ? 'bg-brand-600 text-white hover:bg-brand-700' : 'bg-white border border-line-200 text-brand-700 hover:bg-brand-50'
+                  }`}
+                >
+                  {armed ? 'Batal' : penuh ? 'Jam Penuh' : 'Tempatkan'}
+                </button>
+              </div>
+            );
+          })}
+          {assignmentsForClass.length === 0 && (
+            <p className="text-sm text-ink-300 text-center py-4">Belum ada Tugas Mengajar untuk kelas ini. Atur dulu di menu Tugas Mengajar.</p>
+          )}
         </div>
       </div>
 
-      <div className="flex gap-1 bg-mist-50 rounded-lg p-1 w-fit flex-wrap">
+      <div className="flex gap-1 bg-white border border-line-200 rounded-xl p-1 w-fit flex-wrap">
         {HARI_LIST.map((h) => (
           <button
             key={h}
             onClick={() => setSelectedDay(h)}
-            className={`px-3 py-1.5 rounded-md text-sm font-medium transition ${selectedDay === h ? 'bg-white text-brand-700 shadow-sm' : 'text-ink-500 hover:text-ink-700'}`}
+            className={`px-4 py-1.5 rounded-lg text-sm font-medium transition ${selectedDay === h ? 'bg-brand-600 text-white shadow-sm' : 'text-ink-700 hover:bg-mist-50 hover:text-ink-900'}`}
           >
             {HARI_LABEL[h]}
           </button>
@@ -179,12 +190,7 @@ export default function SchedulesTab() {
       </div>
 
       <div className="surface-card p-5">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="font-display font-semibold text-ink-900">Jadwal {HARI_LABEL[selectedDay]}</h2>
-          <button onClick={openAddPeriod} className="text-xs text-brand-600 hover:text-brand-800 font-medium border border-line-200 rounded-lg px-3 py-1.5 flex items-center gap-1">
-            <Plus className="w-3.5 h-3.5" /> Tambah Baris Jam
-          </button>
-        </div>
+        <h2 className="font-display font-semibold text-ink-900 mb-4">Jadwal {HARI_LABEL[selectedDay]}</h2>
 
         <div className="overflow-x-auto">
           <table className="text-sm border-collapse w-full">
@@ -193,9 +199,8 @@ export default function SchedulesTab() {
                 <th className="pb-2 pr-3 font-medium whitespace-nowrap">Waktu</th>
                 <th className="pb-2 pr-3 font-medium whitespace-nowrap">Jam Ke</th>
                 {classes.map((c) => (
-                  <th key={c.id} className="pb-2 px-2 font-medium text-center whitespace-nowrap">{c.name}</th>
+                  <th key={c.id} className={`pb-2 px-2 font-medium text-center whitespace-nowrap ${c.id === selectedClassId ? 'text-brand-700' : ''}`}>{c.name}</th>
                 ))}
-                <th className="w-16"></th>
               </tr>
             </thead>
             <tbody>
@@ -210,70 +215,58 @@ export default function SchedulesTab() {
                   ) : (
                     classes.map((c) => {
                       const s = scheduleFor(p.id, c.id);
+                      if (s) {
+                        return (
+                          <td key={c.id} className="px-1">
+                            <button
+                              onClick={() => openCell(p, c, s)}
+                              className="w-full min-w-[42px] py-1.5 rounded-md text-xs font-medium bg-brand-50 text-brand-700 hover:bg-brand-100 transition"
+                            >
+                              {s.kode || s.subject?.kode || '?'}
+                            </button>
+                          </td>
+                        );
+                      }
+                      if (armedAssignment && !armedPenuh && c.id === armedAssignment.class_room_id) {
+                        const guruBentrok = armedAssignment.teacher_id && schedules.some((sc) => sc.period_id === p.id && sc.teacher_id === armedAssignment.teacher_id);
+                        if (guruBentrok) {
+                          return (
+                            <td key={c.id} className="px-1">
+                              <div title="Guru penugasan ini sudah mengajar kelas lain di jam ini" className="w-full min-w-[42px] py-1.5 rounded-md text-xs text-center bg-rose-50 text-rose-300 cursor-not-allowed">✕</div>
+                            </td>
+                          );
+                        }
+                        return (
+                          <td key={c.id} className="px-1">
+                            <button
+                              onClick={() => handlePlace(p)}
+                              disabled={placing}
+                              title="Tempatkan di sini"
+                              className="w-full min-w-[42px] py-1.5 rounded-md text-xs font-medium bg-brand-100 text-brand-700 hover:bg-brand-200 ring-2 ring-brand-400 transition disabled:opacity-50"
+                            >
+                              +
+                            </button>
+                          </td>
+                        );
+                      }
                       return (
                         <td key={c.id} className="px-1">
-                          <button
-                            onClick={() => openCell(p, c)}
-                            className={`w-full min-w-[42px] py-1.5 rounded-md text-xs font-medium transition ${s ? 'bg-brand-50 text-brand-700 hover:bg-brand-100' : 'bg-mist-50 text-ink-300 hover:bg-mist-100'}`}
-                          >
-                            {s ? (s.kode || s.subject?.kode || '?') : '+'}
-                          </button>
+                          <div className="w-full min-w-[42px] py-1.5 rounded-md text-xs text-center text-ink-200">·</div>
                         </td>
                       );
                     })
                   )}
-                  <td className="text-right whitespace-nowrap">
-                    <div className="flex justify-end gap-1">
-                      <button onClick={() => openEditPeriod(p)} className="text-ink-400 hover:text-brand-600"><Pencil className="w-3.5 h-3.5" /></button>
-                      <button onClick={() => handleDeletePeriod(p)} className="text-ink-300 hover:text-honey-700"><Trash2 className="w-3.5 h-3.5" /></button>
-                    </div>
-                  </td>
                 </tr>
               ))}
               {periodsForDay.length === 0 && (
-                <tr><td colSpan={classes.length + 3} className="py-6 text-center text-ink-300">Belum ada baris jam untuk hari ini.</td></tr>
+                <tr><td colSpan={classes.length + 2} className="py-6 text-center text-ink-300">Belum ada baris jam untuk hari ini — atur dulu di menu Template Jadwal.</td></tr>
               )}
             </tbody>
           </table>
         </div>
       </div>
 
-      {/* ===== Modal: tambah/edit baris jam ===== */}
-      {periodModal && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-ink-900/40" onClick={() => setPeriodModal(null)} />
-          <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-sm">
-            <div className="flex items-center justify-between p-5 border-b border-line-200">
-              <h3 className="font-display font-semibold text-ink-900 flex items-center gap-2"><Clock className="w-4 h-4" /> {periodModal.editing ? 'Edit' : 'Tambah'} Baris Jam</h3>
-              <button onClick={() => setPeriodModal(null)} className="text-ink-300 hover:text-ink-600"><X className="w-5 h-5" /></button>
-            </div>
-            <form onSubmit={handleSavePeriod} className="p-5 space-y-3">
-              {periodError && <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2">{periodError}</p>}
-              <div className="grid grid-cols-2 gap-3">
-                <input placeholder="Jam ke (mis. 1, opsional)" value={periodForm.jam_ke} onChange={(e) => setPeriodForm({ ...periodForm, jam_ke: e.target.value })} className="field-input" />
-                <select value={periodForm.tipe} onChange={(e) => setPeriodForm({ ...periodForm, tipe: e.target.value })} className="field-input text-ink-700">
-                  <option value="pelajaran">Jam Pelajaran</option>
-                  <option value="khusus">Kegiatan Khusus</option>
-                </select>
-                <input type="time" value={periodForm.waktu_mulai} onChange={(e) => setPeriodForm({ ...periodForm, waktu_mulai: e.target.value })} className="field-input" required />
-                <input type="time" value={periodForm.waktu_selesai} onChange={(e) => setPeriodForm({ ...periodForm, waktu_selesai: e.target.value })} className="field-input" required />
-              </div>
-              {periodForm.tipe === 'khusus' && (
-                <>
-                  <input placeholder="Label (mis. ISTIRAHAT PERTAMA)" value={periodForm.label_khusus} onChange={(e) => setPeriodForm({ ...periodForm, label_khusus: e.target.value })} className="field-input w-full" required />
-                  <div className="flex items-center gap-2">
-                    <label className="text-xs text-ink-500">Warna</label>
-                    <input type="color" value={periodForm.warna} onChange={(e) => setPeriodForm({ ...periodForm, warna: e.target.value })} className="h-8 w-14 rounded border border-line-200" />
-                  </div>
-                </>
-              )}
-              <button disabled={periodSaving} className="btn-primary w-full justify-center">{periodSaving ? 'Menyimpan...' : 'Simpan'}</button>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ===== Modal: isi mapel per sel ===== */}
+      {/* ===== Modal: lihat isian sel + ubah kode + hapus ===== */}
       {cellModal && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-ink-900/40" onClick={() => setCellModal(null)} />
@@ -285,37 +278,31 @@ export default function SchedulesTab() {
               </div>
               <button onClick={() => setCellModal(null)} className="text-ink-300 hover:text-ink-600"><X className="w-5 h-5" /></button>
             </div>
-            <form onSubmit={handleSaveCell} className="p-5 space-y-3">
+            <form onSubmit={handleSaveCellKode} className="p-5 space-y-3">
               {cellError && <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2">{cellError}</p>}
-              <select value={cellForm.subject_id} onChange={(e) => setCellForm({ ...cellForm, subject_id: e.target.value })} className="field-input w-full text-ink-700" required>
-                <option value="">Pilih Mata Pelajaran</option>
-                {subjects.map((s) => <option key={s.id} value={s.id}>{s.nama}</option>)}
-              </select>
-              <select value={cellForm.teacher_id} onChange={(e) => setCellForm({ ...cellForm, teacher_id: e.target.value })} className="field-input w-full text-ink-700">
-                <option value="">Guru (opsional)</option>
-                {teachers.map((t) => <option key={t.id} value={t.id}>{t.user?.name}</option>)}
-              </select>
-              <input placeholder="Kode guru untuk tampil di grid (mis. D1)" value={cellForm.kode} onChange={(e) => setCellForm({ ...cellForm, kode: e.target.value })} className="field-input w-full" maxLength={10} />
+              <div className="rounded-lg bg-mist-50 border border-line-200 px-3 py-2.5">
+                <p className="text-sm font-medium text-ink-900">{cellModal.existing.subject?.nama}</p>
+                <p className="text-xs text-ink-500">{cellModal.existing.teacher?.user?.name || 'Belum ada guru'}</p>
+              </div>
+              <input placeholder="Kode guru untuk tampil di grid (mis. D1)" value={cellKode} onChange={(e) => setCellKode(e.target.value)} className="field-input w-full" maxLength={10} />
               <div className="flex gap-2">
                 <button disabled={cellSaving} className="btn-primary flex-1 justify-center">{cellSaving ? 'Menyimpan...' : 'Simpan'}</button>
-                {cellModal.existing && (
-                  <button type="button" onClick={handleDeleteCell} className="px-3 rounded-lg border border-line-200 text-honey-700 hover:bg-honey-50">
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                )}
+                <button type="button" onClick={handleDeleteCell} className="px-3 rounded-lg border border-line-200 text-honey-700 hover:bg-honey-50">
+                  <Trash2 className="w-4 h-4" />
+                </button>
               </div>
             </form>
           </div>
         </div>
       )}
 
-      {/* ===== Modal: export Word ===== */}
+      {/* ===== Modal: export Excel ===== */}
       {exportModal && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-ink-900/40" onClick={() => setExportModal(false)} />
           <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-sm">
             <div className="flex items-center justify-between p-5 border-b border-line-200">
-              <h3 className="font-display font-semibold text-ink-900">Export ke Word</h3>
+              <h3 className="font-display font-semibold text-ink-900">Export ke Excel</h3>
               <button onClick={() => setExportModal(false)} className="text-ink-300 hover:text-ink-600"><X className="w-5 h-5" /></button>
             </div>
             <div className="p-5 space-y-3">
@@ -329,7 +316,7 @@ export default function SchedulesTab() {
                 <input placeholder="Tanggal (opsional)" value={exportForm.tanggal || ''} onChange={(e) => setExportForm({ ...exportForm, tanggal: e.target.value })} className="field-input" />
               </div>
               <button onClick={handleExport} disabled={exporting} className="btn-primary w-full justify-center">
-                <Download className="w-4 h-4" /> {exporting ? 'Mengunduh...' : 'Unduh Dokumen Word'}
+                <FileSpreadsheet className="w-4 h-4" /> {exporting ? 'Mengunduh...' : 'Unduh Dokumen Excel'}
               </button>
             </div>
           </div>

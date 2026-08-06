@@ -150,6 +150,7 @@ export default function CategoryBarChart({ title, subtitle, categories, showTabl
 }
 
 function wrapLabel(name) {
+  if (!name) return [''];
   const kata = name.split(' ');
   if (kata.length <= 1 || name.length <= 10) return [name];
   const tengah = Math.ceil(kata.length / 2);

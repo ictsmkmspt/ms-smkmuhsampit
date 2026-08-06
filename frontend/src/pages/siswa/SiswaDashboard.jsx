@@ -351,12 +351,12 @@ export default function SiswaDashboard() {
                 >
                   <Icon className={`w-6 h-6 ${isActive ? 'stroke-[2.5]' : 'stroke-[1.75]'}`} />
                   <span className="text-[10px] font-medium tracking-wide">{t.label}</span>
-                  {isActive && (
-                    <span className="absolute bottom-0 w-8 h-0.5 bg-brand-600 rounded-t-full" />
-                  )}
-                </button>
-              );
-            })}
+                {isActive && (
+                  <span className="absolute bottom-0 w-8 h-0.5 bg-brand-600 rounded-t-full" />
+                )}
+              </button>
+            );
+          })}
           </div>
         </div>
       )}

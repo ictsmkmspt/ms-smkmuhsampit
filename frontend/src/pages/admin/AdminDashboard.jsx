@@ -3,7 +3,7 @@ import {
   LogOut, Database, ClipboardList, ClipboardCheck, Settings, ChevronDown, ChevronLeft, ChevronRight, Menu, X,
   Users, GraduationCap, School, UserCog, Briefcase, LayoutDashboard, Building2,
   Clock, AlertOctagon, Trophy, CalendarDays, Wallet, Pencil, Image, ShieldCheck,
-  AlertTriangle, BookOpen, CalendarClock, CalendarRange, Warehouse, Boxes, Wrench, PackagePlus, UserPlus, DatabaseBackup, FlaskConical,
+  AlertTriangle, BookOpen, CalendarClock, CalendarRange, Warehouse, Boxes, Wrench, PackagePlus, UserPlus, DatabaseBackup, FlaskConical, Sparkles,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useSchoolProfile } from '../../context/SchoolProfileContext';
@@ -33,9 +33,9 @@ const ALUMNI_ICONS = { siswa: GraduationCap, wali: UserCog };
 const SETTINGS_ICONS = { sekolah: Image, jam: Clock, backup: DatabaseBackup };
 const PKL_ICONS = { dudi: Building2, penempatan: ClipboardList };
 const POIN_ICONS = { 'rekap-pelanggaran': AlertOctagon, 'rekap-prestasi': Trophy, 'jenis-pelanggaran': AlertOctagon, 'jenis-prestasi': Trophy, sanksi: AlertTriangle };
-const KURIKULUM_ICONS = { kalender: CalendarRange, libur: CalendarDays };
+const KURIKULUM_ICONS = { kalender: CalendarRange, akademik: CalendarRange, libur: CalendarDays, mapel: BookOpen, tugas: UserCog, jadwal: CalendarClock, template: Sparkles };
 const SARPRAS_ICONS = { ruang: Warehouse, aset: Boxes };
-const PENGEMBANGAN_ICONS = { ppdb: UserPlus, mapel: BookOpen, tugas: UserCog, jadwal: CalendarClock, pemeliharaan: Wrench, pengadaan: PackagePlus };
+const PENGEMBANGAN_ICONS = { ppdb: UserPlus, pemeliharaan: Wrench, pengadaan: PackagePlus };
 
 export default function AdminDashboard() {
   const { user, logout } = useAuth();
@@ -61,7 +61,7 @@ export default function AdminDashboard() {
     { key: 'absensi',    label: 'Rekap Absensi', icon: ClipboardCheck, component: AttendanceReportTab, roles: ['waka_kesiswaan'] },
     { key: 'poin',       label: 'Poin',        icon: ClipboardList,   hasDropdown: true, submenu: poinSubmenu, subIcons: POIN_ICONS, roles: ['waka_kesiswaan'] },
     { key: 'pkl',        label: 'PKL',         icon: Briefcase,       hasDropdown: true, submenu: pklSubmenu, subIcons: PKL_ICONS, roles: ['waka_humas', 'waka_kurikulum'] },
-    { key: 'kurikulum',  label: 'Pelajaran',   icon: BookOpen,        hasDropdown: true, submenu: KURIKULUM_SUBMENU, subIcons: KURIKULUM_ICONS, roles: ['waka_kurikulum'] },
+    { key: 'kurikulum',  label: 'Pembelajaran', icon: BookOpen,        hasDropdown: true, submenu: KURIKULUM_SUBMENU, subIcons: KURIKULUM_ICONS, roles: ['waka_kurikulum'] },
     { key: 'sarpras',    label: 'Sarana dan Prasarana', icon: Wrench, hasDropdown: true, submenu: SARPRAS_SUBMENU, subIcons: SARPRAS_ICONS, roles: ['waka_sarpras'] },
     { key: 'pengaturan', label: 'Pengaturan',  icon: Settings,        hasDropdown: true, submenu: settingsSubmenu, subIcons: SETTINGS_ICONS, roles: [] },
     { key: 'pengembangan', label: 'Pengembangan', icon: FlaskConical, hasDropdown: true, submenu: PENGEMBANGAN_SUBMENU, subIcons: PENGEMBANGAN_ICONS, roles: [] },
@@ -79,9 +79,10 @@ export default function AdminDashboard() {
   // Poin yang kelihatan oleh SEMUA peran — sub lain (jenis-pelanggaran,
   // jenis-prestasi, sanksi) direstriksi ke Kesiswaan saja.
   const [activePoinSub, setActivePoinSub] = useState('rekap-pelanggaran');
-  const [activeKurikulumSub, setActiveKurikulumSub] = useState('mapel');
+  const [activeKurikulumSub, setActiveKurikulumSub] = useState('akademik');
   const [activeSarprasSub, setActiveSarprasSub] = useState('ruang');
   const [openDropdown, setOpenDropdown] = useState(null); // 'master' | 'pengaturan' | null
+  const [openNested, setOpenNested] = useState(null); // "${tabKey}.${groupKey}" | null — submenu bertingkat (mis. Kalender di Pembelajaran)
   const [collapsed, setCollapsed] = useState(false); // toggle sidebar desktop
   const [mobileOpen, setMobileOpen] = useState(false); // toggle dropdown menu di HP
   const [showEditProfil, setShowEditProfil] = useState(false);
@@ -153,6 +154,48 @@ export default function AdminDashboard() {
           {!isCollapsed && isOpen && (
             <div className="mt-1 ml-4 pl-3 border-l border-white/10 space-y-0.5">
               {tab.submenu.map((sub) => {
+                // Submenu bertingkat (mis. "Kalender" berisi Kalender
+                // Akademik & Kalender Libur) — grup ini sendiri tidak
+                // langsung membuka konten, cuma expand/collapse anaknya.
+                if (sub.children) {
+                  const nestedKey = `${tab.key}.${sub.key}`;
+                  const grupPunyaAnakAktif = activeTab === tab.key && sub.children.some((c) => c.key === activeSub);
+                  const nestedOpen = openNested === nestedKey || (openNested === null && grupPunyaAnakAktif);
+                  const GroupIcon = tab.subIcons[sub.key];
+                  return (
+                    <div key={sub.key}>
+                      <button
+                        onClick={() => setOpenNested((prev) => (prev === nestedKey ? null : nestedKey))}
+                        className={`w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg text-sm text-left whitespace-nowrap transition ${
+                          grupPunyaAnakAktif ? 'text-[#F2B705] font-medium' : 'text-white/60 hover:text-white'
+                        }`}
+                      >
+                        <span className="flex items-center gap-2"><GroupIcon className="w-3.5 h-3.5" /> {sub.label}</span>
+                        <ChevronDown className={`w-3 h-3 shrink-0 transition-transform ${nestedOpen ? 'rotate-180' : ''}`} />
+                      </button>
+                      {nestedOpen && (
+                        <div className="mt-0.5 ml-4 pl-3 border-l border-white/10 space-y-0.5">
+                          {sub.children.map((anak) => {
+                            const ChildIcon = tab.subIcons[anak.key];
+                            const childActive = activeTab === tab.key && activeSub === anak.key;
+                            return (
+                              <button
+                                key={anak.key}
+                                onClick={() => { setActiveSub(anak.key); setActiveTab(tab.key); setMobileOpen(false); }}
+                                className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-left whitespace-nowrap transition ${
+                                  childActive ? 'text-[#F2B705] font-medium' : 'text-white/60 hover:text-white'
+                                }`}
+                              >
+                                <ChildIcon className="w-3.5 h-3.5" /> {anak.label}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                }
+
                 const SubIcon = tab.subIcons[sub.key];
                 const subActive = activeTab === tab.key && activeSub === sub.key;
                 return (

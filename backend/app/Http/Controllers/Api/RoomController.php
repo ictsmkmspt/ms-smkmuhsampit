@@ -10,7 +10,7 @@ class RoomController extends Controller
 {
     public function index()
     {
-        return Room::withCount('assets')->orderBy('nama')->get();
+        return Room::withCount('assets')->with('teacher.user')->orderBy('nama')->get();
     }
 
     public function store(Request $request)
@@ -19,11 +19,11 @@ class RoomController extends Controller
             'nama' => 'required|string|max:100',
             'jenis' => 'required|in:kelas,lab,bengkel,kantor,lainnya',
             'kapasitas' => 'nullable|integer|min:0',
-            'penanggung_jawab' => 'nullable|string|max:100',
+            'teacher_id' => 'nullable|exists:teachers,id',
             'keterangan' => 'nullable|string',
         ]);
 
-        return response()->json(Room::create($data), 201);
+        return response()->json(Room::create($data)->load('teacher.user'), 201);
     }
 
     public function update(Request $request, Room $room)
@@ -32,13 +32,13 @@ class RoomController extends Controller
             'nama' => 'required|string|max:100',
             'jenis' => 'required|in:kelas,lab,bengkel,kantor,lainnya',
             'kapasitas' => 'nullable|integer|min:0',
-            'penanggung_jawab' => 'nullable|string|max:100',
+            'teacher_id' => 'nullable|exists:teachers,id',
             'keterangan' => 'nullable|string',
         ]);
 
         $room->update($data);
 
-        return $room->fresh();
+        return $room->fresh()->load('teacher.user');
     }
 
     public function destroy(Room $room)

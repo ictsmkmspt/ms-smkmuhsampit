@@ -22,6 +22,19 @@ class AssetController extends Controller
         return $query->get();
     }
 
+    public function findByBarcode(string $code)
+    {
+        $asset = Asset::with('room')->where('kode_aset', $code)->first();
+
+        if (!$asset) {
+            return response()->json([
+                'message' => 'Barcode tidak dikenali / aset tidak ditemukan.',
+            ], 404);
+        }
+
+        return response()->json($asset);
+    }
+
     public function store(Request $request)
     {
         $data = $request->validate([

@@ -15,6 +15,7 @@ class TeachingAssignmentController extends Controller
         $tahunAjaranId = $request->filled('tahun_ajaran_id') ? $request->tahun_ajaran_id : TahunAjaran::aktifId();
 
         $query = TeachingAssignment::with(['teacher.user', 'subject', 'classRoom'])
+            ->withCount('schedules')
             ->where('tahun_ajaran_id', $tahunAjaranId);
 
         if ($request->filled('class_room_id')) {
@@ -37,6 +38,9 @@ class TeachingAssignmentController extends Controller
                     ->where('tahun_ajaran_id', $tahunAjaranId)),
             ],
             'class_room_id' => 'required|exists:class_rooms,id',
+            // Opsional — sebagian mapel SMK (kejuruan/blok) tidak selalu
+            // dipatok rata per minggu, jadi tidak boleh dipaksa wajib.
+            'target_jam' => 'nullable|integer|min:1',
         ], [
             'subject_id.unique' => 'Mata pelajaran ini sudah ada penugasan guru untuk kelas ini di tahun ajaran aktif.',
         ]);
@@ -45,18 +49,19 @@ class TeachingAssignmentController extends Controller
 
         $assignment = TeachingAssignment::create($data);
 
-        return response()->json($assignment->load(['teacher.user', 'subject', 'classRoom']), 201);
+        return response()->json($assignment->load(['teacher.user', 'subject', 'classRoom'])->loadCount('schedules'), 201);
     }
 
     public function update(Request $request, TeachingAssignment $teachingAssignment)
     {
         $data = $request->validate([
             'teacher_id' => 'required|exists:teachers,id',
+            'target_jam' => 'nullable|integer|min:1',
         ]);
 
         $teachingAssignment->update($data);
 
-        return $teachingAssignment->fresh(['teacher.user', 'subject', 'classRoom']);
+        return $teachingAssignment->fresh(['teacher.user', 'subject', 'classRoom'])->loadCount('schedules');
     }
 
     public function destroy(TeachingAssignment $teachingAssignment)

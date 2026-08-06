@@ -1,9 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
-import { LogOut, School, Trophy, AlertOctagon, Clock, ChevronDown, ChevronLeft, ChevronRight, Wallet, UserCog, X } from 'lucide-react';
+import { LogOut, School, Trophy, AlertOctagon, Clock, ChevronDown, ChevronLeft, ChevronRight, Wallet, UserCog, X, Home, BookOpen } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api/axios';
 import LeaderboardPrestasi from '../../components/LeaderboardPrestasi';
 import EditProfileModal from '../../components/EditProfileModal';
+import KalenderAkademikView from '../../components/KalenderAkademikView';
+
+const TABS = [
+  { key: 'beranda', label: 'Beranda', icon: Home },
+  { key: 'pembelajaran', label: 'Pembelajaran', icon: BookOpen },
+];
 
 const PAGE_SIZE = 5;
 
@@ -31,6 +37,7 @@ export default function ParentDashboard() {
   const [showTagihanLainDetail, setShowTagihanLainDetail] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [showEditProfil, setShowEditProfil] = useState(false);
+  const [activeTab, setActiveTab] = useState('beranda');
   const menuRef = useRef(null);
 
   useEffect(() => {
@@ -129,15 +136,17 @@ export default function ParentDashboard() {
         </div>
       </div>
 
-      <div className="max-w-2xl mx-auto px-6 pt-6 pb-10">
-        {children.length === 0 && !loading && (
+      <div className="max-w-2xl mx-auto px-6 pt-6 pb-24">
+        {activeTab === 'pembelajaran' && <KalenderAkademikView />}
+
+        {activeTab === 'beranda' && children.length === 0 && !loading && (
           <div className="surface-card p-6 text-center">
             <School className="w-8 h-8 text-ink-300 mx-auto mb-2" />
             <p className="text-sm text-ink-500">Belum ada data anak yang terhubung ke akun ini. Hubungi admin sekolah untuk menghubungkan akun.</p>
           </div>
         )}
 
-        {children.length > 0 && (
+        {activeTab === 'beranda' && children.length > 0 && (
           <>
             {/* Pemilih anak, cuma tampil kalau lebih dari 1 anak */}
             {children.length > 1 && (
@@ -289,8 +298,34 @@ export default function ParentDashboard() {
           </>
         )}
 
-        <div className="mt-6">
-          <LeaderboardPrestasi />
+        {activeTab === 'beranda' && (
+          <div className="mt-6">
+            <LeaderboardPrestasi />
+          </div>
+        )}
+      </div>
+
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-line-200 z-40">
+        <div className="max-w-2xl mx-auto flex">
+          {TABS.map((t) => {
+            const Icon = t.icon;
+            const isActive = activeTab === t.key;
+            return (
+              <button
+                key={t.key}
+                onClick={() => setActiveTab(t.key)}
+                className={`relative flex-1 flex flex-col items-center justify-center gap-1 py-3 transition ${
+                  isActive ? 'text-brand-600' : 'text-ink-400 hover:text-ink-600'
+                }`}
+              >
+                <Icon className={`w-6 h-6 ${isActive ? 'stroke-[2.5]' : 'stroke-[1.75]'}`} />
+                <span className="text-[10px] font-medium tracking-wide">{t.label}</span>
+                {isActive && (
+                  <span className="absolute bottom-0 w-8 h-0.5 bg-brand-600 rounded-t-full" />
+                )}
+              </button>
+            );
+          })}
         </div>
       </div>
 

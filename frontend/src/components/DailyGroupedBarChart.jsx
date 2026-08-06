@@ -123,17 +123,15 @@ export default function DailyGroupedBarChart({ title, subtitle, labels, series, 
                       />
                     );
                   })}
-                  {(i === 0 || (i + 1) % 5 === 0) && (
-                    <text
-                      x={colX + colWidth / 2}
-                      y={HEIGHT - PAD_BOTTOM + 12}
-                      textAnchor="middle" fontSize="8"
-                      fill={isHover ? 'var(--color-ink-900)' : 'var(--color-ink-500)'}
-                      fontWeight={isHover ? '600' : '400'}
-                    >
-                      {l}
-                    </text>
-                  )}
+                  <text
+                    x={colX + colWidth / 2}
+                    y={HEIGHT - PAD_BOTTOM + 12}
+                    textAnchor="middle" fontSize="7"
+                    fill={isHover ? 'var(--color-ink-900)' : 'var(--color-ink-500)'}
+                    fontWeight={isHover ? '600' : '400'}
+                  >
+                    {l}
+                  </text>
                   <rect
                     x={colX} y={PAD_TOP} width={colWidth} height={plotHeight}
                     fill="transparent" tabIndex={0}

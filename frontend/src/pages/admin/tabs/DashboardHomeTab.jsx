@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Users, GraduationCap, School, Building2, AlertTriangle, ChevronLeft, ChevronRight, ArrowRight, Briefcase, ClipboardCheck, CalendarRange, DoorOpen, Package } from 'lucide-react';
+import { Users, GraduationCap, School, Building2, AlertTriangle, ChevronLeft, ChevronRight, ChevronDown, ArrowRight, Briefcase, ClipboardCheck, BookOpen, DoorOpen, Package } from 'lucide-react';
 import api from '../../../api/axios';
 import { useAuth } from '../../../context/AuthContext';
 import CategoryBarChart from '../../../components/CategoryBarChart';
@@ -18,30 +18,43 @@ const PANDUAN_KESISWAAN = [
   { no: 6, judul: 'Sanksi Bertingkat', keterangan: 'Setelah poin berjalan, atur aturan sanksi berdasarkan akumulasi poin pelanggaran.', tab: 'poin', sub: 'sanksi' },
 ];
 
-function PanduanKesiswaan({ onNavigate }) {
+// Kartu "Panduan Awal" dipakai semua peran Waka — defaultnya terlipat
+// (cuma judul + jumlah langkah) supaya tidak makan tempat di dashboard,
+// terutama sekarang beberapa panduan sudah lumayan panjang (mis. Kurikulum
+// 6 langkah). Klik judulnya untuk buka/tutup daftar langkah lengkap.
+function PanduanAwal({ judul, deskripsi, langkah, onNavigate }) {
+  const [buka, setBuka] = useState(false);
   return (
-    <div className="surface-card p-5 border-l-4 border-l-brand-400">
-      <h2 className="font-display font-semibold text-ink-900 mb-1">Panduan Awal Kesiswaan</h2>
-      <p className="text-sm text-ink-700 mb-4">
-        Untuk data kesiswaan berjalan benar, urutkan pengaturan seperti berikut: kelas dan siswa lebih dulu (karena wali & poin bergantung pada data siswa), baru kemudian jenis pelanggaran/prestasi, dan terakhir aturan sanksi bertingkat (karena bergantung pada poin yang sudah tercatat).
-      </p>
-      <div className="space-y-2">
-        {PANDUAN_KESISWAAN.map((s) => (
-          <div key={s.no} className="flex items-center gap-3 bg-mist-50 rounded-xl p-3">
-            <span className="shrink-0 w-7 h-7 rounded-full bg-brand-600 text-white text-sm font-semibold flex items-center justify-center">{s.no}</span>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-ink-900">{s.judul}</p>
-              <p className="text-xs text-ink-500">{s.keterangan}</p>
-            </div>
-            <button
-              onClick={() => onNavigate?.(s.tab, s.sub)}
-              className="shrink-0 flex items-center gap-1 text-xs font-medium text-brand-700 hover:text-brand-900 bg-white border border-line-200 rounded-lg px-3 py-1.5 whitespace-nowrap"
-            >
-              Buka <ArrowRight className="w-3.5 h-3.5" />
-            </button>
+    <div className="surface-card border-l-4 border-l-brand-400 overflow-hidden">
+      <button onClick={() => setBuka((v) => !v)} className="w-full flex items-center justify-between gap-3 p-5 text-left">
+        <div className="min-w-0">
+          <h2 className="font-display font-semibold text-ink-900">{judul}</h2>
+          {!buka && <p className="text-xs text-ink-500 mt-0.5">{langkah.length} langkah pengaturan awal — klik untuk lihat detail.</p>}
+        </div>
+        <ChevronDown className={`w-4 h-4 text-ink-400 shrink-0 transition-transform ${buka ? 'rotate-180' : ''}`} />
+      </button>
+      {buka && (
+        <div className="px-5 pb-5">
+          <p className="text-sm text-ink-700 mb-4">{deskripsi}</p>
+          <div className="space-y-2">
+            {langkah.map((s) => (
+              <div key={s.no} className="flex items-center gap-3 bg-mist-50 rounded-xl p-3">
+                <span className="shrink-0 w-7 h-7 rounded-full bg-brand-600 text-white text-sm font-semibold flex items-center justify-center">{s.no}</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-ink-900">{s.judul}</p>
+                  <p className="text-xs text-ink-500">{s.keterangan}</p>
+                </div>
+                <button
+                  onClick={() => onNavigate?.(s.tab, s.sub)}
+                  className="shrink-0 flex items-center gap-1 text-xs font-medium text-brand-700 hover:text-brand-900 bg-white border border-line-200 rounded-lg px-3 py-1.5 whitespace-nowrap"
+                >
+                  Buka <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -52,34 +65,6 @@ function PanduanKesiswaan({ onNavigate }) {
 const PANDUAN_HUMAS = [
   { no: 1, judul: 'Input Data IDUKA', keterangan: 'Daftarkan perusahaan/instansi tempat siswa PKL beserta akun login, instruktur, dan lokasi absensinya.', tab: 'pkl', sub: 'dudi' },
 ];
-
-function PanduanHumas({ onNavigate }) {
-  return (
-    <div className="surface-card p-5 border-l-4 border-l-brand-400">
-      <h2 className="font-display font-semibold text-ink-900 mb-1">Panduan Awal Humas</h2>
-      <p className="text-sm text-ink-700 mb-4">
-        Data IDUKA perlu diisi lebih dulu sebelum Waka Kurikulum bisa membuat penempatan PKL siswa.
-      </p>
-      <div className="space-y-2">
-        {PANDUAN_HUMAS.map((s) => (
-          <div key={s.no} className="flex items-center gap-3 bg-mist-50 rounded-xl p-3">
-            <span className="shrink-0 w-7 h-7 rounded-full bg-brand-600 text-white text-sm font-semibold flex items-center justify-center">{s.no}</span>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-ink-900">{s.judul}</p>
-              <p className="text-xs text-ink-500">{s.keterangan}</p>
-            </div>
-            <button
-              onClick={() => onNavigate?.(s.tab, s.sub)}
-              className="shrink-0 flex items-center gap-1 text-xs font-medium text-brand-700 hover:text-brand-900 bg-white border border-line-200 rounded-lg px-3 py-1.5 whitespace-nowrap"
-            >
-              Buka <ArrowRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 // Dashboard Waka Humas cuma menampilkan statistik PKL/IDUKA — bidangnya
 // sendiri — bukan grafik pelanggaran/prestasi/absensi (itu bukan urusan
@@ -112,7 +97,12 @@ function HumasDashboard({ onNavigate }) {
 
   return (
     <div className="space-y-6">
-      <PanduanHumas onNavigate={onNavigate} />
+      <PanduanAwal
+        judul="Panduan Awal Humas"
+        deskripsi="Data IDUKA perlu diisi lebih dulu sebelum Waka Kurikulum bisa membuat penempatan PKL siswa."
+        langkah={PANDUAN_HUMAS}
+        onNavigate={onNavigate}
+      />
 
       <div>
         <h2 className="font-display text-xl font-semibold text-ink-900">Ringkasan</h2>
@@ -136,63 +126,38 @@ function HumasDashboard({ onNavigate }) {
 
 // Langkah pengaturan awal Waka Kurikulum, berurutan sesuai ketergantungan
 // datanya: hari libur harus ditentukan dulu sebelum kalender akademik
-// disusun (supaya kegiatan tidak bentrok tanggal libur), baru setelah itu
-// penempatan PKL siswa (tidak bergantung ke dua yang di atas, tapi memang
-// tanggung jawab Kurikulum yang paling sering dipakai berikutnya).
+// disusun (supaya kegiatan tidak bentrok tanggal libur); mata pelajaran
+// harus ada dulu sebelum bisa ditugaskan ke guru (Tugas Mengajar), dan
+// Tugas Mengajar harus ada dulu sebelum bisa ditempatkan ke jam (Jadwal
+// Pelajaran). Penempatan PKL siswa tidak bergantung ke langkah lain.
 const PANDUAN_KURIKULUM = [
   { no: 1, judul: 'Atur Kalender Libur', keterangan: 'Tentukan tanggal libur (termasuk sabtu-minggu otomatis) sebelum menyusun kalender akademik.', tab: 'kurikulum', sub: 'libur' },
-  { no: 2, judul: 'Atur Kalender Akademik', keterangan: 'Susun jadwal kegiatan (ASTS, ASAS, dll) sepanjang tahun ajaran.', tab: 'kurikulum', sub: 'kalender' },
+  { no: 2, judul: 'Atur Kalender Akademik', keterangan: 'Susun jadwal kegiatan (ASTS, ASAS, dll) sepanjang tahun ajaran.', tab: 'kurikulum', sub: 'akademik' },
   { no: 3, judul: 'Atur Penempatan PKL Siswa', keterangan: 'Tempatkan siswa ke IDUKA dan tentukan guru pembimbingnya.', tab: 'pkl', sub: 'penempatan' },
+  { no: 4, judul: 'Input Mata Pelajaran', keterangan: 'Daftarkan mata pelajaran yang diajarkan, sebelum menetapkan Tugas Mengajar.', tab: 'kurikulum', sub: 'mapel' },
+  { no: 5, judul: 'Atur Tugas Mengajar', keterangan: 'Tetapkan guru pengampu tiap mata pelajaran per kelas, sebelum menyusun jadwal.', tab: 'kurikulum', sub: 'tugas' },
+  { no: 6, judul: 'Susun Jadwal Pelajaran', keterangan: 'Tempatkan Tugas Mengajar ke jam yang tersedia untuk membentuk jadwal lengkap.', tab: 'kurikulum', sub: 'jadwal' },
 ];
-
-function PanduanKurikulum({ onNavigate }) {
-  return (
-    <div className="surface-card p-5 border-l-4 border-l-brand-400">
-      <h2 className="font-display font-semibold text-ink-900 mb-1">Panduan Awal Kurikulum</h2>
-      <p className="text-sm text-ink-700 mb-4">
-        Urutkan pengaturan seperti berikut: kalender libur lebih dulu (supaya kalender akademik tidak bentrok tanggal libur), baru kalender akademik, dan terakhir penempatan PKL siswa.
-      </p>
-      <div className="space-y-2">
-        {PANDUAN_KURIKULUM.map((s) => (
-          <div key={s.no} className="flex items-center gap-3 bg-mist-50 rounded-xl p-3">
-            <span className="shrink-0 w-7 h-7 rounded-full bg-brand-600 text-white text-sm font-semibold flex items-center justify-center">{s.no}</span>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-ink-900">{s.judul}</p>
-              <p className="text-xs text-ink-500">{s.keterangan}</p>
-            </div>
-            <button
-              onClick={() => onNavigate?.(s.tab, s.sub)}
-              className="shrink-0 flex items-center gap-1 text-xs font-medium text-brand-700 hover:text-brand-900 bg-white border border-line-200 rounded-lg px-3 py-1.5 whitespace-nowrap"
-            >
-              Buka <ArrowRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 // Dashboard Waka Kurikulum — bidangnya sekarang Guru, Kalender Akademik/
 // Libur, dan PKL (dibagi dengan Humas) — bukan grafik pelanggaran/prestasi/
 // absensi (itu bukan urusan Kurikulum lagi, backend-nya juga sudah tidak
 // mengizinkan Kurikulum baca /dashboard/grafik).
 function KurikulumDashboard({ onNavigate }) {
-  const [stats, setStats] = useState({ guru: null, kelas: null });
-  const [tahunAjaran, setTahunAjaran] = useState(null);
+  const [stats, setStats] = useState({ guru: null, kelas: null, mapel: null });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     Promise.allSettled([
       api.get('/teachers').then((r) => r.data.length),
       api.get('/classes').then((r) => r.data.length),
-      api.get('/tahun-ajaran').then((r) => r.data.find((t) => t.status === 'aktif')),
-    ]).then(([guru, kelas, ta]) => {
+      api.get('/subjects').then((r) => r.data.length),
+    ]).then(([guru, kelas, mapel]) => {
       setStats({
         guru: guru.status === 'fulfilled' ? guru.value : '!',
         kelas: kelas.status === 'fulfilled' ? kelas.value : '!',
+        mapel: mapel.status === 'fulfilled' ? mapel.value : '!',
       });
-      setTahunAjaran(ta.status === 'fulfilled' ? ta.value : null);
       setLoading(false);
     });
   }, []);
@@ -200,11 +165,17 @@ function KurikulumDashboard({ onNavigate }) {
   const KARTU = [
     { key: 'guru', label: 'Total Guru', icon: GraduationCap, color: '#15803D' },
     { key: 'kelas', label: 'Total Kelas', icon: School, color: '#F2B705' },
+    { key: 'mapel', label: 'Jumlah Mata Pelajaran', icon: BookOpen, color: '#2a78d6' },
   ];
 
   return (
     <div className="space-y-6">
-      <PanduanKurikulum onNavigate={onNavigate} />
+      <PanduanAwal
+        judul="Panduan Awal Kurikulum"
+        deskripsi="Urutkan pengaturan seperti berikut: kalender libur lebih dulu (supaya kalender akademik tidak bentrok tanggal libur), kalender akademik, penempatan PKL siswa, lalu mata pelajaran, tugas mengajar, dan terakhir jadwal pelajaran (masing-masing bergantung pada langkah sebelumnya)."
+        langkah={PANDUAN_KURIKULUM}
+        onNavigate={onNavigate}
+      />
 
       <div>
         <h2 className="font-display text-xl font-semibold text-ink-900">Ringkasan</h2>
@@ -221,13 +192,6 @@ function KurikulumDashboard({ onNavigate }) {
             <p className="text-xs text-ink-500 mt-1">{k.label}</p>
           </div>
         ))}
-        <div className="surface-card p-5">
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-3 bg-[#2a78d61A]">
-            <CalendarRange className="w-5 h-5 text-[#2a78d6]" />
-          </div>
-          <p className="font-display text-lg font-bold text-ink-900">{loading ? '—' : (tahunAjaran?.nama || '-')}</p>
-          <p className="text-xs text-ink-500 mt-1">Tahun Ajaran Aktif</p>
-        </div>
       </div>
     </div>
   );
@@ -240,34 +204,6 @@ const PANDUAN_SARPRAS = [
   { no: 1, judul: 'Tambah Ruangan', keterangan: 'Daftarkan ruang, lab, dan bengkel yang ada di sekolah.', tab: 'sarpras', sub: 'ruang' },
   { no: 2, judul: 'Tambah Inventaris', keterangan: 'Catat aset/barang inventaris, opsional dikaitkan ke ruangan yang sudah dibuat.', tab: 'sarpras', sub: 'aset' },
 ];
-
-function PanduanSarpras({ onNavigate }) {
-  return (
-    <div className="surface-card p-5 border-l-4 border-l-brand-400">
-      <h2 className="font-display font-semibold text-ink-900 mb-1">Panduan Awal Sarpras</h2>
-      <p className="text-sm text-ink-700 mb-4">
-        Urutkan pengaturan seperti berikut: ruangan lebih dulu, baru inventaris aset (bisa dikaitkan ke ruangan yang sudah dibuat).
-      </p>
-      <div className="space-y-2">
-        {PANDUAN_SARPRAS.map((s) => (
-          <div key={s.no} className="flex items-center gap-3 bg-mist-50 rounded-xl p-3">
-            <span className="shrink-0 w-7 h-7 rounded-full bg-brand-600 text-white text-sm font-semibold flex items-center justify-center">{s.no}</span>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-ink-900">{s.judul}</p>
-              <p className="text-xs text-ink-500">{s.keterangan}</p>
-            </div>
-            <button
-              onClick={() => onNavigate?.(s.tab, s.sub)}
-              className="shrink-0 flex items-center gap-1 text-xs font-medium text-brand-700 hover:text-brand-900 bg-white border border-line-200 rounded-lg px-3 py-1.5 whitespace-nowrap"
-            >
-              Buka <ArrowRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 // Dashboard Waka Sarpras — bidangnya sekarang cuma Sarana & Prasarana
 // (Ruang/Lab dan Inventaris Aset) — bukan grafik pelanggaran/prestasi/
@@ -297,7 +233,12 @@ function SarprasDashboard({ onNavigate }) {
 
   return (
     <div className="space-y-6">
-      <PanduanSarpras onNavigate={onNavigate} />
+      <PanduanAwal
+        judul="Panduan Awal Sarpras"
+        deskripsi="Urutkan pengaturan seperti berikut: ruangan lebih dulu, baru inventaris aset (bisa dikaitkan ke ruangan yang sudah dibuat)."
+        langkah={PANDUAN_SARPRAS}
+        onNavigate={onNavigate}
+      />
 
       <div>
         <h2 className="font-display text-xl font-semibold text-ink-900">Ringkasan</h2>
@@ -475,7 +416,12 @@ export default function DashboardHomeTab({ onNavigate }) {
   return (
     <div className="space-y-6">
       {user.role === 'waka_kesiswaan' ? (
-        <PanduanKesiswaan onNavigate={onNavigate} />
+        <PanduanAwal
+          judul="Panduan Awal Kesiswaan"
+          deskripsi="Untuk data kesiswaan berjalan benar, urutkan pengaturan seperti berikut: kelas dan siswa lebih dulu (karena wali & poin bergantung pada data siswa), baru kemudian jenis pelanggaran/prestasi, dan terakhir aturan sanksi bertingkat (karena bergantung pada poin yang sudah tercatat)."
+          langkah={PANDUAN_KESISWAAN}
+          onNavigate={onNavigate}
+        />
       ) : (
         <div className="surface-card p-5 border-l-4 border-l-brand-400">
           <p className="text-sm text-ink-700">

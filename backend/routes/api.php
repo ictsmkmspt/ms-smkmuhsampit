@@ -20,7 +20,7 @@ use App\Http\Controllers\Api\PklJournalController;
 use App\Http\Controllers\Api\PklPenilaianController;
 use App\Http\Controllers\Api\PklPembimbinganJournalController;
 use App\Http\Controllers\Api\PklPlacementController;
-use App\Http\Controllers\Api\PeriodController;
+use App\Http\Controllers\Api\PeriodTemplateController;
 use App\Http\Controllers\Api\PpdbController;
 use App\Http\Controllers\Api\PrayerAttendanceController;
 use App\Http\Controllers\Api\ProcurementController;
@@ -81,7 +81,10 @@ Route::middleware('auth:sanctum')->group(function () {
     // Prestasi, Kalender Libur, Jam Masuk, ditambah Catatan BK dan Aturan
     // Sanksi Bertingkat (eskalasi otomatis dari akumulasi poin siswa).
     Route::middleware('role:admin,waka_kesiswaan')->group(function () {
-        Route::apiResource('classes', ClassRoomController::class)->parameters(['classes' => 'classRoom']);
+        // "destroy" DIKECUALIKAN di sini — hapus kelas cuma boleh admin
+        // (data siswa & riwayatnya ikut berisiko), didaftarkan terpisah
+        // di bawah dengan role:admin saja.
+        Route::apiResource('classes', ClassRoomController::class)->parameters(['classes' => 'classRoom'])->except(['destroy']);
         Route::post('/classes/{classRoom}/luluskan', [ClassRoomController::class, 'luluskan']);
         Route::post('/classes/{classRoom}/aktifkan', [ClassRoomController::class, 'aktifkan']);
         Route::get('/students/import/template', [StudentController::class, 'downloadTemplate']);
@@ -135,7 +138,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::apiResource('teachers', TeacherController::class)->except(['index', 'show']);
         Route::put('/teachers/{teacher}/reset-password', [TeacherController::class, 'resetPassword']);
 
-        Route::apiResource('academic-events', AcademicEventController::class)->except(['show']);
+        // "index" DIKECUALIKAN di sini juga — didaftarkan terpisah di bawah
+        // supaya Guru/Siswa/Wali (menu Pembelajaran/Beranda, cuma baca) ikut
+        // bisa akses tanpa bentrok URI ganda dengan rute ini.
+        Route::apiResource('academic-events', AcademicEventController::class)->except(['show', 'index']);
 
         Route::post('/tahun-ajaran', [TahunAjaranController::class, 'store']);
         Route::put('/tahun-ajaran/{id}', [TahunAjaranController::class, 'update']);
@@ -160,30 +166,37 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::apiResource('pkl-placements', PklPlacementController::class)->except(['show', 'index']);
     });
 
-    // Waka Sarpras — Ruang/Lab/Bengkel dan Inventaris Aset. Pemeliharaan &
-    // Pengadaan Barang dipindah ke grup "Pengembangan" (admin-only) di bawah.
+    // Waka Sarpras — Ruang/Lab/Bengkel dan Inventaris Aset. Penanggung jawab
+    // ruang terhubung ke data guru (lihat grup /teachers read-only di bawah).
+    // Pemeliharaan & Pengadaan Barang dipindah ke grup "Pengembangan"
+    // (admin-only) di bawah.
     Route::middleware('role:admin,waka_sarpras')->group(function () {
         Route::apiResource('rooms', RoomController::class)->except(['show']);
+        Route::get('/assets/barcode/{code}', [AssetController::class, 'findByBarcode']);
         Route::apiResource('assets', AssetController::class)->except(['show']);
     });
 
+    // Mata Pelajaran, Tugas Mengajar, Template Jadwal, dan Jadwal Pelajaran
+    // sekarang jadi bagian tetap menu Pembelajaran milik Waka Kurikulum
+    // (dulu tahap uji coba di menu Pengembangan, sekarang sudah dianggap
+    // siap dibagikan).
+    Route::middleware('role:admin,waka_kurikulum')->group(function () {
+        Route::apiResource('subjects', SubjectController::class)->except(['show']);
+        Route::apiResource('teaching-assignments', TeachingAssignmentController::class)->except(['show']);
+        Route::apiResource('period-templates', PeriodTemplateController::class)->except(['show']);
+        Route::get('/schedules/grid', [ScheduleController::class, 'grid']);
+        Route::get('/schedules/export-excel', [ScheduleExportController::class, 'exportExcel']);
+        Route::apiResource('schedules', ScheduleController::class)->except(['show', 'index']);
+    });
+
     // Menu "Pengembangan" — fitur yang masih tahap uji coba, sengaja cuma
-    // dibuka untuk Super Admin dulu (belum dibagikan ke Waka terkait):
-    // PPDB, Mata Pelajaran, Tugas Mengajar, Jadwal Pelajaran, Pemeliharaan,
-    // dan Pengadaan Barang.
+    // dibuka untuk Super Admin dulu (belum dibagikan ke Waka terkait): PPDB,
+    // Pemeliharaan, dan Pengadaan Barang.
     Route::middleware('role:admin')->group(function () {
         Route::get('/ppdb', [PpdbController::class, 'index']);
         Route::put('/ppdb/pengaturan', [PpdbController::class, 'updatePengaturan']);
         Route::put('/ppdb/{ppdbPendaftar}', [PpdbController::class, 'update']);
         Route::delete('/ppdb/{ppdbPendaftar}', [PpdbController::class, 'destroy']);
-
-        Route::apiResource('subjects', SubjectController::class)->except(['show']);
-        Route::apiResource('teaching-assignments', TeachingAssignmentController::class)->except(['show']);
-        Route::post('/periods/seed-default', [PeriodController::class, 'seedDefault']);
-        Route::apiResource('periods', PeriodController::class)->except(['show']);
-        Route::get('/schedules/grid', [ScheduleController::class, 'grid']);
-        Route::get('/schedules/export-word', [ScheduleExportController::class, 'exportWord']);
-        Route::apiResource('schedules', ScheduleController::class)->except(['show', 'index']);
 
         Route::apiResource('maintenance-requests', MaintenanceRequestController::class)->except(['show']);
         Route::apiResource('procurements', ProcurementController::class)->except(['show']);
@@ -198,6 +211,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/school-profile', [SchoolProfileController::class, 'update']);
         Route::post('/school-profile/logo', [SchoolProfileController::class, 'uploadLogo']);
         Route::post('/students/reset-poin', [StudentController::class, 'resetPoin']);
+        Route::delete('/classes/{classRoom}', [ClassRoomController::class, 'destroy']);
         Route::delete('/tahun-ajaran/{id}', [TahunAjaranController::class, 'destroy']);
         Route::post('/tu', [TuController::class, 'store']);
         Route::delete('/tu/{id}', [TuController::class, 'destroy']);
@@ -211,11 +225,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/system/restore', [SystemBackupController::class, 'restore']);
     });
 
-    // /teachers dibagi ke Waka Kesiswaan/Kurikulum/Humas (dipakai untuk
-    // pilih guru pembimbing PKL di menu Penempatan). Waka Sarpras TIDAK
-    // diikutkan — menunya sekarang cuma Sarana &amp; Prasarana (rooms/assets),
-    // tidak butuh data guru sama sekali.
-    Route::middleware('role:admin,waka_kesiswaan,waka_kurikulum,waka_humas')->group(function () {
+    // /teachers dibagi ke Waka Kesiswaan/Kurikulum/Humas/Sarpras. Kesiswaan/
+    // Kurikulum/Humas pakai buat pilih guru pembimbing PKL di menu Penempatan;
+    // Sarpras pakai buat hubungkan penanggung jawab ruang/lab ke data guru.
+    Route::middleware('role:admin,waka_kesiswaan,waka_kurikulum,waka_humas,waka_sarpras')->group(function () {
         Route::get('/teachers', [TeacherController::class, 'index']);
         Route::get('/teachers/{teacher}', [TeacherController::class, 'show']);
     });
@@ -243,10 +256,14 @@ Route::middleware('auth:sanctum')->group(function () {
     // Read-only lintas-modul yang TIDAK relevan ke tugas Humas (PKL/IDUKA
     // saja) atau Sarpras (Sarana &amp; Prasarana saja) — sengaja tidak
     // diikutkan di sini, biar keduanya cuma bisa lihat apa yang memang jadi
-    // tanggung jawabnya.
-    Route::middleware('role:admin,waka_kesiswaan,waka_kurikulum')->group(function () {
+    // tanggung jawabnya. Guru/Wali ikut diberi akses baca — dipakai menu
+    // Pembelajaran (Wali) dan Beranda (Guru) buat menampilkan Kalender
+    // Akademik. Siswa TIDAK diikutkan — menu Pembelajaran dihapus lagi
+    // khusus buat Siswa.
+    Route::middleware('role:admin,waka_kesiswaan,waka_kurikulum,guru,wali')->group(function () {
         Route::get('/holidays', [HolidayController::class, 'index']);
         Route::get('/tahun-ajaran', [TahunAjaranController::class, 'index']);
+        Route::get('/academic-events', [AcademicEventController::class, 'index']);
     });
 
     // /tu dan /dashboard/grafik TIDAK diikutkan buat Waka Kurikulum/Sarpras —

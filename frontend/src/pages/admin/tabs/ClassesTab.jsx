@@ -2,8 +2,13 @@ import { useEffect, useState } from 'react';
 import { Plus, Trash2, Pencil, X, Check, GraduationCap } from 'lucide-react';
 import api from '../../../api/axios';
 import TruncateText from '../../../components/TruncateText';
+import { useAuth } from '../../../context/AuthContext';
 
 export default function ClassesTab() {
+  const { user } = useAuth();
+  // Waka Kesiswaan tidak boleh hapus kelas (data siswa & riwayatnya ikut
+  // berisiko) — cuma admin. Backend-nya juga sudah dibatasi begitu.
+  const canDelete = user.role === 'admin';
   const [classes, setClasses]   = useState([]);
   const [teachers, setTeachers] = useState([]);
   const [name, setName]         = useState('');
@@ -182,9 +187,11 @@ export default function ClassesTab() {
                       <button onClick={() => handleLuluskan(c)} disabled={!c.students_count} className="text-ink-300 hover:text-brand-600 disabled:opacity-30 disabled:hover:text-ink-300" title="Luluskan Semua Siswa Aktif di Kelas Ini">
                         <GraduationCap className="w-4 h-4" />
                       </button>
-                      <button onClick={() => handleDelete(c.id, c.name)} className="text-ink-300 hover:text-honey-700" title="Hapus Kelas">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      {canDelete && (
+                        <button onClick={() => handleDelete(c.id, c.name)} className="text-ink-300 hover:text-honey-700" title="Hapus Kelas">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>

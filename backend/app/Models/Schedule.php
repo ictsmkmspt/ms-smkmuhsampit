@@ -6,11 +6,16 @@ use Illuminate\Database\Eloquent\Model;
 
 class Schedule extends Model
 {
-    protected $fillable = ['class_room_id', 'subject_id', 'teacher_id', 'tahun_ajaran_id', 'period_id', 'kode'];
+    protected $fillable = ['class_room_id', 'subject_id', 'teacher_id', 'tahun_ajaran_id', 'period_id', 'kode', 'teaching_assignment_id'];
 
     public function period()
     {
-        return $this->belongsTo(Period::class);
+        return $this->belongsTo(PeriodTemplate::class, 'period_id');
+    }
+
+    public function teachingAssignment()
+    {
+        return $this->belongsTo(TeachingAssignment::class);
     }
 
     public function classRoom()

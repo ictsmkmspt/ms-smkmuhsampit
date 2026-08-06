@@ -6,7 +6,12 @@ use Illuminate\Database\Eloquent\Model;
 
 class Room extends Model
 {
-    protected $fillable = ['nama', 'jenis', 'kapasitas', 'penanggung_jawab', 'keterangan'];
+    protected $fillable = ['nama', 'jenis', 'kapasitas', 'teacher_id', 'keterangan'];
+
+    public function teacher()
+    {
+        return $this->belongsTo(Teacher::class);
+    }
 
     public function assets()
     {

@@ -48,11 +48,6 @@ class TahunAjaran extends Model
         return $this->hasMany(Schedule::class);
     }
 
-    public function periods()
-    {
-        return $this->hasMany(Period::class);
-    }
-
     public function bkCases()
     {
         return $this->hasMany(BkCase::class);
