@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Plus, Trash2, Save } from 'lucide-react';
 import api from '../../../api/axios';
 
@@ -9,6 +9,11 @@ export default function SubjectsTab() {
   const [loading, setLoading] = useState(false);
   const [editId, setEditId] = useState(null);
   const [editForm, setEditForm] = useState({});
+
+  const subjectsUrut = useMemo(
+    () => [...subjects].sort((a, b) => (a.kode || '').localeCompare(b.kode || '')),
+    [subjects]
+  );
 
   const load = () => api.get('/subjects').then((res) => setSubjects(res.data));
   useEffect(() => { load(); }, []);
@@ -74,7 +79,7 @@ export default function SubjectsTab() {
             </tr>
           </thead>
           <tbody>
-            {subjects.map((s) => (
+            {subjectsUrut.map((s) => (
               <tr key={s.id} className="border-t border-line-200">
                 <td className="py-2.5">
                   {editId === s.id ? <input value={editForm.kode} onChange={(e) => setEditForm({ ...editForm, kode: e.target.value })} className="field-input py-1" /> : <span className="font-mono text-ink-700">{s.kode}</span>}

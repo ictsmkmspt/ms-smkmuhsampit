@@ -9,6 +9,7 @@ import api from '../../api/axios';
 import PklSiswaView from './PklSiswaView';
 import EditProfileModal from '../../components/EditProfileModal';
 import LeaderboardPrestasi from '../../components/LeaderboardPrestasi';
+import JadwalPelajaranView from '../../components/JadwalPelajaranView';
 
 const PAGE_SIZE = 5;
 
@@ -160,6 +161,13 @@ export default function SiswaDashboard() {
           </p>
 
         </div>
+      </div>
+
+      <div className="surface-card max-w-md mx-auto p-4 mb-6">
+        <h2 className="font-display font-semibold text-sm text-ink-900 mb-3">
+          Jadwal Pelajaran
+        </h2>
+        <JadwalPelajaranView endpoint="/my-schedule" />
       </div>
 
       {/* Riwayat Poin — total di atas, daftar riwayat gabungan prestasi & pelanggaran di bawah */}

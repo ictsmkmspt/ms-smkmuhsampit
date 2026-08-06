@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\ClassRoom;
 use App\Models\PeriodTemplate;
 use App\Models\Schedule;
+use App\Models\Student;
 use App\Models\TahunAjaran;
 use App\Models\TeachingAssignment;
 use Illuminate\Http\Request;
@@ -88,6 +89,11 @@ class ScheduleController extends Controller
             'subject_id' => $assignment->subject_id,
             'teacher_id' => $assignment->teacher_id,
             'tahun_ajaran_id' => $assignment->tahun_ajaran_id,
+            // Kode tampilan di jadwal ikut Kode Guru penugasannya (lihat
+            // TeachingAssignmentController::generateKodeGuru) — kalau belum
+            // pernah di-generate, tetap null dan konsumen (grid/export)
+            // sudah punya fallback ke kode mapel.
+            'kode' => $assignment->kode_guru,
         ]);
 
         return response()->json($schedule->load(['subject', 'teacher.user']), 201);
@@ -134,5 +140,53 @@ class ScheduleController extends Controller
         $schedule->delete();
 
         return response()->json(['message' => 'Isian jadwal dihapus.']);
+    }
+
+    /**
+     * Jadwal 1 kelas saja (siswa/wali) — cuma jam+isian kelas itu, bukan
+     * seluruh sekolah kayak grid() punya admin. Kode tetap dikirim sama
+     * seperti mapel & nama gurunya, supaya frontend bisa tampilkan kode
+     * ringkas di tabel + daftar keterangan (kode -> mapel & guru) di bawahnya.
+     */
+    private function gridUntukKelas(int $classRoomId)
+    {
+        $tahunAjaranId = TahunAjaran::aktifId();
+
+        $periods = PeriodTemplate::orderByRaw("FIELD(hari, 'senin','selasa','rabu','kamis','jumat','sabtu')")
+            ->orderBy('waktu_mulai')
+            ->get();
+
+        $schedules = Schedule::with(['subject', 'teacher.user', 'period'])
+            ->where('tahun_ajaran_id', $tahunAjaranId)
+            ->where('class_room_id', $classRoomId)
+            ->get();
+
+        return response()->json(['periods' => $periods, 'schedules' => $schedules]);
+    }
+
+    public function mySchedule(Request $request)
+    {
+        $classRoomId = Student::where('user_id', $request->user()->id)->value('class_room_id');
+
+        if (!$classRoomId) {
+            return response()->json(['message' => 'Anda belum terdaftar di kelas manapun.'], 422);
+        }
+
+        return $this->gridUntukKelas($classRoomId);
+    }
+
+    public function childSchedule(Request $request, $studentId)
+    {
+        $isMyChild = $request->user()->children()->where('students.id', $studentId)->exists();
+        if (!$isMyChild) {
+            return response()->json(['message' => 'Anda tidak berwenang melihat data siswa ini.'], 403);
+        }
+
+        $classRoomId = Student::where('id', $studentId)->value('class_room_id');
+        if (!$classRoomId) {
+            return response()->json(['message' => 'Siswa ini belum terdaftar di kelas manapun.'], 422);
+        }
+
+        return $this->gridUntukKelas($classRoomId);
     }
 }

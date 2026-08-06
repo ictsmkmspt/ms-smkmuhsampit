@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Plus, Trash2, Pencil, Check, X } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Plus, Trash2, Pencil, Check, X, Wand2 } from 'lucide-react';
 import api from '../../../api/axios';
 
 export default function TeachingAssignmentsTab() {
@@ -10,10 +10,16 @@ export default function TeachingAssignmentsTab() {
   const [form, setForm] = useState({ teacher_id: '', subject_id: '', class_room_id: '', target_jam: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [generating, setGenerating] = useState(false);
 
   const [editingId, setEditingId] = useState(null);
   const [editJam, setEditJam] = useState('');
   const [editSaving, setEditSaving] = useState(false);
+
+  const assignmentsUrut = useMemo(
+    () => [...assignments].sort((a, b) => (a.subject?.kode || '').localeCompare(b.subject?.kode || '')),
+    [assignments]
+  );
 
   const load = () => api.get('/teaching-assignments').then((res) => setAssignments(res.data));
   useEffect(() => {
@@ -49,6 +55,18 @@ export default function TeachingAssignmentsTab() {
     setEditJam(a.target_jam ?? '');
   };
   const cancelEditJam = () => setEditingId(null);
+  const handleGenerateKodeGuru = async () => {
+    if (!confirm('Buat ulang Kode Guru untuk semua penugasan? Kode lama akan ditimpa, termasuk yang sudah tampil di Jadwal Pelajaran.')) return;
+    setGenerating(true);
+    try {
+      const res = await api.post('/teaching-assignments/generate-kode-guru');
+      setAssignments(res.data);
+    } catch (err) {
+      alert(err.response?.data?.message || 'Gagal membuat kode guru.');
+    } finally {
+      setGenerating(false);
+    }
+  };
   const saveEditJam = async (a) => {
     setEditSaving(true);
     try {
@@ -94,13 +112,23 @@ export default function TeachingAssignmentsTab() {
       </form>
 
       <div className="surface-card p-5">
-        <h2 className="font-display font-semibold text-ink-900 mb-1">Daftar Penugasan <span className="text-ink-500 font-sans font-normal text-sm">({assignments.length})</span></h2>
-        <p className="text-xs text-ink-500 mb-4">Kolom "Terjadwal" menghitung otomatis dari isian di menu Jadwal Pelajaran. Target jam boleh dikosongkan kalau memang tidak dipatok rata per minggu (mis. mapel blok/kejuruan).</p>
+        <div className="flex items-center justify-between gap-3 mb-1 flex-wrap">
+          <h2 className="font-display font-semibold text-ink-900">Daftar Penugasan <span className="text-ink-500 font-sans font-normal text-sm">({assignments.length})</span></h2>
+          <button
+            onClick={handleGenerateKodeGuru}
+            disabled={generating || assignments.length === 0}
+            className="flex items-center gap-1.5 text-sm font-medium text-ink-700 bg-mist-50 hover:bg-mist-100 disabled:opacity-50 disabled:cursor-not-allowed border border-line-200 rounded-xl px-4 py-2 transition shrink-0"
+          >
+            <Wand2 className="w-4 h-4" /> {generating ? 'Membuat...' : 'Generate Kode Guru A-Z'}
+          </button>
+        </div>
+        <p className="text-xs text-ink-500 mb-4">Kolom "Terjadwal" menghitung otomatis dari isian di menu Jadwal Pelajaran. Target jam boleh dikosongkan kalau memang tidak dipatok rata per minggu (mis. mapel blok/kejuruan). Kode Guru dibuat lewat tombol di atas — tidak perlu diisi manual — dan kode inilah yang tampil di Jadwal Pelajaran.</p>
         <div className="table-scroll">
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-ink-500 border-b border-line-200">
-              <th className="pb-2 font-medium">Kelas</th>
+              <th className="pb-2 font-medium">Kode Guru</th>
+              <th className="font-medium">Kelas</th>
               <th className="font-medium">Mata Pelajaran</th>
               <th className="font-medium">Guru</th>
               <th className="font-medium">Terjadwal / Target Jam</th>
@@ -108,10 +136,14 @@ export default function TeachingAssignmentsTab() {
             </tr>
           </thead>
           <tbody>
-            {assignments.map((a) => (
+            {assignmentsUrut.map((a) => (
               <tr key={a.id} className="border-t border-line-200">
-                <td className="py-2.5 text-ink-900">{a.class_room?.name}</td>
-                <td className="text-ink-700">{a.subject?.nama}</td>
+                <td className="py-2.5"><span className="badge-soft badge-brand font-mono">{a.kode_guru || '-'}</span></td>
+                <td className="text-ink-900">{a.class_room?.name}</td>
+                <td className="text-ink-700">
+                  {a.subject?.nama}
+                  {a.subject?.kode && <span className="text-ink-400 font-mono text-xs ml-1.5">({a.subject.kode})</span>}
+                </td>
                 <td className="text-ink-700">{a.teacher?.user?.name}</td>
                 <td className="text-ink-700">
                   {editingId === a.id ? (
@@ -137,7 +169,7 @@ export default function TeachingAssignmentsTab() {
                 <td className="text-right"><button onClick={() => handleDelete(a)} className="text-ink-300 hover:text-honey-700"><Trash2 className="w-4 h-4" /></button></td>
               </tr>
             ))}
-            {assignments.length === 0 && <tr><td colSpan="5" className="py-6 text-center text-ink-300">Belum ada penugasan untuk tahun ajaran aktif.</td></tr>}
+            {assignments.length === 0 && <tr><td colSpan="6" className="py-6 text-center text-ink-300">Belum ada penugasan untuk tahun ajaran aktif.</td></tr>}
           </tbody>
         </table>
         </div>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Trash2, X, FileSpreadsheet } from 'lucide-react';
 import api from '../../../api/axios';
 
@@ -39,6 +39,45 @@ export default function SchedulesTab() {
 
   const periodsForDay = periods.filter((p) => p.hari === selectedDay);
   const scheduleFor = (periodId, classId) => schedules.find((s) => s.period_id === periodId && s.class_room_id === classId);
+
+  const keteranganGuru = useMemo(() => {
+    return assignments
+      .filter((a) => a.kode_guru)
+      .map((a) => ({ id: a.id, kode_guru: a.kode_guru, guru: a.teacher?.user?.name || '-', mapel: a.subject?.nama || '-' }))
+      .sort((a, b) => a.kode_guru.localeCompare(b.kode_guru));
+  }, [assignments]);
+
+  // Matriks JP: 1 baris per (guru, kelas) — kolomnya semua kelas, isi cuma
+  // di kolom kelas baris itu. "Total" = JP guru itu di kelas itu saja;
+  // "Total Jp" digabung (rowSpan) buat total keseluruhan guru itu di semua
+  // kelas, ditulis 1x saja di baris pertamanya.
+  const jpMatrix = useMemo(() => {
+    const perGuruKelas = new Map();
+    const totalPerGuru = new Map();
+    schedules.forEach((s) => {
+      const guru = s.teacher?.user?.name || 'Belum ada guru';
+      const key = `${guru}||${s.class_room_id}`;
+      perGuruKelas.set(key, (perGuruKelas.get(key) || 0) + 1);
+      totalPerGuru.set(guru, (totalPerGuru.get(guru) || 0) + 1);
+    });
+
+    const daftarGuru = [...totalPerGuru.keys()].sort((a, b) => a.localeCompare(b));
+    const baris = [];
+    daftarGuru.forEach((guru) => {
+      const kelasUntukGuru = classes.filter((c) => perGuruKelas.has(`${guru}||${c.id}`));
+      kelasUntukGuru.forEach((c, idx) => {
+        baris.push({
+          guru,
+          kelasId: c.id,
+          jumlah: perGuruKelas.get(`${guru}||${c.id}`),
+          barisPertamaGuru: idx === 0,
+          rowSpanGuru: kelasUntukGuru.length,
+          totalGuru: totalPerGuru.get(guru),
+        });
+      });
+    });
+    return baris;
+  }, [classes, schedules]);
 
   const kelasTerpilih = classes.find((c) => c.id === selectedClassId);
   const assignmentsForClass = assignments.filter((a) => a.class_room_id === selectedClassId);
@@ -260,6 +299,70 @@ export default function SchedulesTab() {
               ))}
               {periodsForDay.length === 0 && (
                 <tr><td colSpan={classes.length + 2} className="py-6 text-center text-ink-300">Belum ada baris jam untuk hari ini — atur dulu di menu Template Jadwal.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div className="surface-card p-5">
+        <h2 className="font-display font-semibold text-ink-900 mb-1">Keterangan Kode Guru</h2>
+        <p className="text-xs text-ink-500 mb-4">Penjelasan tiap kode yang tampil di grid jadwal — dibuat lewat tombol "Generate Kode Guru A-Z" di menu Tugas Mengajar.</p>
+        <div className="table-scroll">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-ink-500 border-b border-line-200">
+                <th className="pb-2 pr-3 font-medium">Kode Guru</th>
+                <th className="pr-3 font-medium">Nama Guru</th>
+                <th className="font-medium">Mata Pelajaran</th>
+              </tr>
+            </thead>
+            <tbody>
+              {keteranganGuru.map((k) => (
+                <tr key={k.id} className="border-t border-line-200">
+                  <td className="py-2 pr-3"><span className="badge-soft badge-brand font-mono">{k.kode_guru}</span></td>
+                  <td className="pr-3 text-ink-900">{k.guru}</td>
+                  <td className="text-ink-700">{k.mapel}</td>
+                </tr>
+              ))}
+              {keteranganGuru.length === 0 && (
+                <tr><td colSpan="3" className="py-6 text-center text-ink-300">Belum ada Kode Guru — generate dulu di menu Tugas Mengajar.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div className="surface-card p-5">
+        <h2 className="font-display font-semibold text-ink-900 mb-1">JP Guru per Kelas</h2>
+        <p className="text-xs text-ink-500 mb-4">Rincian jam pelajaran (JP) tiap guru di tiap kelas, beserta totalnya, di tahun ajaran aktif.</p>
+        <div className="table-scroll">
+          <table className="w-full text-sm border-collapse">
+            <thead>
+              <tr className="text-left text-ink-500 border-b border-line-200">
+                <th className="pb-2 pr-3 font-medium whitespace-nowrap">Nama</th>
+                {classes.map((c) => (
+                  <th key={c.id} className="font-medium text-center px-2 whitespace-nowrap">{c.name}</th>
+                ))}
+                <th className="font-medium text-center px-2 whitespace-nowrap">total</th>
+                <th className="font-medium text-center px-2 whitespace-nowrap">Total Jp</th>
+              </tr>
+            </thead>
+            <tbody>
+              {jpMatrix.map((row, i) => (
+                <tr key={i} className="border-t border-line-200">
+                  <td className="py-2 pr-3 text-ink-900 whitespace-nowrap">{row.guru}</td>
+                  {classes.map((c) => (
+                    <td key={c.id} className="text-center text-ink-700 px-2">{c.id === row.kelasId ? row.jumlah : ''}</td>
+                  ))}
+                  <td className="text-center text-ink-900 font-medium px-2">{row.jumlah}</td>
+                  {row.barisPertamaGuru && (
+                    <td rowSpan={row.rowSpanGuru} className="text-center font-semibold text-brand-700 px-2 align-middle border-l border-line-200">{row.totalGuru} Jp</td>
+                  )}
+                </tr>
+              ))}
+              {jpMatrix.length === 0 && (
+                <tr><td colSpan={classes.length + 3} className="py-6 text-center text-ink-300">Belum ada jadwal ditempatkan.</td></tr>
               )}
             </tbody>
           </table>

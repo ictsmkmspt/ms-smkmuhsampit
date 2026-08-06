@@ -209,6 +209,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // siap dibagikan).
     Route::middleware('role:admin,waka_kurikulum')->group(function () {
         Route::apiResource('subjects', SubjectController::class)->except(['show']);
+        Route::post('/teaching-assignments/generate-kode-guru', [TeachingAssignmentController::class, 'generateKodeGuru']);
         Route::apiResource('teaching-assignments', TeachingAssignmentController::class)->except(['show']);
         Route::apiResource('period-templates', PeriodTemplateController::class)->except(['show']);
         Route::get('/schedules/grid', [ScheduleController::class, 'grid']);
@@ -396,6 +397,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/pkl-attendances/{pklAttendance}/izin-sakit', [PklAttendanceController::class, 'hapusIzinSakit']);
         Route::get('/my-pkl-jurnal', [PklJournalController::class, 'riwayatSaya']);
         Route::post('/pkl-jurnal', [PklJournalController::class, 'simpanKegiatan']);
+        Route::get('/my-schedule', [ScheduleController::class, 'mySchedule']);
     });
 
     Route::middleware('role:wali')->group(function () {
@@ -403,6 +405,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/my-children/{studentId}/activity', [ParentController::class, 'activity']);
         Route::get('/my-children/{studentId}/spp', [ParentController::class, 'spp']);
         Route::get('/my-children/{studentId}/tagihan-lain', [ParentController::class, 'tagihanLain']);
+        Route::get('/my-children/{studentId}/schedule', [ScheduleController::class, 'childSchedule']);
     });
 
     Route::middleware('role:tu')->group(function () {

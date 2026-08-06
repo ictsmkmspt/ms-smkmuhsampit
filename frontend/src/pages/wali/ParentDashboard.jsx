@@ -5,6 +5,7 @@ import api from '../../api/axios';
 import LeaderboardPrestasi from '../../components/LeaderboardPrestasi';
 import EditProfileModal from '../../components/EditProfileModal';
 import KalenderAkademikView from '../../components/KalenderAkademikView';
+import JadwalPelajaranView from '../../components/JadwalPelajaranView';
 
 const TABS = [
   { key: 'beranda', label: 'Beranda', icon: Home },
@@ -137,7 +138,19 @@ export default function ParentDashboard() {
       </div>
 
       <div className="max-w-2xl mx-auto px-6 pt-6 pb-24">
-        {activeTab === 'pembelajaran' && <KalenderAkademikView />}
+        {activeTab === 'pembelajaran' && (
+          <div className="space-y-6">
+            {selectedId && (
+              <div className="surface-card p-4">
+                <h2 className="font-display font-semibold text-ink-900 mb-3">
+                  Jadwal Pelajaran <span className="text-ink-500 font-sans font-normal text-sm">— {selectedChild?.user?.name}</span>
+                </h2>
+                <JadwalPelajaranView endpoint={`/my-children/${selectedId}/schedule`} />
+              </div>
+            )}
+            <KalenderAkademikView />
+          </div>
+        )}
 
         {activeTab === 'beranda' && children.length === 0 && !loading && (
           <div className="surface-card p-6 text-center">
