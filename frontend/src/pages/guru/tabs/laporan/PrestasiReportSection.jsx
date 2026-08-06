@@ -53,25 +53,25 @@ export default function PrestasiReportSection() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left text-ink-500 border-b border-line-200">
-                  <th className="pb-2 font-medium">Nama Siswa</th>
-                  <th className="font-medium text-right">Total Poin</th>
+                  <th className="pb-2 font-medium whitespace-nowrap px-2">Nama Siswa</th>
+                  <th className="font-medium text-right whitespace-nowrap px-2">Total Poin</th>
                 </tr>
               </thead>
               <tbody>
                 {[...summary].sort((a, b) => b.total_prestasi - a.total_prestasi).map((s) => (
                   <tr key={s.id} className="border-t border-line-200">
-                    <td className="py-2.5">
+                    <td className="py-2.5 whitespace-nowrap px-2">
                       <button onClick={() => setSelectedStudent(s)} className="text-ink-900 font-medium hover:text-brand-600 hover:underline transition text-left max-w-[12rem]">
                         <TruncateText text={s.user?.name} clickable={false} />
                       </button>
                     </td>
-                    <td className="text-right">
+                    <td className="text-right whitespace-nowrap px-2">
                       <span className={`badge-soft ${s.total_prestasi > 0 ? 'badge-brand' : 'badge-soft'}`}>{s.total_prestasi} poin</span>
                     </td>
                   </tr>
                 ))}
                 {summary.length === 0 && (
-                  <tr><td colSpan="2" className="py-6 text-center text-ink-300">Belum ada data siswa.</td></tr>
+                  <tr><td colSpan="2" className="py-6 text-center text-ink-300 whitespace-nowrap px-2">Belum ada data siswa.</td></tr>
                 )}
               </tbody>
             </table>

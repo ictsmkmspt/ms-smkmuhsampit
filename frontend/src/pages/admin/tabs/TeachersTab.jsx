@@ -160,17 +160,17 @@ export default function TeachersTab() {
             <table className="w-full text-sm mt-3">
               <thead>
                 <tr className="text-left text-ink-500 border-b border-line-200">
-                  <th className="pb-2 font-medium">Baris</th>
-                  <th className="font-medium">Kolom</th>
-                  <th className="font-medium">Alasan Gagal</th>
+                  <th className="pb-2 font-medium whitespace-nowrap px-2">Baris</th>
+                  <th className="font-medium whitespace-nowrap px-2">Kolom</th>
+                  <th className="font-medium whitespace-nowrap px-2">Alasan Gagal</th>
                 </tr>
               </thead>
               <tbody>
                 {importResult.gagal.map((g, i) => (
                   <tr key={i} className="border-t border-line-200">
-                    <td className="py-2 text-ink-900">{g.baris}</td>
-                    <td className="text-ink-700">{g.kolom}</td>
-                    <td className="text-honey-700"><TruncateText text={g.alasan} maxWidth="16rem" /></td>
+                    <td className="py-2 text-ink-900 whitespace-nowrap px-2">{g.baris}</td>
+                    <td className="text-ink-700 whitespace-nowrap px-2">{g.kolom}</td>
+                    <td className="text-honey-700 whitespace-nowrap px-2"><TruncateText text={g.alasan} maxWidth="16rem" /></td>
                   </tr>
                 ))}
               </tbody>
@@ -208,14 +208,14 @@ export default function TeachersTab() {
         <table className="w-full text-sm min-w-[560px]">
           <thead>
             <tr className="text-left text-ink-500 border-b border-line-200">
-              <th className="pb-2 font-medium">Nama</th><th className="font-medium">Email</th><th className="font-medium">NIP</th><th className="font-medium">Jenis Kelamin</th>{canEdit && <th></th>}
+              <th className="pb-2 font-medium whitespace-nowrap px-2">Nama</th><th className="font-medium whitespace-nowrap px-2">Email</th><th className="font-medium whitespace-nowrap px-2">NIP</th><th className="font-medium whitespace-nowrap px-2">Jenis Kelamin</th>{canEdit && <th className="whitespace-nowrap px-2"></th>}
             </tr>
           </thead>
           <tbody>
             {teachers.map((t) => (
               editId === t.id ? (
                 <tr key={t.id} className="border-t border-line-200 bg-mist-50">
-                  <td colSpan="5" className="py-3">
+                  <td colSpan="5" className="py-3 whitespace-nowrap px-2">
                     <div className="grid grid-cols-2 gap-2 mb-2">
                       <input value={editData.name} onChange={(e) => setEditData({ ...editData, name: e.target.value })} className="field-input py-1.5 text-sm" placeholder="Nama" />
                       <select value={editData.jenis_kelamin} onChange={(e) => setEditData({ ...editData, jenis_kelamin: e.target.value })} className="field-input py-1.5 text-sm text-ink-700">
@@ -234,12 +234,12 @@ export default function TeachersTab() {
                 </tr>
               ) : (
                 <tr key={t.id} className="border-t border-line-200">
-                  <td className="py-2.5 text-ink-900"><TruncateText text={t.user?.name} /></td>
-                  <td className="text-ink-700"><TruncateText text={t.user?.email} /></td>
-                  <td className="text-ink-700">{t.nip}</td>
-                  <td className="text-ink-700">{JK_LABEL[t.jenis_kelamin] || '-'}</td>
+                  <td className="py-2.5 text-ink-900 whitespace-nowrap px-2"><TruncateText text={t.user?.name} /></td>
+                  <td className="text-ink-700 whitespace-nowrap px-2"><TruncateText text={t.user?.email} /></td>
+                  <td className="text-ink-700 whitespace-nowrap px-2">{t.nip}</td>
+                  <td className="text-ink-700 whitespace-nowrap px-2">{JK_LABEL[t.jenis_kelamin] || '-'}</td>
                   {canEdit && (
-                    <td className="text-right">
+                    <td className="text-right whitespace-nowrap px-2">
                       <div className="flex justify-end gap-2">
                         <button onClick={() => startEdit(t)} className="text-ink-400 hover:text-brand-600 text-xs border border-line-200 rounded-lg px-2 py-1">
                           Edit
@@ -257,7 +257,7 @@ export default function TeachersTab() {
               )
             ))}
             {teachers.length === 0 && (
-              <tr><td colSpan="5" className="py-6 text-center text-ink-300">Belum ada guru.</td></tr>
+              <tr><td colSpan="5" className="py-6 text-center text-ink-300 whitespace-nowrap px-2">Belum ada guru.</td></tr>
             )}
           </tbody>
         </table>

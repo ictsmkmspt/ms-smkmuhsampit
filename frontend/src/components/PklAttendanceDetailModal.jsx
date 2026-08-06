@@ -169,25 +169,25 @@ export default function PklAttendanceDetailModal({ placement, onClose, canVerify
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-left text-ink-500 border-b border-line-200">
-                    <th className="pb-2 font-medium">Tanggal</th>
-                    <th className="font-medium">Masuk</th>
-                    <th className="font-medium">Pulang</th>
-                    <th className="font-medium">Status</th>
-                    <th className="font-medium text-right">Verifikasi</th>
-                    <th className="pb-2"></th>
+                    <th className="pb-2 font-medium whitespace-nowrap px-2">Tanggal</th>
+                    <th className="font-medium whitespace-nowrap px-2">Masuk</th>
+                    <th className="font-medium whitespace-nowrap px-2">Pulang</th>
+                    <th className="font-medium whitespace-nowrap px-2">Status</th>
+                    <th className="font-medium text-right whitespace-nowrap px-2">Verifikasi</th>
+                    <th className="pb-2 whitespace-nowrap px-2"></th>
                   </tr>
                 </thead>
                 <tbody>
                   {paginated.map((a) => (
                     <tr key={a.id} className="border-t border-line-200 align-top">
-                      <td className="py-2.5 text-ink-700">{a.date}</td>
-                      <td className="text-ink-900">{a.time_in ? a.time_in.slice(0, 5) : '-'}</td>
-                      <td className="text-ink-900">{a.time_out ? a.time_out.slice(0, 5) : '-'}</td>
-                      <td>
+                      <td className="py-2.5 text-ink-700 whitespace-nowrap px-2">{a.date}</td>
+                      <td className="text-ink-900 whitespace-nowrap px-2">{a.time_in ? a.time_in.slice(0, 5) : '-'}</td>
+                      <td className="text-ink-900 whitespace-nowrap px-2">{a.time_out ? a.time_out.slice(0, 5) : '-'}</td>
+                      <td className="whitespace-nowrap px-2">
                         <span className={`badge-soft ${STATUS_BADGE[a.status]}`}>{STATUS_LABEL[a.status]}</span>
                         {a.corrected_by && <p className="text-[10px] text-ink-400 mt-1">dikoreksi manual</p>}
                       </td>
-                      <td className="text-right">
+                      <td className="text-right whitespace-nowrap px-2">
                         {a.verified_at ? (
                           <span className="flex items-center justify-end gap-1 text-xs text-brand-700">
                             <CheckCircle2 className="w-3.5 h-3.5" /> Terverifikasi
@@ -204,7 +204,7 @@ export default function PklAttendanceDetailModal({ placement, onClose, canVerify
                           <span className="text-xs text-ink-300">Belum diverifikasi</span>
                         )}
                       </td>
-                      <td className="text-right">
+                      <td className="text-right whitespace-nowrap px-2">
                         {!a.verified_at && (
                           <button onClick={() => handleHapus(a.id)} className="text-ink-300 hover:text-honey-700" title="Hapus baris ini">
                             <Trash2 className="w-3.5 h-3.5" />

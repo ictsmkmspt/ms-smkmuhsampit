@@ -68,26 +68,26 @@ export default function RoomsTab() {
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-ink-500 border-b border-line-200">
-              <th className="pb-2 font-medium">Nama</th>
-              <th className="font-medium">Jenis</th>
-              <th className="font-medium text-center">Kapasitas</th>
-              <th className="font-medium">Penanggung Jawab</th>
-              <th className="font-medium text-center">Jml Aset</th>
-              <th></th>
+              <th className="pb-2 font-medium whitespace-nowrap px-2">Nama</th>
+              <th className="font-medium whitespace-nowrap px-2">Jenis</th>
+              <th className="font-medium text-center whitespace-nowrap px-2">Kapasitas</th>
+              <th className="font-medium whitespace-nowrap px-2">Penanggung Jawab</th>
+              <th className="font-medium text-center whitespace-nowrap px-2">Jml Aset</th>
+              <th className="whitespace-nowrap px-2"></th>
             </tr>
           </thead>
           <tbody>
             {rooms.map((r) => (
               <tr key={r.id} className="border-t border-line-200">
-                <td className="py-2.5 text-ink-900">{r.nama}</td>
-                <td><span className="badge-soft badge-brand">{JENIS_LABEL[r.jenis]}</span></td>
-                <td className="text-center text-ink-700">{r.kapasitas ?? '-'}</td>
-                <td className="text-ink-700">{r.teacher?.user?.name || '-'}</td>
-                <td className="text-center text-ink-700">{r.assets_count}</td>
-                <td className="text-right"><button onClick={() => handleDelete(r)} className="text-ink-300 hover:text-honey-700"><Trash2 className="w-4 h-4" /></button></td>
+                <td className="py-2.5 text-ink-900 whitespace-nowrap px-2">{r.nama}</td>
+                <td className="whitespace-nowrap px-2"><span className="badge-soft badge-brand">{JENIS_LABEL[r.jenis]}</span></td>
+                <td className="text-center text-ink-700 whitespace-nowrap px-2">{r.kapasitas ?? '-'}</td>
+                <td className="text-ink-700 whitespace-nowrap px-2">{r.teacher?.user?.name || '-'}</td>
+                <td className="text-center text-ink-700 whitespace-nowrap px-2">{r.assets_count}</td>
+                <td className="text-right whitespace-nowrap px-2"><button onClick={() => handleDelete(r)} className="text-ink-300 hover:text-honey-700"><Trash2 className="w-4 h-4" /></button></td>
               </tr>
             ))}
-            {rooms.length === 0 && <tr><td colSpan="6" className="py-6 text-center text-ink-300">Belum ada data ruang.</td></tr>}
+            {rooms.length === 0 && <tr><td colSpan="6" className="py-6 text-center text-ink-300 whitespace-nowrap px-2">Belum ada data ruang.</td></tr>}
           </tbody>
         </table>
         </div>

@@ -98,9 +98,9 @@ export default function KehadiranSection() {
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-ink-500 border-b border-line-200">
-                <th className="pb-2 font-medium">Nama Siswa</th>
-                <th className="pb-2 font-medium text-center w-20">Status</th>
-                <th className="pb-2 font-medium text-right w-56">Aksi</th>
+                <th className="pb-2 font-medium whitespace-nowrap px-2">Nama Siswa</th>
+                <th className="pb-2 font-medium text-center w-20 whitespace-nowrap px-2">Status</th>
+                <th className="pb-2 font-medium text-right w-56 whitespace-nowrap px-2">Aksi</th>
               </tr>
             </thead>
             <tbody>
@@ -113,7 +113,7 @@ export default function KehadiranSection() {
 
                 return (
                   <tr key={s.id} className="border-t border-line-200">
-                    <td className="py-2.5">
+                    <td className="py-2.5 whitespace-nowrap px-2">
                       <p className="text-ink-900 font-medium"><TruncateText text={s.user?.name} /></p>
                       {msg && (
                         <p className={`text-xs mt-0.5 ${msg.error ? 'text-honey-700' : 'text-brand-600'}`}>
@@ -121,14 +121,14 @@ export default function KehadiranSection() {
                         </p>
                       )}
                     </td>
-                    <td className="text-center">
+                    <td className="text-center whitespace-nowrap px-2">
                       {status === 'hadir' && <span className="badge-soft badge-brand">Hadir</span>}
                       {status === 'izin' && <span className="badge-soft badge-honey">Izin</span>}
                       {status === 'sakit' && <span className="badge-soft badge-honey">Sakit</span>}
                       {status === 'alpa' && <span className="badge-soft badge-rose">Alpa</span>}
                       {status === 'sudah' && <span className="badge-soft badge-rose">Sudah</span>}
                     </td>
-                    <td className="text-right">
+                    <td className="text-right whitespace-nowrap px-2">
                       {!done ? (
                         <div className="flex justify-end gap-1">
                           <button

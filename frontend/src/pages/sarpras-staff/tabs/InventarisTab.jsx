@@ -155,23 +155,23 @@ export default function InventarisTab() {
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-ink-500 border-b border-line-200">
-              <th className="pb-2 font-medium">Kode</th>
-              <th className="font-medium">Nama</th>
-              {isTeknisi && <th className="font-medium">Ruang</th>}
-              <th className="font-medium text-center">Jumlah</th>
-              <th className="font-medium text-center">Kondisi</th>
-              <th></th>
+              <th className="pb-2 font-medium whitespace-nowrap px-2">Kode</th>
+              <th className="font-medium whitespace-nowrap px-2">Nama</th>
+              {isTeknisi && <th className="font-medium whitespace-nowrap px-2">Ruang</th>}
+              <th className="font-medium text-center whitespace-nowrap px-2">Jumlah</th>
+              <th className="font-medium text-center whitespace-nowrap px-2">Kondisi</th>
+              <th className="whitespace-nowrap px-2"></th>
             </tr>
           </thead>
           <tbody>
             {assetTersaring.map((a) => (
               <tr key={a.id} className="border-t border-line-200">
-                <td className="py-2.5 font-mono text-xs text-ink-500">{a.kode_aset}</td>
-                <td className="text-ink-900">{a.nama}</td>
-                {isTeknisi && <td className="text-ink-700">{a.room?.nama || '-'}</td>}
-                <td className="text-center text-ink-700">{a.jumlah}</td>
-                <td className="text-center"><span className={`badge-soft ${KONDISI_BADGE[a.kondisi]}`}>{KONDISI_LABEL[a.kondisi]}</span></td>
-                <td className="text-right">
+                <td className="py-2.5 font-mono text-xs text-ink-500 whitespace-nowrap px-2">{a.kode_aset}</td>
+                <td className="text-ink-900 whitespace-nowrap px-2">{a.nama}</td>
+                {isTeknisi && <td className="text-ink-700 whitespace-nowrap px-2">{a.room?.nama || '-'}</td>}
+                <td className="text-center text-ink-700 whitespace-nowrap px-2">{a.jumlah}</td>
+                <td className="text-center whitespace-nowrap px-2"><span className={`badge-soft ${KONDISI_BADGE[a.kondisi]}`}>{KONDISI_LABEL[a.kondisi]}</span></td>
+                <td className="text-right whitespace-nowrap px-2">
                   <div className="flex items-center justify-end gap-2">
                     <button onClick={() => showBarcode(a)} title="Lihat barcode" className="text-ink-300 hover:text-brand-700"><QrCode className="w-4 h-4" /></button>
                     <button onClick={() => window.open(`/print/aset-label?ids=${a.id}`, '_blank')} title="Cetak label" className="text-ink-300 hover:text-brand-700"><Printer className="w-4 h-4" /></button>
@@ -179,7 +179,7 @@ export default function InventarisTab() {
                 </td>
               </tr>
             ))}
-            {assetTersaring.length === 0 && <tr><td colSpan={isTeknisi ? 6 : 5} className="py-6 text-center text-ink-300">{assets.length === 0 ? 'Belum ada data aset.' : 'Tidak ada aset yang cocok dengan pencarian.'}</td></tr>}
+            {assetTersaring.length === 0 && <tr><td colSpan={isTeknisi ? 6 : 5} className="py-6 text-center text-ink-300 whitespace-nowrap px-2">{assets.length === 0 ? 'Belum ada data aset.' : 'Tidak ada aset yang cocok dengan pencarian.'}</td></tr>}
           </tbody>
         </table>
         </div>

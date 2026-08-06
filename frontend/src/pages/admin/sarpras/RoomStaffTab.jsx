@@ -126,22 +126,22 @@ export default function RoomStaffTab() {
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-ink-500 border-b border-line-200">
-              <th className="pb-2 font-medium">Nama</th>
-              <th className="font-medium">Email</th>
-              <th className="font-medium">Peran</th>
-              <th className="font-medium">Ruang</th>
-              {canManage && <th></th>}
+              <th className="pb-2 font-medium whitespace-nowrap px-2">Nama</th>
+              <th className="font-medium whitespace-nowrap px-2">Email</th>
+              <th className="font-medium whitespace-nowrap px-2">Peran</th>
+              <th className="font-medium whitespace-nowrap px-2">Ruang</th>
+              {canManage && <th className="whitespace-nowrap px-2"></th>}
             </tr>
           </thead>
           <tbody>
             {staff.map((s) => (
               <tr key={s.id} className="border-t border-line-200">
-                <td className="py-2.5 text-ink-900"><TruncateText text={s.name} /></td>
-                <td className="text-ink-700"><TruncateText text={s.email} /></td>
-                <td><span className={`badge-soft ${ROLE_BADGE[s.role]}`}>{ROLE_LABEL[s.role]}</span></td>
-                <td className="text-ink-700">{s.room?.nama || (s.role === 'teknisi' ? 'Semua Ruang' : '-')}</td>
+                <td className="py-2.5 text-ink-900 whitespace-nowrap px-2"><TruncateText text={s.name} /></td>
+                <td className="text-ink-700 whitespace-nowrap px-2"><TruncateText text={s.email} /></td>
+                <td className="whitespace-nowrap px-2"><span className={`badge-soft ${ROLE_BADGE[s.role]}`}>{ROLE_LABEL[s.role]}</span></td>
+                <td className="text-ink-700 whitespace-nowrap px-2">{s.room?.nama || (s.role === 'teknisi' ? 'Semua Ruang' : '-')}</td>
                 {canManage && (
-                  <td className="text-right">
+                  <td className="text-right whitespace-nowrap px-2">
                     <div className="flex justify-end gap-2">
                       <button onClick={() => startEdit(s)} className="text-ink-400 hover:text-brand-600" title="Ubah nama/email/ruang">
                         <Pencil className="w-4 h-4" />
@@ -158,7 +158,7 @@ export default function RoomStaffTab() {
               </tr>
             ))}
             {staff.length === 0 && (
-              <tr><td colSpan={canManage ? 5 : 4} className="py-6 text-center text-ink-300">Belum ada akun Teknisi/Kepala Bengkel.</td></tr>
+              <tr><td colSpan={canManage ? 5 : 4} className="py-6 text-center text-ink-300 whitespace-nowrap px-2">Belum ada akun Teknisi/Kepala Bengkel.</td></tr>
             )}
           </tbody>
         </table>

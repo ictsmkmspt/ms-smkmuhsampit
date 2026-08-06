@@ -270,26 +270,26 @@ export default function TagihanTab() {
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-ink-500 border-b border-line-200">
-                <th className="pb-2 font-medium">Nama Siswa</th>
-                <th className="font-medium">Kelas</th>
-                <th className="font-medium">Nominal</th>
-                <th className="font-medium">Status</th>
-                <th className="font-medium">Tgl Bayar</th>
-                <th className="font-medium text-right">Aksi</th>
+                <th className="pb-2 font-medium whitespace-nowrap px-2">Nama Siswa</th>
+                <th className="font-medium whitespace-nowrap px-2">Kelas</th>
+                <th className="font-medium whitespace-nowrap px-2">Nominal</th>
+                <th className="font-medium whitespace-nowrap px-2">Status</th>
+                <th className="font-medium whitespace-nowrap px-2">Tgl Bayar</th>
+                <th className="font-medium text-right whitespace-nowrap px-2">Aksi</th>
               </tr>
             </thead>
             <tbody>
               {spps.map((s) => (
                 <Fragment key={s.id}>
                 <tr className="border-t border-line-200">
-                  <td className="py-2.5">
+                  <td className="py-2.5 whitespace-nowrap px-2">
                     <div className="flex items-center gap-2.5">
                       <Avatar name={s.student?.user?.name} />
                       <span className="text-ink-900 min-w-0"><TruncateText text={s.student?.user?.name} /></span>
                     </div>
                   </td>
-                  <td className="text-ink-700">{s.student?.class_room?.name || '-'}</td>
-                  <td className="text-ink-700">
+                  <td className="text-ink-700 whitespace-nowrap px-2">{s.student?.class_room?.name || '-'}</td>
+                  <td className="text-ink-700 whitespace-nowrap px-2">
                     {editingId === s.id ? (
                       <div className="flex items-center gap-1.5">
                         <input
@@ -311,7 +311,7 @@ export default function TagihanTab() {
                       </button>
                     )}
                   </td>
-                  <td>
+                  <td className="whitespace-nowrap px-2">
                     <span className={`badge-soft ${statusBadgeClass(s.status)}`}>
                       {statusLabel(s.status)}
                     </span>
@@ -319,8 +319,8 @@ export default function TagihanTab() {
                       <p className="text-xs text-ink-400 mt-0.5">sisa {formatRupiah(s.nominal - s.jumlah_dibayar)}</p>
                     )}
                   </td>
-                  <td className="text-ink-700 text-xs">{s.tanggal_bayar || '-'}</td>
-                  <td className="text-right">
+                  <td className="text-ink-700 text-xs whitespace-nowrap px-2">{s.tanggal_bayar || '-'}</td>
+                  <td className="text-right whitespace-nowrap px-2">
                     <div className="flex justify-end items-center gap-2">
                       {s.status !== 'lunas' && (
                         <button
@@ -364,7 +364,7 @@ export default function TagihanTab() {
                 </tr>
                 {partialId === s.id && (
                   <tr className="bg-mist-50">
-                    <td colSpan="6" className="py-2 px-2">
+                    <td colSpan="6" className="py-2 px-2 whitespace-nowrap">
                       <div className="flex items-center gap-2 justify-end">
                         <span className="text-xs text-ink-500 mr-auto">
                           Bayar sebagian SPP {s.student?.user?.name} — sisa {formatRupiah(s.nominal - s.jumlah_dibayar)}

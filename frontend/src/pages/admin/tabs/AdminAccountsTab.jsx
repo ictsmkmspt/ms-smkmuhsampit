@@ -91,26 +91,26 @@ export default function AdminAccountsTab() {
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-ink-500 border-b border-line-200">
-              <th className="pb-2 font-medium">Nama</th>
-              <th className="font-medium">Email</th>
-              <th className="font-medium">Peran</th>
-              <th></th>
+              <th className="pb-2 font-medium whitespace-nowrap px-2">Nama</th>
+              <th className="font-medium whitespace-nowrap px-2">Email</th>
+              <th className="font-medium whitespace-nowrap px-2">Peran</th>
+              <th className="whitespace-nowrap px-2"></th>
             </tr>
           </thead>
           <tbody>
             {accounts.map((a) => (
               <tr key={a.id} className="border-t border-line-200">
-                <td className="py-2.5 text-ink-900">
+                <td className="py-2.5 text-ink-900 whitespace-nowrap px-2">
                   <TruncateText text={a.name} />
                   {a.id === user.id && <span className="ml-1.5 text-xs text-ink-400">(Anda)</span>}
                 </td>
-                <td className="text-ink-700"><TruncateText text={a.email} /></td>
-                <td>
+                <td className="text-ink-700 whitespace-nowrap px-2"><TruncateText text={a.email} /></td>
+                <td className="whitespace-nowrap px-2">
                   <span className={`badge-soft ${a.role === 'admin' ? 'badge-brand' : 'badge-soft'}`}>
                     {ROLE_LABEL[a.role] || a.role}
                   </span>
                 </td>
-                <td className="text-right">
+                <td className="text-right whitespace-nowrap px-2">
                   {a.id !== user.id && (
                     <div className="flex justify-end gap-2">
                       <button onClick={() => handleResetPassword(a)} className="text-ink-400 hover:text-brand-600" title="Reset Password ke default (123456)">
@@ -125,7 +125,7 @@ export default function AdminAccountsTab() {
               </tr>
             ))}
             {accounts.length === 0 && (
-              <tr><td colSpan="4" className="py-6 text-center text-ink-300">Belum ada akun admin.</td></tr>
+              <tr><td colSpan="4" className="py-6 text-center text-ink-300 whitespace-nowrap px-2">Belum ada akun admin.</td></tr>
             )}
           </tbody>
         </table>

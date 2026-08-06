@@ -70,22 +70,22 @@ export default function ProcurementsTab() {
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-ink-500 border-b border-line-200">
-              <th className="pb-2 font-medium">Tanggal</th>
-              <th className="font-medium">Barang</th>
-              <th className="font-medium text-center">Jumlah</th>
-              <th className="font-medium">Alasan</th>
-              <th className="font-medium text-center">Status</th>
-              <th></th>
+              <th className="pb-2 font-medium whitespace-nowrap px-2">Tanggal</th>
+              <th className="font-medium whitespace-nowrap px-2">Barang</th>
+              <th className="font-medium text-center whitespace-nowrap px-2">Jumlah</th>
+              <th className="font-medium whitespace-nowrap px-2">Alasan</th>
+              <th className="font-medium text-center whitespace-nowrap px-2">Status</th>
+              <th className="whitespace-nowrap px-2"></th>
             </tr>
           </thead>
           <tbody>
             {items.map((p) => (
               <tr key={p.id} className="border-t border-line-200">
-                <td className="py-2.5 font-mono text-ink-700">{p.tanggal_pengajuan}</td>
-                <td className="text-ink-900">{p.nama_barang}</td>
-                <td className="text-center text-ink-700">{p.jumlah}</td>
-                <td className="text-ink-700 max-w-[16rem]">{p.alasan}</td>
-                <td className="text-center">
+                <td className="py-2.5 font-mono text-ink-700 whitespace-nowrap px-2">{p.tanggal_pengajuan}</td>
+                <td className="text-ink-900 whitespace-nowrap px-2">{p.nama_barang}</td>
+                <td className="text-center text-ink-700 whitespace-nowrap px-2">{p.jumlah}</td>
+                <td className="text-ink-700 max-w-[16rem] whitespace-nowrap px-2">{p.alasan}</td>
+                <td className="text-center whitespace-nowrap px-2">
                   <select
                     value={p.status}
                     disabled={savingId === p.id}
@@ -95,10 +95,10 @@ export default function ProcurementsTab() {
                     {Object.entries(STATUS_LABEL).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
                   </select>
                 </td>
-                <td className="text-right"><button onClick={() => handleDelete(p)} className="text-ink-300 hover:text-honey-700"><Trash2 className="w-4 h-4" /></button></td>
+                <td className="text-right whitespace-nowrap px-2"><button onClick={() => handleDelete(p)} className="text-ink-300 hover:text-honey-700"><Trash2 className="w-4 h-4" /></button></td>
               </tr>
             ))}
-            {items.length === 0 && <tr><td colSpan="6" className="py-6 text-center text-ink-300">Belum ada pengajuan pengadaan.</td></tr>}
+            {items.length === 0 && <tr><td colSpan="6" className="py-6 text-center text-ink-300 whitespace-nowrap px-2">Belum ada pengajuan pengadaan.</td></tr>}
           </tbody>
         </table>
         </div>

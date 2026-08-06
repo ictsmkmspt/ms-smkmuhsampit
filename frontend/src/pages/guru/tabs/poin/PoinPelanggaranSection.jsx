@@ -168,9 +168,9 @@ export default function PoinPelanggaranSection() {
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-ink-500 border-b border-line-200">
-                <th className="pb-2 font-medium">Nama Siswa</th>
-                <th className="pb-2 font-medium text-center w-20">Poin</th>
-                <th className="pb-2 font-medium text-right w-64">Aksi</th>
+                <th className="pb-2 font-medium whitespace-nowrap px-2">Nama Siswa</th>
+                <th className="pb-2 font-medium text-center w-20 whitespace-nowrap px-2">Poin</th>
+                <th className="pb-2 font-medium text-right w-64 whitespace-nowrap px-2">Aksi</th>
               </tr>
             </thead>
             <tbody>
@@ -178,7 +178,7 @@ export default function PoinPelanggaranSection() {
                 const msg = rowMessage[s.id];
                 return (
                   <tr key={s.id} className="border-t border-line-200">
-                    <td className="py-2.5">
+                    <td className="py-2.5 whitespace-nowrap px-2">
                       <button
                         onClick={() => setSelectedStudent(s)}
                         className="text-ink-900 font-medium hover:text-brand-600 hover:underline transition text-left max-w-[12rem]"
@@ -187,12 +187,12 @@ export default function PoinPelanggaranSection() {
                       </button>
                       {msg && <p className={`text-xs mt-0.5 ${msg.error ? 'text-honey-700' : 'text-brand-600'}`}>{msg.text}</p>}
                     </td>
-                    <td className="text-center">
+                    <td className="text-center whitespace-nowrap px-2">
                       <button onClick={() => setSelectedStudent(s)} title="Lihat/edit riwayat poin">
                         <span className="badge-soft badge-honey hover:brightness-95 transition">{s.total_poin || 0}</span>
                       </button>
                     </td>
-                    <td className="text-right">
+                    <td className="text-right whitespace-nowrap px-2">
                       <div className="flex justify-end gap-2">
                         <select value={rowTypeId[s.id] || ''} onChange={(e) => setRowTypeId((p) => ({ ...p, [s.id]: e.target.value }))}
                           className="text-xs border border-line-200 rounded-lg px-2 py-1.5 text-ink-700">

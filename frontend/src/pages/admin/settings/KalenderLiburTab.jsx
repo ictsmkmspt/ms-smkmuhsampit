@@ -174,17 +174,17 @@ export default function KalenderLiburTab() {
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-ink-500 border-b border-line-200">
-              <th className="pb-2 font-medium">Tanggal</th>
-              <th className="font-medium">Keterangan</th>
-              <th></th>
+              <th className="pb-2 font-medium whitespace-nowrap px-2">Tanggal</th>
+              <th className="font-medium whitespace-nowrap px-2">Keterangan</th>
+              <th className="whitespace-nowrap px-2"></th>
             </tr>
           </thead>
           <tbody>
             {holidaysHalamanIni.map((h) => (
               <tr key={h.id} className="border-t border-line-200">
-                <td className="py-2.5 font-mono text-ink-900">{fmtDMY(h.date)}</td>
-                <td className="text-ink-700"><TruncateText text={h.keterangan} maxWidth="16rem" /></td>
-                <td className="text-right">
+                <td className="py-2.5 font-mono text-ink-900 whitespace-nowrap px-2">{fmtDMY(h.date)}</td>
+                <td className="text-ink-700 whitespace-nowrap px-2"><TruncateText text={h.keterangan} maxWidth="16rem" /></td>
+                <td className="text-right whitespace-nowrap px-2">
                   <button onClick={() => handleDelete(h.id, h.keterangan)} className="text-ink-300 hover:text-honey-700">
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -192,7 +192,7 @@ export default function KalenderLiburTab() {
               </tr>
             ))}
             {holidays.length === 0 && (
-              <tr><td colSpan="3" className="py-6 text-center text-ink-300">Belum ada hari libur yang ditambahkan.</td></tr>
+              <tr><td colSpan="3" className="py-6 text-center text-ink-300 whitespace-nowrap px-2">Belum ada hari libur yang ditambahkan.</td></tr>
             )}
           </tbody>
         </table>

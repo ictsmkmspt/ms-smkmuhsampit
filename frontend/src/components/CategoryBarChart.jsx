@@ -54,18 +54,18 @@ export default function CategoryBarChart({ title, subtitle, categories, showTabl
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-ink-500 border-b border-line-200">
-                <th className="pb-2 font-medium">Kategori</th>
-                <th className="font-medium text-right">Jumlah</th>
+                <th className="pb-2 font-medium whitespace-nowrap px-2">Kategori</th>
+                <th className="font-medium text-right whitespace-nowrap px-2">Jumlah</th>
               </tr>
             </thead>
             <tbody>
               {categories.map((c) => (
                 <tr key={c.name} className="border-t border-line-200">
-                  <td className="py-1.5 text-ink-900 flex items-center gap-2">
+                  <td className="py-1.5 text-ink-900 flex items-center gap-2 whitespace-nowrap px-2">
                     <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ backgroundColor: c.color }} />
                     {c.name}
                   </td>
-                  <td className="text-right text-ink-700 tabular-nums">{c.value}</td>
+                  <td className="text-right text-ink-700 tabular-nums whitespace-nowrap px-2">{c.value}</td>
                 </tr>
               ))}
             </tbody>

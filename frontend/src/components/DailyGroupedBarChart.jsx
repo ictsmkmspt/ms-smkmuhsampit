@@ -68,21 +68,21 @@ export default function DailyGroupedBarChart({ title, subtitle, labels, series, 
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-ink-500 border-b border-line-200">
-                <th className="pb-2 font-medium">Tanggal</th>
+                <th className="pb-2 font-medium whitespace-nowrap px-2">Tanggal</th>
                 {series.map((s) => (
-                  <th key={s.name} className="font-medium text-right">{s.name}</th>
+                  <th key={s.name} className="font-medium text-right whitespace-nowrap px-2">{s.name}</th>
                 ))}
-                <th className="font-medium text-right">Total</th>
+                <th className="font-medium text-right whitespace-nowrap px-2">Total</th>
               </tr>
             </thead>
             <tbody>
               {labels.map((l, i) => (
                 <tr key={l} className="border-t border-line-200">
-                  <td className="py-1.5 text-ink-900">{l}</td>
+                  <td className="py-1.5 text-ink-900 whitespace-nowrap px-2">{l}</td>
                   {series.map((s) => (
-                    <td key={s.name} className="text-right text-ink-700 tabular-nums">{s.data[i] || 0}</td>
+                    <td key={s.name} className="text-right text-ink-700 tabular-nums whitespace-nowrap px-2">{s.data[i] || 0}</td>
                   ))}
-                  <td className="text-right font-medium text-ink-900 tabular-nums">{totals[i]}</td>
+                  <td className="text-right font-medium text-ink-900 tabular-nums whitespace-nowrap px-2">{totals[i]}</td>
                 </tr>
               ))}
             </tbody>

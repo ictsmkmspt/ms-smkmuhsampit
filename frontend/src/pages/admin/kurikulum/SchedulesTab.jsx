@@ -246,9 +246,9 @@ export default function SchedulesTab() {
               {periodsForDay.map((p) => (
                 <tr key={p.id} className="border-t border-line-200">
                   <td className="py-2 pr-3 whitespace-nowrap font-mono text-xs text-ink-700">{p.waktu_mulai?.slice(0, 5)}-{p.waktu_selesai?.slice(0, 5)}</td>
-                  <td className="pr-3 text-ink-700">{p.jam_ke || '-'}</td>
+                  <td className="pr-3 text-ink-700 whitespace-nowrap">{p.jam_ke || '-'}</td>
                   {p.tipe === 'khusus' ? (
-                    <td colSpan={classes.length} className="px-2 text-center font-medium rounded" style={{ backgroundColor: p.warna || '#f1f5f9' }}>
+                    <td colSpan={classes.length} className="px-2 text-center font-medium rounded whitespace-nowrap" style={{ backgroundColor: p.warna || '#f1f5f9' }}>
                       {p.label_khusus}
                     </td>
                   ) : (
@@ -256,7 +256,7 @@ export default function SchedulesTab() {
                       const s = scheduleFor(p.id, c.id);
                       if (s) {
                         return (
-                          <td key={c.id} className="px-1">
+                          <td key={c.id} className="px-1 whitespace-nowrap">
                             <button
                               onClick={() => openCell(p, c, s)}
                               className="w-full min-w-[42px] py-1.5 rounded-md text-xs font-medium bg-brand-50 text-brand-700 hover:bg-brand-100 transition"
@@ -270,13 +270,13 @@ export default function SchedulesTab() {
                         const guruBentrok = armedAssignment.teacher_id && schedules.some((sc) => sc.period_id === p.id && sc.teacher_id === armedAssignment.teacher_id);
                         if (guruBentrok) {
                           return (
-                            <td key={c.id} className="px-1">
+                            <td key={c.id} className="px-1 whitespace-nowrap">
                               <div title="Guru penugasan ini sudah mengajar kelas lain di jam ini" className="w-full min-w-[42px] py-1.5 rounded-md text-xs text-center bg-rose-50 text-rose-300 cursor-not-allowed">✕</div>
                             </td>
                           );
                         }
                         return (
-                          <td key={c.id} className="px-1">
+                          <td key={c.id} className="px-1 whitespace-nowrap">
                             <button
                               onClick={() => handlePlace(p)}
                               disabled={placing}
@@ -289,7 +289,7 @@ export default function SchedulesTab() {
                         );
                       }
                       return (
-                        <td key={c.id} className="px-1">
+                        <td key={c.id} className="px-1 whitespace-nowrap">
                           <div className="w-full min-w-[42px] py-1.5 rounded-md text-xs text-center text-ink-200">·</div>
                         </td>
                       );
@@ -298,7 +298,7 @@ export default function SchedulesTab() {
                 </tr>
               ))}
               {periodsForDay.length === 0 && (
-                <tr><td colSpan={classes.length + 2} className="py-6 text-center text-ink-300">Belum ada baris jam untuk hari ini — atur dulu di menu Template Jadwal.</td></tr>
+                <tr><td colSpan={classes.length + 2} className="py-6 text-center text-ink-300 whitespace-nowrap px-2">Belum ada baris jam untuk hari ini — atur dulu di menu Template Jadwal.</td></tr>
               )}
             </tbody>
           </table>
@@ -312,21 +312,21 @@ export default function SchedulesTab() {
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-ink-500 border-b border-line-200">
-                <th className="pb-2 pr-3 font-medium">Kode Guru</th>
-                <th className="pr-3 font-medium">Nama Guru</th>
-                <th className="font-medium">Mata Pelajaran</th>
+                <th className="pb-2 pr-3 font-medium whitespace-nowrap">Kode Guru</th>
+                <th className="pr-3 font-medium whitespace-nowrap">Nama Guru</th>
+                <th className="font-medium whitespace-nowrap px-2">Mata Pelajaran</th>
               </tr>
             </thead>
             <tbody>
               {keteranganGuru.map((k) => (
                 <tr key={k.id} className="border-t border-line-200">
-                  <td className="py-2 pr-3"><span className="badge-soft badge-brand font-mono">{k.kode_guru}</span></td>
-                  <td className="pr-3 text-ink-900">{k.guru}</td>
-                  <td className="text-ink-700">{k.mapel}</td>
+                  <td className="py-2 pr-3 whitespace-nowrap"><span className="badge-soft badge-brand font-mono">{k.kode_guru}</span></td>
+                  <td className="pr-3 text-ink-900 whitespace-nowrap">{k.guru}</td>
+                  <td className="text-ink-700 whitespace-nowrap px-2">{k.mapel}</td>
                 </tr>
               ))}
               {keteranganGuru.length === 0 && (
-                <tr><td colSpan="3" className="py-6 text-center text-ink-300">Belum ada Kode Guru — generate dulu di menu Tugas Mengajar.</td></tr>
+                <tr><td colSpan="3" className="py-6 text-center text-ink-300 whitespace-nowrap px-2">Belum ada Kode Guru — generate dulu di menu Tugas Mengajar.</td></tr>
               )}
             </tbody>
           </table>
@@ -353,16 +353,16 @@ export default function SchedulesTab() {
                 <tr key={i} className="border-t border-line-200">
                   <td className="py-2 pr-3 text-ink-900 whitespace-nowrap">{row.guru}</td>
                   {classes.map((c) => (
-                    <td key={c.id} className="text-center text-ink-700 px-2">{c.id === row.kelasId ? row.jumlah : ''}</td>
+                    <td key={c.id} className="text-center text-ink-700 px-2 whitespace-nowrap">{c.id === row.kelasId ? row.jumlah : ''}</td>
                   ))}
-                  <td className="text-center text-ink-900 font-medium px-2">{row.jumlah}</td>
+                  <td className="text-center text-ink-900 font-medium px-2 whitespace-nowrap">{row.jumlah}</td>
                   {row.barisPertamaGuru && (
-                    <td rowSpan={row.rowSpanGuru} className="text-center font-semibold text-brand-700 px-2 align-middle border-l border-line-200">{row.totalGuru} Jp</td>
+                    <td rowSpan={row.rowSpanGuru} className="text-center font-semibold text-brand-700 px-2 align-middle border-l border-line-200 whitespace-nowrap">{row.totalGuru} Jp</td>
                   )}
                 </tr>
               ))}
               {jpMatrix.length === 0 && (
-                <tr><td colSpan={classes.length + 3} className="py-6 text-center text-ink-300">Belum ada jadwal ditempatkan.</td></tr>
+                <tr><td colSpan={classes.length + 3} className="py-6 text-center text-ink-300 whitespace-nowrap px-2">Belum ada jadwal ditempatkan.</td></tr>
               )}
             </tbody>
           </table>

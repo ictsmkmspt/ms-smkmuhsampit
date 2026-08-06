@@ -137,23 +137,23 @@ export default function PemeliharaanTab() {
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-ink-500 border-b border-line-200">
-              <th className="pb-2 font-medium">Tanggal Lapor</th>
-              <th className="font-medium">Aset</th>
-              {isTeknisi && <th className="font-medium">Ruang</th>}
-              <th className="font-medium">Deskripsi</th>
-              <th className="font-medium">Pelapor</th>
-              <th className="font-medium text-center">Status</th>
+              <th className="pb-2 font-medium whitespace-nowrap px-2">Tanggal Lapor</th>
+              <th className="font-medium whitespace-nowrap px-2">Aset</th>
+              {isTeknisi && <th className="font-medium whitespace-nowrap px-2">Ruang</th>}
+              <th className="font-medium whitespace-nowrap px-2">Deskripsi</th>
+              <th className="font-medium whitespace-nowrap px-2">Pelapor</th>
+              <th className="font-medium text-center whitespace-nowrap px-2">Status</th>
             </tr>
           </thead>
           <tbody>
             {requestTersaring.map((r) => (
               <tr key={r.id} className="border-t border-line-200">
-                <td className="py-2.5 font-mono text-ink-700">{r.tanggal_lapor}</td>
-                <td className="text-ink-700">{r.asset?.nama || '-'}</td>
-                {isTeknisi && <td className="text-ink-700">{r.room?.nama || '-'}</td>}
-                <td className="text-ink-700 max-w-[16rem]">{r.deskripsi}</td>
-                <td className="text-ink-700">{r.pelapor || '-'}</td>
-                <td className="text-center">
+                <td className="py-2.5 font-mono text-ink-700 whitespace-nowrap px-2">{r.tanggal_lapor}</td>
+                <td className="text-ink-700 whitespace-nowrap px-2">{r.asset?.nama || '-'}</td>
+                {isTeknisi && <td className="text-ink-700 whitespace-nowrap px-2">{r.room?.nama || '-'}</td>}
+                <td className="text-ink-700 max-w-[16rem] whitespace-nowrap px-2">{r.deskripsi}</td>
+                <td className="text-ink-700 whitespace-nowrap px-2">{r.pelapor || '-'}</td>
+                <td className="text-center whitespace-nowrap px-2">
                   <select
                     value={r.status}
                     disabled={savingId === r.id}
@@ -165,7 +165,7 @@ export default function PemeliharaanTab() {
                 </td>
               </tr>
             ))}
-            {requestTersaring.length === 0 && <tr><td colSpan={isTeknisi ? 6 : 5} className="py-6 text-center text-ink-300">{requests.length === 0 ? 'Belum ada laporan pemeliharaan.' : 'Tidak ada laporan di ruang ini.'}</td></tr>}
+            {requestTersaring.length === 0 && <tr><td colSpan={isTeknisi ? 6 : 5} className="py-6 text-center text-ink-300 whitespace-nowrap px-2">{requests.length === 0 ? 'Belum ada laporan pemeliharaan.' : 'Tidak ada laporan di ruang ini.'}</td></tr>}
           </tbody>
         </table>
         </div>

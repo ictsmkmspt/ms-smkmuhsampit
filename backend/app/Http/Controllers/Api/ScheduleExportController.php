@@ -8,6 +8,7 @@ use App\Models\PeriodTemplate;
 use App\Models\Schedule;
 use App\Models\Setting;
 use App\Models\TahunAjaran;
+use App\Models\TeachingAssignment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
@@ -39,7 +40,7 @@ class ScheduleExportController extends Controller
 
         $periods = PeriodTemplate::orderBy('waktu_mulai')->get()->groupBy('hari');
         $classes = ClassRoom::where('status', 'aktif')->orderBy('name')->get();
-        $schedules = Schedule::where('tahun_ajaran_id', $tahunAjaranId)->get();
+        $schedules = Schedule::with('teacher.user')->where('tahun_ajaran_id', $tahunAjaranId)->get();
 
         // kunci cepat "period_id-class_room_id" -> kode, biar tidak query
         // ulang per sel saat membangun tabel.
@@ -106,6 +107,13 @@ class ScheduleExportController extends Controller
         }
 
         $this->tulisTandaTanganExcel($sheet, $baris, $totalKolom, $request);
+
+        $assignments = TeachingAssignment::with(['teacher.user', 'subject'])
+            ->where('tahun_ajaran_id', $tahunAjaranId)
+            ->get();
+        $this->tulisKeteranganKodeGuruExcel($spreadsheet, $assignments);
+        $this->tulisJpGuruPerKelasExcel($spreadsheet, $classes, $schedules);
+        $spreadsheet->setActiveSheetIndex(0);
 
         // Lebar kolom — sisi kiri & kanan disamakan supaya kedua tabel
         // hari terlihat seragam.
@@ -227,5 +235,119 @@ class ScheduleExportController extends Controller
         $sheet->setCellValue("{$kolKanan}" . ($baris + 5), $wakaNama ?: '.......................................');
         $sheet->getStyle("{$kolKanan}" . ($baris + 5))->getFont()->setBold(true)->setUnderline(true);
         $sheet->setCellValue("{$kolKanan}" . ($baris + 6), 'NBM. ' . ($wakaNbm ?: '.......................................'));
+    }
+
+    /**
+     * Sheet tambahan: penjelasan tiap Kode Guru (kode -> nama guru & mata
+     * pelajaran) — sama seperti tabel "Keterangan Kode Guru" di menu Jadwal
+     * Pelajaran, supaya dokumen yang dicetak tetap bisa dibaca tanpa perlu
+     * buka aplikasi.
+     */
+    private function tulisKeteranganKodeGuruExcel(Spreadsheet $spreadsheet, $assignments): void
+    {
+        $sheet = $spreadsheet->createSheet();
+        $sheet->setTitle('Keterangan Kode Guru');
+
+        $sheet->setCellValue('A1', 'KODE GURU');
+        $sheet->setCellValue('B1', 'NAMA GURU');
+        $sheet->setCellValue('C1', 'MATA PELAJARAN');
+        $headerStyle = $sheet->getStyle('A1:C1');
+        $headerStyle->getFont()->setBold(true);
+        $headerStyle->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FFDDE6F5');
+        $headerStyle->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+
+        $baris = 2;
+        $terurut = $assignments->filter(fn ($a) => $a->kode_guru)->sortBy('kode_guru')->values();
+        foreach ($terurut as $a) {
+            $sheet->setCellValue("A{$baris}", $a->kode_guru);
+            $sheet->setCellValue("B{$baris}", $a->teacher?->user?->name ?? '-');
+            $sheet->setCellValue("C{$baris}", $a->subject?->nama ?? '-');
+            $sheet->getStyle("A{$baris}:C{$baris}")->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+            $baris++;
+        }
+
+        $sheet->getColumnDimension('A')->setWidth(12);
+        $sheet->getColumnDimension('B')->setWidth(28);
+        $sheet->getColumnDimension('C')->setWidth(32);
+    }
+
+    /**
+     * Sheet tambahan: matriks JP tiap guru per kelas + total keseluruhannya
+     * — sama seperti tabel "JP Guru per Kelas" di menu Jadwal Pelajaran.
+     * 1 baris per (guru, kelas); kolom "Total Jp" digabung (merge) untuk
+     * guru yang mengajar di lebih dari 1 kelas.
+     */
+    private function tulisJpGuruPerKelasExcel(Spreadsheet $spreadsheet, $classes, $schedules): void
+    {
+        $sheet = $spreadsheet->createSheet();
+        $sheet->setTitle('JP Guru per Kelas');
+
+        $sheet->setCellValue('A1', 'NAMA');
+        $kol = 2;
+        foreach ($classes as $c) {
+            $sheet->setCellValue(Coordinate::stringFromColumnIndex($kol) . '1', strtoupper($c->name));
+            $kol++;
+        }
+        $kolTotal = $kol;
+        $sheet->setCellValue(Coordinate::stringFromColumnIndex($kolTotal) . '1', 'TOTAL');
+        $kolTotalJp = $kolTotal + 1;
+        $sheet->setCellValue(Coordinate::stringFromColumnIndex($kolTotalJp) . '1', 'TOTAL JP');
+
+        $totalKolom = $kolTotalJp;
+        $headerRange = 'A1:' . Coordinate::stringFromColumnIndex($totalKolom) . '1';
+        $headerStyle = $sheet->getStyle($headerRange);
+        $headerStyle->getFont()->setBold(true);
+        $headerStyle->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FFDDE6F5');
+        $headerStyle->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $headerStyle->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+
+        $perGuruKelas = [];
+        $totalPerGuru = [];
+        foreach ($schedules as $s) {
+            $guru = $s->teacher?->user?->name ?? 'Belum ada guru';
+            $key = $guru . '||' . $s->class_room_id;
+            $perGuruKelas[$key] = ($perGuruKelas[$key] ?? 0) + 1;
+            $totalPerGuru[$guru] = ($totalPerGuru[$guru] ?? 0) + 1;
+        }
+
+        $daftarGuru = array_keys($totalPerGuru);
+        sort($daftarGuru, SORT_STRING | SORT_FLAG_CASE);
+
+        $baris = 2;
+        foreach ($daftarGuru as $guru) {
+            $kelasUntukGuru = $classes->filter(fn ($c) => isset($perGuruKelas["{$guru}||{$c->id}"]))->values();
+            $barisAwalGuru = $baris;
+
+            foreach ($kelasUntukGuru as $c) {
+                $jumlah = $perGuruKelas["{$guru}||{$c->id}"];
+                $sheet->setCellValue("A{$baris}", $guru);
+                $kolCek = 2;
+                foreach ($classes as $cc) {
+                    if ($cc->id === $c->id) {
+                        $sheet->setCellValue(Coordinate::stringFromColumnIndex($kolCek) . $baris, $jumlah);
+                    }
+                    $kolCek++;
+                }
+                $sheet->setCellValue(Coordinate::stringFromColumnIndex($kolTotal) . $baris, $jumlah);
+                $sheet->getStyle("A{$baris}:" . Coordinate::stringFromColumnIndex($totalKolom) . $baris)
+                    ->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+                $baris++;
+            }
+
+            $barisAkhirGuru = $baris - 1;
+            $kolTotalJpHuruf = Coordinate::stringFromColumnIndex($kolTotalJp);
+            $sheet->setCellValue("{$kolTotalJpHuruf}{$barisAwalGuru}", $totalPerGuru[$guru]);
+            if ($barisAkhirGuru > $barisAwalGuru) {
+                $sheet->mergeCells("{$kolTotalJpHuruf}{$barisAwalGuru}:{$kolTotalJpHuruf}{$barisAkhirGuru}");
+            }
+            $totalJpStyle = $sheet->getStyle("{$kolTotalJpHuruf}{$barisAwalGuru}");
+            $totalJpStyle->getFont()->setBold(true);
+            $totalJpStyle->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
+        }
+
+        $sheet->getColumnDimension('A')->setWidth(26);
+        for ($k = 2; $k <= $totalKolom; $k++) {
+            $sheet->getColumnDimension(Coordinate::stringFromColumnIndex($k))->setWidth(10);
+        }
     }
 }

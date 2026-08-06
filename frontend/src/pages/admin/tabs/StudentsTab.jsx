@@ -172,17 +172,17 @@ export default function StudentsTab() {
             <table className="w-full text-sm mt-3">
               <thead>
                 <tr className="text-left text-ink-500 border-b border-line-200">
-                  <th className="pb-2 font-medium">Baris</th>
-                  <th className="font-medium">Kolom</th>
-                  <th className="font-medium">Alasan Gagal</th>
+                  <th className="pb-2 font-medium whitespace-nowrap px-2">Baris</th>
+                  <th className="font-medium whitespace-nowrap px-2">Kolom</th>
+                  <th className="font-medium whitespace-nowrap px-2">Alasan Gagal</th>
                 </tr>
               </thead>
               <tbody>
                 {importResult.gagal.map((g, i) => (
                   <tr key={i} className="border-t border-line-200">
-                    <td className="py-2 text-ink-900">{g.baris}</td>
-                    <td className="text-ink-700">{g.kolom}</td>
-                    <td className="text-honey-700"><TruncateText text={g.alasan} maxWidth="16rem" /></td>
+                    <td className="py-2 text-ink-900 whitespace-nowrap px-2">{g.baris}</td>
+                    <td className="text-ink-700 whitespace-nowrap px-2">{g.kolom}</td>
+                    <td className="text-honey-700 whitespace-nowrap px-2"><TruncateText text={g.alasan} maxWidth="16rem" /></td>
                   </tr>
                 ))}
               </tbody>
@@ -230,7 +230,7 @@ export default function StudentsTab() {
         <table className="w-full text-sm min-w-[640px]">
           <thead>
             <tr className="text-left text-ink-500 border-b border-line-200">
-              <th className="pb-2 font-medium">Nama</th><th className="font-medium">NIS</th><th className="font-medium">Jenis Kelamin</th><th className="font-medium">Kelas</th><th className="font-medium">Barcode</th><th></th>
+              <th className="pb-2 font-medium whitespace-nowrap px-2">Nama</th><th className="font-medium whitespace-nowrap px-2">NIS</th><th className="font-medium whitespace-nowrap px-2">Jenis Kelamin</th><th className="font-medium whitespace-nowrap px-2">Kelas</th><th className="font-medium whitespace-nowrap px-2">Barcode</th><th className="whitespace-nowrap px-2"></th>
             </tr>
           </thead>
           <tbody>
@@ -249,7 +249,7 @@ export default function StudentsTab() {
                 if (kelasName !== lastKelas) {
                   rows.push(
                     <tr key={`header-${kelasName}`}>
-                      <td colSpan="6" className="pt-4 pb-1">
+                      <td colSpan="6" className="pt-4 pb-1 whitespace-nowrap px-2">
                         <span className="badge-soft badge-brand text-[11px]">
                           {kelasName || 'Belum Ada Kelas'}
                         </span>
@@ -260,12 +260,12 @@ export default function StudentsTab() {
                 }
                 rows.push(
                   <tr key={s.id} className="border-t border-line-200">
-                    <td className="py-2.5 text-ink-900"><TruncateText text={s.user?.name} /></td>
-                    <td className="text-ink-700">{s.nis}</td>
-                    <td className="text-ink-700">{JK_LABEL[s.jenis_kelamin] || '-'}</td>
-                    <td className="text-ink-700">{s.class_room?.name || '-'}</td>
-                    <td className="font-mono text-xs text-brand-600">{s.barcode_code}</td>
-                    <td className="text-right">
+                    <td className="py-2.5 text-ink-900 whitespace-nowrap px-2"><TruncateText text={s.user?.name} /></td>
+                    <td className="text-ink-700 whitespace-nowrap px-2">{s.nis}</td>
+                    <td className="text-ink-700 whitespace-nowrap px-2">{JK_LABEL[s.jenis_kelamin] || '-'}</td>
+                    <td className="text-ink-700 whitespace-nowrap px-2">{s.class_room?.name || '-'}</td>
+                    <td className="font-mono text-xs text-brand-600 whitespace-nowrap px-2">{s.barcode_code}</td>
+                    <td className="text-right whitespace-nowrap px-2">
                       <div className="flex justify-end gap-2">
                         <button onClick={() => handleResetPassword(s.id, s.user?.name)} className="text-ink-400 hover:text-brand-600" title="Reset Password ke default (123456)">
                           <KeyRound className="w-4 h-4" />
@@ -281,7 +281,7 @@ export default function StudentsTab() {
               return rows;
             })()}
             {students.length === 0 && (
-              <tr><td colSpan="6" className="py-6 text-center text-ink-300">Belum ada siswa.</td></tr>
+              <tr><td colSpan="6" className="py-6 text-center text-ink-300 whitespace-nowrap px-2">Belum ada siswa.</td></tr>
             )}
           </tbody>
         </table>

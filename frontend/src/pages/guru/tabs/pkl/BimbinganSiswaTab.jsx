@@ -53,28 +53,28 @@ export default function BimbinganSiswaTab() {
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-ink-500 border-b border-line-200">
-                <th className="pb-2 font-medium">Nama Siswa</th>
-                <th className="font-medium">IDUKA</th>
-                <th className="font-medium">Periode</th>
-                <th className="pb-2 w-32"></th>
+                <th className="pb-2 font-medium whitespace-nowrap px-2">Nama Siswa</th>
+                <th className="font-medium whitespace-nowrap px-2">IDUKA</th>
+                <th className="font-medium whitespace-nowrap px-2">Periode</th>
+                <th className="pb-2 w-32 whitespace-nowrap px-2"></th>
               </tr>
             </thead>
             <tbody>
               {aktif.map((p) => (
                 <tr key={p.id} className="border-t border-line-200">
-                  <td className="py-2.5">
+                  <td className="py-2.5 whitespace-nowrap px-2">
                     <p className="text-ink-900 font-medium"><TruncateText text={p.student?.user?.name} /></p>
                     <p className="text-xs text-ink-500">{p.student?.class_room?.name || '-'}</p>
                   </td>
-                  <td className="text-ink-700"><TruncateText text={p.dudi?.nama_perusahaan} /></td>
-                  <td className="text-ink-700 text-xs">{p.tanggal_mulai} s/d {p.tanggal_selesai}</td>
-                  <td className="text-right py-2">
+                  <td className="text-ink-700 whitespace-nowrap px-2"><TruncateText text={p.dudi?.nama_perusahaan} /></td>
+                  <td className="text-ink-700 text-xs whitespace-nowrap px-2">{p.tanggal_mulai} s/d {p.tanggal_selesai}</td>
+                  <td className="text-right py-2 whitespace-nowrap px-2">
                     <TombolAksi p={p} />
                   </td>
                 </tr>
               ))}
               {aktif.length === 0 && (
-                <tr><td colSpan="4" className="py-6 text-center text-ink-300">Anda belum ditugaskan membimbing siswa PKL.</td></tr>
+                <tr><td colSpan="4" className="py-6 text-center text-ink-300 whitespace-nowrap px-2">Anda belum ditugaskan membimbing siswa PKL.</td></tr>
               )}
             </tbody>
           </table>
@@ -98,22 +98,22 @@ export default function BimbinganSiswaTab() {
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-ink-500 border-b border-line-200">
-                <th className="pb-2 font-medium">Nama Siswa</th>
-                <th className="font-medium">IDUKA</th>
-                <th className="font-medium">Periode</th>
-                <th className="pb-2 w-32"></th>
+                <th className="pb-2 font-medium whitespace-nowrap px-2">Nama Siswa</th>
+                <th className="font-medium whitespace-nowrap px-2">IDUKA</th>
+                <th className="font-medium whitespace-nowrap px-2">Periode</th>
+                <th className="pb-2 w-32 whitespace-nowrap px-2"></th>
               </tr>
             </thead>
             <tbody>
               {selesai.map((p) => (
                 <tr key={p.id} className="border-t border-line-200">
-                  <td className="py-2.5">
+                  <td className="py-2.5 whitespace-nowrap px-2">
                     <p className="text-ink-900 font-medium"><TruncateText text={p.student?.user?.name} /></p>
                     <p className="text-xs text-ink-500">{p.student?.class_room?.name || '-'}</p>
                   </td>
-                  <td className="text-ink-700"><TruncateText text={p.dudi?.nama_perusahaan} /></td>
-                  <td className="text-ink-700 text-xs">{p.tanggal_mulai} s/d {p.tanggal_selesai}</td>
-                  <td className="text-right py-2">
+                  <td className="text-ink-700 whitespace-nowrap px-2"><TruncateText text={p.dudi?.nama_perusahaan} /></td>
+                  <td className="text-ink-700 text-xs whitespace-nowrap px-2">{p.tanggal_mulai} s/d {p.tanggal_selesai}</td>
+                  <td className="text-right py-2 whitespace-nowrap px-2">
                     <TombolAksi p={p} />
                   </td>
                 </tr>

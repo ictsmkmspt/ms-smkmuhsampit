@@ -395,27 +395,27 @@ export default function TagihanLainTab() {
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-ink-500 border-b border-line-200">
-                <th className="pb-2 font-medium">Nama Siswa</th>
-                <th className="font-medium">Kelas</th>
-                <th className="font-medium">Tagihan</th>
-                <th className="font-medium">Nominal</th>
-                <th className="font-medium">Status</th>
-                <th className="font-medium text-right">Aksi</th>
+                <th className="pb-2 font-medium whitespace-nowrap px-2">Nama Siswa</th>
+                <th className="font-medium whitespace-nowrap px-2">Kelas</th>
+                <th className="font-medium whitespace-nowrap px-2">Tagihan</th>
+                <th className="font-medium whitespace-nowrap px-2">Nominal</th>
+                <th className="font-medium whitespace-nowrap px-2">Status</th>
+                <th className="font-medium text-right whitespace-nowrap px-2">Aksi</th>
               </tr>
             </thead>
             <tbody>
               {list.map((t) => (
                 <Fragment key={t.id}>
                 <tr className="border-t border-line-200">
-                  <td className="py-2.5">
+                  <td className="py-2.5 whitespace-nowrap px-2">
                     <div className="flex items-center gap-2.5">
                       <Avatar name={t.student?.user?.name} />
                       <span className="text-ink-900 min-w-0"><TruncateText text={t.student?.user?.name} /></span>
                     </div>
                   </td>
-                  <td className="text-ink-700">{t.student?.class_room?.name || '-'}</td>
-                  <td className="text-ink-700"><TruncateText text={t.nama_tagihan} maxWidth="10rem" /></td>
-                  <td className="text-ink-700">
+                  <td className="text-ink-700 whitespace-nowrap px-2">{t.student?.class_room?.name || '-'}</td>
+                  <td className="text-ink-700 whitespace-nowrap px-2"><TruncateText text={t.nama_tagihan} maxWidth="10rem" /></td>
+                  <td className="text-ink-700 whitespace-nowrap px-2">
                     {editingId === t.id ? (
                       <div className="flex items-center gap-1.5">
                         <input
@@ -437,7 +437,7 @@ export default function TagihanLainTab() {
                       </button>
                     )}
                   </td>
-                  <td>
+                  <td className="whitespace-nowrap px-2">
                     <span className={`badge-soft ${statusBadgeClass(t.status)}`}>
                       {statusLabel(t.status)}
                     </span>
@@ -445,7 +445,7 @@ export default function TagihanLainTab() {
                       <p className="text-xs text-ink-400 mt-0.5">sisa {formatRupiah(t.nominal - t.jumlah_dibayar)}</p>
                     )}
                   </td>
-                  <td className="text-right">
+                  <td className="text-right whitespace-nowrap px-2">
                     <div className="flex justify-end items-center gap-2">
                       {t.status !== 'lunas' && (
                         <button
@@ -489,7 +489,7 @@ export default function TagihanLainTab() {
                 </tr>
                 {partialId === t.id && (
                   <tr className="bg-mist-50">
-                    <td colSpan="6" className="py-2 px-2">
+                    <td colSpan="6" className="py-2 px-2 whitespace-nowrap">
                       <div className="flex items-center gap-2 justify-end">
                         <span className="text-xs text-ink-500 mr-auto">
                           Bayar sebagian "{t.nama_tagihan}" {t.student?.user?.name} — sisa {formatRupiah(t.nominal - t.jumlah_dibayar)}

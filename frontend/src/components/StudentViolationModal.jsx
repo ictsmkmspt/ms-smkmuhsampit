@@ -121,17 +121,17 @@ export default function StudentViolationModal({ student, onClose, onChanged, rea
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left text-ink-500 border-b border-line-200">
-                  <th className="pb-2 font-medium">Tanggal</th>
-                  <th className="font-medium">Jenis Pelanggaran</th>
-                  <th className="font-medium text-right">Poin</th>
-                  {!readOnly && <th className="font-medium text-right">Aksi</th>}
+                  <th className="pb-2 font-medium whitespace-nowrap px-2">Tanggal</th>
+                  <th className="font-medium whitespace-nowrap px-2">Jenis Pelanggaran</th>
+                  <th className="font-medium text-right whitespace-nowrap px-2">Poin</th>
+                  {!readOnly && <th className="font-medium text-right whitespace-nowrap px-2">Aksi</th>}
                 </tr>
               </thead>
               <tbody>
                 {violations.map((v) => (
                   editingId === v.id ? (
                     <tr key={v.id} className="border-t border-line-200 bg-mist-50">
-                      <td colSpan="4" className="py-3">
+                      <td colSpan="4" className="py-3 whitespace-nowrap px-2">
                         <div className="flex flex-wrap gap-2 items-end">
                           <select
                             value={editTypeId}
@@ -165,14 +165,14 @@ export default function StudentViolationModal({ student, onClose, onChanged, rea
                     </tr>
                   ) : (
                     <tr key={v.id} className="border-t border-line-200">
-                      <td className="py-2.5 text-ink-700 align-top">{v.date}</td>
-                      <td className="text-ink-900 align-top">
+                      <td className="py-2.5 text-ink-700 align-top whitespace-nowrap px-2">{v.date}</td>
+                      <td className="text-ink-900 align-top whitespace-nowrap px-2">
                         {v.violation_type?.name || (v.type === 'alpa' ? 'Tidak Hadir' : v.type === 'telat' ? 'Terlambat' : '-')}
                         {v.note && <p className="text-xs text-ink-400 mt-0.5"><TruncateText text={v.note} maxWidth="16rem" /></p>}
                       </td>
-                      <td className="text-right text-honey-700 font-medium align-top">+{v.poin}</td>
+                      <td className="text-right text-honey-700 font-medium align-top whitespace-nowrap px-2">+{v.poin}</td>
                       {!readOnly && (
-                        <td className="text-right align-top">
+                        <td className="text-right align-top whitespace-nowrap px-2">
                           {v.type === 'alpa' ? (
                             <span className="text-xs text-ink-300">otomatis</span>
                           ) : (

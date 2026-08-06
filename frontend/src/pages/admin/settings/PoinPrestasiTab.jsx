@@ -99,15 +99,15 @@ export default function PoinPrestasiTab() {
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-ink-500 border-b border-line-200">
-              <th className="pb-2 font-medium">Nama Jenis</th>
-              <th className="pb-2 font-medium text-center w-32">Poin</th>
-              <th className="pb-2 w-28"></th>
+              <th className="pb-2 font-medium whitespace-nowrap px-2">Nama Jenis</th>
+              <th className="pb-2 font-medium text-center w-32 whitespace-nowrap px-2">Poin</th>
+              <th className="pb-2 w-28 whitespace-nowrap px-2"></th>
             </tr>
           </thead>
           <tbody>
             {types.map((t) => (
               <tr key={t.id} className="border-t border-line-200">
-                <td className="py-2.5">
+                <td className="py-2.5 whitespace-nowrap px-2">
                   {editId === t.id ? (
                     <input value={editData[t.id]?.name ?? t.name}
                       onChange={(e) => setEditData((p) => ({ ...p, [t.id]: { ...p[t.id], name: e.target.value } }))}
@@ -116,7 +116,7 @@ export default function PoinPrestasiTab() {
                     <TruncateText text={t.name} className="text-ink-900" />
                   )}
                 </td>
-                <td className="text-center">
+                <td className="text-center whitespace-nowrap px-2">
                   {editId === t.id ? (
                     <input type="number" min="0" max="100"
                       value={editData[t.id]?.poin ?? t.poin}
@@ -126,7 +126,7 @@ export default function PoinPrestasiTab() {
                     <span className="badge-soft badge-brand">{t.poin} poin</span>
                   )}
                 </td>
-                <td className="text-right">
+                <td className="text-right whitespace-nowrap px-2">
                   <div className="flex items-center justify-end gap-1">
                     {editId === t.id ? (
                       <>
@@ -150,7 +150,7 @@ export default function PoinPrestasiTab() {
               </tr>
             ))}
             {types.length === 0 && (
-              <tr><td colSpan="3" className="py-6 text-center text-ink-300">Belum ada jenis prestasi. Tambahkan dulu sebelum guru bisa mencatat prestasi siswa.</td></tr>
+              <tr><td colSpan="3" className="py-6 text-center text-ink-300 whitespace-nowrap px-2">Belum ada jenis prestasi. Tambahkan dulu sebelum guru bisa mencatat prestasi siswa.</td></tr>
             )}
           </tbody>
         </table>

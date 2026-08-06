@@ -44,26 +44,26 @@ export default function KalenderAkademikView() {
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-ink-500 border-b border-line-200">
-              <th className="pb-2 font-medium">Nama</th>
-              <th className="font-medium">Jenis</th>
-              <th className="font-medium">Tanggal</th>
-              <th className="font-medium">Keterangan</th>
+              <th className="pb-2 font-medium whitespace-nowrap px-2">Nama</th>
+              <th className="font-medium whitespace-nowrap px-2">Jenis</th>
+              <th className="font-medium whitespace-nowrap px-2">Tanggal</th>
+              <th className="font-medium whitespace-nowrap px-2">Keterangan</th>
             </tr>
           </thead>
           <tbody>
             {events.map((ev) => (
               <tr key={ev.id} className="border-t border-line-200">
-                <td className="py-2.5 text-ink-900">{ev.nama}</td>
-                <td>
+                <td className="py-2.5 text-ink-900 whitespace-nowrap px-2">{ev.nama}</td>
+                <td className="whitespace-nowrap px-2">
                   <span className="inline-flex items-center gap-1.5 text-xs font-medium rounded-full px-2 py-0.5 text-white" style={{ backgroundColor: JENIS_WARNA[ev.jenis] }}>
                     {JENIS_LABEL[ev.jenis]}
                   </span>
                 </td>
-                <td className="text-ink-700 font-mono">{fmtDMY(ev.tanggal_mulai)} – {fmtDMY(ev.tanggal_selesai)}</td>
-                <td className="text-ink-700">{ev.keterangan || '-'}</td>
+                <td className="text-ink-700 font-mono whitespace-nowrap px-2">{fmtDMY(ev.tanggal_mulai)} – {fmtDMY(ev.tanggal_selesai)}</td>
+                <td className="text-ink-700 whitespace-nowrap px-2">{ev.keterangan || '-'}</td>
               </tr>
             ))}
-            {events.length === 0 && <tr><td colSpan="4" className="py-6 text-center text-ink-300">Belum ada agenda untuk tahun ajaran aktif.</td></tr>}
+            {events.length === 0 && <tr><td colSpan="4" className="py-6 text-center text-ink-300 whitespace-nowrap px-2">Belum ada agenda untuk tahun ajaran aktif.</td></tr>}
           </tbody>
         </table>
         </div>
@@ -78,20 +78,20 @@ export default function KalenderAkademikView() {
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-ink-500 border-b border-line-200">
-              <th className="pb-2 font-medium w-48">Tanggal</th>
-              <th className="font-medium">Keterangan</th>
+              <th className="pb-2 font-medium w-48 whitespace-nowrap px-2">Tanggal</th>
+              <th className="font-medium whitespace-nowrap px-2">Keterangan</th>
             </tr>
           </thead>
           <tbody>
             {liburHalamanIni.map((h) => (
               <tr key={h.id} className="border-t border-line-200">
-                <td className="py-2.5 font-mono text-ink-900">
+                <td className="py-2.5 font-mono text-ink-900 whitespace-nowrap px-2">
                   {h.tanggal_mulai === h.tanggal_akhir ? fmtDMY(h.tanggal_mulai) : `${fmtDMY(h.tanggal_mulai)} – ${fmtDMY(h.tanggal_akhir)}`}
                 </td>
-                <td className="text-ink-700">{h.keterangan}</td>
+                <td className="text-ink-700 whitespace-nowrap px-2">{h.keterangan}</td>
               </tr>
             ))}
-            {holidays.length === 0 && <tr><td colSpan="2" className="py-6 text-center text-ink-300">Belum ada hari libur tercatat.</td></tr>}
+            {holidays.length === 0 && <tr><td colSpan="2" className="py-6 text-center text-ink-300 whitespace-nowrap px-2">Belum ada hari libur tercatat.</td></tr>}
           </tbody>
         </table>
         </div>

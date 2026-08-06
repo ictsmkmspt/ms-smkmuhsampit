@@ -159,17 +159,17 @@ export default function WaliTab() {
             <table className="w-full text-sm mt-3">
               <thead>
                 <tr className="text-left text-ink-500 border-b border-line-200">
-                  <th className="pb-2 font-medium">Baris</th>
-                  <th className="font-medium">Kolom</th>
-                  <th className="font-medium">Alasan Gagal</th>
+                  <th className="pb-2 font-medium whitespace-nowrap px-2">Baris</th>
+                  <th className="font-medium whitespace-nowrap px-2">Kolom</th>
+                  <th className="font-medium whitespace-nowrap px-2">Alasan Gagal</th>
                 </tr>
               </thead>
               <tbody>
                 {importResult.gagal.map((g, i) => (
                   <tr key={i} className="border-t border-line-200">
-                    <td className="py-2 text-ink-900">{g.baris}</td>
-                    <td className="text-ink-700">{g.kolom}</td>
-                    <td className="text-honey-700"><TruncateText text={g.alasan} maxWidth="16rem" /></td>
+                    <td className="py-2 text-ink-900 whitespace-nowrap px-2">{g.baris}</td>
+                    <td className="text-ink-700 whitespace-nowrap px-2">{g.kolom}</td>
+                    <td className="text-honey-700 whitespace-nowrap px-2"><TruncateText text={g.alasan} maxWidth="16rem" /></td>
                   </tr>
                 ))}
               </tbody>

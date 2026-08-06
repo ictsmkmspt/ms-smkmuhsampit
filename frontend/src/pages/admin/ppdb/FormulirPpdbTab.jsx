@@ -77,24 +77,24 @@ export default function FormulirPpdbTab() {
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-ink-500 border-b border-line-200">
-              <th className="pb-2 font-medium">Kode</th>
-              <th className="font-medium">Nama</th>
-              <th className="font-medium">Asal Sekolah</th>
-              <th className="font-medium">No. HP Ortu</th>
-              <th className="font-medium">Jurusan</th>
-              <th className="font-medium text-center">Status</th>
-              <th></th>
+              <th className="pb-2 font-medium whitespace-nowrap px-2">Kode</th>
+              <th className="font-medium whitespace-nowrap px-2">Nama</th>
+              <th className="font-medium whitespace-nowrap px-2">Asal Sekolah</th>
+              <th className="font-medium whitespace-nowrap px-2">No. HP Ortu</th>
+              <th className="font-medium whitespace-nowrap px-2">Jurusan</th>
+              <th className="font-medium text-center whitespace-nowrap px-2">Status</th>
+              <th className="whitespace-nowrap px-2"></th>
             </tr>
           </thead>
           <tbody>
             {pendaftar.map((p) => (
               <tr key={p.id} className="border-t border-line-200">
-                <td className="py-2.5 font-mono text-xs text-ink-500">{p.kode_pendaftaran}</td>
-                <td className="text-ink-900"><TruncateText text={p.nama_lengkap} /></td>
-                <td className="text-ink-700">{p.asal_sekolah || '-'}</td>
-                <td className="text-ink-700">{p.no_hp_orang_tua}</td>
-                <td className="text-ink-700">{p.jurusan_pilihan || '-'}</td>
-                <td className="text-center">
+                <td className="py-2.5 font-mono text-xs text-ink-500 whitespace-nowrap px-2">{p.kode_pendaftaran}</td>
+                <td className="text-ink-900 whitespace-nowrap px-2"><TruncateText text={p.nama_lengkap} /></td>
+                <td className="text-ink-700 whitespace-nowrap px-2">{p.asal_sekolah || '-'}</td>
+                <td className="text-ink-700 whitespace-nowrap px-2">{p.no_hp_orang_tua}</td>
+                <td className="text-ink-700 whitespace-nowrap px-2">{p.jurusan_pilihan || '-'}</td>
+                <td className="text-center whitespace-nowrap px-2">
                   <select
                     value={p.status}
                     disabled={savingId === p.id}
@@ -104,10 +104,10 @@ export default function FormulirPpdbTab() {
                     {Object.entries(STATUS_LABEL).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
                   </select>
                 </td>
-                <td className="text-right"><button onClick={() => handleDelete(p)} className="text-ink-300 hover:text-honey-700"><Trash2 className="w-4 h-4" /></button></td>
+                <td className="text-right whitespace-nowrap px-2"><button onClick={() => handleDelete(p)} className="text-ink-300 hover:text-honey-700"><Trash2 className="w-4 h-4" /></button></td>
               </tr>
             ))}
-            {pendaftar.length === 0 && <tr><td colSpan="7" className="py-6 text-center text-ink-300">Belum ada pendaftar PPDB.</td></tr>}
+            {pendaftar.length === 0 && <tr><td colSpan="7" className="py-6 text-center text-ink-300 whitespace-nowrap px-2">Belum ada pendaftar PPDB.</td></tr>}
           </tbody>
         </table>
         </div>

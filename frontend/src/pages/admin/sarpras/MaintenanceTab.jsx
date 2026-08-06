@@ -121,22 +121,22 @@ export default function MaintenanceTab() {
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-ink-500 border-b border-line-200">
-              <th className="pb-2 font-medium">Tanggal Lapor</th>
-              <th className="font-medium">Aset / Ruang</th>
-              <th className="font-medium">Deskripsi</th>
-              <th className="font-medium">Pelapor</th>
-              <th className="font-medium text-center">Status</th>
-              <th></th>
+              <th className="pb-2 font-medium whitespace-nowrap px-2">Tanggal Lapor</th>
+              <th className="font-medium whitespace-nowrap px-2">Aset / Ruang</th>
+              <th className="font-medium whitespace-nowrap px-2">Deskripsi</th>
+              <th className="font-medium whitespace-nowrap px-2">Pelapor</th>
+              <th className="font-medium text-center whitespace-nowrap px-2">Status</th>
+              <th className="whitespace-nowrap px-2"></th>
             </tr>
           </thead>
           <tbody>
             {requests.map((r) => (
               <tr key={r.id} className="border-t border-line-200">
-                <td className="py-2.5 font-mono text-ink-700">{r.tanggal_lapor}</td>
-                <td className="text-ink-700">{r.asset?.nama || r.room?.nama || '-'}</td>
-                <td className="text-ink-700 max-w-[16rem]">{r.deskripsi}</td>
-                <td className="text-ink-700">{r.pelapor || '-'}</td>
-                <td className="text-center">
+                <td className="py-2.5 font-mono text-ink-700 whitespace-nowrap px-2">{r.tanggal_lapor}</td>
+                <td className="text-ink-700 whitespace-nowrap px-2">{r.asset?.nama || r.room?.nama || '-'}</td>
+                <td className="text-ink-700 max-w-[16rem] whitespace-nowrap px-2">{r.deskripsi}</td>
+                <td className="text-ink-700 whitespace-nowrap px-2">{r.pelapor || '-'}</td>
+                <td className="text-center whitespace-nowrap px-2">
                   <select
                     value={r.status}
                     disabled={savingId === r.id}
@@ -146,10 +146,10 @@ export default function MaintenanceTab() {
                     {Object.entries(STATUS_LABEL).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
                   </select>
                 </td>
-                <td className="text-right"><button onClick={() => handleDelete(r)} className="text-ink-300 hover:text-honey-700"><Trash2 className="w-4 h-4" /></button></td>
+                <td className="text-right whitespace-nowrap px-2"><button onClick={() => handleDelete(r)} className="text-ink-300 hover:text-honey-700"><Trash2 className="w-4 h-4" /></button></td>
               </tr>
             ))}
-            {requests.length === 0 && <tr><td colSpan="6" className="py-6 text-center text-ink-300">Belum ada laporan pemeliharaan.</td></tr>}
+            {requests.length === 0 && <tr><td colSpan="6" className="py-6 text-center text-ink-300 whitespace-nowrap px-2">Belum ada laporan pemeliharaan.</td></tr>}
           </tbody>
         </table>
         </div>

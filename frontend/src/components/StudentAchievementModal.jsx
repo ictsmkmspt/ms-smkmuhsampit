@@ -119,17 +119,17 @@ export default function StudentAchievementModal({ student, onClose, onChanged, r
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left text-ink-500 border-b border-line-200">
-                  <th className="pb-2 font-medium">Tanggal</th>
-                  <th className="font-medium">Jenis Prestasi</th>
-                  <th className="font-medium text-right">Poin</th>
-                  {!readOnly && <th className="font-medium text-right">Aksi</th>}
+                  <th className="pb-2 font-medium whitespace-nowrap px-2">Tanggal</th>
+                  <th className="font-medium whitespace-nowrap px-2">Jenis Prestasi</th>
+                  <th className="font-medium text-right whitespace-nowrap px-2">Poin</th>
+                  {!readOnly && <th className="font-medium text-right whitespace-nowrap px-2">Aksi</th>}
                 </tr>
               </thead>
               <tbody>
                 {achievements.map((a) => (
                   editingId === a.id ? (
                     <tr key={a.id} className="border-t border-line-200 bg-mist-50">
-                      <td colSpan="4" className="py-3">
+                      <td colSpan="4" className="py-3 whitespace-nowrap px-2">
                         <div className="flex flex-wrap gap-2 items-end">
                           <select
                             value={editTypeId}
@@ -163,14 +163,14 @@ export default function StudentAchievementModal({ student, onClose, onChanged, r
                     </tr>
                   ) : (
                     <tr key={a.id} className="border-t border-line-200">
-                      <td className="py-2.5 text-ink-700 align-top">{a.date}</td>
-                      <td className="text-ink-900 align-top">
+                      <td className="py-2.5 text-ink-700 align-top whitespace-nowrap px-2">{a.date}</td>
+                      <td className="text-ink-900 align-top whitespace-nowrap px-2">
                         {a.achievement_type?.name || '-'}
                         {a.note && <p className="text-xs text-ink-400 mt-0.5"><TruncateText text={a.note} maxWidth="16rem" /></p>}
                       </td>
-                      <td className="text-right text-brand-700 font-medium align-top">+{a.poin}</td>
+                      <td className="text-right text-brand-700 font-medium align-top whitespace-nowrap px-2">+{a.poin}</td>
                       {!readOnly && (
-                        <td className="text-right align-top">
+                        <td className="text-right align-top whitespace-nowrap px-2">
                           <div className="flex gap-2 justify-end">
                             <button onClick={() => startEdit(a)} className="text-ink-400 hover:text-brand-600" title="Ubah">
                               <Pencil className="w-3.5 h-3.5" />

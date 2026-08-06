@@ -220,25 +220,25 @@ export default function PenempatanTab() {
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-ink-500 border-b border-line-200">
-              <th className="pb-2 font-medium">Siswa</th>
-              <th className="font-medium">IDUKA</th>
-              <th className="font-medium">Pembimbing</th>
-              <th className="font-medium">Periode</th>
-              <th className="font-medium">Status</th>
-              {canEdit && <th className="pb-2 w-20"></th>}
+              <th className="pb-2 font-medium whitespace-nowrap px-2">Siswa</th>
+              <th className="font-medium whitespace-nowrap px-2">IDUKA</th>
+              <th className="font-medium whitespace-nowrap px-2">Pembimbing</th>
+              <th className="font-medium whitespace-nowrap px-2">Periode</th>
+              <th className="font-medium whitespace-nowrap px-2">Status</th>
+              {canEdit && <th className="pb-2 w-20 whitespace-nowrap px-2"></th>}
             </tr>
           </thead>
           <tbody>
             {list.map((p) => (
               <tr key={p.id} className="border-t border-line-200">
-                <td className="py-2.5">
+                <td className="py-2.5 whitespace-nowrap px-2">
                   <p className="text-ink-900 font-medium"><TruncateText text={p.student?.user?.name} /></p>
                   <p className="text-xs text-ink-500">{p.student?.class_room?.name || '-'}</p>
                 </td>
-                <td className="text-ink-700"><TruncateText text={p.dudi?.nama_perusahaan} /></td>
-                <td className="text-ink-700"><TruncateText text={p.guru_pembimbing?.user?.name} /></td>
-                <td className="text-ink-700 text-xs">{p.tanggal_mulai} s/d {p.tanggal_selesai}</td>
-                <td>
+                <td className="text-ink-700 whitespace-nowrap px-2"><TruncateText text={p.dudi?.nama_perusahaan} /></td>
+                <td className="text-ink-700 whitespace-nowrap px-2"><TruncateText text={p.guru_pembimbing?.user?.name} /></td>
+                <td className="text-ink-700 text-xs whitespace-nowrap px-2">{p.tanggal_mulai} s/d {p.tanggal_selesai}</td>
+                <td className="whitespace-nowrap px-2">
                   {canEdit ? (
                     <button onClick={() => handleUbahStatus(p, p.status === 'aktif' ? 'selesai' : 'aktif')}>
                       <span className={`badge-soft ${p.status === 'aktif' ? 'badge-brand' : 'badge-soft'}`}>
@@ -252,7 +252,7 @@ export default function PenempatanTab() {
                   )}
                 </td>
                 {canEdit && (
-                  <td className="text-right">
+                  <td className="text-right whitespace-nowrap px-2">
                     <button onClick={() => handleDelete(p)} className="text-ink-300 hover:text-honey-700">
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -261,7 +261,7 @@ export default function PenempatanTab() {
               </tr>
             ))}
             {list.length === 0 && (
-              <tr><td colSpan="6" className="py-6 text-center text-ink-300">Belum ada penempatan PKL.</td></tr>
+              <tr><td colSpan="6" className="py-6 text-center text-ink-300 whitespace-nowrap px-2">Belum ada penempatan PKL.</td></tr>
             )}
           </tbody>
         </table>

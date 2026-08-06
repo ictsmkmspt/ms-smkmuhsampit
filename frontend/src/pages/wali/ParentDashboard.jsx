@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { LogOut, School, Trophy, AlertOctagon, Clock, ChevronDown, ChevronLeft, ChevronRight, Wallet, UserCog, X, Home, BookOpen } from 'lucide-react';
+import { LogOut, School, Trophy, AlertOctagon, Clock, ChevronDown, ChevronLeft, ChevronRight, Wallet, UserCog, X, Home, BookOpen, CalendarRange } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api/axios';
 import LeaderboardPrestasi from '../../components/LeaderboardPrestasi';
@@ -7,9 +7,13 @@ import EditProfileModal from '../../components/EditProfileModal';
 import KalenderAkademikView from '../../components/KalenderAkademikView';
 import JadwalPelajaranView from '../../components/JadwalPelajaranView';
 
-const TABS = [
-  { key: 'beranda', label: 'Beranda', icon: Home },
-  { key: 'pembelajaran', label: 'Pembelajaran', icon: BookOpen },
+// Sub-menu di atas konten (bukan navbar bawah lagi) — Kalender Akademik &
+// Jadwal Pelajaran sekarang jadi tab sejajar dengan Beranda, bukan digabung
+// jadi 1 tab "Pembelajaran" seperti sebelumnya.
+const SUB_TABS = [
+  { key: 'beranda', label: 'Beranda', labelShort: 'Beranda', icon: Home },
+  { key: 'kalender', label: 'Kalender Akademik', labelShort: 'Kalender', icon: CalendarRange },
+  { key: 'jadwal', label: 'Jadwal Pelajaran', labelShort: 'Jadwal', icon: BookOpen },
 ];
 
 const PAGE_SIZE = 5;
@@ -137,18 +141,41 @@ export default function ParentDashboard() {
         </div>
       </div>
 
-      <div className="max-w-2xl mx-auto px-6 pt-6 pb-24">
-        {activeTab === 'pembelajaran' && (
-          <div className="space-y-6">
-            {selectedId && (
-              <div className="surface-card p-4">
-                <h2 className="font-display font-semibold text-ink-900 mb-3">
-                  Jadwal Pelajaran <span className="text-ink-500 font-sans font-normal text-sm">— {selectedChild?.user?.name}</span>
-                </h2>
-                <JadwalPelajaranView endpoint={`/my-children/${selectedId}/schedule`} />
-              </div>
-            )}
-            <KalenderAkademikView />
+      <div className="max-w-2xl mx-auto px-6 pt-3 pb-10">
+        <div className="flex gap-1 bg-white border border-line-200 rounded-xl p-1 mb-3 w-fit mx-auto">
+          {SUB_TABS.map((t) => {
+            const isActive = activeTab === t.key;
+            return (
+              <button
+                key={t.key}
+                onClick={() => setActiveTab(t.key)}
+                className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-4 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-medium whitespace-nowrap transition ${
+                  isActive ? 'bg-brand-600 text-white shadow-sm' : 'text-ink-700 hover:bg-mist-50 hover:text-ink-900'
+                }`}
+              >
+                <t.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <span className="sm:hidden">{t.labelShort}</span>
+                <span className="hidden sm:inline">{t.label}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {activeTab === 'kalender' && <KalenderAkademikView />}
+
+        {activeTab === 'jadwal' && selectedId && (
+          <div className="surface-card p-4">
+            <h2 className="font-display font-semibold text-ink-900 mb-3">
+              Jadwal Pelajaran <span className="text-ink-500 font-sans font-normal text-sm">— {selectedChild?.user?.name}</span>
+            </h2>
+            <JadwalPelajaranView endpoint={`/my-children/${selectedId}/schedule`} />
+          </div>
+        )}
+
+        {activeTab === 'jadwal' && !selectedId && (
+          <div className="surface-card p-6 text-center">
+            <School className="w-8 h-8 text-ink-300 mx-auto mb-2" />
+            <p className="text-sm text-ink-500">Belum ada data anak yang terhubung ke akun ini.</p>
           </div>
         )}
 
@@ -316,30 +343,6 @@ export default function ParentDashboard() {
             <LeaderboardPrestasi />
           </div>
         )}
-      </div>
-
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-line-200 z-40">
-        <div className="max-w-2xl mx-auto flex">
-          {TABS.map((t) => {
-            const Icon = t.icon;
-            const isActive = activeTab === t.key;
-            return (
-              <button
-                key={t.key}
-                onClick={() => setActiveTab(t.key)}
-                className={`relative flex-1 flex flex-col items-center justify-center gap-1 py-3 transition ${
-                  isActive ? 'text-brand-600' : 'text-ink-400 hover:text-ink-600'
-                }`}
-              >
-                <Icon className={`w-6 h-6 ${isActive ? 'stroke-[2.5]' : 'stroke-[1.75]'}`} />
-                <span className="text-[10px] font-medium tracking-wide">{t.label}</span>
-                {isActive && (
-                  <span className="absolute bottom-0 w-8 h-0.5 bg-brand-600 rounded-t-full" />
-                )}
-              </button>
-            );
-          })}
-        </div>
       </div>
 
       {showEditProfil && (

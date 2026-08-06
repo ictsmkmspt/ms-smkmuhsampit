@@ -127,25 +127,25 @@ export default function TeachingAssignmentsTab() {
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-ink-500 border-b border-line-200">
-              <th className="pb-2 font-medium">Kode Guru</th>
-              <th className="font-medium">Kelas</th>
-              <th className="font-medium">Mata Pelajaran</th>
-              <th className="font-medium">Guru</th>
-              <th className="font-medium">Terjadwal / Target Jam</th>
-              <th></th>
+              <th className="pb-2 font-medium whitespace-nowrap px-2">Kode Guru</th>
+              <th className="font-medium whitespace-nowrap px-2">Kelas</th>
+              <th className="font-medium whitespace-nowrap px-2">Mata Pelajaran</th>
+              <th className="font-medium whitespace-nowrap px-2">Guru</th>
+              <th className="font-medium whitespace-nowrap px-2">Terjadwal / Target Jam</th>
+              <th className="whitespace-nowrap px-2"></th>
             </tr>
           </thead>
           <tbody>
             {assignmentsUrut.map((a) => (
               <tr key={a.id} className="border-t border-line-200">
-                <td className="py-2.5"><span className="badge-soft badge-brand font-mono">{a.kode_guru || '-'}</span></td>
-                <td className="text-ink-900">{a.class_room?.name}</td>
-                <td className="text-ink-700">
+                <td className="py-2.5 whitespace-nowrap px-2"><span className="badge-soft badge-brand font-mono">{a.kode_guru || '-'}</span></td>
+                <td className="text-ink-900 whitespace-nowrap px-2">{a.class_room?.name}</td>
+                <td className="text-ink-700 whitespace-nowrap px-2">
                   {a.subject?.nama}
                   {a.subject?.kode && <span className="text-ink-400 font-mono text-xs ml-1.5">({a.subject.kode})</span>}
                 </td>
-                <td className="text-ink-700">{a.teacher?.user?.name}</td>
-                <td className="text-ink-700">
+                <td className="text-ink-700 whitespace-nowrap px-2">{a.teacher?.user?.name}</td>
+                <td className="text-ink-700 whitespace-nowrap px-2">
                   {editingId === a.id ? (
                     <div className="flex items-center gap-1.5">
                       <input
@@ -166,10 +166,10 @@ export default function TeachingAssignmentsTab() {
                     </button>
                   )}
                 </td>
-                <td className="text-right"><button onClick={() => handleDelete(a)} className="text-ink-300 hover:text-honey-700"><Trash2 className="w-4 h-4" /></button></td>
+                <td className="text-right whitespace-nowrap px-2"><button onClick={() => handleDelete(a)} className="text-ink-300 hover:text-honey-700"><Trash2 className="w-4 h-4" /></button></td>
               </tr>
             ))}
-            {assignments.length === 0 && <tr><td colSpan="6" className="py-6 text-center text-ink-300">Belum ada penugasan untuk tahun ajaran aktif.</td></tr>}
+            {assignments.length === 0 && <tr><td colSpan="6" className="py-6 text-center text-ink-300 whitespace-nowrap px-2">Belum ada penugasan untuk tahun ajaran aktif.</td></tr>}
           </tbody>
         </table>
         </div>

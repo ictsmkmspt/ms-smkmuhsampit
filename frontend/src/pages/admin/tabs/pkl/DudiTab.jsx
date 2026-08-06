@@ -172,17 +172,17 @@ export default function DudiTab() {
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-ink-500 border-b border-line-200">
-              <th className="pb-2 font-medium">Perusahaan</th>
-              <th className="font-medium">Kontak</th>
-              <th className="font-medium">Lokasi</th>
-              {canEdit && <th className="pb-2 w-24"></th>}
+              <th className="pb-2 font-medium whitespace-nowrap px-2">Perusahaan</th>
+              <th className="font-medium whitespace-nowrap px-2">Kontak</th>
+              <th className="font-medium whitespace-nowrap px-2">Lokasi</th>
+              {canEdit && <th className="pb-2 w-24 whitespace-nowrap px-2"></th>}
             </tr>
           </thead>
           <tbody>
             {list.map((d) => (
               editId === d.id ? (
                 <tr key={d.id} className="border-t border-line-200 bg-mist-50">
-                  <td colSpan="4" className="py-3">
+                  <td colSpan="4" className="py-3 whitespace-nowrap px-2">
                     <div className="grid grid-cols-2 gap-2 mb-2">
                       <input value={editData.nama_perusahaan} onChange={(e) => setEditData({ ...editData, nama_perusahaan: e.target.value })} className="field-input py-1.5 text-sm" placeholder="Nama perusahaan" />
                       <input value={editData.penanggung_jawab} onChange={(e) => setEditData({ ...editData, penanggung_jawab: e.target.value })} className="field-input py-1.5 text-sm" placeholder="Nama Instruktur" />
@@ -215,15 +215,15 @@ export default function DudiTab() {
                 </tr>
               ) : (
                 <tr key={d.id} className="border-t border-line-200">
-                  <td className="py-2.5">
+                  <td className="py-2.5 whitespace-nowrap px-2">
                     <p className="text-ink-900 font-medium"><TruncateText text={d.nama_perusahaan} /></p>
                     <p className="text-xs text-ink-500"><TruncateText text={d.alamat} /></p>
                   </td>
-                  <td className="text-ink-700">
+                  <td className="text-ink-700 whitespace-nowrap px-2">
                     <p><TruncateText text={d.penanggung_jawab} /></p>
                     <p className="text-xs text-ink-500">{d.telepon || '-'}</p>
                   </td>
-                  <td className="text-ink-700 text-xs">
+                  <td className="text-ink-700 text-xs whitespace-nowrap px-2">
                     {d.latitude && d.longitude ? (
                       <>
                         <p>{Number(d.latitude).toFixed(5)}, {Number(d.longitude).toFixed(5)}</p>
@@ -232,7 +232,7 @@ export default function DudiTab() {
                     ) : '-'}
                   </td>
                   {canEdit && (
-                    <td className="text-right">
+                    <td className="text-right whitespace-nowrap px-2">
                       <div className="flex justify-end gap-2">
                         <button onClick={() => startEdit(d)} className="text-xs text-ink-500 hover:text-brand-600 font-medium border border-line-200 rounded-lg px-2 py-1">
                           <Save className="w-3.5 h-3.5" />
@@ -250,7 +250,7 @@ export default function DudiTab() {
               )
             ))}
             {list.length === 0 && (
-              <tr><td colSpan="4" className="py-6 text-center text-ink-300">Belum ada IDUKA yang terdaftar.</td></tr>
+              <tr><td colSpan="4" className="py-6 text-center text-ink-300 whitespace-nowrap px-2">Belum ada IDUKA yang terdaftar.</td></tr>
             )}
           </tbody>
         </table>

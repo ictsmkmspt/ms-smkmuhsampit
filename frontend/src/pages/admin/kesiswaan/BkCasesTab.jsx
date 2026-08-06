@@ -92,30 +92,30 @@ export default function BkCasesTab() {
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-ink-500 border-b border-line-200">
-              <th className="pb-2 font-medium">Siswa</th>
-              <th className="font-medium">Tanggal</th>
-              <th className="font-medium">Kategori</th>
-              <th className="font-medium">Catatan</th>
-              <th className="font-medium">Tindak Lanjut</th>
-              <th className="font-medium text-center">Status</th>
-              <th></th>
+              <th className="pb-2 font-medium whitespace-nowrap px-2">Siswa</th>
+              <th className="font-medium whitespace-nowrap px-2">Tanggal</th>
+              <th className="font-medium whitespace-nowrap px-2">Kategori</th>
+              <th className="font-medium whitespace-nowrap px-2">Catatan</th>
+              <th className="font-medium whitespace-nowrap px-2">Tindak Lanjut</th>
+              <th className="font-medium text-center whitespace-nowrap px-2">Status</th>
+              <th className="whitespace-nowrap px-2"></th>
             </tr>
           </thead>
           <tbody>
             {cases.map((c) => (
               <tr key={c.id} className="border-t border-line-200 align-top">
-                <td className="py-2.5 text-ink-900">{c.student?.user?.name}<div className="text-xs text-ink-400">{c.student?.class_room?.name}</div></td>
-                <td className="text-ink-700 font-mono">{c.tanggal}</td>
-                <td className="text-ink-700">{KATEGORI_LABEL[c.kategori]}</td>
-                <td className="text-ink-700 max-w-[16rem]"><TruncateText text={c.catatan} /></td>
-                <td className="text-ink-700 max-w-[14rem]">
+                <td className="py-2.5 text-ink-900 whitespace-nowrap px-2">{c.student?.user?.name}<div className="text-xs text-ink-400">{c.student?.class_room?.name}</div></td>
+                <td className="text-ink-700 font-mono whitespace-nowrap px-2">{c.tanggal}</td>
+                <td className="text-ink-700 whitespace-nowrap px-2">{KATEGORI_LABEL[c.kategori]}</td>
+                <td className="text-ink-700 max-w-[16rem] whitespace-nowrap px-2"><TruncateText text={c.catatan} /></td>
+                <td className="text-ink-700 max-w-[14rem] whitespace-nowrap px-2">
                   {editId === c.id ? (
                     <textarea value={editForm.tindak_lanjut} onChange={(e) => setEditForm({ ...editForm, tindak_lanjut: e.target.value })} className="field-input" rows={2} />
                   ) : (
                     <TruncateText text={c.tindak_lanjut} />
                   )}
                 </td>
-                <td className="text-center">
+                <td className="text-center whitespace-nowrap px-2">
                   {editId === c.id ? (
                     <select value={editForm.status} onChange={(e) => setEditForm({ ...editForm, status: e.target.value })} className="field-input py-1 text-ink-700">
                       <option value="berjalan">Berjalan</option>
@@ -125,7 +125,7 @@ export default function BkCasesTab() {
                     <span className={`badge-soft ${c.status === 'selesai' ? 'badge-brand' : 'badge-honey'}`}>{c.status === 'selesai' ? 'Selesai' : 'Berjalan'}</span>
                   )}
                 </td>
-                <td className="text-right whitespace-nowrap">
+                <td className="text-right whitespace-nowrap px-2">
                   {editId === c.id ? (
                     <>
                       <button onClick={() => handleSaveEdit(c.id)} className="text-xs text-brand-600 font-medium mr-2">Simpan</button>
@@ -141,7 +141,7 @@ export default function BkCasesTab() {
               </tr>
             ))}
             {cases.length === 0 && (
-              <tr><td colSpan="7" className="py-6 text-center text-ink-300">Belum ada catatan BK.</td></tr>
+              <tr><td colSpan="7" className="py-6 text-center text-ink-300 whitespace-nowrap px-2">Belum ada catatan BK.</td></tr>
             )}
           </tbody>
         </table>

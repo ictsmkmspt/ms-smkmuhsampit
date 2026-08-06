@@ -73,21 +73,21 @@ export default function SubjectsTab() {
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-ink-500 border-b border-line-200">
-              <th className="pb-2 font-medium w-32">Kode</th>
-              <th className="font-medium">Nama</th>
-              <th className="w-24"></th>
+              <th className="pb-2 font-medium w-32 whitespace-nowrap px-2">Kode</th>
+              <th className="font-medium whitespace-nowrap px-2">Nama</th>
+              <th className="w-24 whitespace-nowrap px-2"></th>
             </tr>
           </thead>
           <tbody>
             {subjectsUrut.map((s) => (
               <tr key={s.id} className="border-t border-line-200">
-                <td className="py-2.5">
+                <td className="py-2.5 whitespace-nowrap px-2">
                   {editId === s.id ? <input value={editForm.kode} onChange={(e) => setEditForm({ ...editForm, kode: e.target.value })} className="field-input py-1" /> : <span className="font-mono text-ink-700">{s.kode}</span>}
                 </td>
-                <td>
+                <td className="whitespace-nowrap px-2">
                   {editId === s.id ? <input value={editForm.nama} onChange={(e) => setEditForm({ ...editForm, nama: e.target.value })} className="field-input py-1" /> : <span className="text-ink-900">{s.nama}</span>}
                 </td>
-                <td className="text-right">
+                <td className="text-right whitespace-nowrap px-2">
                   {editId === s.id ? (
                     <>
                       <button onClick={() => handleSave(s.id)} className="text-brand-600 hover:text-brand-800" title="Simpan"><Save className="w-4 h-4" /></button>
@@ -102,7 +102,7 @@ export default function SubjectsTab() {
                 </td>
               </tr>
             ))}
-            {subjects.length === 0 && <tr><td colSpan="3" className="py-6 text-center text-ink-300">Belum ada mata pelajaran.</td></tr>}
+            {subjects.length === 0 && <tr><td colSpan="3" className="py-6 text-center text-ink-300 whitespace-nowrap px-2">Belum ada mata pelajaran.</td></tr>}
           </tbody>
         </table>
         </div>

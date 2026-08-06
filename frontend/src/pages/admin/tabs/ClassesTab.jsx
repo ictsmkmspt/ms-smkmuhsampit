@@ -115,10 +115,10 @@ export default function ClassesTab() {
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-ink-500 border-b border-line-200">
-              <th className="pb-2 font-medium">Nama Kelas</th>
-              <th className="font-medium">Jumlah Siswa</th>
-              <th className="font-medium">Wali Kelas</th>
-              <th></th>
+              <th className="pb-2 font-medium whitespace-nowrap px-2">Nama Kelas</th>
+              <th className="font-medium whitespace-nowrap px-2">Jumlah Siswa</th>
+              <th className="font-medium whitespace-nowrap px-2">Wali Kelas</th>
+              <th className="whitespace-nowrap px-2"></th>
             </tr>
           </thead>
           <tbody>
@@ -128,7 +128,7 @@ export default function ClassesTab() {
               if (isEditing) {
                 return (
                   <tr key={c.id} className="border-t border-line-200 bg-mist-50">
-                    <td className="py-2.5" colSpan="4">
+                    <td className="py-2.5 whitespace-nowrap px-2" colSpan="4">
                       <div className="flex flex-wrap items-start gap-3">
                         <div>
                           <label className="block text-xs font-medium text-ink-500 mb-1">Nama Kelas</label>
@@ -177,10 +177,10 @@ export default function ClassesTab() {
 
               return (
                 <tr key={c.id} className="border-t border-line-200">
-                  <td className="py-2.5 text-ink-900">{c.name}</td>
-                  <td><span className="badge-soft badge-brand">{c.students_count ?? 0} siswa</span></td>
-                  <td className="text-ink-700">{c.homeroom_teacher?.user?.name ? <TruncateText text={c.homeroom_teacher.user.name} /> : <span className="text-ink-300">— Belum ada —</span>}</td>
-                  <td className="text-right">
+                  <td className="py-2.5 text-ink-900 whitespace-nowrap px-2">{c.name}</td>
+                  <td className="whitespace-nowrap px-2"><span className="badge-soft badge-brand">{c.students_count ?? 0} siswa</span></td>
+                  <td className="text-ink-700 whitespace-nowrap px-2">{c.homeroom_teacher?.user?.name ? <TruncateText text={c.homeroom_teacher.user.name} /> : <span className="text-ink-300">— Belum ada —</span>}</td>
+                  <td className="text-right whitespace-nowrap px-2">
                     <div className="flex justify-end gap-3">
                       <button onClick={() => startEdit(c)} className="text-ink-300 hover:text-brand-600" title="Edit Kelas">
                         <Pencil className="w-4 h-4" />
@@ -199,7 +199,7 @@ export default function ClassesTab() {
               );
             })}
             {classes.length === 0 && (
-              <tr><td colSpan="4" className="py-6 text-center text-ink-300">Belum ada kelas.</td></tr>
+              <tr><td colSpan="4" className="py-6 text-center text-ink-300 whitespace-nowrap px-2">Belum ada kelas.</td></tr>
             )}
           </tbody>
         </table>

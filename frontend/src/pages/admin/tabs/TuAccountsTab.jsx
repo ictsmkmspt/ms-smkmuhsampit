@@ -80,18 +80,18 @@ export default function TuAccountsTab() {
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-ink-500 border-b border-line-200">
-              <th className="pb-2 font-medium">Nama</th>
-              <th className="font-medium">Email</th>
-              {isAdmin && <th></th>}
+              <th className="pb-2 font-medium whitespace-nowrap px-2">Nama</th>
+              <th className="font-medium whitespace-nowrap px-2">Email</th>
+              {isAdmin && <th className="whitespace-nowrap px-2"></th>}
             </tr>
           </thead>
           <tbody>
             {accounts.map((a) => (
               <tr key={a.id} className="border-t border-line-200">
-                <td className="py-2.5 text-ink-900"><TruncateText text={a.name} /></td>
-                <td className="text-ink-700"><TruncateText text={a.email} /></td>
+                <td className="py-2.5 text-ink-900 whitespace-nowrap px-2"><TruncateText text={a.name} /></td>
+                <td className="text-ink-700 whitespace-nowrap px-2"><TruncateText text={a.email} /></td>
                 {isAdmin && (
-                  <td className="text-right">
+                  <td className="text-right whitespace-nowrap px-2">
                     <div className="flex justify-end gap-2">
                       <button onClick={() => handleResetPassword(a.id, a.name)} className="text-ink-400 hover:text-brand-600" title="Reset Password ke default (123456)">
                         <KeyRound className="w-4 h-4" />
@@ -105,7 +105,7 @@ export default function TuAccountsTab() {
               </tr>
             ))}
             {accounts.length === 0 && (
-              <tr><td colSpan="3" className="py-6 text-center text-ink-300">Belum ada akun TU.</td></tr>
+              <tr><td colSpan="3" className="py-6 text-center text-ink-300 whitespace-nowrap px-2">Belum ada akun TU.</td></tr>
             )}
           </tbody>
         </table>

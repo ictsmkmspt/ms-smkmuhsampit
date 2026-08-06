@@ -133,19 +133,19 @@ export default function AbsensiReportSection() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left text-ink-500 border-b border-line-200">
-                  <th className="pb-2 font-medium">Nama Siswa</th>
-                  <th className="font-medium">Jam Masuk</th>
-                  <th className="font-medium">Status</th>
-                  <th className="font-medium text-right">Aksi</th>
+                  <th className="pb-2 font-medium whitespace-nowrap px-2">Nama Siswa</th>
+                  <th className="font-medium whitespace-nowrap px-2">Jam Masuk</th>
+                  <th className="font-medium whitespace-nowrap px-2">Status</th>
+                  <th className="font-medium text-right whitespace-nowrap px-2">Aksi</th>
                 </tr>
               </thead>
               <tbody>
                 {students.map((r) => (
                   <tr key={r.id} className="border-t border-line-200">
-                    <td className="py-2.5 text-ink-900"><TruncateText text={r.student?.user?.name} /></td>
-                    <td className="font-mono text-xs text-ink-700">{r.time_in || '-'}</td>
-                    <td><span className={`badge-soft ${badgeClass(r.status)}`}>{r.status === 'pkl' ? 'PKL' : r.status}</span></td>
-                    <td className="text-right">
+                    <td className="py-2.5 text-ink-900 whitespace-nowrap px-2"><TruncateText text={r.student?.user?.name} /></td>
+                    <td className="font-mono text-xs text-ink-700 whitespace-nowrap px-2">{r.time_in || '-'}</td>
+                    <td className="whitespace-nowrap px-2"><span className={`badge-soft ${badgeClass(r.status)}`}>{r.status === 'pkl' ? 'PKL' : r.status}</span></td>
+                    <td className="text-right whitespace-nowrap px-2">
                       {r.status === 'libur' ? (
                         <span className="text-xs text-ink-300 italic">Hari libur</span>
                       ) : r.status === 'pkl' ? (
@@ -166,7 +166,7 @@ export default function AbsensiReportSection() {
                   </tr>
                 ))}
                 {students.length === 0 && (
-                  <tr><td colSpan="4" className="py-6 text-center text-ink-300">Belum ada siswa di kelas ini.</td></tr>
+                  <tr><td colSpan="4" className="py-6 text-center text-ink-300 whitespace-nowrap px-2">Belum ada siswa di kelas ini.</td></tr>
                 )}
               </tbody>
             </table>

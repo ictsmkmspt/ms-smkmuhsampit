@@ -171,21 +171,21 @@ export default function LaporanTab() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="text-left text-ink-500 border-b border-line-200">
-                      <th className="pb-2 font-medium">Tanggal</th>
-                      <th className="font-medium">Siswa</th>
-                      <th className="font-medium">Jenis</th>
-                      <th className="font-medium">Keterangan</th>
-                      <th className="font-medium text-right">Jumlah</th>
+                      <th className="pb-2 font-medium whitespace-nowrap px-2">Tanggal</th>
+                      <th className="font-medium whitespace-nowrap px-2">Siswa</th>
+                      <th className="font-medium whitespace-nowrap px-2">Jenis</th>
+                      <th className="font-medium whitespace-nowrap px-2">Keterangan</th>
+                      <th className="font-medium text-right whitespace-nowrap px-2">Jumlah</th>
                     </tr>
                   </thead>
                   <tbody>
                     {rincianGabungan.map((r) => (
                       <tr key={`${r._jenis}-${r.id}`} className="border-t border-line-200">
-                        <td className="py-2 text-ink-700 text-xs">{r.tanggal_bayar}</td>
-                        <td className="text-ink-900"><TruncateText text={r.student?.user?.name} maxWidth="10rem" /></td>
-                        <td className="text-ink-700">{r._jenis}</td>
-                        <td className="text-ink-700"><TruncateText text={r._label} maxWidth="10rem" /></td>
-                        <td className="text-right text-brand-700 font-medium">{formatRupiah(r.jumlah_dibayar)}</td>
+                        <td className="py-2 text-ink-700 text-xs whitespace-nowrap px-2">{r.tanggal_bayar}</td>
+                        <td className="text-ink-900 whitespace-nowrap px-2"><TruncateText text={r.student?.user?.name} maxWidth="10rem" /></td>
+                        <td className="text-ink-700 whitespace-nowrap px-2">{r._jenis}</td>
+                        <td className="text-ink-700 whitespace-nowrap px-2"><TruncateText text={r._label} maxWidth="10rem" /></td>
+                        <td className="text-right text-brand-700 font-medium whitespace-nowrap px-2">{formatRupiah(r.jumlah_dibayar)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -240,26 +240,26 @@ export default function LaporanTab() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left text-ink-500 border-b border-line-200">
-                  <th className="pb-2 font-medium">Nama Siswa</th>
-                  <th className="font-medium">Kelas</th>
-                  <th className="font-medium text-right">Tunggakan SPP</th>
-                  <th className="font-medium text-right">Tunggakan Lain</th>
-                  <th className="font-medium text-right">Total</th>
+                  <th className="pb-2 font-medium whitespace-nowrap px-2">Nama Siswa</th>
+                  <th className="font-medium whitespace-nowrap px-2">Kelas</th>
+                  <th className="font-medium text-right whitespace-nowrap px-2">Tunggakan SPP</th>
+                  <th className="font-medium text-right whitespace-nowrap px-2">Tunggakan Lain</th>
+                  <th className="font-medium text-right whitespace-nowrap px-2">Total</th>
                 </tr>
               </thead>
               <tbody>
                 {tunggakanList.map((row) => (
                   <tr key={row.student.id} className="border-t border-line-200">
-                    <td className="py-2.5">
+                    <td className="py-2.5 whitespace-nowrap px-2">
                       <div className="flex items-center gap-2.5">
                         <Avatar name={row.student.user?.name} />
                         <span className="text-ink-900 min-w-0"><TruncateText text={row.student.user?.name} /></span>
                       </div>
                     </td>
-                    <td className="text-ink-700">{row.student.class_room?.name || '-'}</td>
-                    <td className="text-right text-ink-700">{formatRupiah(row.tunggakan_spp)}</td>
-                    <td className="text-right text-ink-700">{formatRupiah(row.tunggakan_lain)}</td>
-                    <td className="text-right font-medium text-honey-700">{formatRupiah(row.total_tunggakan)}</td>
+                    <td className="text-ink-700 whitespace-nowrap px-2">{row.student.class_room?.name || '-'}</td>
+                    <td className="text-right text-ink-700 whitespace-nowrap px-2">{formatRupiah(row.tunggakan_spp)}</td>
+                    <td className="text-right text-ink-700 whitespace-nowrap px-2">{formatRupiah(row.tunggakan_lain)}</td>
+                    <td className="text-right font-medium text-honey-700 whitespace-nowrap px-2">{formatRupiah(row.total_tunggakan)}</td>
                   </tr>
                 ))}
               </tbody>

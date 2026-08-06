@@ -96,23 +96,23 @@ export default function PeriodTemplateTab() {
             <tr className="text-left text-ink-500 border-b border-line-200">
               <th className="pb-2 pr-3 font-medium whitespace-nowrap">Waktu</th>
               <th className="pb-2 pr-3 font-medium whitespace-nowrap">Jam Ke</th>
-              <th className="pb-2 font-medium">Keterangan</th>
-              <th className="w-16"></th>
+              <th className="pb-2 font-medium whitespace-nowrap px-2">Keterangan</th>
+              <th className="w-16 whitespace-nowrap px-2"></th>
             </tr>
           </thead>
           <tbody>
             {rowsForDay.map((r) => (
               <tr key={r.id} className="border-t border-line-200">
                 <td className="py-2 pr-3 whitespace-nowrap font-mono text-xs text-ink-700">{r.waktu_mulai?.slice(0, 5)}-{r.waktu_selesai?.slice(0, 5)}</td>
-                <td className="pr-3 text-ink-700">{r.jam_ke || '-'}</td>
-                <td>
+                <td className="pr-3 text-ink-700 whitespace-nowrap">{r.jam_ke || '-'}</td>
+                <td className="whitespace-nowrap px-2">
                   {r.tipe === 'khusus' ? (
                     <span className="inline-block rounded px-2 py-1 font-medium" style={{ backgroundColor: r.warna || '#f1f5f9' }}>{r.label_khusus}</span>
                   ) : (
                     <span className="text-ink-400">Jam pelajaran biasa</span>
                   )}
                 </td>
-                <td className="text-right whitespace-nowrap">
+                <td className="text-right whitespace-nowrap px-2">
                   <div className="flex justify-end gap-1">
                     <button onClick={() => openEdit(r)} className="text-ink-400 hover:text-brand-600"><Pencil className="w-3.5 h-3.5" /></button>
                     <button onClick={() => handleDelete(r)} className="text-ink-300 hover:text-honey-700"><Trash2 className="w-3.5 h-3.5" /></button>
@@ -121,7 +121,7 @@ export default function PeriodTemplateTab() {
               </tr>
             ))}
             {rowsForDay.length === 0 && (
-              <tr><td colSpan="4" className="py-6 text-center text-ink-300">Belum ada baris template untuk hari ini.</td></tr>
+              <tr><td colSpan="4" className="py-6 text-center text-ink-300 whitespace-nowrap px-2">Belum ada baris template untuk hari ini.</td></tr>
             )}
           </tbody>
         </table>

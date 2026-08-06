@@ -63,22 +63,22 @@ export default function SanksiTab() {
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-ink-500 border-b border-line-200">
-              <th className="pb-2 font-medium">Tahap</th>
-              <th className="font-medium">Rentang Poin</th>
-              <th className="font-medium">Tindakan</th>
-              <th></th>
+              <th className="pb-2 font-medium whitespace-nowrap px-2">Tahap</th>
+              <th className="font-medium whitespace-nowrap px-2">Rentang Poin</th>
+              <th className="font-medium whitespace-nowrap px-2">Tindakan</th>
+              <th className="whitespace-nowrap px-2"></th>
             </tr>
           </thead>
           <tbody>
             {rules.map((r) => (
               <tr key={r.id} className="border-t border-line-200">
-                <td className="py-2.5 text-ink-900 font-medium">{r.nama}</td>
-                <td className="text-ink-700 font-mono">{r.min_poin} – {r.max_poin ?? '∞'}</td>
-                <td className="text-ink-700">{r.tindakan}</td>
-                <td className="text-right"><button onClick={() => handleDelete(r)} className="text-ink-300 hover:text-honey-700"><Trash2 className="w-4 h-4" /></button></td>
+                <td className="py-2.5 text-ink-900 font-medium whitespace-nowrap px-2">{r.nama}</td>
+                <td className="text-ink-700 font-mono whitespace-nowrap px-2">{r.min_poin} – {r.max_poin ?? '∞'}</td>
+                <td className="text-ink-700 whitespace-nowrap px-2">{r.tindakan}</td>
+                <td className="text-right whitespace-nowrap px-2"><button onClick={() => handleDelete(r)} className="text-ink-300 hover:text-honey-700"><Trash2 className="w-4 h-4" /></button></td>
               </tr>
             ))}
-            {rules.length === 0 && <tr><td colSpan="4" className="py-6 text-center text-ink-300">Belum ada aturan sanksi.</td></tr>}
+            {rules.length === 0 && <tr><td colSpan="4" className="py-6 text-center text-ink-300 whitespace-nowrap px-2">Belum ada aturan sanksi.</td></tr>}
           </tbody>
         </table>
         </div>
@@ -90,22 +90,22 @@ export default function SanksiTab() {
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-ink-500 border-b border-line-200">
-              <th className="pb-2 font-medium">Siswa</th>
-              <th className="font-medium">Kelas</th>
-              <th className="font-medium text-center">Total Poin</th>
-              <th className="font-medium">Tahap Sanksi</th>
+              <th className="pb-2 font-medium whitespace-nowrap px-2">Siswa</th>
+              <th className="font-medium whitespace-nowrap px-2">Kelas</th>
+              <th className="font-medium text-center whitespace-nowrap px-2">Total Poin</th>
+              <th className="font-medium whitespace-nowrap px-2">Tahap Sanksi</th>
             </tr>
           </thead>
           <tbody>
             {siswa.map((row) => (
               <tr key={row.student.id} className="border-t border-line-200">
-                <td className="py-2.5 text-ink-900">{row.student.user?.name}</td>
-                <td className="text-ink-700">{row.student.class_room?.name || '-'}</td>
-                <td className="text-center"><span className="badge-soft badge-honey">{row.student.total_poin} poin</span></td>
-                <td className="text-ink-700">{row.sanksi ? row.sanksi.nama : <span className="text-ink-300">Belum ada aturan yang cocok</span>}</td>
+                <td className="py-2.5 text-ink-900 whitespace-nowrap px-2">{row.student.user?.name}</td>
+                <td className="text-ink-700 whitespace-nowrap px-2">{row.student.class_room?.name || '-'}</td>
+                <td className="text-center whitespace-nowrap px-2"><span className="badge-soft badge-honey">{row.student.total_poin} poin</span></td>
+                <td className="text-ink-700 whitespace-nowrap px-2">{row.sanksi ? row.sanksi.nama : <span className="text-ink-300">Belum ada aturan yang cocok</span>}</td>
               </tr>
             ))}
-            {siswa.length === 0 && <tr><td colSpan="4" className="py-6 text-center text-ink-300">Tidak ada siswa dengan poin pelanggaran saat ini.</td></tr>}
+            {siswa.length === 0 && <tr><td colSpan="4" className="py-6 text-center text-ink-300 whitespace-nowrap px-2">Tidak ada siswa dengan poin pelanggaran saat ini.</td></tr>}
           </tbody>
         </table>
         </div>

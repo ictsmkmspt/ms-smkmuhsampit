@@ -88,17 +88,17 @@ export default function AlumniTab() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-left text-ink-500 border-b border-line-200">
-                    <th className="pb-2 font-medium">Nama</th>
-                    <th className="font-medium">NIS</th>
-                    <th className="font-medium">Tanggal Lulus</th>
+                    <th className="pb-2 font-medium whitespace-nowrap px-2">Nama</th>
+                    <th className="font-medium whitespace-nowrap px-2">NIS</th>
+                    <th className="font-medium whitespace-nowrap px-2">Tanggal Lulus</th>
                   </tr>
                 </thead>
                 <tbody>
                   {students.map((s) => (
                     <tr key={s.id} className="border-t border-line-200">
-                      <td className="py-2.5 text-ink-900"><TruncateText text={s.user?.name} /></td>
-                      <td className="text-ink-700">{s.nis}</td>
-                      <td className="text-ink-700">{s.tanggal_lulus || '-'}</td>
+                      <td className="py-2.5 text-ink-900 whitespace-nowrap px-2"><TruncateText text={s.user?.name} /></td>
+                      <td className="text-ink-700 whitespace-nowrap px-2">{s.nis}</td>
+                      <td className="text-ink-700 whitespace-nowrap px-2">{s.tanggal_lulus || '-'}</td>
                     </tr>
                   ))}
                 </tbody>
