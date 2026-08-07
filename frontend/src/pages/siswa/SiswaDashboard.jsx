@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import QRCode from 'qrcode';
 import {
   LogOut, Clock, ChevronDown, UserCog, ChevronLeft, ChevronRight,
-  Award, AlertTriangle, Home, ClipboardCheck, NotebookPen,
+  Award, AlertTriangle, Home, ClipboardCheck, NotebookPen, ClipboardList,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api/axios';
@@ -22,6 +22,7 @@ export default function SiswaDashboard() {
   const [poinHistory, setPoinHistory] = useState([]);
   const [poinPage, setPoinPage] = useState(1);
   const [absensiPage, setAbsensiPage] = useState(1);
+  const [academicScores, setAcademicScores] = useState([]);
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [showEditProfil, setShowEditProfil] = useState(false);
@@ -59,6 +60,7 @@ export default function SiswaDashboard() {
 
     api.get('/my-profile').then((res) => setProfile(res.data));
     api.get('/my-attendances').then((res) => setHistory(res.data));
+    api.get('/my-academic-scores').then((res) => setAcademicScores(res.data));
 
     Promise.all([api.get('/my-violations'), api.get('/my-achievements')]).then(([v, a]) => {
       const gabungan = [
@@ -168,6 +170,26 @@ export default function SiswaDashboard() {
           Jadwal Pelajaran
         </h2>
         <JadwalPelajaranView endpoint="/my-schedule" />
+      </div>
+
+      <div className="surface-card max-w-md mx-auto p-4 mb-6">
+        <h2 className="font-display font-semibold text-sm text-ink-900 mb-3 flex items-center gap-2">
+          <ClipboardList className="w-4 h-4 text-ink-500" /> Nilai Akademik
+        </h2>
+        <ul className="divide-y divide-line-200">
+          {academicScores.slice(0, 5).map((n) => (
+            <li key={n.id} className="py-2.5 flex items-center justify-between text-sm gap-2">
+              <div className="min-w-0">
+                <p className="text-ink-900 truncate">{n.nama_kegiatan}</p>
+                <p className="text-xs text-ink-500">{n.subject?.nama} · {n.tanggal}</p>
+              </div>
+              <span className="font-display font-semibold text-ink-900 shrink-0">{n.skor}</span>
+            </li>
+          ))}
+          {academicScores.length === 0 && (
+            <li className="py-4 text-center text-sm text-ink-300">Belum ada nilai tercatat.</li>
+          )}
+        </ul>
       </div>
 
       {/* Riwayat Poin — total di atas, daftar riwayat gabungan prestasi & pelanggaran di bawah */}

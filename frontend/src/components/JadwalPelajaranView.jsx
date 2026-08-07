@@ -4,12 +4,15 @@ import api from '../api/axios';
 const HARI = ['senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu'];
 const HARI_LABEL = { senin: 'Senin', selasa: 'Selasa', rabu: 'Rabu', kamis: 'Kamis', jumat: "Jum'at", sabtu: 'Sabtu' };
 
-// Tampilan jadwal 1 kelas, baca-saja — dipakai Siswa (endpoint /my-schedule)
-// dan Wali (endpoint /my-children/{id}/schedule). Nama mapel & guru langsung
-// ditulis di barisnya masing-masing (tidak pakai kode + keterangan terpisah
-// lagi), dan jam kosong (tanpa isian) disembunyikan supaya daftarnya tidak
-// panjang.
-export default function JadwalPelajaranView({ endpoint }) {
+// Tampilan jadwal, baca-saja — dipakai Siswa (endpoint /my-schedule), Wali
+// (endpoint /my-children/{id}/schedule), dan Guru (endpoint
+// /my-teaching-schedule, dengan showClass supaya baris kedua tampilkan nama
+// kelas, bukan nama guru — soalnya guru sendiri sudah tahu dia gurunya,
+// yang perlu ditahu justru kelas mana yang diajar di jam itu, karena
+// jadwalnya bisa merentang beberapa kelas berbeda). Nama mapel & guru/kelas
+// langsung ditulis di barisnya masing-masing, jam kosong (tanpa isian)
+// disembunyikan supaya daftarnya tidak panjang.
+export default function JadwalPelajaranView({ endpoint, showClass = false }) {
   const [periods, setPeriods] = useState([]);
   const [schedules, setSchedules] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -69,7 +72,7 @@ export default function JadwalPelajaranView({ endpoint }) {
               ) : (
                 <p className="text-sm text-ink-900 min-w-0">
                   <span className="font-medium">{jadwal.subject?.nama || '-'}</span>
-                  <span className="text-ink-500"> — {jadwal.teacher?.user?.name || '-'}</span>
+                  <span className="text-ink-500"> — {showClass ? (jadwal.class_room?.name || '-') : (jadwal.teacher?.user?.name || '-')}</span>
                 </p>
               )}
             </li>

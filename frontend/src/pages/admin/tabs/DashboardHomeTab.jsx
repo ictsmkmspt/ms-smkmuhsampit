@@ -1,9 +1,17 @@
 import { useEffect, useState } from 'react';
-import { Users, GraduationCap, School, Building2, AlertTriangle, ChevronLeft, ChevronRight, ChevronDown, ArrowRight, Briefcase, ClipboardCheck, BookOpen, DoorOpen, Package, CheckCircle2, XCircle, ClipboardList, Wrench } from 'lucide-react';
+import { Users, GraduationCap, School, Building2, AlertTriangle, ChevronLeft, ChevronRight, ChevronDown, ArrowRight, Briefcase, ClipboardCheck, BookOpen, DoorOpen, Package, CheckCircle2, XCircle, ClipboardList, Wrench, Database, Settings, FlaskConical, HardHat } from 'lucide-react';
 import api from '../../../api/axios';
 import { useAuth } from '../../../context/AuthContext';
 import CategoryBarChart from '../../../components/CategoryBarChart';
 import DailyGroupedBarChart from '../../../components/DailyGroupedBarChart';
+import { MASTER_DATA_SUBMENU } from './MasterDataTab';
+import { ALUMNI_SUBMENU } from './AlumniMenuTab';
+import { POIN_SUBMENU } from './PoinTab';
+import { PKL_SUBMENU } from './PklTab';
+import { KURIKULUM_SUBMENU } from './KurikulumTab';
+import { SARPRAS_SUBMENU } from './SarprasTab';
+import { SETTINGS_SUBMENU } from './SettingsTab';
+import { PENGEMBANGAN_SUBMENU } from './PengembanganTab';
 
 // Langkah pengaturan awal Waka Kesiswaan, berurutan sesuai ketergantungan
 // datanya: Kelas harus ada dulu sebelum Siswa bisa dimasukkan, Siswa harus
@@ -319,6 +327,97 @@ const STAT_DEFS = [
   { key: 'dudi', label: 'Total IDUKA', icon: Building2, color: '#3FB27F' },
 ];
 
+// "Pembelajaran" punya 1 grup bertingkat ("Kalender" -> Akademik/Libur) di
+// sidebar — diratakan jadi daftar datar di sini, supaya dropdown di kartu
+// dashboard tidak perlu 2 tingkat nested cuma untuk 1 grup.
+const KURIKULUM_SUBMENU_DATAR = KURIKULUM_SUBMENU.flatMap((item) =>
+  item.children ? item.children.map((c) => ({ key: c.key, label: c.label })) : [{ key: item.key, label: item.label }]
+);
+
+// Akses cepat ke semua menu utama — cuma buat Super Admin (role lain sudah
+// punya dashboard ringkas sendiri di atas, dan sebagian besar menu di sini
+// memang di luar bidangnya). `key` mengikuti TABS di AdminDashboard.jsx.
+// `submenu` (kalau ada) dikirim ke onNavigate sebagai sub — kartu tanpa
+// `submenu` langsung navigasi saat diklik, kartu yang punya `submenu`
+// klik pertama cuma buka/tutup daftarnya (sama seperti dropdown di sidebar).
+const MENU_UTAMA = [
+  { key: 'master', label: 'Master Data', desc: 'Siswa, guru, kelas & wali', icon: Database, color: '#0B1B3A', submenu: MASTER_DATA_SUBMENU },
+  { key: 'alumni', label: 'Alumni', desc: 'Data siswa yang sudah lulus', icon: GraduationCap, color: '#3FB27F', submenu: ALUMNI_SUBMENU },
+  { key: 'absensi', label: 'Rekap Absensi', desc: 'Kehadiran siswa harian', icon: ClipboardCheck, color: '#2a78d6' },
+  { key: 'poin', label: 'Poin', desc: 'Pelanggaran, prestasi & sanksi', icon: ClipboardList, color: '#B9504F', submenu: POIN_SUBMENU },
+  { key: 'pkl', label: 'PKL', desc: 'IDUKA & penempatan siswa', icon: Briefcase, color: '#15803D', submenu: PKL_SUBMENU },
+  { key: 'kurikulum', label: 'Pembelajaran', desc: 'Kalender, mapel & jadwal', icon: BookOpen, color: '#eb6834', submenu: KURIKULUM_SUBMENU_DATAR },
+  { key: 'sarpras-staf', label: 'Teknisi & Kepala Bengkel', desc: 'Penanggung jawab ruang', icon: HardHat, color: '#6B7280' },
+  { key: 'sarpras', label: 'Sarana & Prasarana', desc: 'Ruang, aset & pemeliharaan', icon: Wrench, color: '#F2B705', submenu: SARPRAS_SUBMENU },
+  { key: 'pengaturan', label: 'Pengaturan', desc: 'Profil sekolah & cadangan data', icon: Settings, color: '#7C5CBF', submenu: SETTINGS_SUBMENU },
+  { key: 'pengembangan', label: 'Pengembangan', desc: 'PPDB online & pengadaan', icon: FlaskConical, color: '#0F766E', submenu: PENGEMBANGAN_SUBMENU },
+];
+
+function MenuUtama({ onNavigate }) {
+  const [openKey, setOpenKey] = useState(null);
+
+  const handleCardClick = (m) => {
+    if (m.submenu) {
+      setOpenKey((prev) => (prev === m.key ? null : m.key));
+    } else {
+      onNavigate?.(m.key);
+    }
+  };
+
+  return (
+    <div>
+      <h2 className="font-display text-xl font-semibold text-ink-900">Menu Utama</h2>
+      <p className="text-sm text-ink-500 mt-1 mb-4">Akses cepat ke semua menu pengelolaan sekolah.</p>
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        {MENU_UTAMA.map((m) => {
+          const Icon = m.icon;
+          const isOpen = openKey === m.key;
+          return (
+            // relative + dropdown `absolute` supaya kartu yang lagi dibuka
+            // tidak jadi lebih tinggi dari kartu lain (ukuran semua kartu
+            // tetap sama persis, dropdown-nya melayang di atas konten bawah).
+            <div key={m.key} className="relative">
+              <button
+                onClick={() => handleCardClick(m)}
+                className={`surface-card w-full h-32 p-4 text-left flex flex-col hover:shadow-md transition ${isOpen ? 'border-brand-300 shadow-md' : ''}`}
+              >
+                <div className="flex items-start justify-between gap-1 mb-auto">
+                  <div
+                    className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                    style={{ backgroundColor: `${m.color}1A` }}
+                  >
+                    <Icon className="w-4.5 h-4.5" style={{ color: m.color }} />
+                  </div>
+                  {m.submenu && (
+                    <ChevronDown className={`w-4 h-4 text-ink-300 shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                  )}
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-ink-900 leading-snug line-clamp-1">{m.label}</p>
+                  <p className="text-xs text-ink-500 mt-0.5 leading-snug line-clamp-2">{m.desc}</p>
+                </div>
+              </button>
+              {m.submenu && isOpen && (
+                <div className="absolute left-0 right-0 top-full mt-1 z-20 surface-card bg-white py-1.5 shadow-lg">
+                  {m.submenu.map((s) => (
+                    <button
+                      key={s.key}
+                      onClick={() => onNavigate?.(m.key, s.key)}
+                      className="w-full flex items-center gap-2 px-4 py-2 text-xs font-medium text-ink-700 hover:text-brand-700 hover:bg-mist-50 text-left transition"
+                    >
+                      {s.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export default function DashboardHomeTab({ onNavigate }) {
   const { user } = useAuth();
   // "Total IDUKA" cuma relevan (dan cuma bisa diakses) buat admin/Waka Humas
@@ -346,7 +445,9 @@ export default function DashboardHomeTab({ onNavigate }) {
     // Waka Humas/Kurikulum/Sarpras punya dashboard sendiri (lihat di bawah)
     // yang tidak pernah merender dropdown filter kelas ini — dan Sarpras
     // sekarang malah sudah tidak lagi punya akses baca /classes sama sekali.
-    if (user.role === 'waka_humas' || user.role === 'waka_kurikulum' || user.role === 'waka_sarpras') return;
+    // Super Admin juga dilewati — dashboard-nya sekarang cuma "Menu Utama",
+    // Ringkasan/Grafik-nya sudah tidak ditampilkan lagi.
+    if (user.role === 'admin' || user.role === 'waka_humas' || user.role === 'waka_kurikulum' || user.role === 'waka_sarpras') return;
     api.get('/classes').then((res) => setKelasList(res.data)).catch(() => setKelasList([]));
   }, [user.role]);
 
@@ -354,7 +455,8 @@ export default function DashboardHomeTab({ onNavigate }) {
     // Waka Humas/Kurikulum/Sarpras tidak lagi punya akses /dashboard/grafik
     // (data pelanggaran/prestasi/absensi bukan tanggung jawabnya) —
     // dashboard-nya sendiri sudah diganti tampilan lain (lihat di bawah).
-    if (user.role === 'waka_humas' || user.role === 'waka_kurikulum' || user.role === 'waka_sarpras') { setLoadingGrafik(false); return; }
+    // Super Admin juga dilewati — grafiknya sudah tidak ditampilkan lagi.
+    if (user.role === 'admin' || user.role === 'waka_humas' || user.role === 'waka_kurikulum' || user.role === 'waka_sarpras') { setLoadingGrafik(false); return; }
     setLoadingGrafik(true);
     api.get('/dashboard/grafik', {
       params: {
@@ -382,8 +484,9 @@ export default function DashboardHomeTab({ onNavigate }) {
     // Waka Humas/Kurikulum/Sarpras punya dashboard sendiri dengan statistik
     // masing-masing (lihat HumasDashboard/KurikulumDashboard/SarprasDashboard
     // di atas) — Sarpras khususnya sudah tidak lagi punya akses baca
-    // /students, /teachers, maupun /classes sama sekali.
-    if (user.role === 'waka_humas' || user.role === 'waka_kurikulum' || user.role === 'waka_sarpras') {
+    // /students, /teachers, maupun /classes sama sekali. Super Admin juga
+    // dilewati — dashboard-nya sekarang cuma "Menu Utama" navigasi.
+    if (user.role === 'admin' || user.role === 'waka_humas' || user.role === 'waka_kurikulum' || user.role === 'waka_sarpras') {
       setLoading(false);
       return;
     }
@@ -429,136 +532,136 @@ export default function DashboardHomeTab({ onNavigate }) {
 
   return (
     <div className="space-y-6">
-      {user.role === 'waka_kesiswaan' ? (
+      {user.role === 'waka_kesiswaan' && (
         <PanduanAwal
           judul="Panduan Awal Kesiswaan"
           deskripsi="Untuk data kesiswaan berjalan benar, urutkan pengaturan seperti berikut: kelas dan siswa lebih dulu (karena wali & poin bergantung pada data siswa), baru kemudian jenis pelanggaran/prestasi, dan terakhir aturan sanksi bertingkat (karena bergantung pada poin yang sudah tercatat)."
           langkah={PANDUAN_KESISWAAN}
           onNavigate={onNavigate}
         />
-      ) : (
-        <div className="surface-card p-5 border-l-4 border-l-brand-400">
-          <p className="text-sm text-ink-700">
-            Selamat datang di panel admin. Gunakan menu di samping untuk mengelola data siswa, guru, kelas, wali murid, laporan absensi/poin, penempatan PKL, dan pengaturan sistem.
-          </p>
-        </div>
       )}
 
-      <div>
-        <h2 className="font-display text-xl font-semibold text-ink-900">Ringkasan</h2>
-        <p className="text-sm text-ink-500 mt-1">Gambaran umum data sekolah saat ini.</p>
-      </div>
+      {user.role === 'admin' && <MenuUtama onNavigate={onNavigate} />}
 
-      {adaError && (
-        <div className="surface-card p-4 border-l-4 border-l-honey-400 flex gap-2">
-          <AlertTriangle className="w-4 h-4 text-honey-500 shrink-0 mt-0.5" />
-          <div className="text-sm text-ink-700">
-            <p className="font-medium mb-1">Sebagian data gagal dimuat:</p>
-            <ul className="list-disc list-inside space-y-0.5">
-              {Object.entries(errors).map(([key, msg]) => (
-                <li key={key}>
-                  <span className="font-medium">{statDefs.find((s) => s.key === key)?.label || key}</span>: {msg}
-                </li>
-              ))}
-            </ul>
+      {user.role !== 'admin' && (
+        <>
+          <div>
+            <h2 className="font-display text-xl font-semibold text-ink-900">Ringkasan</h2>
+            <p className="text-sm text-ink-500 mt-1">Gambaran umum data sekolah saat ini.</p>
           </div>
-        </div>
-      )}
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {statDefs.map((s) => {
-          const Icon = s.icon;
-          const gagalAmbil = errors[s.key] !== undefined;
-          const value = loading ? '—' : gagalAmbil ? '!' : (stats[s.key] ?? 0);
-          return (
-            <div key={s.key} className="surface-card p-5">
-              <div
-                className="w-10 h-10 rounded-xl flex items-center justify-center mb-3"
-                style={{ backgroundColor: `${s.color}1A` }}
-              >
-                <Icon className="w-5 h-5" style={{ color: s.color }} />
+          {adaError && (
+            <div className="surface-card p-4 border-l-4 border-l-honey-400 flex gap-2">
+              <AlertTriangle className="w-4 h-4 text-honey-500 shrink-0 mt-0.5" />
+              <div className="text-sm text-ink-700">
+                <p className="font-medium mb-1">Sebagian data gagal dimuat:</p>
+                <ul className="list-disc list-inside space-y-0.5">
+                  {Object.entries(errors).map(([key, msg]) => (
+                    <li key={key}>
+                      <span className="font-medium">{statDefs.find((s) => s.key === key)?.label || key}</span>: {msg}
+                    </li>
+                  ))}
+                </ul>
               </div>
-              <p className="font-display text-2xl font-bold text-ink-900">{value}</p>
-              <p className="text-xs text-ink-500 mt-1">{s.label}</p>
             </div>
-          );
-        })}
-      </div>
+          )}
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="font-display font-semibold text-ink-900">Grafik</h2>
-        <div className="flex items-center gap-2">
-          <select
-            value={kelasGrafik}
-            onChange={(e) => setKelasGrafik(e.target.value)}
-            className="field-input text-sm text-ink-700 py-1.5"
-          >
-            <option value="">Semua Kelas</option>
-            {kelasList.map((k) => (
-              <option key={k.id} value={k.id}>{k.name}</option>
-            ))}
-          </select>
-          <div className="flex items-center gap-1 bg-white border border-line-200 rounded-xl px-1 py-1">
-            <button onClick={() => setTanggalGrafik((t) => geserTanggal(t, -1))} className="w-7 h-7 flex items-center justify-center rounded-lg text-ink-500 hover:bg-mist-50" title="Hari sebelumnya">
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-            <input
-              type="date"
-              value={tanggalGrafik}
-              onChange={(e) => e.target.value && setTanggalGrafik(e.target.value)}
-              className="text-sm font-medium text-ink-900 px-2 text-center bg-transparent border-none focus:outline-none"
-            />
-            <button onClick={() => setTanggalGrafik((t) => geserTanggal(t, 1))} className="w-7 h-7 flex items-center justify-center rounded-lg text-ink-500 hover:bg-mist-50" title="Hari berikutnya">
-              <ChevronRight className="w-4 h-4" />
-            </button>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {statDefs.map((s) => {
+              const Icon = s.icon;
+              const gagalAmbil = errors[s.key] !== undefined;
+              const value = loading ? '—' : gagalAmbil ? '!' : (stats[s.key] ?? 0);
+              return (
+                <div key={s.key} className="surface-card p-5">
+                  <div
+                    className="w-10 h-10 rounded-xl flex items-center justify-center mb-3"
+                    style={{ backgroundColor: `${s.color}1A` }}
+                  >
+                    <Icon className="w-5 h-5" style={{ color: s.color }} />
+                  </div>
+                  <p className="font-display text-2xl font-bold text-ink-900">{value}</p>
+                  <p className="text-xs text-ink-500 mt-1">{s.label}</p>
+                </div>
+              );
+            })}
           </div>
-        </div>
-      </div>
 
-      {loadingGrafik ? (
-        <p className="text-center text-ink-300 py-6">Memuat grafik...</p>
-      ) : !grafik ? (
-        <p className="text-center text-ink-300 py-6">Gagal memuat data grafik.</p>
-      ) : (
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <CategoryBarChart
-              title="Pelanggaran"
-              subtitle={`Komposisi jenis pelanggaran, ${formatTanggalIndo(tanggalGrafik)}`}
-              showTableToggle
-              categories={warnaiKategoriTipe(grafik.pelanggaran)}
-            />
-            <CategoryBarChart
-              title="Prestasi"
-              subtitle={`Komposisi jenis prestasi, ${formatTanggalIndo(tanggalGrafik)}`}
-              showTableToggle
-              categories={warnaiKategoriTipe(grafik.prestasi)}
-            />
-          </div>
-          <div className="flex items-center justify-end gap-3">
-            <div className="flex items-center gap-1 bg-white border border-line-200 rounded-xl px-1 py-1">
-              <button onClick={() => gantiBulanAbsensi(-1)} className="w-7 h-7 flex items-center justify-center rounded-lg text-ink-500 hover:bg-mist-50" title="Bulan sebelumnya">
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-              <span className="text-sm font-medium text-ink-900 px-2 min-w-[8rem] text-center">{NAMA_BULAN[bulanAbsensi - 1]} {tahunAbsensi}</span>
-              <button onClick={() => gantiBulanAbsensi(1)} className="w-7 h-7 flex items-center justify-center rounded-lg text-ink-500 hover:bg-mist-50" title="Bulan berikutnya">
-                <ChevronRight className="w-4 h-4" />
-              </button>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="font-display font-semibold text-ink-900">Grafik</h2>
+            <div className="flex items-center gap-2">
+              <select
+                value={kelasGrafik}
+                onChange={(e) => setKelasGrafik(e.target.value)}
+                className="field-input text-sm text-ink-700 py-1.5"
+              >
+                <option value="">Semua Kelas</option>
+                {kelasList.map((k) => (
+                  <option key={k.id} value={k.id}>{k.name}</option>
+                ))}
+              </select>
+              <div className="flex items-center gap-1 bg-white border border-line-200 rounded-xl px-1 py-1">
+                <button onClick={() => setTanggalGrafik((t) => geserTanggal(t, -1))} className="w-7 h-7 flex items-center justify-center rounded-lg text-ink-500 hover:bg-mist-50" title="Hari sebelumnya">
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <input
+                  type="date"
+                  value={tanggalGrafik}
+                  onChange={(e) => e.target.value && setTanggalGrafik(e.target.value)}
+                  className="text-sm font-medium text-ink-900 px-2 text-center bg-transparent border-none focus:outline-none"
+                />
+                <button onClick={() => setTanggalGrafik((t) => geserTanggal(t, 1))} className="w-7 h-7 flex items-center justify-center rounded-lg text-ink-500 hover:bg-mist-50" title="Hari berikutnya">
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           </div>
-          <DailyGroupedBarChart
-            title="Absensi Bulanan"
-            subtitle={`Komposisi kehadiran siswa per tanggal, ${NAMA_BULAN[grafik.bulan - 1]} ${grafik.tahun}`}
-            showTableToggle
-            labels={grafik.absensi.hadir.map((_, i) => i + 1)}
-            series={[
-              { name: 'Hadir', color: '#15803D', data: grafik.absensi.hadir },
-              { name: 'Izin', color: '#2a78d6', data: grafik.absensi.izin },
-              { name: 'Sakit', color: '#D9A52A', data: grafik.absensi.sakit },
-              { name: 'Alpa', color: '#B9504F', data: grafik.absensi.alpa },
-            ]}
-          />
-        </div>
+
+          {loadingGrafik ? (
+            <p className="text-center text-ink-300 py-6">Memuat grafik...</p>
+          ) : !grafik ? (
+            <p className="text-center text-ink-300 py-6">Gagal memuat data grafik.</p>
+          ) : (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <CategoryBarChart
+                  title="Pelanggaran"
+                  subtitle={`Komposisi jenis pelanggaran, ${formatTanggalIndo(tanggalGrafik)}`}
+                  showTableToggle
+                  categories={warnaiKategoriTipe(grafik.pelanggaran)}
+                />
+                <CategoryBarChart
+                  title="Prestasi"
+                  subtitle={`Komposisi jenis prestasi, ${formatTanggalIndo(tanggalGrafik)}`}
+                  showTableToggle
+                  categories={warnaiKategoriTipe(grafik.prestasi)}
+                />
+              </div>
+              <div className="flex items-center justify-end gap-3">
+                <div className="flex items-center gap-1 bg-white border border-line-200 rounded-xl px-1 py-1">
+                  <button onClick={() => gantiBulanAbsensi(-1)} className="w-7 h-7 flex items-center justify-center rounded-lg text-ink-500 hover:bg-mist-50" title="Bulan sebelumnya">
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  <span className="text-sm font-medium text-ink-900 px-2 min-w-[8rem] text-center">{NAMA_BULAN[bulanAbsensi - 1]} {tahunAbsensi}</span>
+                  <button onClick={() => gantiBulanAbsensi(1)} className="w-7 h-7 flex items-center justify-center rounded-lg text-ink-500 hover:bg-mist-50" title="Bulan berikutnya">
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+              <DailyGroupedBarChart
+                title="Absensi Bulanan"
+                subtitle={`Komposisi kehadiran siswa per tanggal, ${NAMA_BULAN[grafik.bulan - 1]} ${grafik.tahun}`}
+                showTableToggle
+                labels={grafik.absensi.hadir.map((_, i) => i + 1)}
+                series={[
+                  { name: 'Hadir', color: '#15803D', data: grafik.absensi.hadir },
+                  { name: 'Izin', color: '#2a78d6', data: grafik.absensi.izin },
+                  { name: 'Sakit', color: '#D9A52A', data: grafik.absensi.sakit },
+                  { name: 'Alpa', color: '#B9504F', data: grafik.absensi.alpa },
+                ]}
+              />
+            </div>
+          )}
+        </>
       )}
     </div>
   );

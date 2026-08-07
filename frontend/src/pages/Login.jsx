@@ -20,7 +20,11 @@ export default function Login() {
     try {
       const user = await login(identifier, password);
       if (user.role === 'admin') navigate('/admin');
-      else if (user.role === 'waka' || user.role.startsWith('waka_')) navigate('/admin');
+      else if (user.role === 'waka') navigate('/admin');
+      else if (user.role === 'waka_kesiswaan') navigate('/waka-kesiswaan');
+      else if (user.role === 'waka_kurikulum') navigate('/waka-kurikulum');
+      else if (user.role === 'waka_humas') navigate('/waka-humas');
+      else if (user.role === 'waka_sarpras') navigate('/waka-sarpras');
       else if (user.role === 'guru') navigate('/guru');
       else if (user.role === 'wali') navigate('/wali');
       else if (user.role === 'dudi') navigate('/dudi');

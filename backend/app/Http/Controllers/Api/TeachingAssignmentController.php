@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Schedule;
 use App\Models\TahunAjaran;
+use App\Models\Teacher;
 use App\Models\TeachingAssignment;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -129,6 +130,25 @@ class TeachingAssignmentController extends Controller
         return TeachingAssignment::with(['teacher.user', 'subject', 'classRoom'])
             ->withCount('schedules')
             ->where('tahun_ajaran_id', $tahunAjaranId)
+            ->get();
+    }
+
+    /**
+     * Daftar penugasan mengajar milik guru yang sedang login — dipakai
+     * frontend buat membatasi pilihan mapel & kelas di menu Nilai supaya
+     * cuma yang benar-benar diampu guru itu di tahun ajaran aktif, bukan
+     * semua mapel & kelas se-sekolah.
+     */
+    public function myAssignments(Request $request)
+    {
+        $teacher = Teacher::where('user_id', $request->user()->id)->first();
+        if (!$teacher) {
+            return response()->json([]);
+        }
+
+        return TeachingAssignment::with(['subject', 'classRoom'])
+            ->where('teacher_id', $teacher->id)
+            ->where('tahun_ajaran_id', TahunAjaran::aktifId())
             ->get();
     }
 

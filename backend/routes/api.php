@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AcademicEventController;
+use App\Http\Controllers\Api\AcademicScoreController;
 use App\Http\Controllers\Api\AchievementController;
 use App\Http\Controllers\Api\AchievementTypeController;
 use App\Http\Controllers\Api\AdminAccountController;
@@ -208,7 +209,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // (dulu tahap uji coba di menu Pengembangan, sekarang sudah dianggap
     // siap dibagikan).
     Route::middleware('role:admin,waka_kurikulum')->group(function () {
-        Route::apiResource('subjects', SubjectController::class)->except(['show']);
+        Route::apiResource('subjects', SubjectController::class)->except(['show', 'index']);
         Route::post('/teaching-assignments/generate-kode-guru', [TeachingAssignmentController::class, 'generateKodeGuru']);
         Route::apiResource('teaching-assignments', TeachingAssignmentController::class)->except(['show']);
         Route::apiResource('period-templates', PeriodTemplateController::class)->except(['show']);
@@ -388,6 +389,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/pkl-pembimbingan', [PklPembimbinganJournalController::class, 'store']);
         Route::put('/pkl-pembimbingan/{pklPembimbinganJournal}', [PklPembimbinganJournalController::class, 'update']);
         Route::delete('/pkl-pembimbingan/{pklPembimbinganJournal}', [PklPembimbinganJournalController::class, 'destroy']);
+        Route::get('/my-teaching-schedule', [ScheduleController::class, 'myTeachingSchedule']);
+        Route::get('/my-teaching-assignments', [TeachingAssignmentController::class, 'myAssignments']);
+        Route::get('/academic-scores', [AcademicScoreController::class, 'index']);
+        Route::post('/academic-scores/bulk', [AcademicScoreController::class, 'storeBulk']);
+        Route::put('/academic-scores/{academicScore}', [AcademicScoreController::class, 'update']);
+        Route::delete('/academic-scores/{academicScore}', [AcademicScoreController::class, 'destroy']);
     });
 
     Route::middleware('role:siswa')->group(function () {
@@ -405,6 +412,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/my-pkl-jurnal', [PklJournalController::class, 'riwayatSaya']);
         Route::post('/pkl-jurnal', [PklJournalController::class, 'simpanKegiatan']);
         Route::get('/my-schedule', [ScheduleController::class, 'mySchedule']);
+        Route::get('/my-academic-scores', [AcademicScoreController::class, 'myScores']);
     });
 
     Route::middleware('role:wali')->group(function () {
@@ -413,6 +421,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/my-children/{studentId}/spp', [ParentController::class, 'spp']);
         Route::get('/my-children/{studentId}/tagihan-lain', [ParentController::class, 'tagihanLain']);
         Route::get('/my-children/{studentId}/schedule', [ScheduleController::class, 'childSchedule']);
+        Route::get('/my-children/{studentId}/academic-scores', [ParentController::class, 'academicScores']);
     });
 
     Route::middleware('role:tu')->group(function () {
@@ -462,5 +471,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('role:admin,guru,tu,waka_kesiswaan,waka_kurikulum,waka_humas')->group(function () {
         Route::get('/classes', [ClassRoomController::class, 'index']);
         Route::get('/students', [StudentController::class, 'index']);
+        Route::get('/subjects', [SubjectController::class, 'index']);
     });
 });

@@ -36,10 +36,14 @@ export default function SchedulesTab() {
     setSchedules(res.data.schedules);
     setAssignments(res.data.assignments);
     setSelectedClassId((prev) => prev ?? res.data.classes[0]?.id ?? null);
-    setArmedAssignmentId(null);
   });
 
   useEffect(() => { loadGrid(); }, [tahunAjaranIdTerpilih]); // eslint-disable-line
+  // Reset status "siap tempatkan" cuma saat GANTI tahun ajaran (daftar
+  // penugasannya berubah total) — bukan tiap loadGrid() dipanggil, supaya
+  // sehabis 1 jam berhasil ditempatkan, penugasan yang sama tetap armed dan
+  // bisa langsung klik "+" lagi buat jam berikutnya tanpa pilih ulang.
+  useEffect(() => { setArmedAssignmentId(null); }, [tahunAjaranIdTerpilih]);
 
   const periodsForDay = periods.filter((p) => p.hari === selectedDay);
   const scheduleFor = (periodId, classId) => schedules.find((s) => s.period_id === periodId && s.class_room_id === classId);

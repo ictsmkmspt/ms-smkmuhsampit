@@ -8,6 +8,7 @@ use App\Models\PeriodTemplate;
 use App\Models\Schedule;
 use App\Models\Student;
 use App\Models\TahunAjaran;
+use App\Models\Teacher;
 use App\Models\TeachingAssignment;
 use Illuminate\Http\Request;
 
@@ -200,5 +201,34 @@ class ScheduleController extends Controller
         }
 
         return $this->gridUntukKelas($classRoomId);
+    }
+
+    /**
+     * Jadwal mengajar 1 guru — dipakai widget "Jadwal Mengajar" di Beranda
+     * dashboard Guru. Beda dari gridUntukKelas() (yang difilter per kelas):
+     * di sini schedules-nya difilter per teacher_id, jadi bisa merentang
+     * beberapa kelas berbeda dalam 1 minggu — tapi tetap maksimal 1 isian
+     * per jam (guru tidak mungkin mengajar 2 kelas di jam yang sama, sudah
+     * dicegah waktu isi jadwal di ScheduleController::store()).
+     */
+    public function myTeachingSchedule(Request $request)
+    {
+        $teacher = Teacher::where('user_id', $request->user()->id)->first();
+        if (!$teacher) {
+            return response()->json(['message' => 'Akun ini tidak terdaftar sebagai guru.'], 403);
+        }
+
+        $tahunAjaranId = TahunAjaran::aktifId();
+
+        $periods = PeriodTemplate::orderByRaw("FIELD(hari, 'senin','selasa','rabu','kamis','jumat','sabtu')")
+            ->orderBy('waktu_mulai')
+            ->get();
+
+        $schedules = Schedule::with(['subject', 'classRoom'])
+            ->where('tahun_ajaran_id', $tahunAjaranId)
+            ->where('teacher_id', $teacher->id)
+            ->get();
+
+        return response()->json(['periods' => $periods, 'schedules' => $schedules]);
     }
 }

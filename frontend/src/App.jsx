@@ -64,7 +64,23 @@ export default function App() {
             } />
 
             <Route path="/admin/*" element={
-              <ProtectedRoute allowedRoles={['admin', 'waka', 'waka_kesiswaan', 'waka_kurikulum', 'waka_humas', 'waka_sarpras']}><AdminDashboard /></ProtectedRoute>
+              <ProtectedRoute allowedRoles={['admin', 'waka']}><AdminDashboard /></ProtectedRoute>
+            } />
+
+            <Route path="/waka-kesiswaan/*" element={
+              <ProtectedRoute allowedRoles={['waka_kesiswaan']}><AdminDashboard /></ProtectedRoute>
+            } />
+
+            <Route path="/waka-kurikulum/*" element={
+              <ProtectedRoute allowedRoles={['waka_kurikulum']}><AdminDashboard /></ProtectedRoute>
+            } />
+
+            <Route path="/waka-humas/*" element={
+              <ProtectedRoute allowedRoles={['waka_humas']}><AdminDashboard /></ProtectedRoute>
+            } />
+
+            <Route path="/waka-sarpras/*" element={
+              <ProtectedRoute allowedRoles={['waka_sarpras']}><AdminDashboard /></ProtectedRoute>
             } />
 
             <Route path="/guru/*" element={

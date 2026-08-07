@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
-import { LogOut, School, Trophy, AlertOctagon, Clock, ChevronDown, ChevronLeft, ChevronRight, Wallet, UserCog, X, Home, BookOpen, CalendarRange } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { LogOut, School, Trophy, AlertOctagon, Clock, ChevronDown, ChevronLeft, ChevronRight, Wallet, UserCog, X, Home, BookOpen, CalendarRange, ClipboardList } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api/axios';
 import LeaderboardPrestasi from '../../components/LeaderboardPrestasi';
@@ -7,11 +7,17 @@ import EditProfileModal from '../../components/EditProfileModal';
 import KalenderAkademikView from '../../components/KalenderAkademikView';
 import JadwalPelajaranView from '../../components/JadwalPelajaranView';
 
-// Sub-menu di atas konten (bukan navbar bawah lagi) — Kalender Akademik &
-// Jadwal Pelajaran sekarang jadi tab sejajar dengan Beranda, bukan digabung
-// jadi 1 tab "Pembelajaran" seperti sebelumnya.
-const SUB_TABS = [
-  { key: 'beranda', label: 'Beranda', labelShort: 'Beranda', icon: Home },
+// Navigasi utama sekarang navbar bawah (gaya sama dengan dashboard Guru) —
+// cuma 2 tab pokok: Beranda & Nilai. Kalender Akademik dan Jadwal Pelajaran
+// jadi sub-menu (pill) DI DALAM tab Beranda, sejajar dengan "Beranda"
+// (ringkasan tagihan + aktivitas) sendiri.
+const BOTTOM_TABS = [
+  { key: 'beranda', label: 'Beranda', icon: Home },
+  { key: 'nilai', label: 'Nilai', icon: ClipboardList },
+];
+
+const BERANDA_SUB_TABS = [
+  { key: 'ringkasan', label: 'Beranda', labelShort: 'Beranda', icon: Home },
   { key: 'kalender', label: 'Kalender Akademik', labelShort: 'Kalender', icon: CalendarRange },
   { key: 'jadwal', label: 'Jadwal Pelajaran', labelShort: 'Jadwal', icon: BookOpen },
 ];
@@ -25,6 +31,7 @@ const TYPE_CONFIG = {
   absensi: { icon: Clock, badge: 'badge-brand' },
   pelanggaran: { icon: AlertOctagon, badge: 'badge-rose' },
   prestasi: { icon: Trophy, badge: 'badge-honey' },
+  nilai: { icon: ClipboardList, badge: 'badge-brand' },
 };
 
 export default function ParentDashboard() {
@@ -38,11 +45,13 @@ export default function ParentDashboard() {
   const [activityPage, setActivityPage] = useState(1);
   const [spp, setSpp] = useState([]);
   const [tagihanLain, setTagihanLain] = useState([]);
+  const [academicScores, setAcademicScores] = useState([]);
   const [showSppDetail, setShowSppDetail] = useState(false);
   const [showTagihanLainDetail, setShowTagihanLainDetail] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [showEditProfil, setShowEditProfil] = useState(false);
   const [activeTab, setActiveTab] = useState('beranda');
+  const [berandaSub, setBerandaSub] = useState('ringkasan');
   const menuRef = useRef(null);
 
   useEffect(() => {
@@ -83,7 +92,25 @@ export default function ParentDashboard() {
     api.get(`/my-children/${selectedId}/tagihan-lain`)
       .then((res) => setTagihanLain(res.data))
       .catch(() => setTagihanLain([]));
+
+    api.get(`/my-children/${selectedId}/academic-scores`)
+      .then((res) => setAcademicScores(res.data))
+      .catch(() => setAcademicScores([]));
   }, [selectedId]);
+
+  // Nilai dikelompokkan per mapel — supaya wali langsung lihat rata-rata
+  // tiap mapel, bukan cuma daftar datar semua kegiatan tercampur.
+  const nilaiPerMapel = useMemo(() => {
+    const map = new Map();
+    academicScores.forEach((n) => {
+      const key = n.subject?.id ?? 0;
+      if (!map.has(key)) map.set(key, { nama: n.subject?.nama || 'Lainnya', items: [] });
+      map.get(key).items.push(n);
+    });
+    return [...map.values()]
+      .map((g) => ({ ...g, rataRata: (g.items.reduce((sum, s) => sum + s.skor, 0) / g.items.length).toFixed(1) }))
+      .sort((a, b) => a.nama.localeCompare(b.nama));
+  }, [academicScores]);
 
   const selectedChild = children.find((c) => c.id === selectedId);
 
@@ -105,7 +132,7 @@ export default function ParentDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-mist-50">
+    <div className="min-h-screen bg-mist-50 pb-20">
       <div className="bg-[#0B1B3A]">
         <div className="max-w-2xl mx-auto px-6 py-4 flex justify-between items-center">
           <div>
@@ -142,55 +169,19 @@ export default function ParentDashboard() {
       </div>
 
       <div className="max-w-2xl mx-auto px-6 pt-3 pb-10">
-        <div className="flex gap-1 bg-white border border-line-200 rounded-xl p-1 mb-3 w-fit mx-auto">
-          {SUB_TABS.map((t) => {
-            const isActive = activeTab === t.key;
-            return (
-              <button
-                key={t.key}
-                onClick={() => setActiveTab(t.key)}
-                className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-4 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-medium whitespace-nowrap transition ${
-                  isActive ? 'bg-brand-600 text-white shadow-sm' : 'text-ink-700 hover:bg-mist-50 hover:text-ink-900'
-                }`}
-              >
-                <t.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                <span className="sm:hidden">{t.labelShort}</span>
-                <span className="hidden sm:inline">{t.label}</span>
-              </button>
-            );
-          })}
-        </div>
-
-        {activeTab === 'kalender' && <KalenderAkademikView />}
-
-        {activeTab === 'jadwal' && selectedId && (
-          <div className="surface-card p-4">
-            <h2 className="font-display font-semibold text-ink-900 mb-3">
-              Jadwal Pelajaran <span className="text-ink-500 font-sans font-normal text-sm">— {selectedChild?.user?.name}</span>
-            </h2>
-            <JadwalPelajaranView endpoint={`/my-children/${selectedId}/schedule`} />
-          </div>
-        )}
-
-        {activeTab === 'jadwal' && !selectedId && (
-          <div className="surface-card p-6 text-center">
-            <School className="w-8 h-8 text-ink-300 mx-auto mb-2" />
-            <p className="text-sm text-ink-500">Belum ada data anak yang terhubung ke akun ini.</p>
-          </div>
-        )}
-
-        {activeTab === 'beranda' && children.length === 0 && !loading && (
+        {children.length === 0 && !loading && (
           <div className="surface-card p-6 text-center">
             <School className="w-8 h-8 text-ink-300 mx-auto mb-2" />
             <p className="text-sm text-ink-500">Belum ada data anak yang terhubung ke akun ini. Hubungi admin sekolah untuk menghubungkan akun.</p>
           </div>
         )}
 
-        {activeTab === 'beranda' && children.length > 0 && (
+        {children.length > 0 && (
           <>
-            {/* Pemilih anak, cuma tampil kalau lebih dari 1 anak */}
+            {/* Pemilih anak, cuma tampil kalau lebih dari 1 anak — berlaku
+                buat tab Beranda maupun Nilai, bukan cuma salah satu. */}
             {children.length > 1 && (
-              <div className="relative mb-5 w-72">
+              <div className="relative mb-5 w-72 mx-auto">
                 <button
                   onClick={() => setShowPicker((p) => !p)}
                   className="w-full flex items-center justify-between gap-2 field-input bg-white text-ink-900 font-medium"
@@ -217,6 +208,76 @@ export default function ParentDashboard() {
               </div>
             )}
 
+            {activeTab === 'beranda' && (
+              <div className="flex gap-1 bg-white border border-line-200 rounded-xl p-1 mb-4 w-fit mx-auto">
+                {BERANDA_SUB_TABS.map((t) => {
+                  const isActive = berandaSub === t.key;
+                  return (
+                    <button
+                      key={t.key}
+                      onClick={() => setBerandaSub(t.key)}
+                      className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-4 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-medium whitespace-nowrap transition ${
+                        isActive ? 'bg-brand-600 text-white shadow-sm' : 'text-ink-700 hover:bg-mist-50 hover:text-ink-900'
+                      }`}
+                    >
+                      <t.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                      <span className="sm:hidden">{t.labelShort}</span>
+                      <span className="hidden sm:inline">{t.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {activeTab === 'beranda' && berandaSub === 'kalender' && <KalenderAkademikView />}
+
+            {activeTab === 'beranda' && berandaSub === 'jadwal' && (
+              <div className="surface-card p-4">
+                <h2 className="font-display font-semibold text-ink-900 mb-3">
+                  Jadwal Pelajaran <span className="text-ink-500 font-sans font-normal text-sm">— {selectedChild?.user?.name}</span>
+                </h2>
+                <JadwalPelajaranView endpoint={`/my-children/${selectedId}/schedule`} />
+              </div>
+            )}
+
+            {activeTab === 'nilai' && (
+              <div className="space-y-4">
+                <h2 className="font-display font-semibold text-ink-900">
+                  Nilai Akademik <span className="text-ink-500 font-sans font-normal text-sm">— {selectedChild?.user?.name}</span>
+                </h2>
+                {nilaiPerMapel.length === 0 ? (
+                  <div className="surface-card p-6 text-center">
+                    <ClipboardList className="w-8 h-8 text-ink-300 mx-auto mb-2" />
+                    <p className="text-sm text-ink-500">Belum ada nilai tercatat.</p>
+                  </div>
+                ) : (
+                  nilaiPerMapel.map((g) => (
+                    <div key={g.nama} className="surface-card p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="font-display font-semibold text-ink-900 text-sm">{g.nama}</h3>
+                        <span className="badge-soft badge-brand">rata-rata {g.rataRata}</span>
+                      </div>
+                      <ul className="divide-y divide-line-200">
+                        {g.items.map((n) => (
+                          <li key={n.id} className="py-2 flex items-center justify-between gap-3 text-sm">
+                            <div className="min-w-0">
+                              <p className="text-ink-900 truncate">{n.nama_kegiatan}</p>
+                              <p className="text-xs text-ink-500">{n.tanggal}</p>
+                            </div>
+                            <span className="font-display font-semibold text-ink-900 shrink-0">{n.skor}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+          </>
+        )}
+
+        {activeTab === 'beranda' && berandaSub === 'ringkasan' && children.length > 0 && (
+          <>
             {/* Tagihan (SPP + Tagihan Lain digabung 1 tabel) */}
             <div className="surface-card p-5 mb-6">
               <h2 className="font-display font-semibold text-ink-900 mb-4 flex items-center gap-2">
@@ -302,7 +363,7 @@ export default function ParentDashboard() {
                           {item.detail && <p className="text-xs text-ink-500 mt-0.5">{item.detail}</p>}
                           {item.poin != null && (
                             <span className={`badge-soft ${config.badge} mt-1.5 inline-block`}>
-                              {item.type === 'prestasi' ? '+' : '+'}{item.poin} poin
+                              {item.type === 'nilai' ? `Skor: ${item.poin}` : `+${item.poin} poin`}
                             </span>
                           )}
                         </div>
@@ -338,11 +399,38 @@ export default function ParentDashboard() {
           </>
         )}
 
-        {activeTab === 'beranda' && (
+        {activeTab === 'beranda' && berandaSub === 'ringkasan' && (
           <div className="mt-6">
             <LeaderboardPrestasi />
           </div>
         )}
+      </div>
+
+      {/* Navbar bawah — Beranda & Nilai, gaya sama dengan dashboard Guru */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-line-200 z-50">
+        <div className="max-w-2xl mx-auto flex">
+          {BOTTOM_TABS.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.key;
+            return (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                className={`relative flex-1 flex flex-col items-center justify-center gap-1 py-3 transition ${
+                  isActive ? 'text-brand-600' : 'text-ink-400 hover:text-ink-600'
+                }`}
+              >
+                <Icon className={`w-6 h-6 ${isActive ? 'stroke-[2.5]' : 'stroke-[1.75]'}`} />
+                <span className={`text-[10px] font-medium tracking-wide ${isActive ? 'text-brand-600' : 'text-ink-400'}`}>
+                  {tab.label}
+                </span>
+                {isActive && (
+                  <span className="absolute bottom-0 w-8 h-0.5 bg-brand-600 rounded-t-full" />
+                )}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {showEditProfil && (

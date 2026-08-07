@@ -4,10 +4,12 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Achievement;
+use App\Models\AcademicScore;
 use App\Models\Attendance;
 use App\Models\Spp;
 use App\Models\Student;
 use App\Models\TagihanLain;
+use App\Models\TahunAjaran;
 use App\Models\Violation;
 use Illuminate\Http\Request;
 
@@ -71,13 +73,45 @@ class ParentController extends Controller
                 'poin'   => $a->poin,
             ]);
 
-        $timeline = $attendances->concat($violations)->concat($achievements)
+        $academicScores = AcademicScore::with('subject')->where('student_id', $studentId)
+            ->orderByDesc('tanggal')->limit(15)->get()
+            ->map(fn ($n) => [
+                'type'   => 'nilai',
+                'date'   => $n->tanggal,
+                'title'  => $n->nama_kegiatan,
+                'detail' => $n->subject?->nama,
+                'status' => null,
+                'poin'   => $n->skor,
+            ]);
+
+        $timeline = $attendances->concat($violations)->concat($achievements)->concat($academicScores)
             ->sortByDesc('date')->values()->take(20);
 
         return response()->json([
             'student'  => $student,
             'timeline' => $timeline,
         ]);
+    }
+
+    /**
+     * Riwayat nilai akademik 1 anak (semua mapel), dari yang terbaru —
+     * dipakai tab "Nilai" dashboard Wali (terpisah dari linimasa Aktivitas
+     * Terkini di Beranda yang cuma menampilkan 15 nilai terbaru tercampur
+     * dengan absensi/pelanggaran/prestasi).
+     */
+    public function academicScores(Request $request, $studentId)
+    {
+        $isMyChild = $request->user()->children()->where('students.id', $studentId)->exists();
+
+        if (!$isMyChild) {
+            return response()->json(['message' => 'Anda tidak berwenang melihat data siswa ini.'], 403);
+        }
+
+        return AcademicScore::with('subject')
+            ->where('student_id', $studentId)
+            ->where('tahun_ajaran_id', TahunAjaran::aktifId())
+            ->orderByDesc('tanggal')
+            ->get();
     }
 
     /**

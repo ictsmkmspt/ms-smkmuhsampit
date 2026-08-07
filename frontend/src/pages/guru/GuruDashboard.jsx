@@ -1,19 +1,26 @@
 import { useEffect, useRef, useState } from 'react';
-import { LogOut, ClipboardCheck, AlertTriangle, FileText, Briefcase, ChevronDown, UserCog, Home } from 'lucide-react';
+import { LogOut, FileText, Briefcase, ChevronDown, UserCog, Home, ClipboardList, QrCode } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import BerandaTab from './tabs/BerandaTab';
-import AbsensiTab from './tabs/AbsensiTab';
-import PoinPelanggaranTab from './tabs/PoinPelanggaranTab';
+import NilaiTab from './tabs/NilaiTab';
+import ScanTab from './tabs/ScanTab';
 import LaporanTab from './tabs/LaporanTab';
 import BimbinganPklTab from './tabs/BimbinganPklTab';
 import EditProfileModal from '../../components/EditProfileModal';
 
+// Urutan navbar bawah: Beranda & Nilai di kiri tombol Scan (tengah,
+// melayang), PKL & Laporan di kanan — Absensi dan Poin digabung jadi 1
+// tombol "Scan" di tengah (submenunya ada di dalam ScanTab: Kehadiran,
+// Sholat Zuhur, Poin Prestasi, Poin Pelanggaran). Slot "CBT" (rancangan
+// ujian online) ditunda dulu — dipakai lebih dulu untuk Nilai (input nilai
+// manual per mapel, mis. PR/ulangan harian) yang lebih sederhana & segera
+// dibutuhkan.
 const ALL_TABS = [
-  { key: 'beranda', label: 'Beranda',          icon: Home,           component: BerandaTab },
-  { key: 'absensi', label: 'Absensi',          icon: ClipboardCheck, component: AbsensiTab },
-  { key: 'poin',    label: 'Poin',  icon: AlertTriangle,  component: PoinPelanggaranTab },
-  { key: 'pkl',     label: 'PKL',               icon: Briefcase,      component: BimbinganPklTab },
-  { key: 'laporan', label: 'Laporan',           icon: FileText,       component: LaporanTab },
+  { key: 'beranda', label: 'Beranda', icon: Home,          component: BerandaTab },
+  { key: 'nilai',   label: 'Nilai',   icon: ClipboardList, component: NilaiTab },
+  { key: 'scan',    label: 'Scan',    icon: QrCode,        component: ScanTab },
+  { key: 'pkl',     label: 'PKL',     icon: Briefcase,      component: BimbinganPklTab },
+  { key: 'laporan', label: 'Laporan', icon: FileText,       component: LaporanTab },
 ];
 
 export default function GuruDashboard() {
@@ -34,16 +41,16 @@ export default function GuruDashboard() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Menu Laporan cuma relevan buat wali kelas (isinya rekap kelas walinya
-  // sendiri), dan menu PKL cuma relevan buat guru yang sedang membimbing
-  // siswa PKL — disembunyikan kalau tidak berlaku, supaya guru lain tidak
-  // bingung lihat menu kosong. Absensi & Poin tetap tampil untuk semua guru
-  // karena bisa dipakai mencatat siswa manapun, bukan cuma kelas sendiri.
-  const TABS = ALL_TABS.filter((tab) => {
-    if (tab.key === 'laporan') return !!user.is_wali_kelas;
-    if (tab.key === 'pkl') return !!user.is_pembimbing_pkl;
-    return true;
-  });
+  // Laporan & PKL sekarang tampil untuk SEMUA guru, bukan cuma wali kelas /
+  // pembimbing PKL — kalau tidak berlaku buat guru itu, halamannya sendiri
+  // sudah otomatis menampilkan pesan "belum ditugaskan" (bukan error/bocor
+  // data), jadi aman ditampilkan ke semua.
+  const TABS = ALL_TABS;
+  // Navbar bawah: Beranda/CBT selalu di kiri, PKL/Laporan di kanan, tombol
+  // Scan melayang di tengah — dipisah di sini supaya kedua sisi tetap
+  // seimbang (pakai flex-1 masing-masing).
+  const leftTabs = TABS.filter((t) => t.key === 'beranda' || t.key === 'nilai');
+  const rightTabs = TABS.filter((t) => t.key === 'pkl' || t.key === 'laporan');
 
   useEffect(() => {
     if (!TABS.find((t) => t.key === activeTab)) {
@@ -98,30 +105,33 @@ export default function GuruDashboard() {
         {ActiveComponent && <ActiveComponent />}
       </div>
 
-      {/* Bottom navbar ala Instagram */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-line-200 z-50">
-        <div className="max-w-4xl mx-auto flex">
-          {TABS.map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.key;
-            return (
-              <button
-                key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
-                className={`relative flex-1 flex flex-col items-center justify-center gap-1 py-3 transition ${
-                  isActive ? 'text-brand-600' : 'text-ink-400 hover:text-ink-600'
-                }`}
-              >
-                <Icon className={`w-6 h-6 ${isActive ? 'stroke-[2.5]' : 'stroke-[1.75]'}`} />
-                <span className={`text-[10px] font-medium tracking-wide ${isActive ? 'text-brand-600' : 'text-ink-400'}`}>
-                  {tab.label}
-                </span>
-                {isActive && (
-                  <span className="absolute bottom-0 w-8 h-0.5 bg-brand-600 rounded-t-full" />
-                )}
-              </button>
-            );
-          })}
+      {/* Bottom navbar — Beranda/CBT kiri, Scan melayang di tengah, PKL/Laporan kanan */}
+      <div className="fixed bottom-0 left-0 right-0 z-50">
+        <div className="relative bg-white border-t border-line-200">
+          <div className="max-w-4xl mx-auto flex items-stretch">
+            <div className="flex-1 flex">
+              {leftTabs.map((tab) => (
+                <SideTabButton key={tab.key} tab={tab} isActive={activeTab === tab.key} onClick={() => setActiveTab(tab.key)} />
+              ))}
+            </div>
+            <div className="w-20 shrink-0" aria-hidden="true" />
+            <div className="flex-1 flex">
+              {rightTabs.map((tab) => (
+                <SideTabButton key={tab.key} tab={tab} isActive={activeTab === tab.key} onClick={() => setActiveTab(tab.key)} />
+              ))}
+            </div>
+          </div>
+
+          <button
+            onClick={() => setActiveTab('scan')}
+            title="Scan QR Code"
+            className={`absolute left-1/2 -translate-x-1/2 -top-4 w-16 h-16 rounded-full flex flex-col items-center justify-center gap-0.5 shadow-lg transition ${
+              activeTab === 'scan' ? 'bg-brand-700 ring-4 ring-brand-100' : 'bg-brand-600 hover:bg-brand-700'
+            }`}
+          >
+            <QrCode className="w-6 h-6 text-white" />
+            <span className="text-[9px] font-semibold text-white leading-none tracking-wide">Scan</span>
+          </button>
         </div>
       </div>
 
@@ -129,5 +139,25 @@ export default function GuruDashboard() {
         <EditProfileModal onClose={() => setShowEditProfil(false)} />
       )}
     </div>
+  );
+}
+
+function SideTabButton({ tab, isActive, onClick }) {
+  const Icon = tab.icon;
+  return (
+    <button
+      onClick={onClick}
+      className={`relative flex-1 flex flex-col items-center justify-center gap-1 py-3 transition ${
+        isActive ? 'text-brand-600' : 'text-ink-400 hover:text-ink-600'
+      }`}
+    >
+      <Icon className={`w-6 h-6 ${isActive ? 'stroke-[2.5]' : 'stroke-[1.75]'}`} />
+      <span className={`text-[10px] font-medium tracking-wide ${isActive ? 'text-brand-600' : 'text-ink-400'}`}>
+        {tab.label}
+      </span>
+      {isActive && (
+        <span className="absolute bottom-0 w-8 h-0.5 bg-brand-600 rounded-t-full" />
+      )}
+    </button>
   );
 }
