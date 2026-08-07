@@ -19,6 +19,7 @@ import RoomStaffTab from './sarpras/RoomStaffTab';
 import DashboardHomeTab from './tabs/DashboardHomeTab';
 import AttendanceReportTab from './tabs/AttendanceReportTab';
 import EditProfileModal from '../../components/EditProfileModal';
+import { TahunAjaranProvider, useTahunAjaran } from '../../context/TahunAjaranContext';
 
 const ROLE_LABEL = {
   admin: 'Super Admin',
@@ -39,6 +40,14 @@ const SARPRAS_ICONS = { ruang: Warehouse, aset: Boxes, pemeliharaan: Wrench };
 const PENGEMBANGAN_ICONS = { ppdb: UserPlus, pengadaan: PackagePlus };
 
 export default function AdminDashboard() {
+  return (
+    <TahunAjaranProvider>
+      <AdminDashboardContent />
+    </TahunAjaranProvider>
+  );
+}
+
+function AdminDashboardContent() {
   const { user, logout } = useAuth();
   const { profile } = useSchoolProfile();
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -88,6 +97,7 @@ export default function AdminDashboard() {
   const [collapsed, setCollapsed] = useState(false); // toggle sidebar desktop
   const [mobileOpen, setMobileOpen] = useState(false); // toggle dropdown menu di HP
   const [showEditProfil, setShowEditProfil] = useState(false);
+  const { list: tahunAjaranList, selectedId: tahunAjaranId, setSelectedId: setTahunAjaranId } = useTahunAjaran();
 
   const active = TABS.find((t) => t.key === activeTab) || TABS[0];
   const ActiveComponent = active?.component;
@@ -326,6 +336,22 @@ export default function AdminDashboard() {
             </div>
           )}
         </div>
+
+        {!collapsed && tahunAjaranList.length > 0 && (
+          <div className="px-3 pt-3">
+            <select
+              value={tahunAjaranId}
+              onChange={(e) => setTahunAjaranId(e.target.value)}
+              className="w-full bg-white/10 border border-white/10 rounded-md px-2 py-1 text-xs text-white focus:outline-none focus:ring-1 focus:ring-[#F2B705]"
+            >
+              {tahunAjaranList.map((t) => (
+                <option key={t.id} value={t.id} className="text-ink-900">
+                  {t.nama}{t.status === 'aktif' ? ' (Aktif)' : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto overflow-x-hidden">
           {navItems('desktop')}

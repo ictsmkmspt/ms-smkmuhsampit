@@ -59,6 +59,10 @@ class TeachingAssignmentController extends Controller
 
     public function update(Request $request, TeachingAssignment $teachingAssignment)
     {
+        if ($teachingAssignment->tahun_ajaran_id !== TahunAjaran::aktifId()) {
+            return response()->json(['message' => 'Penugasan ini milik tahun ajaran yang tidak aktif dan tidak bisa diubah.'], 422);
+        }
+
         $data = $request->validate([
             'teacher_id' => 'required|exists:teachers,id',
             'target_jam' => 'nullable|integer|min:1',
@@ -71,6 +75,10 @@ class TeachingAssignmentController extends Controller
 
     public function destroy(TeachingAssignment $teachingAssignment)
     {
+        if ($teachingAssignment->tahun_ajaran_id !== TahunAjaran::aktifId()) {
+            return response()->json(['message' => 'Penugasan ini milik tahun ajaran yang tidak aktif dan tidak bisa dihapus.'], 422);
+        }
+
         $teachingAssignment->delete();
 
         return response()->json(['message' => 'Pembagian tugas mengajar dihapus.']);

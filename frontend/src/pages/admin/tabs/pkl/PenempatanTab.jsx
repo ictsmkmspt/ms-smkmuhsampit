@@ -3,6 +3,7 @@ import { Plus, Trash2, ClipboardList, PowerOff } from 'lucide-react';
 import api from '../../../../api/axios';
 import TruncateText from '../../../../components/TruncateText';
 import { useAuth } from '../../../../context/AuthContext';
+import { useTahunAjaran, useTahunAjaranParam } from '../../../../context/TahunAjaranContext';
 
 const emptyForm = {
   student_id: '', dudi_id: '', guru_pembimbing_id: '',
@@ -16,6 +17,8 @@ export default function PenempatanTab() {
   // Kurikulum, sesuai pembagian tanggung jawab yang backend-nya juga sudah
   // batasi (POST/PUT/DELETE /pkl-placements ditolak buat waka_humas).
   const canEdit = user.role === 'admin' || user.role === 'waka_kurikulum';
+  const tahunParam = useTahunAjaranParam();
+  const { isAktif: tahunAktif, selectedId: tahunAjaranId } = useTahunAjaran();
   const [list, setList] = useState([]);
   const [students, setStudents] = useState([]);
   const [dudiList, setDudiList] = useState([]);
@@ -30,7 +33,7 @@ export default function PenempatanTab() {
   const [selesaiCount, setSelesaiCount] = useState(0);
 
   const load = () => {
-    const params = {};
+    const params = { ...tahunParam };
     if (filterStatus) params.status = filterStatus;
     return api.get('/pkl-placements', { params }).then((res) => setList(res.data));
   };
@@ -94,7 +97,7 @@ export default function PenempatanTab() {
   }, []);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps -- load() didefinisikan ulang tiap render, sengaja tidak dimasukkan ke deps
-  useEffect(() => { load(); }, [filterStatus]);
+  useEffect(() => { load(); }, [filterStatus, tahunAjaranId]);
   useEffect(() => { loadAktifCount(); }, []);
   useEffect(() => { loadSelesaiCount(); }, []);
 
@@ -215,7 +218,12 @@ export default function PenempatanTab() {
             )}
           </div>
         </div>
-        <p className="text-xs text-ink-400 mb-4">Cuma menampilkan penempatan tahun ajaran yang sedang aktif. Data tahun ajaran sebelumnya tidak dihapus, cuma disembunyikan dari daftar ini.</p>
+        <p className="text-xs text-ink-400 mb-4">
+          {tahunAktif
+            ? 'Cuma menampilkan penempatan tahun ajaran yang sedang aktif.'
+            : 'Menampilkan penempatan tahun ajaran yang dipilih di sidebar.'}
+          {' '}Data tahun ajaran sebelumnya tidak dihapus, cuma disembunyikan dari daftar ini.
+        </p>
         <div className="table-scroll">
         <table className="w-full text-sm">
           <thead>

@@ -2,8 +2,10 @@ import { useEffect, useState } from 'react';
 import { X, Pencil, Trash2 } from 'lucide-react';
 import api from '../api/axios';
 import TruncateText from './TruncateText';
+import { useTahunAjaranParam } from '../context/TahunAjaranContext';
 
 export default function StudentAchievementModal({ student, onClose, onChanged, readOnly = false }) {
+  const tahunParam = useTahunAjaranParam();
   const [achievementTypes, setAchievementTypes] = useState([]);
   const [dateFrom, setDateFrom]     = useState('');
   const [dateTo, setDateTo]         = useState('');
@@ -22,7 +24,7 @@ export default function StudentAchievementModal({ student, onClose, onChanged, r
 
   const loadAchievements = () => {
     setLoading(true);
-    const params = {};
+    const params = { ...tahunParam };
     if (dateFrom) params.date_from = dateFrom;
     if (dateTo) params.date_to = dateTo;
     if (typeId) params.achievement_type_id = typeId;

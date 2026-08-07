@@ -4,6 +4,7 @@ import api from '../../../api/axios';
 import StudentViolationModal from '../../../components/StudentViolationModal';
 import TruncateText from '../../../components/TruncateText';
 import { useAuth } from '../../../context/AuthContext';
+import { useTahunAjaran, useTahunAjaranParam } from '../../../context/TahunAjaranContext';
 
 const PAGE_SIZE = 5;
 const SUMMARY_PAGE_SIZE = 40;
@@ -11,6 +12,9 @@ const SUMMARY_PAGE_SIZE = 40;
 export default function ViolationReportTab() {
   const { user } = useAuth();
   const isAdmin = user.role === 'admin';
+  const tahunParam = useTahunAjaranParam();
+  const { isAktif: tahunAktif, selectedId: tahunAjaranId, list: tahunAjaranList } = useTahunAjaran();
+  const tahunAjaranTerpilih = tahunAjaranList.find((t) => String(t.id) === String(tahunAjaranId));
   const [summary, setSummary] = useState([]);
   const [detail, setDetail] = useState([]);
   const [classes, setClasses] = useState([]);
@@ -27,7 +31,7 @@ export default function ViolationReportTab() {
 
   const loadSummary = () => {
     setLoading(true);
-    const params = {};
+    const params = { ...tahunParam };
     if (classRoomId) params.class_room_id = classRoomId;
     setSummaryPage(1);
     return api.get('/violations/summary', { params })
@@ -36,7 +40,7 @@ export default function ViolationReportTab() {
   };
 
   const loadDetail = () => {
-    const params = {};
+    const params = { ...tahunParam };
     if (classRoomId) params.class_room_id = classRoomId;
     if (date) params.date = date;
     setPage(1);
@@ -48,7 +52,7 @@ export default function ViolationReportTab() {
     loadDetail();
   };
 
-  useEffect(() => { loadAll(); }, []); // eslint-disable-line
+  useEffect(() => { loadAll(); }, [tahunAjaranId]); // eslint-disable-line
 
   const totalAlpa = summary.reduce((sum, s) => sum + (s.alpa_count || 0), 0);
 
@@ -148,7 +152,11 @@ export default function ViolationReportTab() {
           <h2 className="font-display font-semibold text-ink-900 mb-1">
             Riwayat Kejadian Pelanggaran
           </h2>
-          <p className="text-xs text-ink-400 mb-2">Cuma menampilkan riwayat tahun ajaran yang sedang aktif.</p>
+          <p className="text-xs text-ink-400 mb-2">
+            {tahunAktif
+              ? 'Cuma menampilkan riwayat tahun ajaran yang sedang aktif.'
+              : `Menampilkan riwayat tahun ajaran ${tahunAjaranTerpilih?.nama || ''}.`}
+          </p>
 
           <div className="flex gap-2 mb-3">
             <input

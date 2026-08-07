@@ -52,21 +52,39 @@ class AchievementController extends Controller
 
     /**
      * Akumulasi poin prestasi per siswa. Kalau yang login guru, dipaksa hanya kelas walinya sendiri.
+     * Default pakai kolom total_prestasi (cache, cepat) untuk tahun ajaran aktif. Kalau
+     * ?tahun_ajaran_id= diisi dengan tahun ajaran LAIN, dihitung ulang live dari riwayat
+     * Achievement tahun itu — supaya tidak perlu ubah tahun ajaran aktif cuma buat lihat rekap lama.
      */
     public function summary(Request $request)
     {
         $restricted  = $this->guruClassRoomId($request);
         $classRoomId = $restricted ?? $request->class_room_id;
+        $tahunAjaranId = $request->filled('tahun_ajaran_id') ? (int) $request->tahun_ajaran_id : TahunAjaran::aktifId();
 
         $query = Student::with(['user', 'classRoom'])->where('status', 'aktif');
         if ($classRoomId) $query->where('class_room_id', $classRoomId);
-        return $query->orderByDesc('total_prestasi')->get();
+
+        if ($tahunAjaranId === TahunAjaran::aktifId()) {
+            return $query->orderByDesc('total_prestasi')->get();
+        }
+
+        return $query->withSum(['achievements as riwayat_prestasi' => function ($q) use ($tahunAjaranId) {
+                $q->where('tahun_ajaran_id', $tahunAjaranId);
+            }], 'poin')
+            ->get()
+            ->each(function ($s) {
+                $s->total_prestasi = (int) ($s->riwayat_prestasi ?? 0);
+                unset($s->riwayat_prestasi);
+            })
+            ->sortByDesc('total_prestasi')
+            ->values();
     }
 
     /**
      * Riwayat kejadian prestasi. Kalau yang login guru, dipaksa hanya kelas walinya sendiri.
-     * Default cuma tahun ajaran yang sedang aktif (sama seperti PklPlacementController::index) —
-     * kirim ?semua_tahun=1 untuk lihat semua tahun ajaran sekaligus.
+     * Default cuma tahun ajaran yang sedang aktif — kirim ?tahun_ajaran_id= untuk lihat tahun
+     * ajaran lain, atau ?semua_tahun=1 untuk lihat semua tahun ajaran sekaligus.
      */
     public function detail(Request $request)
     {
@@ -77,7 +95,8 @@ class AchievementController extends Controller
         if ($request->date) $query->where('date', $request->date);
         if ($classRoomId) $query->whereHas('student', fn ($q) => $q->where('class_room_id', $classRoomId));
         if (!$request->boolean('semua_tahun')) {
-            $query->where('tahun_ajaran_id', TahunAjaran::aktifId());
+            $tahunAjaranId = $request->filled('tahun_ajaran_id') ? $request->tahun_ajaran_id : TahunAjaran::aktifId();
+            $query->where('tahun_ajaran_id', $tahunAjaranId);
         }
         return $query->orderByDesc('date')->orderByDesc('created_at')->get();
     }
@@ -87,7 +106,8 @@ class AchievementController extends Controller
      * rentang tanggal (date_from/date_to) dan jenis prestasi (achievement_type_id).
      * Dipakai oleh popup riwayat prestasi di halaman Rekap Poin Prestasi.
      * Kalau yang login guru, hanya boleh melihat siswa di kelas walinya sendiri.
-     * Default cuma tahun ajaran yang sedang aktif — kirim ?semua_tahun=1 untuk lihat semua.
+     * Default cuma tahun ajaran yang sedang aktif — kirim ?tahun_ajaran_id= untuk lihat
+     * tahun ajaran lain, atau ?semua_tahun=1 untuk lihat semua.
      */
     public function studentAchievements(Request $request, $studentId)
     {
@@ -112,7 +132,8 @@ class AchievementController extends Controller
             $query->where('achievement_type_id', $request->achievement_type_id);
         }
         if (!$request->boolean('semua_tahun')) {
-            $query->where('tahun_ajaran_id', TahunAjaran::aktifId());
+            $tahunAjaranId = $request->filled('tahun_ajaran_id') ? $request->tahun_ajaran_id : TahunAjaran::aktifId();
+            $query->where('tahun_ajaran_id', $tahunAjaranId);
         }
 
         return $query->orderByDesc('date')->orderByDesc('created_at')->get();

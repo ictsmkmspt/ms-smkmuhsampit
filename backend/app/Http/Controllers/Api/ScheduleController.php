@@ -67,6 +67,10 @@ class ScheduleController extends Controller
 
         $assignment = TeachingAssignment::findOrFail($data['teaching_assignment_id']);
 
+        if ($assignment->tahun_ajaran_id !== TahunAjaran::aktifId()) {
+            return response()->json(['message' => 'Penugasan ini milik tahun ajaran yang tidak aktif, tidak bisa dipakai menambah isian jadwal baru.'], 422);
+        }
+
         if (Schedule::where('period_id', $data['period_id'])->where('class_room_id', $assignment->class_room_id)->exists()) {
             return response()->json(['message' => 'Kelas ini sudah punya jadwal di jam tersebut.'], 422);
         }
@@ -107,6 +111,10 @@ class ScheduleController extends Controller
      */
     public function update(Request $request, Schedule $schedule)
     {
+        if ($schedule->tahun_ajaran_id !== TahunAjaran::aktifId()) {
+            return response()->json(['message' => 'Isian jadwal ini milik tahun ajaran yang tidak aktif dan tidak bisa diubah.'], 422);
+        }
+
         $data = $request->validate([
             'period_id' => 'nullable|exists:period_templates,id',
             'kode' => 'nullable|string|max:10',
@@ -137,6 +145,10 @@ class ScheduleController extends Controller
 
     public function destroy(Schedule $schedule)
     {
+        if ($schedule->tahun_ajaran_id !== TahunAjaran::aktifId()) {
+            return response()->json(['message' => 'Isian jadwal ini milik tahun ajaran yang tidak aktif dan tidak bisa dihapus.'], 422);
+        }
+
         $schedule->delete();
 
         return response()->json(['message' => 'Isian jadwal dihapus.']);

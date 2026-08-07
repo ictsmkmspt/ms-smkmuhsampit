@@ -301,8 +301,15 @@ Route::middleware('auth:sanctum')->group(function () {
     // khusus buat Siswa.
     Route::middleware('role:admin,waka_kesiswaan,waka_kurikulum,guru,wali')->group(function () {
         Route::get('/holidays', [HolidayController::class, 'index']);
-        Route::get('/tahun-ajaran', [TahunAjaranController::class, 'index']);
         Route::get('/academic-events', [AcademicEventController::class, 'index']);
+    });
+
+    // /tahun-ajaran dipisah dari grup di atas — dipakai dropdown pilih tahun
+    // ajaran di sidebar (buat lihat data tahun lalu tanpa harus ubah tahun
+    // ajaran aktif), jadi semua Waka (bukan cuma Kesiswaan/Kurikulum) perlu
+    // baca daftarnya juga, sama seperti Guru/Wali.
+    Route::middleware('role:admin,waka_kesiswaan,waka_kurikulum,waka_humas,waka_sarpras,guru,wali')->group(function () {
+        Route::get('/tahun-ajaran', [TahunAjaranController::class, 'index']);
     });
 
     // /tu dan /dashboard/grafik TIDAK diikutkan buat Waka Kurikulum/Sarpras —

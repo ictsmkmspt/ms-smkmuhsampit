@@ -2,8 +2,11 @@ import { useEffect, useMemo, useState } from 'react';
 import { Plus, Trash2, Save, CalendarRange, ChevronLeft, ChevronRight } from 'lucide-react';
 import api from '../../../api/axios';
 import AgendaCalendar, { JENIS_LABEL, JENIS_WARNA, fmtDMY, kelompokkanLibur } from '../../../components/AcademicAgendaCalendar';
+import { useTahunAjaran, useTahunAjaranParam } from '../../../context/TahunAjaranContext';
 
 export default function AcademicCalendarTab() {
+  const tahunParam = useTahunAjaranParam();
+  const { isAktif: tahunAktif, selectedId: tahunAjaranIdTerpilih } = useTahunAjaran();
   const [tahunAjaranList, setTahunAjaranList] = useState([]);
   const [tanggal, setTanggal] = useState({ tanggal_mulai: '', tanggal_selesai: '' });
   const [savingTahun, setSavingTahun] = useState(false);
@@ -28,13 +31,14 @@ export default function AcademicCalendarTab() {
     const a = res.data.find((t) => t.status === 'aktif');
     if (a) setTanggal({ tanggal_mulai: a.tanggal_mulai || '', tanggal_selesai: a.tanggal_selesai || '' });
   });
-  const loadEvents = () => api.get('/academic-events').then((res) => setEvents(res.data));
+  const loadEvents = () => api.get('/academic-events', { params: tahunParam }).then((res) => setEvents(res.data));
 
   useEffect(() => {
     loadTahunAjaran();
-    loadEvents();
     api.get('/holidays').then((res) => setHolidays(res.data));
   }, []);
+
+  useEffect(() => { loadEvents(); }, [tahunAjaranIdTerpilih]); // eslint-disable-line
 
   const handleSaveTahun = async () => {
     if (!aktif) return;
@@ -98,26 +102,30 @@ export default function AcademicCalendarTab() {
 
       <AgendaCalendar events={events} holidays={holidays} />
 
-      <form onSubmit={handleAddEvent} className="surface-card p-5 space-y-3">
-        <h2 className="font-display font-semibold text-ink-900">Tambah Agenda Kalender Akademik</h2>
-        {error && <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2">{error}</p>}
-        <div className="grid grid-cols-3 gap-3">
-          <input placeholder="Nama agenda" value={form.nama} onChange={(e) => setForm({ ...form, nama: e.target.value })} className="field-input col-span-2" required />
-          <select value={form.jenis} onChange={(e) => setForm({ ...form, jenis: e.target.value })} className="field-input text-ink-700">
-            {Object.entries(JENIS_LABEL).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
-          </select>
-          <div>
-            <label className="block text-xs font-medium text-ink-500 mb-1">Dari Tanggal</label>
-            <input type="date" value={form.tanggal_mulai} onChange={(e) => setForm({ ...form, tanggal_mulai: e.target.value })} className="field-input w-full" required />
+      {tahunAktif ? (
+        <form onSubmit={handleAddEvent} className="surface-card p-5 space-y-3">
+          <h2 className="font-display font-semibold text-ink-900">Tambah Agenda Kalender Akademik</h2>
+          {error && <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2">{error}</p>}
+          <div className="grid grid-cols-3 gap-3">
+            <input placeholder="Nama agenda" value={form.nama} onChange={(e) => setForm({ ...form, nama: e.target.value })} className="field-input col-span-2" required />
+            <select value={form.jenis} onChange={(e) => setForm({ ...form, jenis: e.target.value })} className="field-input text-ink-700">
+              {Object.entries(JENIS_LABEL).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+            </select>
+            <div>
+              <label className="block text-xs font-medium text-ink-500 mb-1">Dari Tanggal</label>
+              <input type="date" value={form.tanggal_mulai} onChange={(e) => setForm({ ...form, tanggal_mulai: e.target.value })} className="field-input w-full" required />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-ink-500 mb-1">Sampai Tanggal</label>
+              <input type="date" value={form.tanggal_selesai} onChange={(e) => setForm({ ...form, tanggal_selesai: e.target.value })} className="field-input w-full" required />
+            </div>
+            <input placeholder="Keterangan (opsional)" value={form.keterangan} onChange={(e) => setForm({ ...form, keterangan: e.target.value })} className="field-input" />
           </div>
-          <div>
-            <label className="block text-xs font-medium text-ink-500 mb-1">Sampai Tanggal</label>
-            <input type="date" value={form.tanggal_selesai} onChange={(e) => setForm({ ...form, tanggal_selesai: e.target.value })} className="field-input w-full" required />
-          </div>
-          <input placeholder="Keterangan (opsional)" value={form.keterangan} onChange={(e) => setForm({ ...form, keterangan: e.target.value })} className="field-input" />
-        </div>
-        <button disabled={loading} className="btn-primary"><Plus className="w-4 h-4" /> {loading ? 'Menyimpan...' : 'Tambah Agenda'}</button>
-      </form>
+          <button disabled={loading} className="btn-primary"><Plus className="w-4 h-4" /> {loading ? 'Menyimpan...' : 'Tambah Agenda'}</button>
+        </form>
+      ) : (
+        <p className="text-xs text-ink-400 -mt-2">Anda sedang melihat tahun ajaran lain (bukan yang aktif) — tambah agenda baru dinonaktifkan di sini. Kembali ke tahun ajaran aktif di sidebar untuk menambah agenda.</p>
+      )}
 
       <div className="surface-card p-5">
         <h2 className="font-display font-semibold text-ink-900 mb-4">Daftar Agenda <span className="text-ink-500 font-sans font-normal text-sm">({events.length})</span></h2>

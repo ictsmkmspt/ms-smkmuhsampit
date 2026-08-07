@@ -1,11 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Trash2, X, FileSpreadsheet } from 'lucide-react';
 import api from '../../../api/axios';
+import { useTahunAjaran, useTahunAjaranParam } from '../../../context/TahunAjaranContext';
 
 const HARI_LIST = ['senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu'];
 const HARI_LABEL = { senin: 'Senin', selasa: 'Selasa', rabu: 'Rabu', kamis: 'Kamis', jumat: "Jum'at", sabtu: 'Sabtu' };
 
 export default function SchedulesTab() {
+  const tahunParam = useTahunAjaranParam();
+  const { isAktif: tahunAktif, selectedId: tahunAjaranIdTerpilih } = useTahunAjaran();
   const [selectedDay, setSelectedDay] = useState('senin');
   const [classes, setClasses] = useState([]);
   const [periods, setPeriods] = useState([]);
@@ -27,15 +30,16 @@ export default function SchedulesTab() {
   });
   const [exporting, setExporting] = useState(false);
 
-  const loadGrid = () => api.get('/schedules/grid').then((res) => {
+  const loadGrid = () => api.get('/schedules/grid', { params: tahunParam }).then((res) => {
     setClasses(res.data.classes);
     setPeriods(res.data.periods);
     setSchedules(res.data.schedules);
     setAssignments(res.data.assignments);
     setSelectedClassId((prev) => prev ?? res.data.classes[0]?.id ?? null);
+    setArmedAssignmentId(null);
   });
 
-  useEffect(() => { loadGrid(); }, []);
+  useEffect(() => { loadGrid(); }, [tahunAjaranIdTerpilih]); // eslint-disable-line
 
   const periodsForDay = periods.filter((p) => p.hari === selectedDay);
   const scheduleFor = (periodId, classId) => schedules.find((s) => s.period_id === periodId && s.class_room_id === classId);
@@ -148,7 +152,7 @@ export default function SchedulesTab() {
     localStorage.setItem('jadwal_export_ttd', JSON.stringify(exportForm));
     setExporting(true);
     try {
-      const res = await api.get('/schedules/export-excel', { params: exportForm, responseType: 'blob' });
+      const res = await api.get('/schedules/export-excel', { params: { ...exportForm, ...tahunParam }, responseType: 'blob' });
       const url = window.URL.createObjectURL(new Blob([res.data]));
       const link = document.createElement('a');
       link.href = url;
@@ -167,7 +171,9 @@ export default function SchedulesTab() {
     <div className="space-y-6">
       <div className="surface-card p-4 border-l-4 border-l-brand-400 flex items-start justify-between gap-3 flex-wrap">
         <p className="text-sm text-ink-700 flex-1 min-w-[240px]">
-          Struktur jam mengikuti menu <b>Template Jadwal</b> secara otomatis. Tempatkan Tugas Mengajar ke jam yang tersedia lewat panel di bawah — isian jadwal selalu mengikuti Tugas Mengajar, tidak bisa isi bebas mapel/guru lagi, supaya tidak ada guru yang kebentur jam mengajar di 2 kelas sekaligus.
+          {tahunAktif
+            ? <>Struktur jam mengikuti menu <b>Template Jadwal</b> secara otomatis. Tempatkan Tugas Mengajar ke jam yang tersedia lewat panel di bawah — isian jadwal selalu mengikuti Tugas Mengajar, tidak bisa isi bebas mapel/guru lagi, supaya tidak ada guru yang kebentur jam mengajar di 2 kelas sekaligus.</>
+            : 'Anda sedang melihat tahun ajaran lain (bukan yang aktif) — tempatkan/ubah/hapus isian jadwal dinonaktifkan di sini. Kembali ke tahun ajaran aktif di sidebar untuk mengubahnya.'}
         </p>
         <button onClick={() => setExportModal(true)} className="btn-primary whitespace-nowrap">
           <FileSpreadsheet className="w-4 h-4" /> Export ke Excel
@@ -175,46 +181,48 @@ export default function SchedulesTab() {
       </div>
 
       {/* ===== Panel: pool Tugas Mengajar per kelas ===== */}
-      <div className="surface-card p-5">
-        <div className="flex items-center justify-between mb-1 flex-wrap gap-2">
-          <h2 className="font-display font-semibold text-ink-900">Tempatkan Tugas Mengajar</h2>
-          <select
-            value={selectedClassId || ''}
-            onChange={(e) => pilihKelas(Number(e.target.value))}
-            className="field-input text-sm text-ink-700 w-48"
-          >
-            {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </select>
-        </div>
-        <p className="text-xs text-ink-500 mb-4">Pilih 1 penugasan, lalu klik jam kosong yang menyala hijau di tabel bawah pada kolom "{kelasTerpilih?.name}".</p>
+      {tahunAktif && (
+        <div className="surface-card p-5">
+          <div className="flex items-center justify-between mb-1 flex-wrap gap-2">
+            <h2 className="font-display font-semibold text-ink-900">Tempatkan Tugas Mengajar</h2>
+            <select
+              value={selectedClassId || ''}
+              onChange={(e) => pilihKelas(Number(e.target.value))}
+              className="field-input text-sm text-ink-700 w-48"
+            >
+              {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+          </div>
+          <p className="text-xs text-ink-500 mb-4">Pilih 1 penugasan, lalu klik jam kosong yang menyala hijau di tabel bawah pada kolom "{kelasTerpilih?.name}".</p>
 
-        <div className="space-y-2">
-          {assignmentsForClass.map((a) => {
-            const penuh = a.target_jam != null && a.schedules_count >= a.target_jam;
-            const armed = armedAssignmentId === a.id;
-            return (
-              <div key={a.id} className={`flex items-center justify-between gap-3 rounded-xl p-3 border transition ${armed ? 'border-brand-400 bg-brand-50' : 'border-line-200 bg-mist-50'}`}>
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-ink-900 truncate">{a.subject?.nama}</p>
-                  <p className="text-xs text-ink-500">{a.teacher?.user?.name || 'Belum ada guru'} · {a.schedules_count ?? 0}/{a.target_jam ?? '∞'} jam ditempatkan</p>
+          <div className="space-y-2">
+            {assignmentsForClass.map((a) => {
+              const penuh = a.target_jam != null && a.schedules_count >= a.target_jam;
+              const armed = armedAssignmentId === a.id;
+              return (
+                <div key={a.id} className={`flex items-center justify-between gap-3 rounded-xl p-3 border transition ${armed ? 'border-brand-400 bg-brand-50' : 'border-line-200 bg-mist-50'}`}>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-ink-900 truncate">{a.subject?.nama}</p>
+                    <p className="text-xs text-ink-500">{a.teacher?.user?.name || 'Belum ada guru'} · {a.schedules_count ?? 0}/{a.target_jam ?? '∞'} jam ditempatkan</p>
+                  </div>
+                  <button
+                    onClick={() => toggleArm(a)}
+                    disabled={penuh && !armed}
+                    className={`shrink-0 text-xs font-medium rounded-lg px-3 py-1.5 whitespace-nowrap transition disabled:opacity-40 ${
+                      armed ? 'bg-brand-600 text-white hover:bg-brand-700' : 'bg-white border border-line-200 text-brand-700 hover:bg-brand-50'
+                    }`}
+                  >
+                    {armed ? 'Batal' : penuh ? 'Jam Penuh' : 'Tempatkan'}
+                  </button>
                 </div>
-                <button
-                  onClick={() => toggleArm(a)}
-                  disabled={penuh && !armed}
-                  className={`shrink-0 text-xs font-medium rounded-lg px-3 py-1.5 whitespace-nowrap transition disabled:opacity-40 ${
-                    armed ? 'bg-brand-600 text-white hover:bg-brand-700' : 'bg-white border border-line-200 text-brand-700 hover:bg-brand-50'
-                  }`}
-                >
-                  {armed ? 'Batal' : penuh ? 'Jam Penuh' : 'Tempatkan'}
-                </button>
-              </div>
-            );
-          })}
-          {assignmentsForClass.length === 0 && (
-            <p className="text-sm text-ink-300 text-center py-4">Belum ada Tugas Mengajar untuk kelas ini. Atur dulu di menu Tugas Mengajar.</p>
-          )}
+              );
+            })}
+            {assignmentsForClass.length === 0 && (
+              <p className="text-sm text-ink-300 text-center py-4">Belum ada Tugas Mengajar untuk kelas ini. Atur dulu di menu Tugas Mengajar.</p>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="flex gap-1 bg-white border border-line-200 rounded-xl p-1 w-fit flex-wrap">
         {HARI_LIST.map((h) => (
@@ -381,20 +389,31 @@ export default function SchedulesTab() {
               </div>
               <button onClick={() => setCellModal(null)} className="text-ink-300 hover:text-ink-600"><X className="w-5 h-5" /></button>
             </div>
-            <form onSubmit={handleSaveCellKode} className="p-5 space-y-3">
-              {cellError && <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2">{cellError}</p>}
-              <div className="rounded-lg bg-mist-50 border border-line-200 px-3 py-2.5">
-                <p className="text-sm font-medium text-ink-900">{cellModal.existing.subject?.nama}</p>
-                <p className="text-xs text-ink-500">{cellModal.existing.teacher?.user?.name || 'Belum ada guru'}</p>
+            {tahunAktif ? (
+              <form onSubmit={handleSaveCellKode} className="p-5 space-y-3">
+                {cellError && <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2">{cellError}</p>}
+                <div className="rounded-lg bg-mist-50 border border-line-200 px-3 py-2.5">
+                  <p className="text-sm font-medium text-ink-900">{cellModal.existing.subject?.nama}</p>
+                  <p className="text-xs text-ink-500">{cellModal.existing.teacher?.user?.name || 'Belum ada guru'}</p>
+                </div>
+                <input placeholder="Kode guru untuk tampil di grid (mis. D1)" value={cellKode} onChange={(e) => setCellKode(e.target.value)} className="field-input w-full" maxLength={10} />
+                <div className="flex gap-2">
+                  <button disabled={cellSaving} className="btn-primary flex-1 justify-center">{cellSaving ? 'Menyimpan...' : 'Simpan'}</button>
+                  <button type="button" onClick={handleDeleteCell} className="px-3 rounded-lg border border-line-200 text-honey-700 hover:bg-honey-50">
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <div className="p-5 space-y-3">
+                <div className="rounded-lg bg-mist-50 border border-line-200 px-3 py-2.5">
+                  <p className="text-sm font-medium text-ink-900">{cellModal.existing.subject?.nama}</p>
+                  <p className="text-xs text-ink-500">{cellModal.existing.teacher?.user?.name || 'Belum ada guru'}</p>
+                  {cellModal.existing.kode && <p className="text-xs text-ink-500 mt-1">Kode: <span className="font-mono">{cellModal.existing.kode}</span></p>}
+                </div>
+                <p className="text-xs text-ink-400">Isian tahun ajaran lain bersifat lihat-saja — tidak bisa diubah/dihapus di sini.</p>
               </div>
-              <input placeholder="Kode guru untuk tampil di grid (mis. D1)" value={cellKode} onChange={(e) => setCellKode(e.target.value)} className="field-input w-full" maxLength={10} />
-              <div className="flex gap-2">
-                <button disabled={cellSaving} className="btn-primary flex-1 justify-center">{cellSaving ? 'Menyimpan...' : 'Simpan'}</button>
-                <button type="button" onClick={handleDeleteCell} className="px-3 rounded-lg border border-line-200 text-honey-700 hover:bg-honey-50">
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-            </form>
+            )}
           </div>
         </div>
       )}

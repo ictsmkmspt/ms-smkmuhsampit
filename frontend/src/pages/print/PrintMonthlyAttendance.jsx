@@ -4,7 +4,7 @@ import { Printer } from 'lucide-react';
 import api from '../../api/axios';
 
 const BULAN = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-const STATUS_LABEL = { hadir: 'H', izin: 'I', sakit: 'S', alpa: 'A', libur: 'L' };
+const STATUS_LABEL = { hadir: 'H', izin: 'I', sakit: 'S', alpa: 'A', libur: 'L', pkl: 'P' };
 
 export default function PrintMonthlyAttendance() {
   const [params] = useSearchParams();
@@ -52,7 +52,7 @@ export default function PrintMonthlyAttendance() {
             <th rowSpan="2" className="border border-ink-400 px-1 py-1">No</th>
             <th rowSpan="2" className="border border-ink-400 px-2 py-1 text-left">Nama Siswa</th>
             <th colSpan={days.length} className="border border-ink-400 px-1 py-1">Tanggal</th>
-            <th colSpan="5" className="border border-ink-400 px-1 py-1">Rekap</th>
+            <th colSpan="6" className="border border-ink-400 px-1 py-1">Rekap</th>
           </tr>
           <tr>
             {days.map((d) => <th key={d} className="border border-ink-400 w-4 px-0.5 py-1">{d}</th>)}
@@ -61,6 +61,7 @@ export default function PrintMonthlyAttendance() {
             <th className="border border-ink-400 px-1 py-1">S</th>
             <th className="border border-ink-400 px-1 py-1">A</th>
             <th className="border border-ink-400 px-1 py-1">L</th>
+            <th className="border border-ink-400 px-1 py-1">P</th>
           </tr>
         </thead>
         <tbody>
@@ -78,15 +79,16 @@ export default function PrintMonthlyAttendance() {
               <td className="border border-ink-400 text-center">{row.counts.sakit}</td>
               <td className="border border-ink-400 text-center">{row.counts.alpa}</td>
               <td className="border border-ink-400 text-center">{row.counts.libur}</td>
+              <td className="border border-ink-400 text-center">{row.counts.pkl}</td>
             </tr>
           ))}
           {data.students.length === 0 && (
-            <tr><td colSpan={days.length + 7} className="border border-ink-400 py-4 text-center">Belum ada siswa di kelas ini.</td></tr>
+            <tr><td colSpan={days.length + 8} className="border border-ink-400 py-4 text-center">Belum ada siswa di kelas ini.</td></tr>
           )}
         </tbody>
       </table>
 
-      <p className="text-[10px] mt-3">Keterangan: H = Hadir, I = Izin, S = Sakit, A = Alpa, L = Libur</p>
+      <p className="text-[10px] mt-3">Keterangan: H = Hadir, I = Izin, S = Sakit, A = Alpa, L = Libur, P = PKL</p>
 
       <div className="flex justify-end mt-16 text-sm">
         <div className="text-center">

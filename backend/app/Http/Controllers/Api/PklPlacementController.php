@@ -12,8 +12,8 @@ class PklPlacementController extends Controller
 {
     /**
      * Semua penempatan PKL (admin), dengan filter opsional by status.
-     * Default cuma tahun ajaran yang sedang aktif — kirim ?semua_tahun=1
-     * untuk lihat semua tahun ajaran sekaligus (misal buat cari data lama).
+     * Default cuma tahun ajaran yang sedang aktif — kirim ?tahun_ajaran_id= untuk lihat
+     * tahun ajaran lain, atau ?semua_tahun=1 untuk lihat semua tahun ajaran sekaligus.
      */
     public function index(Request $request)
     {
@@ -22,7 +22,8 @@ class PklPlacementController extends Controller
             $query->where('status', $request->status);
         }
         if (!$request->boolean('semua_tahun')) {
-            $query->where('tahun_ajaran_id', TahunAjaran::aktifId());
+            $tahunAjaranId = $request->filled('tahun_ajaran_id') ? $request->tahun_ajaran_id : TahunAjaran::aktifId();
+            $query->where('tahun_ajaran_id', $tahunAjaranId);
         }
         return $query->orderByDesc('tanggal_mulai')->get();
     }

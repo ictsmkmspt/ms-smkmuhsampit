@@ -23,6 +23,23 @@ class AttendanceController extends Controller
 {
     use RestrictsGuruToOwnClass;
 
+    /**
+     * Siswa yang sedang PKL PADA TANGGAL tertentu — dicek dari rentang
+     * tanggal_mulai/tanggal_selesai penempatan, BUKAN dari status aktif/selesai
+     * penempatan SEKARANG. Kalau pakai status='aktif', begitu penempatan lama
+     * ditutup (jadi 'selesai'), riwayat hari-hari lama yang sebenarnya PKL akan
+     * salah jatuh jadi 'alpa' karena tidak ketemu lagi di query status aktif.
+     */
+    private function siswaPklPadaTanggal(string $date, ?array $studentIds = null): array
+    {
+        $query = PklPlacement::where('tanggal_mulai', '<=', $date)
+            ->where('tanggal_selesai', '>=', $date);
+        if ($studentIds !== null) {
+            $query->whereIn('student_id', $studentIds);
+        }
+        return $query->pluck('student_id')->all();
+    }
+
     public function scan(Request $request)
     {
         $request->validate(['code' => 'required|string']);
@@ -115,10 +132,21 @@ class AttendanceController extends Controller
             ->get()
             ->groupBy('student_id');
 
-        $hasil = $students->map(function ($student) use ($attendances, $daysInMonth, $request, $today) {
-            $records = $attendances->get($student->id, collect())->keyBy('date');
+        // Ambil semua penempatan PKL yang rentang tanggalnya bersinggungan dengan
+        // bulan ini (bukan cuma status='aktif' sekarang) — supaya hari-hari lama
+        // yang siswanya sedang PKL tetap tercatat 'pkl', walau penempatannya sudah
+        // ditutup/selesai sekarang.
+        $pklPlacements = PklPlacement::whereIn('student_id', $students->pluck('id'))
+            ->where('tanggal_mulai', '<=', $endDate)
+            ->where('tanggal_selesai', '>=', $startDate)
+            ->get(['student_id', 'tanggal_mulai', 'tanggal_selesai'])
+            ->groupBy('student_id');
+
+        $hasil = $students->map(function ($student) use ($attendances, $pklPlacements, $daysInMonth, $request, $today) {
+            $records    = $attendances->get($student->id, collect())->keyBy('date');
+            $placements = $pklPlacements->get($student->id, collect());
             $days    = [];
-            $counts  = ['hadir' => 0, 'izin' => 0, 'sakit' => 0, 'alpa' => 0, 'libur' => 0];
+            $counts  = ['hadir' => 0, 'izin' => 0, 'sakit' => 0, 'alpa' => 0, 'libur' => 0, 'pkl' => 0];
 
             for ($d = 1; $d <= $daysInMonth; $d++) {
                 $date = sprintf('%04d-%02d-%02d', $request->year, $request->month, $d);
@@ -132,6 +160,13 @@ class AttendanceController extends Controller
                 if ($att) {
                     $days[$d] = $att->status;
                     $counts[$att->status] = ($counts[$att->status] ?? 0) + 1;
+                    continue;
+                }
+
+                $sedangPkl = $placements->first(fn ($p) => $p->tanggal_mulai <= $date && $p->tanggal_selesai >= $date);
+                if ($sedangPkl) {
+                    $days[$d] = 'pkl';
+                    $counts['pkl']++;
                     continue;
                 }
 
@@ -195,7 +230,7 @@ class AttendanceController extends Controller
         $attendances = Attendance::where('date', $date)->where('class_room_id', $classRoom->id)
             ->get()->keyBy('student_id');
 
-        $siswaPkl = PklPlacement::where('status', 'aktif')->pluck('student_id')->all();
+        $siswaPkl = $this->siswaPklPadaTanggal($date);
 
         $hasil = $students->map(function ($student) use ($attendances, $date, $siswaPkl) {
             $att = $attendances->get($student->id);
@@ -236,7 +271,7 @@ class AttendanceController extends Controller
         }
 
         $studentsAlreadyAbsent = Attendance::where('date', $date)->pluck('student_id');
-        $siswaPkl = PklPlacement::where('status', 'aktif')->pluck('student_id');
+        $siswaPkl = $this->siswaPklPadaTanggal($date);
 
         $alpaStudents = Student::where('status', 'aktif')
             ->whereNotIn('id', $studentsAlreadyAbsent)
@@ -406,7 +441,7 @@ class AttendanceController extends Controller
         $attendances = $attendanceQuery->get()->keyBy('student_id');
 
         $isLibur = Holiday::isHariLibur($date);
-        $siswaPkl = PklPlacement::where('status', 'aktif')->pluck('student_id')->all();
+        $siswaPkl = $this->siswaPklPadaTanggal($date);
 
         $hasil = $students->map(function ($student) use ($attendances, $date, $isLibur, $siswaPkl) {
             $attendance = $attendances->get($student->id);
@@ -431,21 +466,39 @@ class AttendanceController extends Controller
 
     /**
      * Rekap akumulasi poin per siswa. Kalau yang login guru, dipaksa hanya kelas walinya sendiri.
+     * Default pakai kolom total_poin (cache, cepat) untuk tahun ajaran aktif. Kalau
+     * ?tahun_ajaran_id= diisi dengan tahun ajaran LAIN, dihitung ulang live dari riwayat
+     * Violation tahun itu — supaya tidak perlu ubah tahun ajaran aktif cuma buat lihat rekap lama.
      */
     public function violationReport(Request $request)
     {
         $restricted  = $this->guruClassRoomId($request);
         $classRoomId = $restricted ?? $request->class_room_id;
+        $tahunAjaranId = $request->filled('tahun_ajaran_id') ? (int) $request->tahun_ajaran_id : TahunAjaran::aktifId();
 
         $query = Student::with(['user', 'classRoom'])->where('status', 'aktif');
         if ($classRoomId) $query->where('class_room_id', $classRoomId);
-        return $query->orderByDesc('total_poin')->get();
+
+        if ($tahunAjaranId === TahunAjaran::aktifId()) {
+            return $query->orderByDesc('total_poin')->get();
+        }
+
+        return $query->withSum(['violations as riwayat_poin' => function ($q) use ($tahunAjaranId) {
+                $q->where('tahun_ajaran_id', $tahunAjaranId);
+            }], 'poin')
+            ->get()
+            ->each(function ($s) {
+                $s->total_poin = (int) ($s->riwayat_poin ?? 0);
+                unset($s->riwayat_poin);
+            })
+            ->sortByDesc('total_poin')
+            ->values();
     }
 
     /**
      * Riwayat kejadian pelanggaran. Kalau yang login guru, dipaksa hanya kelas walinya sendiri.
-     * Default cuma tahun ajaran yang sedang aktif (sama seperti PklPlacementController::index) —
-     * kirim ?semua_tahun=1 untuk lihat semua tahun ajaran sekaligus.
+     * Default cuma tahun ajaran yang sedang aktif — kirim ?tahun_ajaran_id= untuk lihat tahun
+     * ajaran lain, atau ?semua_tahun=1 untuk lihat semua tahun ajaran sekaligus.
      */
     public function violationDetail(Request $request)
     {
@@ -456,7 +509,8 @@ class AttendanceController extends Controller
         if ($request->date) $query->where('date', $request->date);
         if ($classRoomId) $query->whereHas('student', fn ($q) => $q->where('class_room_id', $classRoomId));
         if (!$request->boolean('semua_tahun')) {
-            $query->where('tahun_ajaran_id', TahunAjaran::aktifId());
+            $tahunAjaranId = $request->filled('tahun_ajaran_id') ? $request->tahun_ajaran_id : TahunAjaran::aktifId();
+            $query->where('tahun_ajaran_id', $tahunAjaranId);
         }
         return $query->orderByDesc('date')->orderByDesc('created_at')->get();
     }
@@ -466,7 +520,8 @@ class AttendanceController extends Controller
      * rentang tanggal (date_from/date_to) dan jenis pelanggaran (violation_type_id).
      * Dipakai oleh popup riwayat pelanggaran di halaman Rekap Poin Pelanggaran.
      * Kalau yang login guru, hanya boleh melihat siswa di kelas walinya sendiri.
-     * Default cuma tahun ajaran yang sedang aktif — kirim ?semua_tahun=1 untuk lihat semua.
+     * Default cuma tahun ajaran yang sedang aktif — kirim ?tahun_ajaran_id= untuk lihat
+     * tahun ajaran lain, atau ?semua_tahun=1 untuk lihat semua.
      */
     public function studentViolations(Request $request, $studentId)
     {
@@ -491,7 +546,8 @@ class AttendanceController extends Controller
             $query->where('violation_type_id', $request->violation_type_id);
         }
         if (!$request->boolean('semua_tahun')) {
-            $query->where('tahun_ajaran_id', TahunAjaran::aktifId());
+            $tahunAjaranId = $request->filled('tahun_ajaran_id') ? $request->tahun_ajaran_id : TahunAjaran::aktifId();
+            $query->where('tahun_ajaran_id', $tahunAjaranId);
         }
 
         return $query->orderByDesc('date')->orderByDesc('created_at')->get();
