@@ -11,10 +11,7 @@ import EditProfileModal from '../../components/EditProfileModal';
 // Urutan navbar bawah: Beranda & Nilai di kiri tombol Scan (tengah,
 // melayang), PKL & Laporan di kanan — Absensi dan Poin digabung jadi 1
 // tombol "Scan" di tengah (submenunya ada di dalam ScanTab: Kehadiran,
-// Sholat Zuhur, Poin Prestasi, Poin Pelanggaran). Slot "CBT" (rancangan
-// ujian online) ditunda dulu — dipakai lebih dulu untuk Nilai (input nilai
-// manual per mapel, mis. PR/ulangan harian) yang lebih sederhana & segera
-// dibutuhkan.
+// Sholat Zuhur, Poin Prestasi, Poin Pelanggaran).
 const ALL_TABS = [
   { key: 'beranda', label: 'Beranda', icon: Home,          component: BerandaTab },
   { key: 'nilai',   label: 'Nilai',   icon: ClipboardList, component: NilaiTab },
@@ -46,7 +43,7 @@ export default function GuruDashboard() {
   // sudah otomatis menampilkan pesan "belum ditugaskan" (bukan error/bocor
   // data), jadi aman ditampilkan ke semua.
   const TABS = ALL_TABS;
-  // Navbar bawah: Beranda/CBT selalu di kiri, PKL/Laporan di kanan, tombol
+  // Navbar bawah: Beranda/Nilai selalu di kiri, PKL/Laporan di kanan, tombol
   // Scan melayang di tengah — dipisah di sini supaya kedua sisi tetap
   // seimbang (pakai flex-1 masing-masing).
   const leftTabs = TABS.filter((t) => t.key === 'beranda' || t.key === 'nilai');
@@ -105,7 +102,7 @@ export default function GuruDashboard() {
         {ActiveComponent && <ActiveComponent />}
       </div>
 
-      {/* Bottom navbar — Beranda/CBT kiri, Scan melayang di tengah, PKL/Laporan kanan */}
+      {/* Bottom navbar — Beranda/Nilai kiri, Scan melayang di tengah, PKL/Laporan kanan */}
       <div className="fixed bottom-0 left-0 right-0 z-50">
         <div className="relative bg-white border-t border-line-200">
           <div className="max-w-4xl mx-auto flex items-stretch">
