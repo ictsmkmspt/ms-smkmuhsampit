@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import QRCode from 'qrcode';
 import {
   LogOut, Clock, ChevronDown, UserCog, ChevronLeft, ChevronRight,
-  Award, AlertTriangle, Home, ClipboardCheck, NotebookPen, ClipboardList,
+  Award, AlertTriangle, ClipboardCheck, NotebookPen, ClipboardList,
+  QrCode, BookOpen, CalendarRange, Briefcase,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api/axios';
@@ -10,8 +11,24 @@ import PklSiswaView from './PklSiswaView';
 import EditProfileModal from '../../components/EditProfileModal';
 import LeaderboardPrestasi from '../../components/LeaderboardPrestasi';
 import JadwalPelajaranView from '../../components/JadwalPelajaranView';
+import KalenderAkademikView from '../../components/KalenderAkademikView';
 
 const PAGE_SIZE = 5;
+
+// Sub-menu di dalam tombol QR (tengah) — gaya sama dengan sub-menu Ortu/Guru
+// (pill putih rata tengah + ikon).
+const QR_SUB_TABS = [
+  { key: 'qr', label: 'QR', icon: QrCode },
+  { key: 'jadwal', label: 'Jadwal', icon: BookOpen },
+  { key: 'kalender', label: 'Kalender', icon: CalendarRange },
+];
+
+// Sub-menu di dalam tab PKL — "Beranda" tidak perlu lagi di sini karena
+// kartu QR/leaderboard sudah pindah ke tombol QR di navbar bawah.
+const PKL_SUB_TABS = [
+  { key: 'absensi', label: 'Absensi', icon: ClipboardCheck },
+  { key: 'jurnal', label: 'Jurnal Kegiatan', icon: NotebookPen },
+];
 
 export default function SiswaDashboard() {
   const { user, logout } = useAuth();
@@ -28,8 +45,10 @@ export default function SiswaDashboard() {
   const [showEditProfil, setShowEditProfil] = useState(false);
   const menuRef = useRef(null);
 
-  // Sub-menu dipakai cuma saat sedang PKL: 'beranda' | 'absensi' | 'jurnal'
-  const [pklTab, setPklTab] = useState('beranda');
+  // Navigasi utama (navbar bawah): 'qr' (tengah, melayang) | 'nilai' (kiri) | 'pkl' (kanan, cuma kalau siswa pernah PKL)
+  const [activeTab, setActiveTab] = useState('qr');
+  const [qrSub, setQrSub] = useState('qr');
+  const [pklSub, setPklSub] = useState('absensi');
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -46,6 +65,8 @@ export default function SiswaDashboard() {
   // siswa yang PKL-nya sudah berakhir tetap bisa buka menu Absensi & Jurnal
   // Kegiatan untuk lihat riwayat lamanya, cuma tombol "buat baru"-nya saja
   // yang otomatis ditolak backend karena penempatannya sudah tidak aktif.
+  // Tab PKL di navbar bawah cuma tampil kalau ini true (siswa belum pernah
+  // PKL sama sekali tidak perlu lihat menu ini).
   const isPkl = !!(pklPlacement && Object.keys(pklPlacement).length > 0);
 
   useEffect(() => {
@@ -53,9 +74,6 @@ export default function SiswaDashboard() {
   }, []);
 
   useEffect(() => {
-    // Data "Beranda" (profil, QR, riwayat absensi & poin sekolah) sekarang
-    // selalu diambil, walaupun sedang PKL — supaya menu "Beranda" tetap
-    // bisa diakses siswa PKL lewat navbar bawah.
     if (pklPlacement === undefined) return;
 
     api.get('/my-profile').then((res) => setProfile(res.data));
@@ -112,7 +130,7 @@ export default function SiswaDashboard() {
     );
   }
 
-  const berandaContent = (
+  const qrCardContent = (
     <>
       <div className="max-w-md mx-auto mb-6 rounded-2xl overflow-hidden shadow-[0_2px_16px_rgba(34,52,74,0.08)] border border-line-200">
         <div className="bg-brand-600 px-5 pt-5 pb-7 text-white">
@@ -163,33 +181,6 @@ export default function SiswaDashboard() {
           </p>
 
         </div>
-      </div>
-
-      <div className="surface-card max-w-md mx-auto p-4 mb-6">
-        <h2 className="font-display font-semibold text-sm text-ink-900 mb-3">
-          Jadwal Pelajaran
-        </h2>
-        <JadwalPelajaranView endpoint="/my-schedule" />
-      </div>
-
-      <div className="surface-card max-w-md mx-auto p-4 mb-6">
-        <h2 className="font-display font-semibold text-sm text-ink-900 mb-3 flex items-center gap-2">
-          <ClipboardList className="w-4 h-4 text-ink-500" /> Nilai Akademik
-        </h2>
-        <ul className="divide-y divide-line-200">
-          {academicScores.slice(0, 5).map((n) => (
-            <li key={n.id} className="py-2.5 flex items-center justify-between text-sm gap-2">
-              <div className="min-w-0">
-                <p className="text-ink-900 truncate">{n.nama_kegiatan}</p>
-                <p className="text-xs text-ink-500">{n.subject?.nama} · {n.tanggal}</p>
-              </div>
-              <span className="font-display font-semibold text-ink-900 shrink-0">{n.skor}</span>
-            </li>
-          ))}
-          {academicScores.length === 0 && (
-            <li className="py-4 text-center text-sm text-ink-300">Belum ada nilai tercatat.</li>
-          )}
-        </ul>
       </div>
 
       {/* Riwayat Poin — total di atas, daftar riwayat gabungan prestasi & pelanggaran di bawah */}
@@ -317,14 +308,33 @@ export default function SiswaDashboard() {
     </>
   );
 
-  const PKL_TABS = [
-    { key: 'beranda', label: 'Beranda', icon: Home },
-    { key: 'absensi', label: 'Absensi', icon: ClipboardCheck },
-    { key: 'jurnal', label: 'Jurnal Kegiatan', icon: NotebookPen },
-  ];
+  const nilaiContent = (
+    <div className="surface-card max-w-md mx-auto p-4">
+      <h2 className="font-display font-semibold text-sm text-ink-900 mb-3 flex items-center gap-2">
+        <ClipboardList className="w-4 h-4 text-ink-500" /> Nilai Akademik
+      </h2>
+      <ul className="divide-y divide-line-200">
+        {academicScores.map((n) => (
+          <li key={n.id} className="py-2.5 flex items-center justify-between text-sm gap-2">
+            <div className="min-w-0">
+              <p className="text-ink-900 truncate">{n.nama_kegiatan}</p>
+              <p className="text-xs text-ink-500">{n.subject?.nama} · {n.tanggal}</p>
+            </div>
+            <span className="font-display font-semibold text-ink-900 shrink-0">{n.skor}</span>
+          </li>
+        ))}
+        {academicScores.length === 0 && (
+          <li className="py-4 text-center text-sm text-ink-300">Belum ada nilai tercatat.</li>
+        )}
+      </ul>
+    </div>
+  );
+
+  const BOTTOM_TABS_LEFT = [{ key: 'nilai', label: 'Nilai', icon: ClipboardList }];
+  const BOTTOM_TABS_RIGHT = isPkl ? [{ key: 'pkl', label: 'PKL', icon: Briefcase }] : [];
 
   return (
-    <div className={`min-h-screen bg-mist-50 p-6 ${isPkl ? 'pb-24' : ''}`}>
+    <div className="min-h-screen bg-mist-50 p-6 pb-24">
       <div className="flex justify-between items-end max-w-md mx-auto mb-6">
         <div>
           <p className="text-xs text-ink-500">Siswa</p>
@@ -359,41 +369,119 @@ export default function SiswaDashboard() {
         </div>
       </div>
 
-      {isPkl ? (
-        pklTab === 'beranda' ? berandaContent : <PklSiswaView placement={pklPlacement} tab={pklTab} />
-      ) : (
-        berandaContent
-      )}
-
-      {isPkl && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-line-200 z-40">
-          <div className="max-w-md mx-auto flex">
-            {PKL_TABS.map((t) => {
-              const Icon = t.icon;
-              const isActive = pklTab === t.key;
+      {activeTab === 'qr' && (
+        <>
+          <div className="flex gap-1 bg-white border border-line-200 rounded-xl p-1 mb-4 w-fit mx-auto">
+            {QR_SUB_TABS.map((t) => {
+              const isActive = qrSub === t.key;
               return (
                 <button
                   key={t.key}
-                  onClick={() => setPklTab(t.key)}
-                  className={`relative flex-1 flex flex-col items-center justify-center gap-1 py-3 transition ${
-                    isActive ? 'text-brand-600' : 'text-ink-400 hover:text-ink-600'
+                  onClick={() => setQrSub(t.key)}
+                  className={`flex items-center gap-1.5 px-3 sm:px-4 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-medium whitespace-nowrap transition ${
+                    isActive ? 'bg-brand-600 text-white shadow-sm' : 'text-ink-700 hover:bg-mist-50 hover:text-ink-900'
                   }`}
                 >
-                  <Icon className={`w-6 h-6 ${isActive ? 'stroke-[2.5]' : 'stroke-[1.75]'}`} />
-                  <span className="text-[10px] font-medium tracking-wide">{t.label}</span>
-                {isActive && (
-                  <span className="absolute bottom-0 w-8 h-0.5 bg-brand-600 rounded-t-full" />
-                )}
-              </button>
-            );
-          })}
+                  <t.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  {t.label}
+                </button>
+              );
+            })}
           </div>
-        </div>
+
+          {qrSub === 'qr' && qrCardContent}
+          {qrSub === 'jadwal' && (
+            <div className="surface-card max-w-md mx-auto p-4">
+              <h2 className="font-display font-semibold text-sm text-ink-900 mb-3">Jadwal Pelajaran</h2>
+              <JadwalPelajaranView endpoint="/my-schedule" />
+            </div>
+          )}
+          {qrSub === 'kalender' && (
+            <div className="max-w-md mx-auto">
+              <KalenderAkademikView />
+            </div>
+          )}
+        </>
       )}
+
+      {activeTab === 'nilai' && nilaiContent}
+
+      {activeTab === 'pkl' && isPkl && (
+        <>
+          <div className="flex gap-1 bg-white border border-line-200 rounded-xl p-1 mb-4 w-fit mx-auto">
+            {PKL_SUB_TABS.map((t) => {
+              const isActive = pklSub === t.key;
+              return (
+                <button
+                  key={t.key}
+                  onClick={() => setPklSub(t.key)}
+                  className={`flex items-center gap-1.5 px-3 sm:px-4 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-medium whitespace-nowrap transition ${
+                    isActive ? 'bg-brand-600 text-white shadow-sm' : 'text-ink-700 hover:bg-mist-50 hover:text-ink-900'
+                  }`}
+                >
+                  <t.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  {t.label}
+                </button>
+              );
+            })}
+          </div>
+          <PklSiswaView placement={pklPlacement} tab={pklSub} />
+        </>
+      )}
+
+      {/* Navbar bawah — Nilai kiri, QR melayang tengah, PKL kanan (kalau relevan) */}
+      <div className="fixed bottom-0 left-0 right-0 z-50">
+        <div className="relative bg-white border-t border-line-200">
+          <div className="max-w-md mx-auto flex items-stretch">
+            <div className="flex-1 flex">
+              {BOTTOM_TABS_LEFT.map((tab) => (
+                <SideTabButton key={tab.key} tab={tab} isActive={activeTab === tab.key} onClick={() => setActiveTab(tab.key)} />
+              ))}
+            </div>
+            <div className="w-20 shrink-0" aria-hidden="true" />
+            <div className="flex-1 flex">
+              {BOTTOM_TABS_RIGHT.map((tab) => (
+                <SideTabButton key={tab.key} tab={tab} isActive={activeTab === tab.key} onClick={() => setActiveTab(tab.key)} />
+              ))}
+            </div>
+          </div>
+
+          <button
+            onClick={() => setActiveTab('qr')}
+            title="QR Absensi"
+            className={`absolute left-1/2 -translate-x-1/2 -top-4 w-16 h-16 rounded-full flex flex-col items-center justify-center gap-0.5 shadow-lg transition ${
+              activeTab === 'qr' ? 'bg-brand-700 ring-4 ring-brand-100' : 'bg-brand-600 hover:bg-brand-700'
+            }`}
+          >
+            <QrCode className="w-6 h-6 text-white" />
+            <span className="text-[9px] font-semibold text-white leading-none tracking-wide">QR</span>
+          </button>
+        </div>
+      </div>
 
       {showEditProfil && (
         <EditProfileModal onClose={() => setShowEditProfil(false)} />
       )}
     </div>
+  );
+}
+
+function SideTabButton({ tab, isActive, onClick }) {
+  const Icon = tab.icon;
+  return (
+    <button
+      onClick={onClick}
+      className={`relative flex-1 flex flex-col items-center justify-center gap-1 py-3 transition ${
+        isActive ? 'text-brand-600' : 'text-ink-400 hover:text-ink-600'
+      }`}
+    >
+      <Icon className={`w-6 h-6 ${isActive ? 'stroke-[2.5]' : 'stroke-[1.75]'}`} />
+      <span className={`text-[10px] font-medium tracking-wide ${isActive ? 'text-brand-600' : 'text-ink-400'}`}>
+        {tab.label}
+      </span>
+      {isActive && (
+        <span className="absolute bottom-0 w-8 h-0.5 bg-brand-600 rounded-t-full" />
+      )}
+    </button>
   );
 }

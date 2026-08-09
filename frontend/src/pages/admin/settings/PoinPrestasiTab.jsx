@@ -73,18 +73,18 @@ export default function PoinPrestasiTab() {
       <form onSubmit={handleAdd} className="surface-card p-5 space-y-3">
         <h2 className="font-display font-semibold text-ink-900">Tambah Jenis Prestasi</h2>
         {error && <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2">{error}</p>}
-        <div className="flex gap-3">
+        <div className="flex flex-col sm:flex-row gap-3">
           <input
             placeholder="Nama jenis (contoh: Juara Lomba OSN)"
             value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })}
-            className="field-input flex-1" required
+            className="field-input sm:flex-1" required
           />
           <input
             type="number" min="0" max="100" placeholder="Poin"
             value={form.poin} onChange={(e) => setForm({ ...form, poin: e.target.value })}
-            className="field-input w-24" required
+            className="field-input sm:w-24" required
           />
-          <button disabled={addLoading} className="btn-primary whitespace-nowrap">
+          <button disabled={addLoading} className="btn-primary whitespace-nowrap justify-center">
             <Plus className="w-4 h-4" />
             {addLoading ? '...' : 'Tambah'}
           </button>

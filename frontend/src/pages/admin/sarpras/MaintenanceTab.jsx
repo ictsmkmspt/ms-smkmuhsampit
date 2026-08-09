@@ -61,14 +61,14 @@ export default function MaintenanceTab() {
 
   const handleScan = async (code) => {
     try {
-      const res = await api.get(`/assets/barcode/${code}`);
+      const res = await api.get('/assets/qr', { params: { code } });
       const asset = res.data;
       setAssets((prev) => (prev.some((a) => a.id === asset.id) ? prev : [...prev, asset]));
       setForm((f) => ({ ...f, asset_id: String(asset.id), room_id: asset.room_id ? String(asset.room_id) : f.room_id }));
       setScanning(false);
       return { message: `Aset ditemukan: ${asset.nama}, siap dilaporkan.`, error: false };
     } catch (err) {
-      return { message: err.response?.data?.message || 'Barcode tidak dikenali.', error: true };
+      return { message: err.response?.data?.message || 'QR tidak dikenali.', error: true };
     }
   };
 
@@ -102,7 +102,7 @@ export default function MaintenanceTab() {
                 placeholder={form.room_id ? 'Cari aset di ruang ini…' : 'Cari kode / nama / kategori / ruang…'}
               />
             </div>
-            <button type="button" onClick={() => setScanning(true)} title="Pindai barcode aset" className="w-11 h-11 flex items-center justify-center rounded-xl border border-line-200 text-ink-500 hover:text-brand-700 hover:bg-mist-50 transition shrink-0">
+            <button type="button" onClick={() => setScanning(true)} title="Pindai QR aset" className="w-11 h-11 flex items-center justify-center rounded-xl border border-line-200 text-ink-500 hover:text-brand-700 hover:bg-mist-50 transition shrink-0">
               <ScanBarcode className="w-4 h-4" />
             </button>
           </div>
@@ -159,7 +159,7 @@ export default function MaintenanceTab() {
         <div className="fixed inset-0 z-50 bg-ink-900/60 flex items-center justify-center p-4" onClick={() => setScanning(false)}>
           <div className="surface-card p-5 max-w-md w-full" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-3">
-              <h3 className="font-display font-semibold text-ink-900">Pindai Barcode Aset</h3>
+              <h3 className="font-display font-semibold text-ink-900">Pindai QR Aset</h3>
               <button onClick={() => setScanning(false)} className="text-ink-300 hover:text-honey-700"><X className="w-5 h-5" /></button>
             </div>
             <BarcodeScanner onDecode={handleScan} />

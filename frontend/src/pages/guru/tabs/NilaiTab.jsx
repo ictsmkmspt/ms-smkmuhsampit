@@ -63,7 +63,11 @@ export default function NilaiTab() {
 
   useEffect(() => {
     if (!classId) { setStudents([]); return; }
-    api.get('/students', { params: { class_room_id: classId } }).then((res) => setStudents(res.data));
+    let cancelled = false;
+    api.get('/students', { params: { class_room_id: classId } }).then((res) => {
+      if (!cancelled) setStudents(res.data);
+    });
+    return () => { cancelled = true; };
   }, [classId]);
 
   const loadScores = () => {

@@ -28,8 +28,15 @@ class AssetController extends Controller
         return $query->get();
     }
 
-    public function findByBarcode(Request $request, string $code)
+    /**
+     * Cari aset berdasarkan kode hasil pindai QR — kode dikirim lewat query
+     * string (?code=...), bukan segmen URL, karena kode aset boleh bebas
+     * (termasuk mengandung "/") dan segmen URL akan merusak kode semacam
+     * itu (mis. "INV/26/00001" jadi terpotong sebagai 3 segmen path).
+     */
+    public function findByBarcode(Request $request)
     {
+        $code = (string) $request->query('code');
         $query = Asset::with('room')->where('kode_aset', $code);
 
         $roomId = $this->ownRoomId($request);
@@ -41,7 +48,7 @@ class AssetController extends Controller
 
         if (!$asset) {
             return response()->json([
-                'message' => 'Barcode tidak dikenali / aset tidak ditemukan.',
+                'message' => 'QR tidak dikenali / aset tidak ditemukan.',
             ], 404);
         }
 

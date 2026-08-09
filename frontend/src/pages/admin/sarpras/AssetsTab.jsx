@@ -39,10 +39,10 @@ export default function AssetsTab() {
         zip.file(`${a.kode_aset}_${a.nama}.png`, dataUrl.replace(/^data:image\/png;base64,/, ''), { base64: true });
       }
       const content = await zip.generateAsync({ type: 'blob' });
-      saveAs(content, 'barcode_aset.zip');
+      saveAs(content, 'qr_aset.zip');
     } catch (err) {
       console.error(err);
-      alert('Gagal membuat ZIP barcode.');
+      alert('Gagal membuat ZIP QR.');
     } finally {
       setZipping(false);
     }
@@ -78,7 +78,7 @@ export default function AssetsTab() {
       <form onSubmit={handleAdd} className="surface-card p-5 space-y-3">
         <h2 className="font-display font-semibold text-ink-900">Tambah Aset</h2>
         {error && <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2">{error}</p>}
-        <div className="grid grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <input placeholder="Kode aset" value={form.kode_aset} onChange={(e) => setForm({ ...form, kode_aset: e.target.value })} className="field-input" required />
           <input placeholder="Nama aset" value={form.nama} onChange={(e) => setForm({ ...form, nama: e.target.value })} className="field-input col-span-2" required />
           <input placeholder="Kategori" value={form.kategori} onChange={(e) => setForm({ ...form, kategori: e.target.value })} className="field-input" />
@@ -96,27 +96,29 @@ export default function AssetsTab() {
       </form>
 
       <div className="surface-card p-5">
-        <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
           <h2 className="font-display font-semibold text-ink-900">Daftar Aset <span className="text-ink-500 font-sans font-normal text-sm">({assetTersaring.length}/{assets.length})</span></h2>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
             <div className="relative">
               <Search className="w-4 h-4 text-ink-300 absolute left-3 top-1/2 -translate-y-1/2" />
-              <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Cari kode / nama / kategori / ruang…" className="field-input pl-9 w-64" />
+              <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Cari kode / nama / kategori / ruang…" className="field-input pl-9 w-full sm:w-64" />
             </div>
-            <button
-              onClick={downloadAllBarcodes}
-              disabled={zipping || assets.length === 0}
-              className="flex items-center gap-1.5 text-sm font-medium text-ink-700 bg-mist-50 hover:bg-mist-100 disabled:opacity-50 disabled:cursor-not-allowed border border-line-200 rounded-xl px-4 py-2 transition shrink-0"
-            >
-              <Download className="w-4 h-4" /> {zipping ? 'Membuat ZIP...' : 'Unduh Semua Barcode'}
-            </button>
-            <button
-              onClick={() => window.open('/print/aset-label', '_blank')}
-              disabled={assets.length === 0}
-              className="flex items-center gap-1.5 text-sm font-medium text-ink-700 bg-mist-50 hover:bg-mist-100 disabled:opacity-50 disabled:cursor-not-allowed border border-line-200 rounded-xl px-4 py-2 transition shrink-0"
-            >
-              <Printer className="w-4 h-4" /> Cetak Semua (per Ruangan)
-            </button>
+            <div className="flex gap-2 flex-wrap">
+              <button
+                onClick={downloadAllBarcodes}
+                disabled={zipping || assets.length === 0}
+                className="flex items-center gap-1.5 text-sm font-medium text-ink-700 bg-mist-50 hover:bg-mist-100 disabled:opacity-50 disabled:cursor-not-allowed border border-line-200 rounded-xl px-4 py-2 transition shrink-0"
+              >
+                <Download className="w-4 h-4" /> {zipping ? 'Membuat ZIP...' : 'Unduh Semua QR'}
+              </button>
+              <button
+                onClick={() => window.open('/print/aset-label', '_blank')}
+                disabled={assets.length === 0}
+                className="flex items-center gap-1.5 text-sm font-medium text-ink-700 bg-mist-50 hover:bg-mist-100 disabled:opacity-50 disabled:cursor-not-allowed border border-line-200 rounded-xl px-4 py-2 transition shrink-0"
+              >
+                <Printer className="w-4 h-4" /> Cetak Semua (per Ruangan)
+              </button>
+            </div>
           </div>
         </div>
         <div className="table-scroll">
@@ -141,7 +143,7 @@ export default function AssetsTab() {
                 <td className="text-center whitespace-nowrap px-2"><span className={`badge-soft ${KONDISI_BADGE[a.kondisi]}`}>{KONDISI_LABEL[a.kondisi]}</span></td>
                 <td className="text-right whitespace-nowrap px-2">
                   <div className="flex items-center justify-end gap-2">
-                    <button onClick={() => showBarcode(a)} title="Lihat barcode" className="text-ink-300 hover:text-brand-700"><QrCode className="w-4 h-4" /></button>
+                    <button onClick={() => showBarcode(a)} title="Lihat QR" className="text-ink-300 hover:text-brand-700"><QrCode className="w-4 h-4" /></button>
                     <button onClick={() => window.open(`/print/aset-label?ids=${a.id}`, '_blank')} title="Cetak label" className="text-ink-300 hover:text-brand-700"><Printer className="w-4 h-4" /></button>
                     <button onClick={() => handleDelete(a)} title="Hapus" className="text-ink-300 hover:text-honey-700"><Trash2 className="w-4 h-4" /></button>
                   </div>

@@ -31,7 +31,9 @@ export default function PrintAssetLabels() {
     (async () => {
       const map = {};
       for (const a of assets) {
-        map[a.id] = await QRCode.toDataURL(a.kode_aset, { width: 200, margin: 1, color: { dark: '#22344A', light: '#FFFFFF' } });
+        // margin lebih lebar (quiet zone) supaya kamera lebih gampang fokus
+        // & mendeteksi tepi QR saat label sudah dicetak fisik kecil.
+        map[a.id] = await QRCode.toDataURL(a.kode_aset, { width: 300, margin: 3, color: { dark: '#22344A', light: '#FFFFFF' } });
       }
       if (!batal) setQrMap(map);
     })();
@@ -72,13 +74,13 @@ export default function PrintAssetLabels() {
       {kelompok.map((grup, gi) => (
         <div key={gi} className="mb-6 break-inside-avoid">
           {grup.nama && <h2 className="font-semibold text-sm text-ink-700 mb-2 border-b border-ink-300 pb-1">{grup.nama}</h2>}
-          <div className="grid grid-cols-4 gap-3">
+          <div className="grid grid-cols-3 gap-3">
             {grup.items.map((a) => (
               <div key={a.id} className="border border-ink-300 rounded-lg p-2 flex flex-col items-center text-center break-inside-avoid">
                 {qrMap[a.id] ? (
-                  <img src={qrMap[a.id]} alt={a.kode_aset} className="w-16 h-16 object-contain" />
+                  <img src={qrMap[a.id]} alt={a.kode_aset} className="w-24 h-24 object-contain" />
                 ) : (
-                  <div className="w-16 h-16 flex items-center justify-center text-xs text-ink-300">...</div>
+                  <div className="w-24 h-24 flex items-center justify-center text-xs text-ink-300">...</div>
                 )}
                 <p className="font-mono text-base font-bold mt-1 break-all">{a.kode_aset}</p>
               </div>

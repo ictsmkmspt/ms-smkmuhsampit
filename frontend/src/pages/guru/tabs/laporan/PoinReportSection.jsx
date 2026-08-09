@@ -73,7 +73,7 @@ export default function PoinReportSection() {
                 {paginatedSummary.map((s) => (
                   <tr key={s.id} className="border-t border-line-200">
                     <td className="py-2.5 whitespace-nowrap px-2">
-                      <button onClick={() => setSelectedStudent(s)} className="text-ink-900 font-medium hover:text-brand-600 hover:underline transition text-left max-w-[12rem]">
+                      <button onClick={() => setSelectedStudent(s)} className="text-ink-900 font-medium hover:text-brand-600 hover:underline transition text-left">
                         <TruncateText text={s.user?.name} clickable={false} />
                       </button>
                     </td>

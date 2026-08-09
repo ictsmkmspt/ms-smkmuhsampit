@@ -57,10 +57,10 @@ export default function InventarisTab() {
         zip.file(`${a.kode_aset}_${a.nama}.png`, dataUrl.replace(/^data:image\/png;base64,/, ''), { base64: true });
       }
       const content = await zip.generateAsync({ type: 'blob' });
-      saveAs(content, 'barcode_aset.zip');
+      saveAs(content, 'qr_aset.zip');
     } catch (err) {
       console.error(err);
-      alert('Gagal membuat ZIP barcode.');
+      alert('Gagal membuat ZIP QR.');
     } finally {
       setZipping(false);
     }
@@ -83,12 +83,12 @@ export default function InventarisTab() {
 
   const handleScan = async (code) => {
     try {
-      const res = await api.get(`/assets/barcode/${code}`);
+      const res = await api.get('/assets/qr', { params: { code } });
       setAssets((prev) => (prev.some((a) => a.id === res.data.id) ? prev : [...prev, res.data]));
       setScanning(false);
       return { message: `Aset ditemukan: ${res.data.nama}.`, error: false };
     } catch (err) {
-      return { message: err.response?.data?.message || 'Barcode tidak dikenali.', error: true };
+      return { message: err.response?.data?.message || 'QR tidak dikenali.', error: true };
     }
   };
 
@@ -104,7 +104,7 @@ export default function InventarisTab() {
         <form onSubmit={handleAdd} className="surface-card p-5 space-y-3">
           <h2 className="font-display font-semibold text-ink-900">Tambah Aset</h2>
           {error && <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2">{error}</p>}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <input placeholder="Kode aset" value={form.kode_aset} onChange={(e) => setForm({ ...form, kode_aset: e.target.value })} className="field-input" required />
             <input placeholder="Nama aset" value={form.nama} onChange={(e) => setForm({ ...form, nama: e.target.value })} className="field-input" required />
             <input placeholder="Kategori" value={form.kategori} onChange={(e) => setForm({ ...form, kategori: e.target.value })} className="field-input" />
@@ -121,18 +121,18 @@ export default function InventarisTab() {
       <div className="surface-card p-5">
         <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
           <h2 className="font-display font-semibold text-ink-900">Daftar Aset <span className="text-ink-500 font-sans font-normal text-sm">({assetTersaring.length}/{assets.length})</span></h2>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             {isTeknisi && (
-              <select value={roomFilter} onChange={(e) => setRoomFilter(e.target.value)} className="field-input text-ink-700 w-44">
+              <select value={roomFilter} onChange={(e) => setRoomFilter(e.target.value)} className="field-input text-ink-700 w-full sm:w-44">
                 <option value="">Semua Ruang</option>
                 {rooms.map((r) => <option key={r.id} value={r.id}>{r.nama}</option>)}
               </select>
             )}
-            <div className="relative">
+            <div className="relative w-full sm:w-auto">
               <Search className="w-4 h-4 text-ink-300 absolute left-3 top-1/2 -translate-y-1/2" />
-              <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Cari kode / nama / kategori…" className="field-input pl-9 w-56" />
+              <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Cari kode / nama / kategori…" className="field-input pl-9 w-full sm:w-56" />
             </div>
-            <button type="button" onClick={() => setScanning(true)} title="Pindai barcode aset" className="w-11 h-11 flex items-center justify-center rounded-xl border border-line-200 text-ink-500 hover:text-brand-700 hover:bg-mist-50 transition shrink-0">
+            <button type="button" onClick={() => setScanning(true)} title="Pindai QR aset" className="w-11 h-11 flex items-center justify-center rounded-xl border border-line-200 text-ink-500 hover:text-brand-700 hover:bg-mist-50 transition shrink-0">
               <ScanBarcode className="w-4 h-4" />
             </button>
             <button
@@ -140,7 +140,7 @@ export default function InventarisTab() {
               disabled={zipping || assets.length === 0}
               className="flex items-center gap-1.5 text-sm font-medium text-ink-700 bg-mist-50 hover:bg-mist-100 disabled:opacity-50 disabled:cursor-not-allowed border border-line-200 rounded-xl px-4 py-2 transition shrink-0"
             >
-              <Download className="w-4 h-4" /> {zipping ? 'Membuat ZIP...' : 'Unduh Barcode'}
+              <Download className="w-4 h-4" /> {zipping ? 'Membuat ZIP...' : 'Unduh QR'}
             </button>
             <button
               onClick={() => window.open('/print/aset-label', '_blank')}
@@ -173,7 +173,7 @@ export default function InventarisTab() {
                 <td className="text-center whitespace-nowrap px-2"><span className={`badge-soft ${KONDISI_BADGE[a.kondisi]}`}>{KONDISI_LABEL[a.kondisi]}</span></td>
                 <td className="text-right whitespace-nowrap px-2">
                   <div className="flex items-center justify-end gap-2">
-                    <button onClick={() => showBarcode(a)} title="Lihat barcode" className="text-ink-300 hover:text-brand-700"><QrCode className="w-4 h-4" /></button>
+                    <button onClick={() => showBarcode(a)} title="Lihat QR" className="text-ink-300 hover:text-brand-700"><QrCode className="w-4 h-4" /></button>
                     <button onClick={() => window.open(`/print/aset-label?ids=${a.id}`, '_blank')} title="Cetak label" className="text-ink-300 hover:text-brand-700"><Printer className="w-4 h-4" /></button>
                   </div>
                 </td>
@@ -209,7 +209,7 @@ export default function InventarisTab() {
         <div className="fixed inset-0 z-50 bg-ink-900/60 flex items-center justify-center p-4" onClick={() => setScanning(false)}>
           <div className="surface-card p-5 max-w-md w-full" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-3">
-              <h3 className="font-display font-semibold text-ink-900">Pindai Barcode Aset</h3>
+              <h3 className="font-display font-semibold text-ink-900">Pindai QR Aset</h3>
               <button onClick={() => setScanning(false)} className="text-ink-300 hover:text-honey-700"><X className="w-5 h-5" /></button>
             </div>
             <BarcodeScanner onDecode={handleScan} />

@@ -190,7 +190,7 @@ export default function PenempatanTab() {
           <h2 className="font-display font-semibold text-ink-900">
             Daftar Penempatan <span className="text-ink-500 font-sans font-normal text-sm">({list.length})</span>
           </h2>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="field-input text-sm text-ink-700 w-40">
               <option value="">Semua Status</option>
               <option value="aktif">Aktif</option>

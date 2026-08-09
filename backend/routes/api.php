@@ -196,7 +196,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Hapus data tetap khusus grup admin/waka_sarpras di atas.
     Route::middleware('role:admin,waka_sarpras,teknisi,kepala_bengkel')->group(function () {
         Route::get('/rooms', [RoomController::class, 'index']);
-        Route::get('/assets/barcode/{code}', [AssetController::class, 'findByBarcode']);
+        Route::get('/assets/qr', [AssetController::class, 'findByBarcode']);
         Route::get('/assets', [AssetController::class, 'index']);
     });
     Route::middleware('role:admin,waka_sarpras,kepala_bengkel')->group(function () {
@@ -296,11 +296,10 @@ Route::middleware('auth:sanctum')->group(function () {
     // Read-only lintas-modul yang TIDAK relevan ke tugas Humas (PKL/IDUKA
     // saja) atau Sarpras (Sarana &amp; Prasarana saja) — sengaja tidak
     // diikutkan di sini, biar keduanya cuma bisa lihat apa yang memang jadi
-    // tanggung jawabnya. Guru/Wali ikut diberi akses baca — dipakai menu
-    // Pembelajaran (Wali) dan Beranda (Guru) buat menampilkan Kalender
-    // Akademik. Siswa TIDAK diikutkan — menu Pembelajaran dihapus lagi
-    // khusus buat Siswa.
-    Route::middleware('role:admin,waka_kesiswaan,waka_kurikulum,guru,wali')->group(function () {
+    // tanggung jawabnya. Guru/Wali/Siswa ikut diberi akses baca — dipakai
+    // menu Pembelajaran (Wali), Beranda (Guru), dan sub-menu QR > Kalender
+    // (Siswa) buat menampilkan Kalender Akademik.
+    Route::middleware('role:admin,waka_kesiswaan,waka_kurikulum,guru,wali,siswa')->group(function () {
         Route::get('/holidays', [HolidayController::class, 'index']);
         Route::get('/academic-events', [AcademicEventController::class, 'index']);
     });
@@ -308,8 +307,9 @@ Route::middleware('auth:sanctum')->group(function () {
     // /tahun-ajaran dipisah dari grup di atas — dipakai dropdown pilih tahun
     // ajaran di sidebar (buat lihat data tahun lalu tanpa harus ubah tahun
     // ajaran aktif), jadi semua Waka (bukan cuma Kesiswaan/Kurikulum) perlu
-    // baca daftarnya juga, sama seperti Guru/Wali.
-    Route::middleware('role:admin,waka_kesiswaan,waka_kurikulum,waka_humas,waka_sarpras,guru,wali')->group(function () {
+    // baca daftarnya juga, sama seperti Guru/Wali. Siswa ikut diberi akses
+    // baca juga — dipakai KalenderAkademikView (sub-menu QR > Kalender).
+    Route::middleware('role:admin,waka_kesiswaan,waka_kurikulum,waka_humas,waka_sarpras,guru,wali,siswa')->group(function () {
         Route::get('/tahun-ajaran', [TahunAjaranController::class, 'index']);
     });
 

@@ -97,7 +97,7 @@ export default function TeachingAssignmentsTab() {
         <form onSubmit={handleAdd} className="surface-card p-5 space-y-3">
           <h2 className="font-display font-semibold text-ink-900">Tambah Penugasan</h2>
           {error && <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2">{error}</p>}
-          <div className="grid grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
             <select value={form.class_room_id} onChange={(e) => setForm({ ...form, class_room_id: e.target.value })} className="field-input text-ink-700" required>
               <option value="">Pilih Kelas</option>
               {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}

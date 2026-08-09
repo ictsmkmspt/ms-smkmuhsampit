@@ -60,10 +60,10 @@ export default function SubjectsTab() {
       <form onSubmit={handleAdd} className="surface-card p-5 space-y-3">
         <h2 className="font-display font-semibold text-ink-900">Tambah Mata Pelajaran</h2>
         {error && <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2">{error}</p>}
-        <div className="flex gap-3">
-          <input placeholder="Kode (mis. MTK-10)" value={form.kode} onChange={(e) => setForm({ ...form, kode: e.target.value })} className="field-input w-40" required />
-          <input placeholder="Nama mata pelajaran" value={form.nama} onChange={(e) => setForm({ ...form, nama: e.target.value })} className="field-input flex-1" required />
-          <button disabled={loading} className="btn-primary whitespace-nowrap"><Plus className="w-4 h-4" /> {loading ? '...' : 'Tambah'}</button>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <input placeholder="Kode (mis. MTK-10)" value={form.kode} onChange={(e) => setForm({ ...form, kode: e.target.value })} className="field-input sm:w-40" required />
+          <input placeholder="Nama mata pelajaran" value={form.nama} onChange={(e) => setForm({ ...form, nama: e.target.value })} className="field-input sm:flex-1" required />
+          <button disabled={loading} className="btn-primary whitespace-nowrap justify-center"><Plus className="w-4 h-4" /> {loading ? '...' : 'Tambah'}</button>
         </div>
       </form>
 
