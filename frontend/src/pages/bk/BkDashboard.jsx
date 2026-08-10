@@ -1,13 +1,16 @@
 import { useEffect, useState } from 'react';
-import { LogOut, HeartHandshake, AlertTriangle, NotebookPen } from 'lucide-react';
+import { LogOut, HeartHandshake, AlertTriangle, NotebookPen, FileBarChart } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api/axios';
+import { TahunAjaranProvider } from '../../context/TahunAjaranContext';
 import SanksiSiswaTab from './tabs/SanksiSiswaTab';
 import CatatanBkTab from './tabs/CatatanBkTab';
+import LaporanBkTab from './tabs/LaporanBkTab';
 
 const TABS = [
   { key: 'sanksi', label: 'Sanksi Siswa', icon: AlertTriangle },
   { key: 'catatan', label: 'Catatan BK', icon: NotebookPen },
+  { key: 'laporan', label: 'Laporan', icon: FileBarChart },
 ];
 
 export default function BkDashboard() {
@@ -53,6 +56,18 @@ export default function BkDashboard() {
         {activeTab === 'sanksi' && <SanksiSiswaTab onCatatTindakLanjut={bukaCatatTindakLanjut} />}
         {activeTab === 'catatan' && (
           <CatatanBkTab prefill={prefillKejadian} onPrefillUsed={() => setPrefillKejadian(null)} />
+        )}
+        {activeTab === 'laporan' && (
+          // Sub-tab Pelanggaran & Prestasi di LaporanBkTab reuse komponen
+          // Admin (ViolationReportTab/AchievementReportTab) yang butuh
+          // TahunAjaranContext — dibungkus di sini (bukan di seluruh
+          // dashboard) supaya tidak fetch /tahun-ajaran kalau BK sedang di
+          // tab lain. Tanpa selektor tahun ajaran di UI, context ini
+          // otomatis selalu berperilaku "tahun aktif" (lihat
+          // TahunAjaranContext.jsx: selectedId kosong = isAktif true).
+          <TahunAjaranProvider>
+            <LaporanBkTab />
+          </TahunAjaranProvider>
         )}
       </div>
 

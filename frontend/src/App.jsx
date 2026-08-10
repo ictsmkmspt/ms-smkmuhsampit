@@ -33,7 +33,7 @@ export default function App() {
             <Route path="/ppdb" element={<PpdbPublic />} />
 
             <Route path="/print/absensi-bulanan" element={
-              <ProtectedRoute allowedRoles={['admin', 'guru']}><PrintMonthlyAttendance /></ProtectedRoute>
+              <ProtectedRoute allowedRoles={['admin', 'guru', 'bk']}><PrintMonthlyAttendance /></ProtectedRoute>
             } />
 
             <Route path="/print/pkl-jurnal" element={

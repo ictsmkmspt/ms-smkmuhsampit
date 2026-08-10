@@ -11,6 +11,8 @@ export default function TagihanLainTab() {
   const [students, setStudents] = useState([]);
   const [daftarNama, setDaftarNama] = useState([]);
 
+  const [tahunAjaranList, setTahunAjaranList] = useState([]);
+  const [tahunAjaranId, setTahunAjaranId] = useState('');
   const [namaFilter, setNamaFilter] = useState('');
   const [classRoomId, setClassRoomId] = useState('');
   const [status, setStatus] = useState('');
@@ -47,11 +49,17 @@ export default function TagihanLainTab() {
   useEffect(() => {
     api.get('/classes').then((res) => setClasses(res.data));
     api.get('/students').then((res) => setStudents(res.data));
+    api.get('/tahun-ajaran').then((res) => {
+      setTahunAjaranList(res.data);
+      const aktif = res.data.find((t) => t.status === 'aktif');
+      if (aktif) setTahunAjaranId(String(aktif.id));
+    });
   }, []);
 
   const loadList = () => {
     setLoading(true);
     const params = {};
+    if (tahunAjaranId) params.tahun_ajaran_id = tahunAjaranId;
     if (namaFilter) params.nama_tagihan = namaFilter;
     if (classRoomId) params.class_room_id = classRoomId;
     if (status) params.status = status;
@@ -184,7 +192,7 @@ export default function TagihanLainTab() {
     if (!confirm(`Hapus SEMUA tagihan "${namaFilter}" (${list.length} data)? Aksi ini tidak bisa dibatalkan.`)) return;
     setDeletingNama(true);
     try {
-      const res = await api.delete('/tagihan-lain/nama', { params: { nama_tagihan: namaFilter } });
+      const res = await api.delete('/tagihan-lain/nama', { params: { nama_tagihan: namaFilter, tahun_ajaran_id: tahunAjaranId || undefined } });
       notify('success', res.data.message);
       loadList();
     } catch (err) {
@@ -240,7 +248,10 @@ export default function TagihanLainTab() {
       )}
 
       <div className="surface-card p-5">
-        <h3 className="font-display font-semibold text-ink-900 mb-4">Buat Tagihan Baru</h3>
+        <h3 className="font-display font-semibold text-ink-900 mb-1">Buat Tagihan Baru</h3>
+        <p className="text-xs text-ink-500 mb-4">
+          Tagihan baru selalu masuk tahun ajaran aktif ({tahunAjaranList.find((t) => t.status === 'aktif')?.nama || '...'}), berapa pun tahun ajaran yang sedang ditampilkan di filter di bawah.
+        </p>
         {formError && <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2 mb-3">{formError}</p>}
 
         <div className="flex flex-wrap gap-2 mb-4">
@@ -368,6 +379,14 @@ export default function TagihanLainTab() {
       </div>
 
       <div className="surface-card p-5 flex flex-wrap gap-3 items-end">
+        <div>
+          <label className="block text-xs font-medium text-ink-500 mb-1">Tahun Ajaran</label>
+          <select value={tahunAjaranId} onChange={(e) => setTahunAjaranId(e.target.value)} className="field-input text-ink-700">
+            {tahunAjaranList.map((t) => (
+              <option key={t.id} value={t.id}>{t.nama}{t.status === 'aktif' ? ' (Aktif)' : ''}</option>
+            ))}
+          </select>
+        </div>
         <div className="flex-1 min-w-[10rem]">
           <label className="block text-xs font-medium text-ink-500 mb-1">Nama Tagihan</label>
           <select value={namaFilter} onChange={(e) => setNamaFilter(e.target.value)} className="field-input text-ink-700 w-full">

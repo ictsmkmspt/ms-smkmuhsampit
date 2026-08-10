@@ -338,8 +338,9 @@ Route::middleware('auth:sanctum')->group(function () {
     // baca daftarnya juga, sama seperti Guru/Wali. Siswa ikut diberi akses
     // baca juga — dipakai KalenderAkademikView (sub-menu QR > Kalender). BK
     // baca juga — dashboard kerjanya sekarang terikat tahun ajaran aktif,
-    // jadi perlu tahu namanya buat ditampilkan.
-    Route::middleware('role:admin,waka_kesiswaan,waka_kurikulum,waka_humas,waka_sarpras,guru,wali,siswa,bk')->group(function () {
+    // jadi perlu tahu namanya buat ditampilkan. TU baca juga — tombol
+    // pemilih tahun ajaran di menu Tagihan Lain.
+    Route::middleware('role:admin,waka_kesiswaan,waka_kurikulum,waka_humas,waka_sarpras,guru,wali,siswa,bk,tu')->group(function () {
         Route::get('/tahun-ajaran', [TahunAjaranController::class, 'index']);
     });
 
@@ -382,8 +383,10 @@ Route::middleware('auth:sanctum')->group(function () {
     // Laporan (Rekap Absensi/Poin Pelanggaran/Poin Prestasi) — Waka Humas &
     // Waka Kurikulum & Sarpras sengaja tidak diikutkan, bukan bagian dari
     // tanggung jawab mereka. Tidak lewat rute admin,guru di atas yang bisa
-    // mengubah data.
-    Route::middleware('role:admin,guru,waka_kesiswaan')->group(function () {
+    // mengubah data. BK ikut diberi akses baca (menu Laporan BK) — semua
+    // endpoint di grup ini GET saja, jadi aman dibaca lintas kelas tanpa
+    // bisa mengubah data.
+    Route::middleware('role:admin,guru,waka_kesiswaan,bk')->group(function () {
         Route::get('/attendance/report', [AttendanceController::class, 'report']);
         Route::get('/attendance/monthly-report', [AttendanceController::class, 'monthlyReport']);
         Route::get('/violations/summary', [AttendanceController::class, 'violationReport']);
@@ -509,5 +512,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/classes', [ClassRoomController::class, 'index']);
         Route::get('/students', [StudentController::class, 'index']);
         Route::get('/subjects', [SubjectController::class, 'index']);
+    });
+
+    // GET /classes ditimpa di sini supaya BK ikut bisa akses (filter Kelas
+    // di Laporan BK) tanpa ikut kebagian /students & /subjects di grup di
+    // atas yang tidak relevan buat BK.
+    Route::middleware('role:admin,guru,tu,waka_kesiswaan,waka_kurikulum,waka_humas,bk')->group(function () {
+        Route::get('/classes', [ClassRoomController::class, 'index']);
     });
 });

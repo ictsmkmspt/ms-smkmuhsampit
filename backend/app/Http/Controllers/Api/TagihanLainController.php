@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Student;
 use App\Models\TagihanLain;
+use App\Models\TahunAjaran;
 use Illuminate\Http\Request;
 
 class TagihanLainController extends Controller
@@ -12,9 +13,12 @@ class TagihanLainController extends Controller
     /**
      * Daftar tagihan lain, dengan filter opsional nama tagihan (misal cuma
      * lihat "Study Tour 2026"), kelas, status, dan cari nama/NIS siswa.
-     * Beda dari SPP yang wajib pilih bulan/tahun dulu, di sini defaultnya
-     * tampilkan SEMUA tagihan (tidak ada filter wajib) karena nama tagihan
-     * bisa macam-macam & tidak terikat siklus bulanan.
+     * Terikat tahun ajaran seperti data lain di aplikasi ini: default ke
+     * tahun ajaran aktif (supaya tagihan tahun lalu tidak terus menumpuk
+     * campur dengan tahun berjalan), kecuali tahun_ajaran_id dikirim
+     * eksplisit lewat tombol pemilih tahun ajaran di layar TU. Daftar nama
+     * tagihan buat dropdown filter ikut disaring ke tahun yang sama, biar
+     * tidak penuh nama tagihan tahun-tahun lama yang sudah tidak relevan.
      */
     public function index(Request $request)
     {
@@ -23,9 +27,13 @@ class TagihanLainController extends Controller
             'class_room_id' => 'nullable|exists:class_rooms,id',
             'status' => 'nullable|in:belum_bayar,sebagian,lunas',
             'search' => 'nullable|string|max:100',
+            'tahun_ajaran_id' => 'nullable|exists:tahun_ajarans,id',
         ]);
 
-        $query = TagihanLain::with(['student.user', 'student.classRoom']);
+        $tahunAjaranId = $data['tahun_ajaran_id'] ?? TahunAjaran::aktifId();
+
+        $query = TagihanLain::with(['student.user', 'student.classRoom'])
+            ->where('tahun_ajaran_id', $tahunAjaranId);
 
         if (!empty($data['nama_tagihan'])) {
             $query->where('nama_tagihan', $data['nama_tagihan']);
@@ -51,7 +59,8 @@ class TagihanLainController extends Controller
 
         return response()->json([
             'data' => $tagihan,
-            'daftar_nama_tagihan' => TagihanLain::select('nama_tagihan')->distinct()->orderBy('nama_tagihan')->pluck('nama_tagihan'),
+            'daftar_nama_tagihan' => TagihanLain::where('tahun_ajaran_id', $tahunAjaranId)
+                ->select('nama_tagihan')->distinct()->orderBy('nama_tagihan')->pluck('nama_tagihan'),
         ]);
     }
 
@@ -242,14 +251,23 @@ class TagihanLainController extends Controller
     /**
      * Hapus semua tagihan dengan nama tertentu sekaligus — kebalikan dari
      * storeBulk(), dipakai kalau salah buat massal dan mau ulang dari awal.
+     * Dibatasi ke 1 tahun ajaran (default aktif, atau tahun yang sedang
+     * ditampilkan lewat tombol pemilih tahun ajaran) — supaya tidak
+     * kebablasan menghapus tagihan tahun lain yang kebetulan nama-nya sama
+     * (mis. "Seragam" dipakai ulang tiap tahun).
      */
     public function destroyByNama(Request $request)
     {
         $data = $request->validate([
             'nama_tagihan' => 'required|string|max:150',
+            'tahun_ajaran_id' => 'nullable|exists:tahun_ajarans,id',
         ]);
 
-        $dihapus = TagihanLain::where('nama_tagihan', $data['nama_tagihan'])->delete();
+        $tahunAjaranId = $data['tahun_ajaran_id'] ?? TahunAjaran::aktifId();
+
+        $dihapus = TagihanLain::where('nama_tagihan', $data['nama_tagihan'])
+            ->where('tahun_ajaran_id', $tahunAjaranId)
+            ->delete();
 
         return response()->json([
             'message' => "Berhasil menghapus {$dihapus} tagihan \"{$data['nama_tagihan']}\".",
