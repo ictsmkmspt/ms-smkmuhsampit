@@ -113,7 +113,7 @@ class SystemBackupController extends Controller
         }
 
         return response()->json([
-            'message' => 'Database berhasil diganti dengan file yang diupload. Backup otomatis sebelum impor tersimpan di server. Anda mungkin perlu login ulang.',
+            'message' => 'Database berhasil diganti dengan file yang diupload. Backup otomatis sebelum impor tersimpan di server.',
         ]);
     }
 
@@ -134,7 +134,7 @@ class SystemBackupController extends Controller
         File::copy($uploadedFile->getRealPath(), $dbPath);
 
         return response()->json([
-            'message' => 'Database berhasil diganti dengan file yang diupload. Backup otomatis sebelum impor tersimpan di server. Anda mungkin perlu login ulang.',
+            'message' => 'Database berhasil diganti dengan file yang diupload. Backup otomatis sebelum impor tersimpan di server.',
         ]);
     }
 }

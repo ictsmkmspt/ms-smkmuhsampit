@@ -15,6 +15,8 @@ export default function TagihanTab() {
   const [classes, setClasses] = useState([]);
   const [spps, setSpps] = useState([]);
   const [totalSiswa, setTotalSiswa] = useState(0);
+  const [loadedBulan, setLoadedBulan] = useState(bulan);
+  const [loadedTahun, setLoadedTahun] = useState(tahun);
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [deletingBulan, setDeletingBulan] = useState(false);
@@ -45,7 +47,12 @@ export default function TagihanTab() {
     if (status) params.status = status;
     if (search) params.search = search;
     api.get('/spp', { params })
-      .then((res) => { setSpps(res.data.data); setTotalSiswa(res.data.total_siswa); })
+      .then((res) => {
+        setSpps(res.data.data);
+        setTotalSiswa(res.data.total_siswa);
+        setLoadedBulan(bulan);
+        setLoadedTahun(tahun);
+      })
       .finally(() => setLoading(false));
   };
 
@@ -67,10 +74,10 @@ export default function TagihanTab() {
 
   const handleDeleteBulan = async () => {
     if (spps.length === 0) return;
-    if (!confirm(`Hapus SEMUA ${spps.length} tagihan SPP bulan ${BULAN[bulan - 1]} ${tahun}? Aksi ini tidak bisa dibatalkan.`)) return;
+    if (!confirm(`Hapus SEMUA ${spps.length} tagihan SPP bulan ${BULAN[loadedBulan - 1]} ${loadedTahun}? Aksi ini tidak bisa dibatalkan.`)) return;
     setDeletingBulan(true);
     try {
-      const res = await api.delete('/spp/bulan', { params: { bulan, tahun } });
+      const res = await api.delete('/spp/bulan', { params: { bulan: loadedBulan, tahun: loadedTahun } });
       notify('success', res.data.message);
       loadSpp();
     } catch (err) {
@@ -229,7 +236,7 @@ export default function TagihanTab() {
       <div className="surface-card p-5">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
           <h3 className="font-display font-semibold text-ink-900">
-            SPP {BULAN[bulan - 1]} {tahun}
+            SPP {BULAN[loadedBulan - 1]} {loadedTahun}
           </h3>
           <div className="flex gap-2">
             <button onClick={handleGenerate} disabled={generating} className="btn-primary text-sm disabled:opacity-60">
@@ -256,7 +263,7 @@ export default function TagihanTab() {
             <div className="w-12 h-12 rounded-full bg-mist-50 flex items-center justify-center mx-auto mb-3">
               <Receipt className="w-6 h-6 text-ink-300" />
             </div>
-            <p className="text-sm font-medium text-ink-700 mb-1">Belum ada tagihan SPP untuk {BULAN[bulan - 1]} {tahun}</p>
+            <p className="text-sm font-medium text-ink-700 mb-1">Belum ada tagihan SPP untuk {BULAN[loadedBulan - 1]} {loadedTahun}</p>
             <p className="text-xs text-ink-500 mb-4">
               Total siswa aktif: {totalSiswa}. Klik tombol di bawah untuk membuat tagihan otomatis pakai nominal default.
             </p>

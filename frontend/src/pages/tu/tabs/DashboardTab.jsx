@@ -18,6 +18,9 @@ export default function DashboardTab() {
   const [search, setSearch] = useState('');
   const [selectedStudent, setSelectedStudent] = useState(null);
 
+  const [searchLain, setSearchLain] = useState('');
+  const [selectedStudentLain, setSelectedStudentLain] = useState(null);
+
   const [tagihanLainList, setTagihanLainList] = useState([]);
   const [daftarNamaTagihan, setDaftarNamaTagihan] = useState([]);
   const [namaTagihanFilter, setNamaTagihanFilter] = useState(''); // '' = semua jenis
@@ -73,6 +76,19 @@ export default function DashboardTab() {
     setSearch('');
   };
 
+  const searchResultsLain = useMemo(() => {
+    const q = searchLain.trim().toLowerCase();
+    if (!q) return [];
+    return students
+      .filter((s) => s.user?.name?.toLowerCase().includes(q) || s.nis?.toLowerCase().includes(q))
+      .slice(0, 8);
+  }, [searchLain, students]);
+
+  const selectStudentLain = (student) => {
+    setSelectedStudentLain(student);
+    setSearchLain('');
+  };
+
   const sppLunas = spps.filter((s) => s.status === 'lunas');
   const sppBelum = spps.filter((s) => s.status !== 'lunas'); // termasuk "sebagian"
   const totalTerkumpul = spps.reduce((sum, s) => sum + Number(s.jumlah_dibayar || 0), 0);
@@ -125,7 +141,48 @@ export default function DashboardTab() {
             )}
           </div>
         ) : (
-          <StudentSppPanel student={selectedStudent} onClose={() => setSelectedStudent(null)} />
+          <StudentSppPanel student={selectedStudent} onClose={() => setSelectedStudent(null)} showTagihanLain={false} />
+        )}
+      </div>
+
+      {/* Cari & bayar Tagihan Lain per siswa — sengaja dipisah dari kartu SPP
+          di atas (bukan digabung) supaya TU tidak salah bayar tagihan yang
+          beda jenis waktu terburu-buru. */}
+      <div className="surface-card p-5">
+        <h3 className="font-display font-semibold text-ink-900 mb-1">Cari & Bayar Tagihan Lain Siswa</h3>
+        <p className="text-xs text-ink-500 mb-3">Cari siswa yang mau bayar Tagihan Lain (di luar SPP), lihat tunggakannya, lalu tandai lunas langsung.</p>
+
+        {!selectedStudentLain ? (
+          <div className="relative">
+            <Search className="w-4 h-4 text-ink-300 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text" value={searchLain}
+              onChange={(e) => setSearchLain(e.target.value)}
+              className="field-input pl-9" placeholder="Ketik nama atau NIS siswa..."
+            />
+            {searchResultsLain.length > 0 && (
+              <div className="absolute z-10 mt-1 w-full surface-card overflow-hidden max-h-72 overflow-y-auto">
+                {searchResultsLain.map((s) => (
+                  <button
+                    key={s.id}
+                    onClick={() => selectStudentLain(s)}
+                    className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-left hover:bg-mist-50 transition"
+                  >
+                    <Avatar name={s.user?.name} />
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-ink-900 truncate">{s.user?.name}</span>
+                      <span className="block text-xs text-ink-400">{s.class_room?.name || '-'} · NIS {s.nis}</span>
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+            {searchLain.trim() && searchResultsLain.length === 0 && (
+              <p className="text-xs text-ink-400 mt-2">Tidak ada siswa yang cocok dengan &quot;{searchLain}&quot;.</p>
+            )}
+          </div>
+        ) : (
+          <StudentSppPanel student={selectedStudentLain} onClose={() => setSelectedStudentLain(null)} showSpp={false} />
         )}
       </div>
 

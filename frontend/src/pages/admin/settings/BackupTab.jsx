@@ -69,10 +69,21 @@ export default function BackupTab() {
       const res = await api.post('/system/restore', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
-      setRestoreSuccess(res.data.message);
+      setRestoreSuccess(res.data.message + ' Memuat ulang seluruh aplikasi...');
       setFile(null);
       setKonfirmasi('');
       if (fileInputRef.current) fileInputRef.current.value = '';
+
+      // Database (termasuk tabel token login) baru saja ditimpa total, jadi
+      // token sesi ini nyaris pasti sudah tidak valid lagi di database baru,
+      // dan SEMUA data yang sudah kepalang dimuat di seluruh aplikasi (bukan
+      // cuma halaman ini) sudah pasti basi. Bersihkan token lalu paksa
+      // reload penuh ke /login — BUKAN lewat React Router/logout() biasa
+      // (yang akan memanggil API /logout dan gagal karena tokennya sendiri
+      // sudah tidak ada di database baru) — supaya seluruh state aplikasi
+      // benar-benar dimuat ulang dari nol, bukan cuma tab ini.
+      localStorage.removeItem('token');
+      setTimeout(() => { window.location.href = '/login'; }, 2500);
     } catch (err) {
       setRestoreError(err.response?.data?.message || 'Gagal mengimpor database.');
     } finally {

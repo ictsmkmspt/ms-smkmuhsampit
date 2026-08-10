@@ -5,11 +5,15 @@ import { BULAN, formatRupiah, Avatar } from './shared';
 
 /**
  * Panel "riwayat tagihan 1 siswa" dengan tombol Bayar Lunas / Bayar Sebagian
- * / Cetak Nota per baris — gabungan SPP bulanan DAN Tagihan Lain (biaya
- * tidak tetap). Dipakai di 2 tempat: Dashboard (setelah cari siswa) dan
- * menu Alumni (setelah klik 1 alumni dari daftar tunggakan).
+ * / Cetak Nota per baris. Bisa gabungan SPP bulanan DAN Tagihan Lain (biaya
+ * tidak tetap), atau cuma salah satunya lewat showSpp/showTagihanLain —
+ * dipakai gabungan di menu Alumni (perlu lihat semua tunggakan sebelum
+ * lulus), tapi dipisah jadi 2 kartu pencarian sendiri-sendiri di Dashboard
+ * ("Cari & Bayar SPP Siswa" vs "Cari & Bayar Tagihan Lain Siswa") supaya TU
+ * tidak salah bayar tagihan yang beda jenis. Kalau salah satu dimatikan,
+ * request API-nya juga tidak dikirim sama sekali (bukan cuma disembunyikan).
  */
-export default function StudentSppPanel({ student, onClose, onPaid }) {
+export default function StudentSppPanel({ student, onClose, onPaid, showSpp = true, showTagihanLain = true }) {
   const [spp, setSpp] = useState(null);
   const [tagihanLain, setTagihanLain] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -27,14 +31,10 @@ export default function StudentSppPanel({ student, onClose, onPaid }) {
 
   const loadAll = () => {
     setLoading(true);
-    Promise.all([
-      api.get(`/spp/siswa/${student.id}`),
-      api.get(`/tagihan-lain/siswa/${student.id}`),
-    ])
-      .then(([resSpp, resLain]) => {
-        setSpp(resSpp.data.spp);
-        setTagihanLain(resLain.data.tagihan);
-      })
+    const calls = [];
+    if (showSpp) calls.push(api.get(`/spp/siswa/${student.id}`).then((res) => setSpp(res.data.spp)));
+    if (showTagihanLain) calls.push(api.get(`/tagihan-lain/siswa/${student.id}`).then((res) => setTagihanLain(res.data.tagihan)));
+    Promise.all(calls)
       .catch(() => notify('error', 'Gagal memuat riwayat tagihan siswa ini.'))
       .finally(() => setLoading(false));
   };
@@ -237,9 +237,30 @@ export default function StudentSppPanel({ student, onClose, onPaid }) {
         <p className="text-center text-ink-300 py-6 text-sm">Memuat riwayat tagihan...</p>
       ) : (
         <>
+          {showSpp && (
+            <div className="mb-4 pb-4 border-b border-line-200 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <CalendarPlus className="w-4 h-4 text-ink-400 shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-xs text-ink-500">Bayar SPP di Muka</p>
+                  <p className="text-sm text-ink-700 truncate">{BULAN[nextBulan - 1]} {nextTahun} · belum ditagih</p>
+                </div>
+              </div>
+              <button
+                onClick={bayarDimuka}
+                disabled={payingDimuka}
+                className="shrink-0 text-xs font-medium text-white bg-[#15803D] hover:bg-[#116530] disabled:opacity-60 rounded-lg px-4 py-1.5 transition"
+              >
+                {payingDimuka ? 'Memproses...' : 'Bayar di Muka'}
+              </button>
+            </div>
+          )}
+
           {totalTunggakan > 0 ? (
             <div className="flex items-center justify-between mb-3">
-              <p className="text-xs text-ink-500">Total Tunggakan (SPP + Tagihan Lain)</p>
+              <p className="text-xs text-ink-500">
+                Total Tunggakan{showSpp && showTagihanLain ? ' (SPP + Tagihan Lain)' : showSpp ? ' SPP' : ' Tagihan Lain'}
+              </p>
               <p className="text-lg font-display font-semibold text-honey-700">{formatRupiah(totalTunggakan)}</p>
             </div>
           ) : (
@@ -249,40 +270,27 @@ export default function StudentSppPanel({ student, onClose, onPaid }) {
             </div>
           )}
 
-          <div className="mb-4">
-            <p className="text-xs font-medium text-ink-500 mb-1">SPP</p>
-            {(spp || []).length === 0 ? (
-              <p className="text-sm text-ink-400 text-center py-3">Belum ada tagihan SPP.</p>
-            ) : (
-              <ul className="divide-y divide-line-200">{spp.map((s) => renderRow('spp', s))}</ul>
-            )}
-          </div>
-
-          <div>
-            <p className="text-xs font-medium text-ink-500 mb-1 flex items-center gap-1.5"><Wallet className="w-3.5 h-3.5" /> Tagihan Lain</p>
-            {(tagihanLain || []).length === 0 ? (
-              <p className="text-sm text-ink-400 text-center py-3">Belum ada tagihan lain.</p>
-            ) : (
-              <ul className="divide-y divide-line-200">{tagihanLain.map((t) => renderRow('lain', t))}</ul>
-            )}
-          </div>
-
-          <div className="mt-4 pt-4 border-t border-line-200 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2.5 min-w-0">
-              <CalendarPlus className="w-4 h-4 text-ink-400 shrink-0" />
-              <div className="min-w-0">
-                <p className="text-xs text-ink-500">Bayar SPP di Muka</p>
-                <p className="text-sm text-ink-700 truncate">{BULAN[nextBulan - 1]} {nextTahun} · belum ditagih</p>
-              </div>
+          {showSpp && (
+            <div className="mb-4">
+              <p className="text-xs font-medium text-ink-500 mb-1">SPP</p>
+              {(spp || []).length === 0 ? (
+                <p className="text-sm text-ink-400 text-center py-3">Belum ada tagihan SPP.</p>
+              ) : (
+                <ul className="divide-y divide-line-200">{spp.map((s) => renderRow('spp', s))}</ul>
+              )}
             </div>
-            <button
-              onClick={bayarDimuka}
-              disabled={payingDimuka}
-              className="shrink-0 text-xs font-medium text-white bg-[#15803D] hover:bg-[#116530] disabled:opacity-60 rounded-lg px-4 py-1.5 transition"
-            >
-              {payingDimuka ? 'Memproses...' : 'Bayar di Muka'}
-            </button>
-          </div>
+          )}
+
+          {showTagihanLain && (
+            <div>
+              <p className="text-xs font-medium text-ink-500 mb-1 flex items-center gap-1.5"><Wallet className="w-3.5 h-3.5" /> Tagihan Lain</p>
+              {(tagihanLain || []).length === 0 ? (
+                <p className="text-sm text-ink-400 text-center py-3">Belum ada tagihan lain.</p>
+              ) : (
+                <ul className="divide-y divide-line-200">{tagihanLain.map((t) => renderRow('lain', t))}</ul>
+              )}
+            </div>
+          )}
         </>
       )}
     </div>
