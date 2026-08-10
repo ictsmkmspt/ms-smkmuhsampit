@@ -3,17 +3,17 @@ import { Search, X } from 'lucide-react';
 
 // Kotak cari-sambil-ketik untuk memilih aset, dipakai di Daftar Aset (filter
 // tabel) dan form Pemeliharaan (pilih aset spesifik). Aset difilter di sisi
-// frontend berdasarkan kode, nama, kategori, dan nama ruang — cukup untuk
-// jumlah aset sekolah yang wajar, tanpa perlu endpoint pencarian baru.
+// frontend berdasarkan kode, nama, dan nama ruang — cukup untuk jumlah aset
+// sekolah yang wajar, tanpa perlu endpoint pencarian baru.
 export function filterAssets(assets, q) {
   const term = q.trim().toLowerCase();
   if (!term) return assets;
-  return assets.filter((a) => [a.kode_aset, a.nama, a.kategori, a.room?.nama]
+  return assets.filter((a) => [a.kode_aset, a.nama, a.room?.nama]
     .filter(Boolean)
     .some((field) => field.toLowerCase().includes(term)));
 }
 
-export default function AssetSearchSelect({ assets, value, onChange, placeholder = 'Cari kode / nama / kategori / ruang…' }) {
+export default function AssetSearchSelect({ assets, value, onChange, placeholder = 'Cari kode / nama / ruang…' }) {
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
 
@@ -63,7 +63,6 @@ export default function AssetSearchSelect({ assets, value, onChange, placeholder
             >
               <span className="truncate">
                 <span className="font-mono text-xs text-ink-500">{a.kode_aset}</span> — {a.nama}
-                {a.kategori && <span className="text-ink-400"> · {a.kategori}</span>}
               </span>
               <span className="text-xs text-ink-400 shrink-0">{a.room?.nama || '-'}</span>
             </button>

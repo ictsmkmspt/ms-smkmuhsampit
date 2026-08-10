@@ -107,7 +107,7 @@ class ParentController extends Controller
             return response()->json(['message' => 'Anda tidak berwenang melihat data siswa ini.'], 403);
         }
 
-        return AcademicScore::with('subject')
+        return AcademicScore::with('subject', 'recordedBy')
             ->where('student_id', $studentId)
             ->where('tahun_ajaran_id', TahunAjaran::aktifId())
             ->orderByDesc('tanggal')

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Plus, Pencil, Trash2, X, ClipboardList } from 'lucide-react';
+import { Plus, Pencil, Trash2, X, ClipboardList, FileSpreadsheet } from 'lucide-react';
 import api from '../../../api/axios';
 import TruncateText from '../../../components/TruncateText';
 
@@ -8,19 +8,19 @@ const hariIniIso = () => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 };
 
+const KOSONG_FORM = { subject_id: '', class_room_id: '', nama_kegiatan: '', tanggal: hariIniIso(), nilai: {} };
+
 export default function NilaiTab() {
   const [assignments, setAssignments] = useState([]); // Tugas Mengajar milik guru ini
-  const [subjectId, setSubjectId] = useState('');
-  const [classId, setClassId] = useState('');
+  const [subjectFilter, setSubjectFilter] = useState(''); // '' = semua mapel, cuma penyaring tampilan
+  const [classFilter, setClassFilter] = useState('');
 
-  const [students, setStudents] = useState([]);
   const [scores, setScores] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const [showForm, setShowForm] = useState(false);
-  const [namaKegiatan, setNamaKegiatan] = useState('');
-  const [tanggal, setTanggal] = useState(hariIniIso());
-  const [nilaiPerSiswa, setNilaiPerSiswa] = useState({});
+  const [form, setForm] = useState(KOSONG_FORM);
+  const [formStudents, setFormStudents] = useState([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -29,61 +29,60 @@ export default function NilaiTab() {
   const [editSaving, setEditSaving] = useState(false);
 
   const [viewingKey, setViewingKey] = useState(null); // key kegiatan yang lagi dibuka detailnya
+  const [editingKegiatan, setEditingKegiatan] = useState(false); // sedang edit nama/tanggal seluruh kegiatan
+  const [editKegiatanForm, setEditKegiatanForm] = useState({ nama_kegiatan: '', tanggal: '' });
+  const [editKegiatanSaving, setEditKegiatanSaving] = useState(false);
+
+  const [showExport, setShowExport] = useState(false);
+  const [exportPilihan, setExportPilihan] = useState({ subject_id: '', class_room_id: '', semester: 'ganjil' });
+  // Data tanda tangan (Kepsek/Waka Kurikulum/NBM guru) disimpan di perangkat
+  // ini, tidak perlu diisi ulang tiap ekspor — pola sama seperti export
+  // Jadwal Pelajaran di menu Admin > Pembelajaran.
+  const [exportTtd, setExportTtd] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('nilai_export_ttd')) || {}; } catch { return {}; }
+  });
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     api.get('/my-teaching-assignments').then((res) => setAssignments(res.data));
   }, []);
 
-  // Mapel & kelas dibatasi cuma yang benar-benar diampu guru ini (dari
-  // Tugas Mengajar), bukan seluruh mapel/kelas se-sekolah. Kelas yang
-  // muncul cuma yang diampu guru ini UNTUK mapel yang sedang dipilih —
-  // supaya tidak salah pilih kombinasi yang sebenarnya bukan miliknya.
   const subjectOptions = useMemo(() => {
     const map = new Map();
     assignments.forEach((a) => { if (a.subject) map.set(a.subject.id, a.subject); });
     return [...map.values()].sort((a, b) => a.nama.localeCompare(b.nama));
   }, [assignments]);
 
-  const classOptions = useMemo(() => {
-    if (!subjectId) return [];
+  const classOptionsFor = (subjectId) => {
     const map = new Map();
     assignments
-      .filter((a) => a.subject_id === Number(subjectId))
+      .filter((a) => !subjectId || a.subject_id === Number(subjectId))
       .forEach((a) => { if (a.class_room) map.set(a.class_room.id, a.class_room); });
     return [...map.values()].sort((a, b) => a.name.localeCompare(b.name));
-  }, [assignments, subjectId]);
+  };
 
-  useEffect(() => {
-    // Kalau ganti mapel dan kelas yang sebelumnya dipilih ternyata tidak
-    // diampu guru ini untuk mapel baru itu, kosongkan lagi pilihannya.
-    if (classId && !classOptions.some((c) => c.id === Number(classId))) {
-      setClassId('');
-    }
-  }, [subjectId, classOptions]); // eslint-disable-line
-
-  useEffect(() => {
-    if (!classId) { setStudents([]); return; }
-    let cancelled = false;
-    api.get('/students', { params: { class_room_id: classId } }).then((res) => {
-      if (!cancelled) setStudents(res.data);
-    });
-    return () => { cancelled = true; };
-  }, [classId]);
-
+  // Semua nilai milik guru ini (lintas mapel & kelas) langsung dimuat
+  // begitu tab dibuka — filter di bawah cuma penyaring tampilan, bukan
+  // syarat sebelum tabel muncul.
   const loadScores = () => {
-    if (!subjectId || !classId) { setScores([]); return; }
     setLoading(true);
-    api.get('/academic-scores', { params: { subject_id: subjectId, class_room_id: classId } })
+    api.get('/academic-scores', { params: { subject_id: subjectFilter || undefined, class_room_id: classFilter || undefined } })
       .then((res) => setScores(res.data))
       .finally(() => setLoading(false));
   };
+  useEffect(loadScores, [subjectFilter, classFilter]); // eslint-disable-line
 
-  useEffect(loadScores, [subjectId, classId]); // eslint-disable-line
+  useEffect(() => {
+    if (!form.class_room_id) { setFormStudents([]); return; }
+    let cancelled = false;
+    api.get('/students', { params: { class_room_id: form.class_room_id } }).then((res) => {
+      if (!cancelled) setFormStudents(res.data);
+    });
+    return () => { cancelled = true; };
+  }, [form.class_room_id]);
 
   const bukaForm = () => {
-    setNamaKegiatan('');
-    setTanggal(hariIniIso());
-    setNilaiPerSiswa({});
+    setForm(KOSONG_FORM);
     setError('');
     setShowForm(true);
   };
@@ -92,12 +91,17 @@ export default function NilaiTab() {
     e.preventDefault();
     setError('');
 
+    if (!form.subject_id || !form.class_room_id) {
+      setError('Pilih mata pelajaran dan kelas dulu.');
+      return;
+    }
+
     // Siswa yang dikosongkan (tidak diisi guru) otomatis tercatat skor 0 —
     // supaya jelas tercatat "belum/tidak mengerjakan", bukan diam-diam
     // hilang dari rekap kegiatan ini.
-    const isian = students.map((s) => ({
+    const isian = formStudents.map((s) => ({
       student_id: s.id,
-      nilai: nilaiPerSiswa[s.id] !== undefined && nilaiPerSiswa[s.id] !== '' ? Number(nilaiPerSiswa[s.id]) : 0,
+      nilai: form.nilai[s.id] !== undefined && form.nilai[s.id] !== '' ? Number(form.nilai[s.id]) : 0,
     }));
 
     if (isian.length === 0) {
@@ -108,9 +112,9 @@ export default function NilaiTab() {
     setSaving(true);
     try {
       await api.post('/academic-scores/bulk', {
-        subject_id: subjectId,
-        nama_kegiatan: namaKegiatan,
-        tanggal,
+        subject_id: form.subject_id,
+        nama_kegiatan: form.nama_kegiatan,
+        tanggal: form.tanggal,
         skor: isian,
       });
       setShowForm(false);
@@ -148,21 +152,28 @@ export default function NilaiTab() {
     loadScores();
   };
 
-  const kelasTerpilih = classOptions.find((c) => c.id === Number(classId));
   const rataRata = useMemo(() => {
     if (scores.length === 0) return null;
     return (scores.reduce((sum, s) => sum + s.skor, 0) / scores.length).toFixed(1);
   }, [scores]);
 
-  // Dikelompokkan per kegiatan (nama + tanggal) — supaya guru lihat daftar
-  // kegiatan dulu (mis. "PR Bab 3", "UH 2"), baru klik salah satu untuk
-  // lihat rincian nilai tiap siswa di kegiatan itu, bukan tabel datar
-  // ribuan baris siswa+kegiatan tercampur.
+  // Dikelompokkan per kegiatan (mapel+kelas+nama+tanggal) — supaya guru
+  // lihat daftar kegiatan dulu (mis. "PR Bab 3"), baru klik salah satu
+  // untuk lihat rincian nilai tiap siswa, bukan tabel datar ribuan baris
+  // siswa+kegiatan tercampur. Mapel & kelas ikut jadi kunci pengelompokan
+  // karena tabel sekarang bisa menampilkan lintas mapel/kelas sekaligus.
   const kegiatanList = useMemo(() => {
     const map = new Map();
     scores.forEach((row) => {
-      const key = `${row.nama_kegiatan}||${row.tanggal}`;
-      if (!map.has(key)) map.set(key, { key, nama_kegiatan: row.nama_kegiatan, tanggal: row.tanggal, items: [] });
+      const key = `${row.subject_id}||${row.student?.class_room_id}||${row.nama_kegiatan}||${row.tanggal}`;
+      if (!map.has(key)) {
+        map.set(key, {
+          key, nama_kegiatan: row.nama_kegiatan, tanggal: row.tanggal,
+          subject: row.subject, classRoomName: row.student?.class_room?.name,
+          recordedByName: row.recorded_by?.name,
+          items: [],
+        });
+      }
       map.get(key).items.push(row);
     });
     return [...map.values()]
@@ -172,40 +183,109 @@ export default function NilaiTab() {
 
   const viewingKegiatan = kegiatanList.find((g) => g.key === viewingKey) || null;
 
+  const bukaEditKegiatan = () => {
+    setEditKegiatanForm({ nama_kegiatan: viewingKegiatan.nama_kegiatan, tanggal: viewingKegiatan.tanggal });
+    setEditingKegiatan(true);
+  };
+
+  const handleSaveEditKegiatan = async (e) => {
+    e.preventDefault();
+    setEditKegiatanSaving(true);
+    try {
+      await api.put('/academic-scores/kegiatan', {
+        ids: viewingKegiatan.items.map((row) => row.id),
+        nama_kegiatan: editKegiatanForm.nama_kegiatan,
+        tanggal: editKegiatanForm.tanggal,
+      });
+      setEditingKegiatan(false);
+      setViewingKey(null);
+      loadScores();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Gagal mengubah kegiatan.');
+    } finally {
+      setEditKegiatanSaving(false);
+    }
+  };
+
+  const handleDeleteKegiatan = async () => {
+    if (!confirm(`Hapus kegiatan "${viewingKegiatan.nama_kegiatan}"? Semua nilai ${viewingKegiatan.items.length} siswa di kegiatan ini akan ikut terhapus.`)) return;
+    try {
+      await api.delete('/academic-scores/kegiatan', { data: { ids: viewingKegiatan.items.map((row) => row.id) } });
+      setViewingKey(null);
+      loadScores();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Gagal menghapus kegiatan.');
+    }
+  };
+
+  const bukaExport = () => {
+    setExportPilihan({ subject_id: subjectFilter, class_room_id: classFilter, semester: 'ganjil' });
+    setShowExport(true);
+  };
+
+  const handleExport = async () => {
+    if (!exportPilihan.subject_id || !exportPilihan.class_room_id) {
+      alert('Pilih mata pelajaran dan kelas dulu.');
+      return;
+    }
+    localStorage.setItem('nilai_export_ttd', JSON.stringify(exportTtd));
+    setExporting(true);
+    try {
+      const res = await api.get('/academic-scores/export-excel', {
+        params: { ...exportPilihan, ...exportTtd },
+        responseType: 'blob',
+      });
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'Daftar-Nilai.xlsx');
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      setShowExport(false);
+    } catch (err) {
+      alert(err.response?.data?.message || 'Gagal mengekspor nilai.');
+    } finally {
+      setExporting(false);
+    }
+  };
+
   return (
     <div>
-      <div className="surface-card p-4 mb-4">
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="block text-xs font-medium text-ink-500 mb-1">Mata Pelajaran</label>
-            <select value={subjectId} onChange={(e) => setSubjectId(e.target.value)} className="field-input text-ink-700 text-sm">
-              <option value="">— Pilih —</option>
-              {subjectOptions.map((s) => <option key={s.id} value={s.id}>{s.nama}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-ink-500 mb-1">Kelas</label>
-            <select value={classId} onChange={(e) => setClassId(e.target.value)} disabled={!subjectId} className="field-input text-ink-700 text-sm disabled:opacity-50">
-              <option value="">— Pilih —</option>
-              {classOptions.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
-          </div>
+      <div className="surface-card p-4 mb-4 flex flex-col sm:flex-row sm:items-end gap-3">
+        <div className="flex-1">
+          <label className="block text-xs font-medium text-ink-500 mb-1">Saring Mata Pelajaran</label>
+          <select value={subjectFilter} onChange={(e) => { setSubjectFilter(e.target.value); setClassFilter(''); }} className="field-input text-ink-700 text-sm">
+            <option value="">Semua Mapel</option>
+            {subjectOptions.map((s) => <option key={s.id} value={s.id}>{s.nama}</option>)}
+          </select>
         </div>
-      </div>
-
-      {assignments.length === 0 ? (
-        <p className="text-center text-sm text-ink-300 py-8">Anda belum punya Tugas Mengajar di tahun ajaran ini — hubungi Waka Kurikulum.</p>
-      ) : !subjectId || !classId ? (
-        <p className="text-center text-sm text-ink-300 py-8">Pilih mata pelajaran dan kelas dulu untuk mulai mengisi nilai.</p>
-      ) : (
-        <>
-          <div className="flex items-center justify-between gap-3 mb-3">
-            <div className="text-sm text-ink-500">
-              {kegiatanList.length} kegiatan · {scores.length} nilai tercatat{rataRata && <> · rata-rata <b className="text-ink-900">{rataRata}</b></>}
-            </div>
-            <button onClick={bukaForm} className="btn-primary text-sm">
+        <div className="flex-1">
+          <label className="block text-xs font-medium text-ink-500 mb-1">Saring Kelas</label>
+          <select value={classFilter} onChange={(e) => setClassFilter(e.target.value)} className="field-input text-ink-700 text-sm">
+            <option value="">Semua Kelas</option>
+            {classOptionsFor(subjectFilter).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+        </div>
+        {subjectOptions.length > 0 && (
+          <div className="flex gap-2 shrink-0">
+            <button onClick={bukaExport} className="text-sm px-3 py-2 rounded-lg border border-line-200 text-ink-700 hover:bg-mist-50 flex items-center gap-1.5 whitespace-nowrap">
+              <FileSpreadsheet className="w-4 h-4" /> Export Excel
+            </button>
+            <button onClick={bukaForm} className="btn-primary text-sm shrink-0">
               <Plus className="w-4 h-4" /> Tambah Nilai
             </button>
+          </div>
+        )}
+      </div>
+
+      {assignments.length === 0 && !loading ? (
+        <p className="text-center text-sm text-ink-300 py-8">Anda belum punya Tugas Mengajar di tahun ajaran ini — hubungi Waka Kurikulum.</p>
+      ) : (
+        <>
+          <div className="text-sm text-ink-500 mb-3">
+            {kegiatanList.length} kegiatan · {scores.length} nilai tercatat{rataRata && <> · rata-rata <b className="text-ink-900">{rataRata}</b></>}
           </div>
 
           <div className="surface-card overflow-hidden">
@@ -214,6 +294,7 @@ export default function NilaiTab() {
                 <thead>
                   <tr className="text-left text-ink-500 border-b border-line-200">
                     <th className="pb-2 pt-3 pl-4 font-medium whitespace-nowrap px-2">Kegiatan</th>
+                    <th className="pb-2 pt-3 font-medium whitespace-nowrap px-2">Mapel &amp; Kelas</th>
                     <th className="pb-2 pt-3 font-medium whitespace-nowrap px-2">Tanggal</th>
                     <th className="pb-2 pt-3 font-medium text-center whitespace-nowrap px-2">Siswa Dinilai</th>
                     <th className="pb-2 pt-3 pr-4 font-medium text-center whitespace-nowrap px-2">Rata-rata</th>
@@ -223,17 +304,23 @@ export default function NilaiTab() {
                   {kegiatanList.map((g) => (
                     <tr
                       key={g.key}
-                      onClick={() => setViewingKey(g.key)}
+                      onClick={() => { setViewingKey(g.key); setEditingKegiatan(false); }}
                       className="border-t border-line-200 cursor-pointer hover:bg-mist-50 transition"
                     >
-                      <td className="py-2.5 pl-4 text-ink-900 font-medium whitespace-nowrap px-2">{g.nama_kegiatan}</td>
+                      <td className="py-2.5 pl-4 whitespace-nowrap px-2">
+                        <p className="text-ink-900 font-medium">{g.nama_kegiatan}</p>
+                        {g.recordedByName && <p className="text-xs text-ink-400">Guru: {g.recordedByName}</p>}
+                      </td>
+                      <td className="text-ink-500 whitespace-nowrap px-2">{g.subject?.nama} &middot; {g.classRoomName}</td>
                       <td className="text-ink-500 font-mono text-xs whitespace-nowrap px-2">{g.tanggal}</td>
                       <td className="text-center text-ink-700 whitespace-nowrap px-2">{g.items.length}</td>
                       <td className="pr-4 text-center font-semibold text-ink-900 whitespace-nowrap px-2">{g.rataRata}</td>
                     </tr>
                   ))}
                   {!loading && kegiatanList.length === 0 && (
-                    <tr><td colSpan="4" className="py-8 text-center text-ink-300">Belum ada nilai untuk {kelasTerpilih?.name} di mapel ini.</td></tr>
+                    <tr><td colSpan="5" className="py-8 text-center text-ink-300">
+                      {subjectFilter || classFilter ? 'Tidak ada nilai yang cocok dengan saringan ini.' : 'Belum ada nilai tercatat.'}
+                    </td></tr>
                   )}
                 </tbody>
               </table>
@@ -248,32 +335,46 @@ export default function NilaiTab() {
           <div className="absolute inset-0 bg-ink-900/40" onClick={() => setShowForm(false)} />
           <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[85vh] flex flex-col">
             <div className="flex items-center justify-between p-5 border-b border-line-200 shrink-0">
-              <div>
-                <h3 className="font-display font-semibold text-ink-900 flex items-center gap-2"><ClipboardList className="w-4 h-4 text-brand-600" /> Tambah Nilai</h3>
-                <p className="text-xs text-ink-500 mt-0.5">{kelasTerpilih?.name} · {subjectOptions.find((s) => s.id === Number(subjectId))?.nama}</p>
-              </div>
+              <h3 className="font-display font-semibold text-ink-900 flex items-center gap-2"><ClipboardList className="w-4 h-4 text-brand-600" /> Tambah Nilai</h3>
               <button onClick={() => setShowForm(false)} className="text-ink-300 hover:text-ink-600"><X className="w-5 h-5" /></button>
             </div>
             <form onSubmit={handleSimpanSemua} className="p-5 overflow-y-auto space-y-3">
               {error && <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2">{error}</p>}
               <div className="grid grid-cols-2 gap-3">
-                <input placeholder="Nama kegiatan (mis. PR Bab 3)" value={namaKegiatan} onChange={(e) => setNamaKegiatan(e.target.value)} className="field-input" required />
-                <input type="date" value={tanggal} onChange={(e) => setTanggal(e.target.value)} className="field-input" required />
+                <div>
+                  <label className="block text-xs font-medium text-ink-500 mb-1">Mata Pelajaran</label>
+                  <select value={form.subject_id} onChange={(e) => setForm({ ...form, subject_id: e.target.value, class_room_id: '' })} className="field-input" required>
+                    <option value="">— Pilih —</option>
+                    {subjectOptions.map((s) => <option key={s.id} value={s.id}>{s.nama}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-ink-500 mb-1">Kelas</label>
+                  <select value={form.class_room_id} onChange={(e) => setForm({ ...form, class_room_id: e.target.value })} className="field-input" required>
+                    <option value="">— Pilih —</option>
+                    {classOptionsFor(form.subject_id).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <input placeholder="Nama kegiatan (mis. PR Bab 3)" value={form.nama_kegiatan} onChange={(e) => setForm({ ...form, nama_kegiatan: e.target.value })} className="field-input" required />
+                <input type="date" value={form.tanggal} onChange={(e) => setForm({ ...form, tanggal: e.target.value })} className="field-input" required />
               </div>
               <p className="text-xs text-ink-400">Isi skor 0–100 per siswa — yang dikosongkan otomatis tercatat <b>0</b>, bukan dilewati.</p>
               <div className="divide-y divide-line-200 border border-line-200 rounded-xl overflow-hidden">
-                {students.map((s) => (
+                {formStudents.map((s) => (
                   <div key={s.id} className="flex items-center justify-between gap-3 px-3 py-2">
                     <span className="text-sm text-ink-900 min-w-0 flex-1"><TruncateText text={s.user?.name} /></span>
                     <input
                       type="number" min="0" max="100" placeholder="0"
-                      value={nilaiPerSiswa[s.id] ?? ''}
-                      onChange={(e) => setNilaiPerSiswa((p) => ({ ...p, [s.id]: e.target.value }))}
+                      value={form.nilai[s.id] ?? ''}
+                      onChange={(e) => setForm((p) => ({ ...p, nilai: { ...p.nilai, [s.id]: e.target.value } }))}
                       className="field-input w-20 text-center py-1.5"
                     />
                   </div>
                 ))}
-                {students.length === 0 && <p className="text-sm text-ink-300 text-center py-6">Belum ada siswa di kelas ini.</p>}
+                {form.class_room_id && formStudents.length === 0 && <p className="text-sm text-ink-300 text-center py-6">Belum ada siswa di kelas ini.</p>}
+                {!form.class_room_id && <p className="text-sm text-ink-300 text-center py-6">Pilih mata pelajaran dan kelas dulu.</p>}
               </div>
               <button disabled={saving} className="btn-primary w-full justify-center">{saving ? 'Menyimpan...' : 'Simpan Semua'}</button>
             </form>
@@ -284,15 +385,33 @@ export default function NilaiTab() {
       {/* ===== Modal: rincian nilai semua siswa dalam 1 kegiatan ===== */}
       {viewingKey && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-ink-900/40" onClick={() => setViewingKey(null)} />
+          <div className="absolute inset-0 bg-ink-900/40" onClick={() => { setViewingKey(null); setEditingKegiatan(false); }} />
           <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[85vh] flex flex-col">
             <div className="flex items-center justify-between p-5 border-b border-line-200 shrink-0">
-              <div>
-                <h3 className="font-display font-semibold text-ink-900">{viewingKegiatan?.nama_kegiatan}</h3>
-                <p className="text-xs text-ink-500 mt-0.5">{viewingKegiatan?.tanggal} · rata-rata {viewingKegiatan?.rataRata}</p>
+              <div className="min-w-0">
+                <h3 className="font-display font-semibold text-ink-900 truncate">{viewingKegiatan?.nama_kegiatan}</h3>
+                <p className="text-xs text-ink-500 mt-0.5">{viewingKegiatan?.subject?.nama} &middot; {viewingKegiatan?.classRoomName} &middot; {viewingKegiatan?.tanggal} &middot; rata-rata {viewingKegiatan?.rataRata}</p>
+                {viewingKegiatan?.recordedByName && <p className="text-xs text-ink-400 mt-0.5">Dicatat oleh: {viewingKegiatan.recordedByName}</p>}
               </div>
-              <button onClick={() => setViewingKey(null)} className="text-ink-300 hover:text-ink-600"><X className="w-5 h-5" /></button>
+              <div className="flex items-center gap-2 shrink-0">
+                <button onClick={bukaEditKegiatan} title="Edit Kegiatan" className="text-ink-300 hover:text-brand-700"><Pencil className="w-4 h-4" /></button>
+                <button onClick={handleDeleteKegiatan} title="Hapus Kegiatan" className="text-ink-300 hover:text-honey-700"><Trash2 className="w-4 h-4" /></button>
+                <button onClick={() => { setViewingKey(null); setEditingKegiatan(false); }} className="text-ink-300 hover:text-ink-600"><X className="w-5 h-5" /></button>
+              </div>
             </div>
+            {editingKegiatan && (
+              <form onSubmit={handleSaveEditKegiatan} className="p-5 border-b border-line-200 shrink-0 space-y-3 bg-mist-50">
+                <p className="text-xs font-medium text-ink-500">Ubah nama &amp; tanggal kegiatan ini untuk semua siswa sekaligus</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <input placeholder="Nama kegiatan" value={editKegiatanForm.nama_kegiatan} onChange={(e) => setEditKegiatanForm({ ...editKegiatanForm, nama_kegiatan: e.target.value })} className="field-input" required />
+                  <input type="date" value={editKegiatanForm.tanggal} onChange={(e) => setEditKegiatanForm({ ...editKegiatanForm, tanggal: e.target.value })} className="field-input" required />
+                </div>
+                <div className="flex gap-2">
+                  <button disabled={editKegiatanSaving} className="btn-primary text-sm flex-1 justify-center">{editKegiatanSaving ? 'Menyimpan...' : 'Simpan'}</button>
+                  <button type="button" onClick={() => setEditingKegiatan(false)} className="text-sm px-4 py-2 text-ink-500 hover:text-ink-700">Batal</button>
+                </div>
+              </form>
+            )}
             <div className="overflow-y-auto divide-y divide-line-200">
               {viewingKegiatan?.items.map((row) => (
                 <div key={row.id} className="flex items-center justify-between gap-3 px-5 py-2.5">
@@ -329,6 +448,58 @@ export default function NilaiTab() {
               </div>
               <button disabled={editSaving} className="btn-primary w-full justify-center">{editSaving ? 'Menyimpan...' : 'Simpan'}</button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ===== Modal: export Daftar Nilai ke Excel (format dokumen kurikulum) ===== */}
+      {showExport && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-ink-900/40" onClick={() => setShowExport(false)} />
+          <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[85vh] flex flex-col">
+            <div className="flex items-center justify-between p-5 border-b border-line-200 shrink-0">
+              <h3 className="font-display font-semibold text-ink-900 flex items-center gap-2"><FileSpreadsheet className="w-4 h-4 text-brand-600" /> Export Daftar Nilai</h3>
+              <button onClick={() => setShowExport(false)} className="text-ink-300 hover:text-ink-600"><X className="w-5 h-5" /></button>
+            </div>
+            <div className="p-5 overflow-y-auto space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-ink-500 mb-1">Mata Pelajaran</label>
+                  <select value={exportPilihan.subject_id} onChange={(e) => setExportPilihan({ ...exportPilihan, subject_id: e.target.value, class_room_id: '' })} className="field-input" required>
+                    <option value="">— Pilih —</option>
+                    {subjectOptions.map((s) => <option key={s.id} value={s.id}>{s.nama}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-ink-500 mb-1">Kelas</label>
+                  <select value={exportPilihan.class_room_id} onChange={(e) => setExportPilihan({ ...exportPilihan, class_room_id: e.target.value })} className="field-input" required>
+                    <option value="">— Pilih —</option>
+                    {classOptionsFor(exportPilihan.subject_id).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-ink-500 mb-1">Semester</label>
+                <select value={exportPilihan.semester} onChange={(e) => setExportPilihan({ ...exportPilihan, semester: e.target.value })} className="field-input">
+                  <option value="ganjil">Ganjil</option>
+                  <option value="genap">Genap</option>
+                </select>
+              </div>
+
+              <p className="text-xs text-ink-500 pt-2 border-t border-line-200">Data tanda tangan disimpan di perangkat ini, tidak perlu diisi ulang tiap export.</p>
+              <input placeholder="Nama Kepala Sekolah" value={exportTtd.kepsek_nama || ''} onChange={(e) => setExportTtd({ ...exportTtd, kepsek_nama: e.target.value })} className="field-input w-full" />
+              <input placeholder="NIP Kepala Sekolah" value={exportTtd.kepsek_nip || ''} onChange={(e) => setExportTtd({ ...exportTtd, kepsek_nip: e.target.value })} className="field-input w-full" />
+              <input placeholder="Nama Waka Kurikulum" value={exportTtd.waka_nama || ''} onChange={(e) => setExportTtd({ ...exportTtd, waka_nama: e.target.value })} className="field-input w-full" />
+              <input placeholder="NBM Waka Kurikulum" value={exportTtd.waka_nbm || ''} onChange={(e) => setExportTtd({ ...exportTtd, waka_nbm: e.target.value })} className="field-input w-full" />
+              <input placeholder="NBM Anda (Guru Mapel)" value={exportTtd.guru_nbm || ''} onChange={(e) => setExportTtd({ ...exportTtd, guru_nbm: e.target.value })} className="field-input w-full" />
+              <div className="grid grid-cols-2 gap-3">
+                <input placeholder="Tempat (mis. Sampit)" value={exportTtd.tempat || ''} onChange={(e) => setExportTtd({ ...exportTtd, tempat: e.target.value })} className="field-input" />
+                <input placeholder="Tanggal (opsional)" value={exportTtd.tanggal || ''} onChange={(e) => setExportTtd({ ...exportTtd, tanggal: e.target.value })} className="field-input" />
+              </div>
+              <button onClick={handleExport} disabled={exporting} className="btn-primary w-full justify-center">
+                <FileSpreadsheet className="w-4 h-4" /> {exporting ? 'Mengunduh...' : 'Unduh Dokumen Excel'}
+              </button>
+            </div>
           </div>
         </div>
       )}

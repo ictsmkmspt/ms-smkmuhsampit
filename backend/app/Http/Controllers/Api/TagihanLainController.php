@@ -100,32 +100,47 @@ class TagihanLainController extends Controller
 
     /**
      * Buat 1 tagihan yang sama sekaligus untuk BANYAK siswa — pilih SEMUA
-     * siswa aktif, 1 kelas (semua siswa aktif di kelas itu), atau daftar
-     * siswa manual. Dipakai kalau ada biaya yang berlaku untuk sekelompok
-     * siswa sekaligus (misal study tour 1 angkatan, daftar ulang semua
-     * siswa, seragam 1 kelas).
+     * siswa aktif, 1 atau beberapa kelas sekaligus (semua siswa aktif di
+     * kelas-kelas itu, mis. XI TKJ + XI MP + X TKJ dalam 1 aksi), atau
+     * daftar siswa manual. Dipakai kalau ada biaya yang berlaku untuk
+     * sekelompok siswa sekaligus (misal study tour beberapa kelas,
+     * daftar ulang semua siswa, seragam 1 kelas). jenis_kelamin opsional
+     * menyaring lebih lanjut hasil "semua siswa"/kelas — dipakai kalau
+     * nominal beda antara siswa laki-laki & perempuan (mis. seragam),
+     * jadi TU tinggal buat 2 tagihan terpisah dengan nominal masing-masing.
+     * Tidak berlaku untuk daftar siswa manual (student_ids) karena
+     * pilihannya sudah pasti/eksplisit.
      */
     public function storeBulk(Request $request)
     {
         $data = $request->validate([
             'semua_siswa' => 'nullable|boolean',
-            'class_room_id' => 'nullable|exists:class_rooms,id',
+            'class_room_ids' => 'nullable|array|min:1',
+            'class_room_ids.*' => 'exists:class_rooms,id',
             'student_ids' => 'nullable|array|min:1',
             'student_ids.*' => 'exists:students,id',
+            'jenis_kelamin' => 'nullable|in:L,P',
             'nama_tagihan' => 'required|string|max:150',
             'nominal' => 'required|integer|min:0',
             'keterangan' => 'nullable|string|max:500',
         ]);
 
-        if (empty($data['semua_siswa']) && empty($data['class_room_id']) && empty($data['student_ids'])) {
+        if (empty($data['semua_siswa']) && empty($data['class_room_ids']) && empty($data['student_ids'])) {
             return response()->json(['message' => 'Pilih semua siswa, kelas, atau siswa tertentu dulu.'], 422);
         }
 
         if (!empty($data['semua_siswa'])) {
-            $studentIds = Student::where('status', 'aktif')->pluck('id');
-        } elseif (!empty($data['class_room_id'])) {
-            $studentIds = Student::where('class_room_id', $data['class_room_id'])
-                ->where('status', 'aktif')->pluck('id');
+            $query = Student::where('status', 'aktif');
+            if (!empty($data['jenis_kelamin'])) {
+                $query->where('jenis_kelamin', $data['jenis_kelamin']);
+            }
+            $studentIds = $query->pluck('id');
+        } elseif (!empty($data['class_room_ids'])) {
+            $query = Student::whereIn('class_room_id', $data['class_room_ids'])->where('status', 'aktif');
+            if (!empty($data['jenis_kelamin'])) {
+                $query->where('jenis_kelamin', $data['jenis_kelamin']);
+            }
+            $studentIds = $query->pluck('id');
         } else {
             $studentIds = collect($data['student_ids']);
         }

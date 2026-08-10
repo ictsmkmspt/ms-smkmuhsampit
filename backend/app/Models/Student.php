@@ -53,6 +53,11 @@ class Student extends Model
         return $this->hasMany(BkCase::class);
     }
 
+    public function sanksiKejadian()
+    {
+        return $this->hasMany(SanksiKejadian::class);
+    }
+
     public function tagihanLains()
     {
         return $this->hasMany(TagihanLain::class);
@@ -75,9 +80,45 @@ class Student extends Model
             ->withTimestamps();
     }
 
+    /**
+     * Nambah/kurangi poin pelanggaran. Kalau poinnya bertambah (bukan
+     * dikurangi lewat koreksi), sekalian dicek apakah total_poin yang baru
+     * melewati ambang batas Sanksi Bertingkat — kalau ya dan belum ada
+     * kejadian yang masih "diproses" untuk tahap itu, catat kejadian baru
+     * supaya muncul di daftar tugas BK (bukan cuma dihitung ulang tiap
+     * dilihat seperti SanksiRuleController::siswa(), tapi benar-benar
+     * tersimpan & bisa ditindaklanjuti/ditandai selesai).
+     */
     public function tambahPoin(int $poin): void
     {
         $this->increment('total_poin', $poin);
+
+        if ($poin > 0) {
+            $this->deteksiSanksiKejadian();
+        }
+    }
+
+    public function deteksiSanksiKejadian(): void
+    {
+        $rule = SanksiRule::untukPoin($this->total_poin);
+        if (!$rule) {
+            return;
+        }
+
+        $sudahDiproses = SanksiKejadian::where('student_id', $this->id)
+            ->where('sanksi_rule_id', $rule->id)
+            ->where('status', 'diproses')
+            ->exists();
+
+        if ($sudahDiproses) {
+            return;
+        }
+
+        SanksiKejadian::create([
+            'student_id' => $this->id,
+            'sanksi_rule_id' => $rule->id,
+            'total_poin_saat_itu' => $this->total_poin,
+        ]);
     }
 
     public function tambahPrestasi(int $poin): void

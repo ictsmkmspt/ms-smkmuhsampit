@@ -262,7 +262,7 @@ export default function ParentDashboard() {
                           <li key={n.id} className="py-2 flex items-center justify-between gap-3 text-sm">
                             <div className="min-w-0">
                               <p className="text-ink-900 truncate">{n.nama_kegiatan}</p>
-                              <p className="text-xs text-ink-500">{n.tanggal}</p>
+                              <p className="text-xs text-ink-500">{n.tanggal}{n.recorded_by?.name && <> &middot; Guru: {n.recorded_by.name}</>}</p>
                             </div>
                             <span className="font-display font-semibold text-ink-900 shrink-0">{n.skor}</span>
                           </li>

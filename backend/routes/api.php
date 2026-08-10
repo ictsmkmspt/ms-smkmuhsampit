@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\AdminAccountController;
 use App\Http\Controllers\Api\AssetController;
 use App\Http\Controllers\Api\AttendanceController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\BkAccountController;
 use App\Http\Controllers\Api\BkCaseController;
 use App\Http\Controllers\Api\ClassRoomController;
 use App\Http\Controllers\Api\DashboardChartController;
@@ -27,6 +28,7 @@ use App\Http\Controllers\Api\PrayerAttendanceController;
 use App\Http\Controllers\Api\ProcurementController;
 use App\Http\Controllers\Api\RoomController;
 use App\Http\Controllers\Api\RoomStaffController;
+use App\Http\Controllers\Api\SanksiKejadianController;
 use App\Http\Controllers\Api\SanksiRuleController;
 use App\Http\Controllers\Api\ScheduleController;
 use App\Http\Controllers\Api\ScheduleExportController;
@@ -116,9 +118,29 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/parents/import/template', [WaliController::class, 'downloadTemplate']);
         Route::post('/parents/import', [WaliController::class, 'import']);
 
-        Route::apiResource('bk-cases', BkCaseController::class)->except(['show']);
         Route::apiResource('sanksi-rules', SanksiRuleController::class)->except(['show']);
         Route::get('/sanksi-rules/siswa', [SanksiRuleController::class, 'siswa']);
+    });
+
+    // Catatan BK (bk-cases) sengaja PUNYA GRUP SENDIRI (bukan digabung ke
+    // grup role:admin,waka_kesiswaan di atas) supaya akun BK ikut bisa
+    // akses tanpa ikut kebagian semua wewenang lain di grup itu (kelas,
+    // siswa, wali, dst) — dan supaya tidak bentrok URI+method sama seperti
+    // catatan di atas (violation-types/achievement-types).
+    Route::middleware('role:admin,waka_kesiswaan,bk')->group(function () {
+        Route::apiResource('bk-cases', BkCaseController::class)->except(['show', 'index']);
+        Route::get('/sanksi-kejadian/{sanksiKejadian}/export-word', [SanksiKejadianController::class, 'exportWord']);
+        Route::post('/sanksi-kejadian/{sanksiKejadian}/selesaikan', [SanksiKejadianController::class, 'selesaikan']);
+        Route::get('/bk-students', [StudentController::class, 'index']);
+    });
+
+    // GET /bk-cases & GET /sanksi-kejadian dipisah dari grup di atas —
+    // guru (wali kelas) ikut boleh baca (menu Laporan > BK), tapi TIDAK
+    // boleh tulis/ubah/hapus catatan BK. Controller sendiri yang memaksa
+    // guru cuma lihat kelas walinya (RestrictsGuruToOwnClass).
+    Route::middleware('role:admin,waka_kesiswaan,bk,guru')->group(function () {
+        Route::get('/bk-cases', [BkCaseController::class, 'index']);
+        Route::get('/sanksi-kejadian', [SanksiKejadianController::class, 'index']);
     });
 
     // Kalender Libur dipindah ke menu Kurikulum (berdampingan dengan Kalender
@@ -198,10 +220,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/rooms', [RoomController::class, 'index']);
         Route::get('/assets/qr', [AssetController::class, 'findByBarcode']);
         Route::get('/assets', [AssetController::class, 'index']);
+        Route::get('/assets/export-kir', [AssetController::class, 'exportKir']);
     });
     Route::middleware('role:admin,waka_sarpras,kepala_bengkel')->group(function () {
         Route::post('/assets', [AssetController::class, 'store']);
         Route::put('/assets/{asset}', [AssetController::class, 'update']);
+        Route::get('/assets/import/template', [AssetController::class, 'downloadTemplate']);
+        Route::post('/assets/import', [AssetController::class, 'import']);
     });
 
     // Mata Pelajaran, Tugas Mengajar, Template Jadwal, dan Jadwal Pelajaran
@@ -256,6 +281,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/tu', [TuController::class, 'store']);
         Route::delete('/tu/{id}', [TuController::class, 'destroy']);
         Route::put('/tu/{id}/reset-password', [TuController::class, 'resetPassword']);
+        Route::post('/bk', [BkAccountController::class, 'store']);
+        Route::delete('/bk/{id}', [BkAccountController::class, 'destroy']);
+        Route::put('/bk/{id}/reset-password', [BkAccountController::class, 'resetPassword']);
         Route::get('/admin-accounts', [AdminAccountController::class, 'index']);
         Route::post('/admin-accounts', [AdminAccountController::class, 'store']);
         Route::delete('/admin-accounts/{id}', [AdminAccountController::class, 'destroy']);
@@ -308,8 +336,10 @@ Route::middleware('auth:sanctum')->group(function () {
     // ajaran di sidebar (buat lihat data tahun lalu tanpa harus ubah tahun
     // ajaran aktif), jadi semua Waka (bukan cuma Kesiswaan/Kurikulum) perlu
     // baca daftarnya juga, sama seperti Guru/Wali. Siswa ikut diberi akses
-    // baca juga — dipakai KalenderAkademikView (sub-menu QR > Kalender).
-    Route::middleware('role:admin,waka_kesiswaan,waka_kurikulum,waka_humas,waka_sarpras,guru,wali,siswa')->group(function () {
+    // baca juga — dipakai KalenderAkademikView (sub-menu QR > Kalender). BK
+    // baca juga — dashboard kerjanya sekarang terikat tahun ajaran aktif,
+    // jadi perlu tahu namanya buat ditampilkan.
+    Route::middleware('role:admin,waka_kesiswaan,waka_kurikulum,waka_humas,waka_sarpras,guru,wali,siswa,bk')->group(function () {
         Route::get('/tahun-ajaran', [TahunAjaranController::class, 'index']);
     });
 
@@ -317,6 +347,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // bukan bagian dari tanggung jawabnya.
     Route::middleware('role:admin,waka_kesiswaan')->group(function () {
         Route::get('/tu', [TuController::class, 'index']);
+        Route::get('/bk', [BkAccountController::class, 'index']);
         Route::get('/dashboard/grafik', [DashboardChartController::class, 'grafik']);
     });
 
@@ -392,7 +423,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/my-teaching-schedule', [ScheduleController::class, 'myTeachingSchedule']);
         Route::get('/my-teaching-assignments', [TeachingAssignmentController::class, 'myAssignments']);
         Route::get('/academic-scores', [AcademicScoreController::class, 'index']);
+        Route::get('/academic-scores/export-excel', [AcademicScoreController::class, 'exportExcel']);
         Route::post('/academic-scores/bulk', [AcademicScoreController::class, 'storeBulk']);
+        // Rute "kegiatan" WAJIB didaftarkan sebelum {academicScore} di
+        // bawah — kalau tidak, "kegiatan" akan tertangkap sebagai nilai
+        // {academicScore} (route model binding, bukan literal path).
+        Route::put('/academic-scores/kegiatan', [AcademicScoreController::class, 'updateKegiatan']);
+        Route::delete('/academic-scores/kegiatan', [AcademicScoreController::class, 'destroyKegiatan']);
         Route::put('/academic-scores/{academicScore}', [AcademicScoreController::class, 'update']);
         Route::delete('/academic-scores/{academicScore}', [AcademicScoreController::class, 'destroy']);
     });

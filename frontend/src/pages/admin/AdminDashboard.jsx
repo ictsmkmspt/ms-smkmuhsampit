@@ -3,7 +3,7 @@ import {
   LogOut, Database, ClipboardList, ClipboardCheck, Settings, ChevronDown, ChevronLeft, ChevronRight, Menu, X,
   Users, GraduationCap, School, UserCog, Briefcase, LayoutDashboard, Building2,
   Clock, AlertOctagon, Trophy, CalendarDays, Wallet, Pencil, Image, ShieldCheck,
-  AlertTriangle, BookOpen, CalendarClock, CalendarRange, Warehouse, Boxes, Wrench, PackagePlus, UserPlus, DatabaseBackup, FlaskConical, Sparkles, HardHat,
+  AlertTriangle, BookOpen, CalendarClock, CalendarRange, Warehouse, Boxes, Wrench, PackagePlus, UserPlus, DatabaseBackup, FlaskConical, Sparkles, HardHat, HeartHandshake,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useSchoolProfile } from '../../context/SchoolProfileContext';
@@ -30,11 +30,11 @@ const ROLE_LABEL = {
   waka_sarpras: 'Waka Sarpras',
 };
 
-const MASTER_ICONS = { siswa: Users, guru: GraduationCap, kelas: School, wali: UserCog, tu: Wallet, admin: ShieldCheck };
+const MASTER_ICONS = { siswa: Users, guru: GraduationCap, kelas: School, wali: UserCog, tu: Wallet, bk: HeartHandshake, admin: ShieldCheck };
 const ALUMNI_ICONS = { siswa: GraduationCap, wali: UserCog };
 const SETTINGS_ICONS = { sekolah: Image, jam: Clock, backup: DatabaseBackup };
 const PKL_ICONS = { dudi: Building2, penempatan: ClipboardList };
-const POIN_ICONS = { 'rekap-pelanggaran': AlertOctagon, 'rekap-prestasi': Trophy, 'jenis-pelanggaran': AlertOctagon, 'jenis-prestasi': Trophy, sanksi: AlertTriangle };
+const POIN_ICONS = { 'rekap-pelanggaran': AlertOctagon, 'rekap-prestasi': Trophy, 'rekap-bk': HeartHandshake, 'jenis-pelanggaran': AlertOctagon, 'jenis-prestasi': Trophy, sanksi: AlertTriangle };
 const KURIKULUM_ICONS = { kalender: CalendarRange, akademik: CalendarRange, libur: CalendarDays, mapel: BookOpen, tugas: UserCog, jadwal: CalendarClock, template: Sparkles };
 const SARPRAS_ICONS = { ruang: Warehouse, aset: Boxes, pemeliharaan: Wrench };
 const PENGEMBANGAN_ICONS = { ppdb: UserPlus, pengadaan: PackagePlus };

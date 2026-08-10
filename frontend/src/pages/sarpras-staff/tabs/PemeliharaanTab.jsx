@@ -107,7 +107,7 @@ export default function PemeliharaanTab() {
                 assets={assetDiRuangTerpilih}
                 value={form.asset_id}
                 onChange={(id) => setForm({ ...form, asset_id: id })}
-                placeholder={formRoomFilter ? 'Cari aset di ruang ini…' : 'Cari kode / nama / kategori / ruang…'}
+                placeholder={formRoomFilter ? 'Cari aset di ruang ini…' : 'Cari kode / nama / ruang…'}
               />
             </div>
             <button type="button" onClick={() => setScanning(true)} title="Pindai QR aset" className="w-11 h-11 flex items-center justify-center rounded-xl border border-line-200 text-ink-500 hover:text-brand-700 hover:bg-mist-50 transition shrink-0">

@@ -1,15 +1,20 @@
 import { useState } from 'react';
-import { ClipboardCheck, AlertTriangle, Trophy } from 'lucide-react';
+import { ClipboardCheck, AlertTriangle, Trophy, HeartHandshake } from 'lucide-react';
 import AbsensiReportSection from './laporan/AbsensiReportSection';
 import PoinReportSection from './laporan/PoinReportSection';
 import PrestasiReportSection from './laporan/PrestasiReportSection';
+import BkReportSection from './laporan/BkReportSection';
 
 // Gaya sub-menu sama seperti sub-menu Ortu (pill putih rata tengah, ikon +
-// label ringkas) — label dipersingkat: Absensi, Pelanggaran, Prestasi.
+// label ringkas) — label dipersingkat: Absensi, Pelanggaran, Prestasi, BK.
+// Section BK cuma bermakna buat wali kelas (dibatasi backend), tapi
+// ditampilkan ke semua guru sama seperti section lain — bukan disembunyikan
+// per role, konsisten dengan pola tab ini.
 const SECTIONS = [
   { key: 'absensi', label: 'Absensi', icon: ClipboardCheck, component: AbsensiReportSection },
   { key: 'poin', label: 'Pelanggaran', icon: AlertTriangle, component: PoinReportSection },
   { key: 'prestasi', label: 'Prestasi', icon: Trophy, component: PrestasiReportSection },
+  { key: 'bk', label: 'BK', icon: HeartHandshake, component: BkReportSection },
 ];
 
 export default function LaporanTab() {

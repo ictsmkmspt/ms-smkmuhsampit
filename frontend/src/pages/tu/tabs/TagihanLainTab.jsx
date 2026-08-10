@@ -22,7 +22,8 @@ export default function TagihanLainTab() {
 
   const [target, setTarget] = useState('satu'); // 'satu' | 'kelas' | 'pilih' | 'semua'
   const [studentId, setStudentId] = useState('');
-  const [bulkClassRoomId, setBulkClassRoomId] = useState('');
+  const [bulkClassRoomIds, setBulkClassRoomIds] = useState([]);
+  const [bulkJenisKelamin, setBulkJenisKelamin] = useState(''); // '' | 'L' | 'P' — dipakai kalau biaya beda antara siswa laki-laki & perempuan
   const [pickedIds, setPickedIds] = useState([]);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
@@ -70,7 +71,7 @@ export default function TagihanLainTab() {
     if (!form.nama_tagihan.trim()) { setFormError('Nama tagihan wajib diisi.'); return; }
     if (form.nominal === '' || Number(form.nominal) < 0) { setFormError('Nominal wajib diisi.'); return; }
 
-    if (target === 'semua' && !confirm(`Buat tagihan "${form.nama_tagihan.trim()}" untuk SEMUA siswa aktif (${students.length} siswa)?`)) {
+    if (target === 'semua' && !confirm(`Buat tagihan "${form.nama_tagihan.trim()}" untuk ${jumlahSiswaSemua} siswa aktif${bulkJenisKelamin ? ` (${bulkJenisKelamin === 'L' ? 'laki-laki' : 'perempuan'} saja)` : ''}?`)) {
       return;
     }
 
@@ -84,9 +85,11 @@ export default function TagihanLainTab() {
         const payload = { ...form, nominal: Number(form.nominal) };
         if (target === 'semua') {
           payload.semua_siswa = true;
+          if (bulkJenisKelamin) payload.jenis_kelamin = bulkJenisKelamin;
         } else if (target === 'kelas') {
-          if (!bulkClassRoomId) { setFormError('Pilih kelas dulu.'); setSaving(false); return; }
-          payload.class_room_id = bulkClassRoomId;
+          if (bulkClassRoomIds.length === 0) { setFormError('Pilih minimal 1 kelas dulu.'); setSaving(false); return; }
+          payload.class_room_ids = bulkClassRoomIds;
+          if (bulkJenisKelamin) payload.jenis_kelamin = bulkJenisKelamin;
         } else {
           if (pickedIds.length === 0) { setFormError('Pilih minimal 1 siswa.'); setSaving(false); return; }
           payload.student_ids = pickedIds;
@@ -96,7 +99,8 @@ export default function TagihanLainTab() {
       }
       setForm(emptyForm);
       setStudentId('');
-      setBulkClassRoomId('');
+      setBulkClassRoomIds([]);
+      setBulkJenisKelamin('');
       setPickedIds([]);
       loadList();
     } catch (err) {
@@ -194,6 +198,13 @@ export default function TagihanLainTab() {
     setPickedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   };
 
+  const toggleClass = (id) => {
+    setBulkClassRoomIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  };
+  const cocokJenisKelamin = (s) => !bulkJenisKelamin || s.jenis_kelamin === bulkJenisKelamin;
+  const jumlahSiswaKelasTerpilih = students.filter((s) => bulkClassRoomIds.includes(s.class_room_id) && cocokJenisKelamin(s)).length;
+  const jumlahSiswaSemua = students.filter(cocokJenisKelamin).length;
+
   const totalLunas = list.filter((t) => t.status === 'lunas').length;
   const totalSebagian = list.filter((t) => t.status === 'sebagian').length;
   const totalBelum = list.filter((t) => t.status === 'belum_bayar').length;
@@ -243,7 +254,7 @@ export default function TagihanLainTab() {
             type="button" onClick={() => setTarget('kelas')}
             className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border transition ${target === 'kelas' ? 'bg-brand-600 text-white border-transparent' : 'text-ink-600 border-line-200 hover:bg-mist-50'}`}
           >
-            <Users className="w-3.5 h-3.5" /> 1 Kelas Penuh
+            <Users className="w-3.5 h-3.5" /> Pilih Kelas
           </button>
           <button
             type="button" onClick={() => setTarget('pilih')}
@@ -270,10 +281,40 @@ export default function TagihanLainTab() {
           )}
 
           {target === 'kelas' && (
-            <select value={bulkClassRoomId} onChange={(e) => setBulkClassRoomId(e.target.value)} className="field-input text-ink-700 w-full">
-              <option value="">— Pilih Kelas —</option>
-              {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
+            <div className="border border-line-200 rounded-xl p-3 max-h-48 overflow-y-auto">
+              <div className="flex flex-wrap gap-x-4 gap-y-1">
+                {classes.map((c) => (
+                  <label key={c.id} className="flex items-center gap-2 text-sm py-1 cursor-pointer">
+                    <input type="checkbox" checked={bulkClassRoomIds.includes(c.id)} onChange={() => toggleClass(c.id)} />
+                    <span className="text-ink-900">{c.name}</span>
+                  </label>
+                ))}
+              </div>
+              {classes.length === 0 && <p className="text-xs text-ink-400">Belum ada data kelas.</p>}
+              {bulkClassRoomIds.length > 0 && (
+                <p className="text-xs text-brand-600 pt-1 border-t border-line-200 mt-1">
+                  {bulkClassRoomIds.length} kelas dipilih · {jumlahSiswaKelasTerpilih} siswa{bulkJenisKelamin ? (bulkJenisKelamin === 'L' ? ' laki-laki' : ' perempuan') : ''}
+                </p>
+              )}
+            </div>
+          )}
+
+          {(target === 'kelas' || target === 'semua') && (
+            <div>
+              <label className="block text-xs font-medium text-ink-500 mb-1">
+                Jenis Kelamin <span className="font-normal text-ink-400">(opsional, kalau nominal beda laki-laki/perempuan)</span>
+              </label>
+              <div className="flex gap-2">
+                {[{ v: '', l: 'Semua' }, { v: 'L', l: 'Laki-laki' }, { v: 'P', l: 'Perempuan' }].map((o) => (
+                  <button
+                    key={o.v} type="button" onClick={() => setBulkJenisKelamin(o.v)}
+                    className={`text-xs font-medium px-3 py-1.5 rounded-lg border transition ${bulkJenisKelamin === o.v ? 'bg-brand-600 text-white border-transparent' : 'text-ink-600 border-line-200 hover:bg-mist-50'}`}
+                  >
+                    {o.l}
+                  </button>
+                ))}
+              </div>
+            </div>
           )}
 
           {target === 'pilih' && (
@@ -294,7 +335,7 @@ export default function TagihanLainTab() {
             <div className="flex items-start gap-2 bg-mist-50 border border-line-200 rounded-xl p-3">
               <UsersRound className="w-4 h-4 text-ink-400 shrink-0 mt-0.5" />
               <p className="text-xs text-ink-600">
-                Tagihan ini akan dibuat untuk <b>semua siswa aktif</b> ({students.length} siswa), tanpa terkecuali kelas.
+                Tagihan ini akan dibuat untuk <b>semua siswa aktif{bulkJenisKelamin ? ` ${bulkJenisKelamin === 'L' ? 'laki-laki' : 'perempuan'}` : ''}</b> ({jumlahSiswaSemua} siswa), tanpa terkecuali kelas.
               </p>
             </div>
           )}

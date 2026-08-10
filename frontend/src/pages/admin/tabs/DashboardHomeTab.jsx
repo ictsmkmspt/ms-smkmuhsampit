@@ -230,12 +230,13 @@ function SarprasDashboard({ onNavigate }) {
     ]).then(([ruang, aset, laporan]) => {
       const daftarAset = aset.status === 'fulfilled' ? aset.value : [];
       const daftarLaporan = laporan.status === 'fulfilled' ? laporan.value : [];
+      const jumlahkan = (kunci) => daftarAset.reduce((total, a) => total + (a[kunci] || 0), 0);
       setStats({
         ruang: ruang.status === 'fulfilled' ? ruang.value : '!',
-        aset: aset.status === 'fulfilled' ? daftarAset.length : '!',
-        baik: aset.status === 'fulfilled' ? daftarAset.filter((a) => a.kondisi === 'baik').length : '!',
-        rusak_ringan: aset.status === 'fulfilled' ? daftarAset.filter((a) => a.kondisi === 'rusak_ringan').length : '!',
-        rusak_berat: aset.status === 'fulfilled' ? daftarAset.filter((a) => a.kondisi === 'rusak_berat').length : '!',
+        aset: aset.status === 'fulfilled' ? jumlahkan('jumlah') : '!',
+        baik: aset.status === 'fulfilled' ? jumlahkan('jumlah_baik') : '!',
+        rusak_ringan: aset.status === 'fulfilled' ? jumlahkan('jumlah_rusak_ringan') : '!',
+        rusak_berat: aset.status === 'fulfilled' ? jumlahkan('jumlah_rusak_berat') : '!',
         dilaporkan: laporan.status === 'fulfilled' ? daftarLaporan.filter((l) => l.status === 'dilaporkan').length : '!',
         diproses: laporan.status === 'fulfilled' ? daftarLaporan.filter((l) => l.status === 'diproses').length : '!',
       });

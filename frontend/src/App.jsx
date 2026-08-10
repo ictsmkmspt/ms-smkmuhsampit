@@ -12,6 +12,7 @@ import ParentDashboard from './pages/wali/ParentDashboard';
 import DudiDashboard from './pages/dudi/DudiDashboard';
 import TuDashboard from './pages/tu/TuDashboard';
 import RoomStaffDashboard from './pages/sarpras-staff/RoomStaffDashboard';
+import BkDashboard from './pages/bk/BkDashboard';
 import PrintMonthlyAttendance from './pages/print/PrintMonthlyAttendance';
 import PrintPklJurnal from './pages/print/PrintPklJurnal';
 import PrintPklJurnalKegiatan from './pages/print/PrintPklJurnalKegiatan';
@@ -105,6 +106,10 @@ export default function App() {
 
             <Route path="/staf-ruang/*" element={
               <ProtectedRoute allowedRoles={['teknisi', 'kepala_bengkel']}><RoomStaffDashboard /></ProtectedRoute>
+            } />
+
+            <Route path="/bk/*" element={
+              <ProtectedRoute allowedRoles={['bk']}><BkDashboard /></ProtectedRoute>
             } />
 
             <Route path="*" element={<Login />} />

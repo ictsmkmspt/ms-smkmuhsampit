@@ -7,7 +7,7 @@ const JENIS_LABEL = { kelas: 'Ruang Kelas', lab: 'Laboratorium', bengkel: 'Bengk
 export default function RoomsTab() {
   const [rooms, setRooms] = useState([]);
   const [teachers, setTeachers] = useState([]);
-  const [form, setForm] = useState({ nama: '', jenis: 'kelas', kapasitas: '', teacher_id: '', keterangan: '' });
+  const [form, setForm] = useState({ nama: '', kode_ruangan: '', jenis: 'kelas', kapasitas: '', teacher_id: '', keterangan: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -22,7 +22,7 @@ export default function RoomsTab() {
     setError(''); setLoading(true);
     try {
       await api.post('/rooms', { ...form, teacher_id: form.teacher_id || null });
-      setForm({ nama: '', jenis: 'kelas', kapasitas: '', teacher_id: '', keterangan: '' });
+      setForm({ nama: '', kode_ruangan: '', jenis: 'kelas', kapasitas: '', teacher_id: '', keterangan: '' });
       load();
     } catch (err) {
       const msgs = err.response?.data?.errors;
@@ -48,6 +48,7 @@ export default function RoomsTab() {
         <h2 className="font-display font-semibold text-ink-900">Tambah Ruang / Lab / Bengkel</h2>
         {error && <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2">{error}</p>}
         <div className="grid grid-cols-4 gap-3">
+          <input placeholder="Kode ruangan" value={form.kode_ruangan} onChange={(e) => setForm({ ...form, kode_ruangan: e.target.value })} className="field-input" />
           <input placeholder="Nama ruang" value={form.nama} onChange={(e) => setForm({ ...form, nama: e.target.value })} className="field-input col-span-2" required />
           <select value={form.jenis} onChange={(e) => setForm({ ...form, jenis: e.target.value })} className="field-input text-ink-700">
             {Object.entries(JENIS_LABEL).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
@@ -68,7 +69,8 @@ export default function RoomsTab() {
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-ink-500 border-b border-line-200">
-              <th className="pb-2 font-medium whitespace-nowrap px-2">Nama</th>
+              <th className="pb-2 font-medium whitespace-nowrap px-2">Kode Ruangan</th>
+              <th className="font-medium whitespace-nowrap px-2">Nama</th>
               <th className="font-medium whitespace-nowrap px-2">Jenis</th>
               <th className="font-medium text-center whitespace-nowrap px-2">Kapasitas</th>
               <th className="font-medium whitespace-nowrap px-2">Penanggung Jawab</th>
@@ -79,7 +81,8 @@ export default function RoomsTab() {
           <tbody>
             {rooms.map((r) => (
               <tr key={r.id} className="border-t border-line-200">
-                <td className="py-2.5 text-ink-900 whitespace-nowrap px-2">{r.nama}</td>
+                <td className="py-2.5 font-mono text-xs text-ink-500 whitespace-nowrap px-2">{r.kode_ruangan || '-'}</td>
+                <td className="text-ink-900 whitespace-nowrap px-2">{r.nama}</td>
                 <td className="whitespace-nowrap px-2"><span className="badge-soft badge-brand">{JENIS_LABEL[r.jenis]}</span></td>
                 <td className="text-center text-ink-700 whitespace-nowrap px-2">{r.kapasitas ?? '-'}</td>
                 <td className="text-ink-700 whitespace-nowrap px-2">{r.teacher?.user?.name || '-'}</td>
@@ -87,7 +90,7 @@ export default function RoomsTab() {
                 <td className="text-right whitespace-nowrap px-2"><button onClick={() => handleDelete(r)} className="text-ink-300 hover:text-honey-700"><Trash2 className="w-4 h-4" /></button></td>
               </tr>
             ))}
-            {rooms.length === 0 && <tr><td colSpan="6" className="py-6 text-center text-ink-300 whitespace-nowrap px-2">Belum ada data ruang.</td></tr>}
+            {rooms.length === 0 && <tr><td colSpan="7" className="py-6 text-center text-ink-300 whitespace-nowrap px-2">Belum ada data ruang.</td></tr>}
           </tbody>
         </table>
         </div>

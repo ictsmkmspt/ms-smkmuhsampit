@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import QRCode from 'qrcode';
 import {
   LogOut, Clock, ChevronDown, UserCog, ChevronLeft, ChevronRight,
@@ -40,6 +40,23 @@ export default function SiswaDashboard() {
   const [poinPage, setPoinPage] = useState(1);
   const [absensiPage, setAbsensiPage] = useState(1);
   const [academicScores, setAcademicScores] = useState([]);
+
+  // Nilai dikelompokkan per mapel — sama seperti tab Nilai di portal Ortu —
+  // supaya siswa langsung lihat rata-rata tiap mapel, bukan cuma daftar
+  // datar semua kegiatan tercampur. Sengaja ditaruh di sini (sebelum return
+  // awal untuk status PKL yang masih loading di bawah), bukan dekat JSX-nya,
+  // supaya urutan Hooks tetap konsisten tiap render (Rules of Hooks).
+  const nilaiPerMapel = useMemo(() => {
+    const map = new Map();
+    academicScores.forEach((n) => {
+      const key = n.subject?.id ?? 0;
+      if (!map.has(key)) map.set(key, { nama: n.subject?.nama || 'Lainnya', items: [] });
+      map.get(key).items.push(n);
+    });
+    return [...map.values()]
+      .map((g) => ({ ...g, rataRata: (g.items.reduce((sum, s) => sum + s.skor, 0) / g.items.length).toFixed(1) }))
+      .sort((a, b) => a.nama.localeCompare(b.nama));
+  }, [academicScores]);
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [showEditProfil, setShowEditProfil] = useState(false);
@@ -309,24 +326,36 @@ export default function SiswaDashboard() {
   );
 
   const nilaiContent = (
-    <div className="surface-card max-w-md mx-auto p-4">
-      <h2 className="font-display font-semibold text-sm text-ink-900 mb-3 flex items-center gap-2">
+    <div className="max-w-md mx-auto space-y-4">
+      <h2 className="font-display font-semibold text-ink-900 flex items-center gap-2">
         <ClipboardList className="w-4 h-4 text-ink-500" /> Nilai Akademik
       </h2>
-      <ul className="divide-y divide-line-200">
-        {academicScores.map((n) => (
-          <li key={n.id} className="py-2.5 flex items-center justify-between text-sm gap-2">
-            <div className="min-w-0">
-              <p className="text-ink-900 truncate">{n.nama_kegiatan}</p>
-              <p className="text-xs text-ink-500">{n.subject?.nama} · {n.tanggal}</p>
+      {nilaiPerMapel.length === 0 ? (
+        <div className="surface-card p-6 text-center">
+          <ClipboardList className="w-8 h-8 text-ink-300 mx-auto mb-2" />
+          <p className="text-sm text-ink-500">Belum ada nilai tercatat.</p>
+        </div>
+      ) : (
+        nilaiPerMapel.map((g) => (
+          <div key={g.nama} className="surface-card p-4">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="font-display font-semibold text-ink-900 text-sm">{g.nama}</h3>
+              <span className="badge-soft badge-brand">rata-rata {g.rataRata}</span>
             </div>
-            <span className="font-display font-semibold text-ink-900 shrink-0">{n.skor}</span>
-          </li>
-        ))}
-        {academicScores.length === 0 && (
-          <li className="py-4 text-center text-sm text-ink-300">Belum ada nilai tercatat.</li>
-        )}
-      </ul>
+            <ul className="divide-y divide-line-200">
+              {g.items.map((n) => (
+                <li key={n.id} className="py-2 flex items-center justify-between gap-3 text-sm">
+                  <div className="min-w-0">
+                    <p className="text-ink-900 truncate">{n.nama_kegiatan}</p>
+                    <p className="text-xs text-ink-500">{n.tanggal}{n.recorded_by?.name && <> &middot; Guru: {n.recorded_by.name}</>}</p>
+                  </div>
+                  <span className="font-display font-semibold text-ink-900 shrink-0">{n.skor}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))
+      )}
     </div>
   );
 
