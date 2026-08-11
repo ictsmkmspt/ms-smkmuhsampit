@@ -345,12 +345,12 @@ const KURIKULUM_SUBMENU_DATAR = KURIKULUM_SUBMENU.flatMap((item) =>
 const MENU_UTAMA = [
   { key: 'master', label: 'Master Data', desc: 'Siswa, guru, kelas & wali', icon: Database, color: '#0B1B3A', submenu: MASTER_DATA_SUBMENU },
   { key: 'alumni', label: 'Alumni', desc: 'Data siswa yang sudah lulus', icon: GraduationCap, color: '#3FB27F', submenu: ALUMNI_SUBMENU },
-  { key: 'laporan', label: 'Laporan', desc: 'Absensi, poin, BK & nilai', icon: ClipboardCheck, color: '#2a78d6', submenu: LAPORAN_SUBMENU },
   { key: 'poin', label: 'Poin', desc: 'Jenis poin & sanksi bertingkat', icon: ClipboardList, color: '#B9504F', submenu: POIN_SUBMENU },
   { key: 'pkl', label: 'PKL', desc: 'IDUKA & penempatan siswa', icon: Briefcase, color: '#15803D', submenu: PKL_SUBMENU },
   { key: 'kurikulum', label: 'Pembelajaran', desc: 'Kalender, mapel & jadwal', icon: BookOpen, color: '#eb6834', submenu: KURIKULUM_SUBMENU_DATAR },
   { key: 'sarpras-staf', label: 'Teknisi & Kepala Bengkel', desc: 'Penanggung jawab ruang', icon: HardHat, color: '#6B7280' },
   { key: 'sarpras', label: 'Sarana & Prasarana', desc: 'Ruang, aset & pemeliharaan', icon: Wrench, color: '#F2B705', submenu: SARPRAS_SUBMENU },
+  { key: 'laporan', label: 'Laporan', desc: 'Absensi, poin, BK & nilai', icon: ClipboardCheck, color: '#2a78d6', submenu: LAPORAN_SUBMENU },
   { key: 'pengaturan', label: 'Pengaturan', desc: 'Profil sekolah & cadangan data', icon: Settings, color: '#7C5CBF', submenu: SETTINGS_SUBMENU },
   { key: 'pengembangan', label: 'Pengembangan', desc: 'PPDB online & pengadaan', icon: FlaskConical, color: '#0F766E', submenu: PENGEMBANGAN_SUBMENU },
 ];

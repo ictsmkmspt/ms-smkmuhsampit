@@ -9,12 +9,19 @@ const PAD_TOP = 12;
 const PAD_RIGHT = 8;
 
 /**
- * Grafik batang berkelompok untuk deret harian (tanggal 1 s.d. akhir bulan):
- * tiap tanggal punya beberapa batang TERPISAH (bukan ditumpuk), 1 per seri
- * berwarna tetap. Dipakai untuk Absensi Bulanan supaya hadir/izin/sakit/alpa
- * tetap terlihat sebagai batang sendiri-sendiri, bukan 1 batang bertumpuk.
+ * Grafik batang berkelompok generik: tiap label (aslinya dirancang untuk
+ * tanggal 1 s.d. akhir bulan, lihat `labelPrefix`) punya beberapa batang
+ * TERPISAH (bukan ditumpuk), 1 per seri berwarna tetap. Dipakai untuk
+ * Absensi Bulanan (hadir/izin/sakit/alpa per tanggal) maupun rekap lain yang
+ * labelnya bukan tanggal (mis. per kelas) — untuk kasus terakhir set
+ * `labelPrefix=""`, `labelHeader` sesuai isi label (mis. "Kelas"), dan
+ * `showTotal={false}` kalau seri-nya tidak masuk akal dijumlahkan (mis.
+ * rerata/tertinggi/terendah). `filters` (opsional) taruh kontrol filter
+ * (mis. dropdown) langsung di dalam kartu yang sama, di bawah judul — kalau
+ * hasil filter itu kosong (`labels` kosong), tampilkan `emptyMessage` di
+ * bawah filter, bukan grafik kosong tanpa batang.
  */
-export default function DailyGroupedBarChart({ title, subtitle, labels, series, showTableToggle = false }) {
+export default function DailyGroupedBarChart({ title, subtitle, labels, series, showTableToggle = false, showTotal = true, labelPrefix = 'Tanggal ', labelHeader = 'Tanggal', filters = null, emptyMessage = null }) {
   const [hover, setHover] = useState(null); // index label
   const [showTable, setShowTable] = useState(false);
 
@@ -54,25 +61,31 @@ export default function DailyGroupedBarChart({ title, subtitle, labels, series, 
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-3 mt-2 mb-1">
-        {series.map((s) => (
-          <span key={s.name} className="flex items-center gap-1.5 text-xs text-ink-600">
-            <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ backgroundColor: s.color }} />
-            {s.name}
-          </span>
-        ))}
-      </div>
+      {filters && <div className="flex flex-wrap gap-3 items-end mt-3 mb-1">{filters}</div>}
 
-      {showTable ? (
+      {labels.length === 0 && emptyMessage ? (
+        <p className="text-sm text-ink-300 text-center py-8">{emptyMessage}</p>
+      ) : (
+        <>
+          <div className="flex flex-wrap gap-3 mt-2 mb-1">
+            {series.map((s) => (
+              <span key={s.name} className="flex items-center gap-1.5 text-xs text-ink-600">
+                <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ backgroundColor: s.color }} />
+                {s.name}
+              </span>
+            ))}
+          </div>
+
+          {showTable ? (
         <div className="table-scroll mt-3">
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-ink-500 border-b border-line-200">
-                <th className="pb-2 font-medium whitespace-nowrap px-2">Tanggal</th>
+                <th className="pb-2 font-medium whitespace-nowrap px-2">{labelHeader}</th>
                 {series.map((s) => (
                   <th key={s.name} className="font-medium text-right whitespace-nowrap px-2">{s.name}</th>
                 ))}
-                <th className="font-medium text-right whitespace-nowrap px-2">Total</th>
+                {showTotal && <th className="font-medium text-right whitespace-nowrap px-2">Total</th>}
               </tr>
             </thead>
             <tbody>
@@ -82,7 +95,7 @@ export default function DailyGroupedBarChart({ title, subtitle, labels, series, 
                   {series.map((s) => (
                     <td key={s.name} className="text-right text-ink-700 tabular-nums whitespace-nowrap px-2">{s.data[i] || 0}</td>
                   ))}
-                  <td className="text-right font-medium text-ink-900 tabular-nums whitespace-nowrap px-2">{totals[i]}</td>
+                  {showTotal && <td className="text-right font-medium text-ink-900 tabular-nums whitespace-nowrap px-2">{totals[i]}</td>}
                 </tr>
               ))}
             </tbody>
@@ -155,17 +168,19 @@ export default function DailyGroupedBarChart({ title, subtitle, labels, series, 
                 transform: 'translate(-50%, -100%)',
               }}
             >
-              <p className="font-semibold mb-1">Tanggal {labels[hover]}</p>
+              <p className="font-semibold mb-1">{labelPrefix}{labels[hover]}</p>
               {series.map((s) => (
                 <p key={s.name} className="flex items-center gap-1.5">
                   <span className="inline-block w-2 h-0.5 rounded-full shrink-0" style={{ backgroundColor: s.color }} />
                   {s.name}: <span className="font-semibold">{s.data[hover] || 0}</span>
                 </p>
               ))}
-              <p className="mt-1 pt-1 border-t border-white/20 font-semibold">Total: {totals[hover]}</p>
+              {showTotal && <p className="mt-1 pt-1 border-t border-white/20 font-semibold">Total: {totals[hover]}</p>}
             </div>
           )}
         </div>
+      )}
+        </>
       )}
     </div>
   );

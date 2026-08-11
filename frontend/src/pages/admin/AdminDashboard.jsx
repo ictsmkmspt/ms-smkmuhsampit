@@ -70,12 +70,12 @@ function AdminDashboardContent() {
     { key: 'dashboard',  label: 'Dashboard',   icon: LayoutDashboard, component: DashboardHomeTab },
     { key: 'master',     label: 'Master Data', icon: Database,        hasDropdown: true, submenu: masterDataSubmenu, subIcons: MASTER_ICONS, roles: ['waka_kesiswaan', 'waka_kurikulum'] },
     { key: 'alumni',     label: 'Alumni',      icon: GraduationCap,   hasDropdown: true, submenu: ALUMNI_SUBMENU, subIcons: ALUMNI_ICONS, roles: ['waka_kesiswaan', 'waka_humas'] },
-    { key: 'laporan',    label: 'Laporan',     icon: FileBarChart,   hasDropdown: true, submenu: laporanSubmenu, subIcons: LAPORAN_ICONS, roles: ['waka_kesiswaan', 'waka_kurikulum'] },
     { key: 'poin',       label: 'Poin',        icon: ClipboardList,   hasDropdown: true, submenu: poinSubmenu, subIcons: POIN_ICONS, roles: ['waka_kesiswaan'] },
     { key: 'pkl',        label: 'PKL',         icon: Briefcase,       hasDropdown: true, submenu: pklSubmenu, subIcons: PKL_ICONS, roles: ['waka_humas', 'waka_kurikulum'] },
     { key: 'kurikulum',  label: 'Pembelajaran', icon: BookOpen,        hasDropdown: true, submenu: KURIKULUM_SUBMENU, subIcons: KURIKULUM_ICONS, roles: ['waka_kurikulum'] },
     { key: 'sarpras-staf', label: 'Teknisi & Kepala Bengkel', icon: HardHat, component: RoomStaffTab, roles: ['waka_sarpras'] },
     { key: 'sarpras',    label: 'Sarana dan Prasarana', icon: Wrench, hasDropdown: true, submenu: SARPRAS_SUBMENU, subIcons: SARPRAS_ICONS, roles: ['waka_sarpras'] },
+    { key: 'laporan',    label: 'Laporan',     icon: FileBarChart,   hasDropdown: true, submenu: laporanSubmenu, subIcons: LAPORAN_ICONS, roles: ['waka_kesiswaan', 'waka_kurikulum'] },
     { key: 'pengaturan', label: 'Pengaturan',  icon: Settings,        hasDropdown: true, submenu: settingsSubmenu, subIcons: SETTINGS_ICONS, roles: [] },
     { key: 'pengembangan', label: 'Pengembangan', icon: FlaskConical, hasDropdown: true, submenu: PENGEMBANGAN_SUBMENU, subIcons: PENGEMBANGAN_ICONS, roles: [] },
   ].filter((t) => bisaLihat(t.roles));
