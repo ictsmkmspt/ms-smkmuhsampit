@@ -142,4 +142,33 @@ class SanksiKejadianController extends Controller
 
         return $sanksiKejadian->fresh(['student.user', 'student.classRoom', 'sanksiRule', 'diprosesOleh']);
     }
+
+    /**
+     * Koreksi tahap sanksi yang tercatat — dipakai kalau Admin/Waka
+     * Kesiswaan/BK perlu membetulkan kejadian yang salah tahap (mis. rule
+     * poin sempat diubah setelah kejadian ini terdeteksi otomatis).
+     */
+    public function update(Request $request, SanksiKejadian $sanksiKejadian)
+    {
+        $data = $request->validate([
+            'sanksi_rule_id' => 'required|exists:sanksi_rules,id',
+        ]);
+
+        $sanksiKejadian->update($data);
+
+        return $sanksiKejadian->fresh(['student.user', 'student.classRoom', 'sanksiRule', 'diprosesOleh']);
+    }
+
+    /**
+     * Hapus kejadian sanksi yang salah/tidak relevan — mis. dibuat otomatis
+     * dari pelanggaran yang belakangan dihapus/dikoreksi. Catatan BK yang
+     * merujuk ke sini (bk_cases.sanksi_kejadian_id) sengaja nullOnDelete
+     * (lihat migration), jadi aman dihapus tanpa ikut menghapus catatan BK.
+     */
+    public function destroy(SanksiKejadian $sanksiKejadian)
+    {
+        $sanksiKejadian->delete();
+
+        return response()->json(['message' => 'Kejadian sanksi dihapus.']);
+    }
 }

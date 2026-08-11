@@ -28,7 +28,7 @@ class RoomController extends Controller
         $data = $request->validate([
             'nama' => 'required|string|max:100',
             'kode_ruangan' => 'nullable|string|max:50',
-            'jenis' => 'required|in:kelas,lab,bengkel,kantor,lainnya',
+            'jenis' => 'required|in:kelas,lab,bengkel,kantor,lainnya,tanah',
             'kapasitas' => 'nullable|integer|min:0',
             'teacher_id' => 'nullable|exists:teachers,id',
             'keterangan' => 'nullable|string',
@@ -42,7 +42,7 @@ class RoomController extends Controller
         $data = $request->validate([
             'nama' => 'required|string|max:100',
             'kode_ruangan' => 'nullable|string|max:50',
-            'jenis' => 'required|in:kelas,lab,bengkel,kantor,lainnya',
+            'jenis' => 'required|in:kelas,lab,bengkel,kantor,lainnya,tanah',
             'kapasitas' => 'nullable|integer|min:0',
             'teacher_id' => 'nullable|exists:teachers,id',
             'keterangan' => 'nullable|string',

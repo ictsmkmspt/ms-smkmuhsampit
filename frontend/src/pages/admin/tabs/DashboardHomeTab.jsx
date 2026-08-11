@@ -246,7 +246,7 @@ function SarprasDashboard({ onNavigate }) {
   }, []);
 
   const KARTU = [
-    { key: 'ruang', label: 'Total Ruang & Lab', icon: DoorOpen, color: '#2a78d6' },
+    { key: 'ruang', label: 'Total Prasarana', icon: DoorOpen, color: '#2a78d6' },
     { key: 'aset', label: 'Total Inventaris Aset', icon: Package, color: '#F2B705' },
     { key: 'baik', label: 'Barang Baik', icon: CheckCircle2, color: '#15803D' },
     { key: 'rusak_ringan', label: 'Rusak Ringan', icon: AlertTriangle, color: '#D9A52A' },

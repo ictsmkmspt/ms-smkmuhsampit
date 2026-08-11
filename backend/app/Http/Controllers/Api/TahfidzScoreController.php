@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Student;
 use App\Models\TahfidzScore;
-use App\Models\TahunAjaran;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 
@@ -15,7 +14,8 @@ use Illuminate\Validation\ValidationException;
  * pilih nomor juz — praktik hafalan sebenarnya per surah/ayat, sedangkan
  * juz cuma pembagian 1/30 volume mushaf yang tidak selaras batas surah.
  * SEMUA guru boleh mencatat untuk siswa manapun (tidak dikunci Tugas
- * Mengajar).
+ * Mengajar). Juga tidak terikat tahun ajaran — hafalan murid berjalan
+ * terus lintas tahun, bukan sesuatu yang "reset" tiap ganti tahun ajaran.
  */
 class TahfidzScoreController extends Controller
 {
@@ -41,13 +41,9 @@ class TahfidzScoreController extends Controller
         $data = $request->validate([
             'class_room_id' => 'nullable|exists:class_rooms,id',
             'student_id' => 'nullable|exists:students,id',
-            'tahun_ajaran_id' => 'nullable|exists:tahun_ajarans,id',
         ]);
 
-        $tahunAjaranId = $data['tahun_ajaran_id'] ?? TahunAjaran::aktifId();
-
         return TahfidzScore::with(['student.user', 'student.classRoom', 'recordedBy'])
-            ->where('tahun_ajaran_id', $tahunAjaranId)
             ->when(!empty($data['class_room_id']), fn ($q) => $q->whereHas('student', fn ($q2) => $q2->where('class_room_id', $data['class_room_id'])))
             ->when(!empty($data['student_id']), fn ($q) => $q->where('student_id', $data['student_id']))
             ->orderByDesc('tanggal')
@@ -86,10 +82,6 @@ class TahfidzScoreController extends Controller
 
     public function update(Request $request, TahfidzScore $tahfidzScore)
     {
-        if ($tahfidzScore->tahun_ajaran_id !== TahunAjaran::aktifId()) {
-            return response()->json(['message' => 'Catatan ini milik tahun ajaran yang tidak aktif dan tidak bisa diubah.'], 422);
-        }
-
         $data = $request->validate([
             'surah' => 'required|integer|min:1|max:114',
             'ayat_mulai' => 'required|integer|min:1',
@@ -107,10 +99,6 @@ class TahfidzScoreController extends Controller
 
     public function destroy(TahfidzScore $tahfidzScore)
     {
-        if ($tahfidzScore->tahun_ajaran_id !== TahunAjaran::aktifId()) {
-            return response()->json(['message' => 'Catatan ini milik tahun ajaran yang tidak aktif dan tidak bisa dihapus.'], 422);
-        }
-
         $tahfidzScore->delete();
 
         return response()->json(['message' => 'Catatan Tahfidz dihapus.']);
@@ -124,7 +112,6 @@ class TahfidzScoreController extends Controller
         }
 
         return TahfidzScore::where('student_id', $student->id)
-            ->where('tahun_ajaran_id', TahunAjaran::aktifId())
             ->orderByDesc('tanggal')
             ->get();
     }

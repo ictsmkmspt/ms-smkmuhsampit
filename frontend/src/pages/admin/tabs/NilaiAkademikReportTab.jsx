@@ -4,6 +4,7 @@ import api from '../../../api/axios';
 import TruncateText from '../../../components/TruncateText';
 import DailyGroupedBarChart from '../../../components/DailyGroupedBarChart';
 import CategoryBarChart from '../../../components/CategoryBarChart';
+import { useTahunAjaran, useTahunAjaranParam } from '../../../context/TahunAjaranContext';
 
 const RENTANG_NILAI = [
   { name: '0-59', min: 0, max: 59, color: '#B9504F' },
@@ -25,6 +26,10 @@ const RENTANG_NILAI = [
  * — tidak perlu request baru tiap pindah mapel/kegiatan.
  */
 export default function NilaiAkademikReportTab() {
+  const tahunParam = useTahunAjaranParam();
+  const { isAktif: tahunAktif, selectedId: tahunAjaranId, list: tahunAjaranList } = useTahunAjaran();
+  const tahunAjaranTerpilih = tahunAjaranList.find((t) => String(t.id) === String(tahunAjaranId));
+
   const [classes, setClasses] = useState([]);
   const [loadingClasses, setLoadingClasses] = useState(true);
 
@@ -56,11 +61,21 @@ export default function NilaiAkademikReportTab() {
   // sedang ditampilkan.
   const requestIdRef = useRef(0);
 
+  // Kelas cuma diambil sekali — daftar kelas struktural, tidak terikat
+  // tahun ajaran mana pun (kelas yang sama dipakai lintas tahun ajaran).
   useEffect(() => {
     api.get('/classes').then((res) => setClasses(res.data)).finally(() => setLoadingClasses(false));
-    api.get('/academic-scores/laporan').then((res) => setAllScores(res.data)).finally(() => setLoadingAllScores(false));
-    api.get('/teaching-assignments').then((res) => setTeachingAssignments(res.data)).finally(() => setLoadingAssignments(false));
   }, []);
+
+  // Nilai + Tugas Mengajar ikut tahun ajaran yang dipilih di sidebar —
+  // diambil ulang tiap kali tahunAjaranId berubah.
+  useEffect(() => {
+    setLoadingAllScores(true);
+    api.get('/academic-scores/laporan', { params: tahunParam }).then((res) => setAllScores(res.data)).finally(() => setLoadingAllScores(false));
+    setLoadingAssignments(true);
+    api.get('/teaching-assignments', { params: tahunParam }).then((res) => setTeachingAssignments(res.data)).finally(() => setLoadingAssignments(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tahunAjaranId]);
 
   // Tugas Mengajar dianggap "sudah mengisi" kalau guru itu SENDIRI pernah
   // mencatat minimal 1 nilai untuk mapel+kelas itu (dicek dari recorded_by,
@@ -139,16 +154,25 @@ export default function NilaiAkademikReportTab() {
     setSelectedKelas(c);
     setSelectedMapel(null);
     setSelectedKegiatan(null);
+  };
+
+  // Nilai 1 kelas ini diambil ulang tiap kali kelasnya berganti ATAU tahun
+  // ajaran yang dipilih di sidebar berubah — supaya kalau user ganti tahun
+  // ajaran sambil sedang lihat detail 1 kelas, datanya ikut update tanpa
+  // harus balik ke daftar kelas dulu.
+  useEffect(() => {
+    if (!selectedKelas) { setClassScores([]); return; }
     setLoadingScores(true);
     const requestId = ++requestIdRef.current;
-    api.get('/academic-scores/laporan', { params: { class_room_id: c.id } })
+    api.get('/academic-scores/laporan', { params: { class_room_id: selectedKelas.id, ...tahunParam } })
       .then((res) => {
         if (requestId === requestIdRef.current) setClassScores(res.data);
       })
       .finally(() => {
         if (requestId === requestIdRef.current) setLoadingScores(false);
       });
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedKelas, tahunAjaranId]);
 
   const mapelStats = useMemo(() => {
     const map = new Map();
@@ -289,7 +313,9 @@ export default function NilaiAkademikReportTab() {
         <div className="flex items-center justify-between gap-3 pb-4 mb-4 border-b border-line-200">
           <div className="min-w-0">
             <h3 className="font-display font-semibold text-ink-900 truncate">{selectedKelas.name}</h3>
-            <p className="text-xs text-ink-500">Rekap Nilai per Mata Pelajaran</p>
+            <p className="text-xs text-ink-500">
+              Rekap Nilai per Mata Pelajaran &middot; {tahunAktif ? 'tahun ajaran aktif' : `tahun ajaran ${tahunAjaranTerpilih?.nama || ''}`}
+            </p>
           </div>
           <button
             onClick={() => setSelectedKelas(null)}
@@ -339,6 +365,12 @@ export default function NilaiAkademikReportTab() {
   // Tingkat 1: daftar kelas
   return (
     <div className="space-y-6">
+      <p className="text-xs text-ink-400">
+        {tahunAktif
+          ? 'Menampilkan nilai tahun ajaran aktif.'
+          : `Menampilkan nilai tahun ajaran ${tahunAjaranTerpilih?.nama || ''}.`}
+      </p>
+
       {!loadingAllScores && allScores.length > 0 && (
         <>
           <DailyGroupedBarChart

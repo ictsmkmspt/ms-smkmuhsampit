@@ -5,14 +5,13 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Student;
 use App\Models\TadarusScore;
-use App\Models\TahunAjaran;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 
 /**
  * Tadarus (membaca Al-Quran, bukan menghafal) — dicatat per surah + rentang
  * ayat. Sama seperti Tahsin/Tahfidz, SEMUA guru boleh mencatat untuk siswa
- * manapun.
+ * manapun, dan tidak terikat tahun ajaran.
  */
 class TadarusScoreController extends Controller
 {
@@ -49,13 +48,9 @@ class TadarusScoreController extends Controller
         $data = $request->validate([
             'class_room_id' => 'nullable|exists:class_rooms,id',
             'student_id' => 'nullable|exists:students,id',
-            'tahun_ajaran_id' => 'nullable|exists:tahun_ajarans,id',
         ]);
 
-        $tahunAjaranId = $data['tahun_ajaran_id'] ?? TahunAjaran::aktifId();
-
         return TadarusScore::with(['student.user', 'student.classRoom', 'recordedBy'])
-            ->where('tahun_ajaran_id', $tahunAjaranId)
             ->when(!empty($data['class_room_id']), fn ($q) => $q->whereHas('student', fn ($q2) => $q2->where('class_room_id', $data['class_room_id'])))
             ->when(!empty($data['student_id']), fn ($q) => $q->where('student_id', $data['student_id']))
             ->orderByDesc('tanggal')
@@ -94,10 +89,6 @@ class TadarusScoreController extends Controller
 
     public function update(Request $request, TadarusScore $tadarusScore)
     {
-        if ($tadarusScore->tahun_ajaran_id !== TahunAjaran::aktifId()) {
-            return response()->json(['message' => 'Catatan ini milik tahun ajaran yang tidak aktif dan tidak bisa diubah.'], 422);
-        }
-
         $data = $request->validate([
             'surah' => 'required|integer|min:1|max:114',
             'ayat_mulai' => 'required|integer|min:1',
@@ -115,10 +106,6 @@ class TadarusScoreController extends Controller
 
     public function destroy(TadarusScore $tadarusScore)
     {
-        if ($tadarusScore->tahun_ajaran_id !== TahunAjaran::aktifId()) {
-            return response()->json(['message' => 'Catatan ini milik tahun ajaran yang tidak aktif dan tidak bisa dihapus.'], 422);
-        }
-
         $tadarusScore->delete();
 
         return response()->json(['message' => 'Catatan Tadarus dihapus.']);
@@ -132,7 +119,6 @@ class TadarusScoreController extends Controller
         }
 
         return TadarusScore::where('student_id', $student->id)
-            ->where('tahun_ajaran_id', TahunAjaran::aktifId())
             ->orderByDesc('tanggal')
             ->get();
     }

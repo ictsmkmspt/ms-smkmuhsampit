@@ -6,25 +6,11 @@ use Illuminate\Database\Eloquent\Model;
 
 class TadarusScore extends Model
 {
-    protected $fillable = ['student_id', 'tahun_ajaran_id', 'surah', 'ayat_mulai', 'ayat_selesai', 'keterangan', 'tanggal', 'recorded_by'];
-
-    protected static function booted(): void
-    {
-        static::creating(function (TadarusScore $score) {
-            if (empty($score->tahun_ajaran_id)) {
-                $score->tahun_ajaran_id = TahunAjaran::aktifId();
-            }
-        });
-    }
+    protected $fillable = ['student_id', 'surah', 'ayat_mulai', 'ayat_selesai', 'keterangan', 'tanggal', 'recorded_by'];
 
     public function student()
     {
         return $this->belongsTo(Student::class);
-    }
-
-    public function tahunAjaran()
-    {
-        return $this->belongsTo(TahunAjaran::class);
     }
 
     public function recordedBy()

@@ -140,6 +140,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::apiResource('bk-cases', BkCaseController::class)->except(['show', 'index']);
         Route::get('/sanksi-kejadian/{sanksiKejadian}/export-word', [SanksiKejadianController::class, 'exportWord']);
         Route::post('/sanksi-kejadian/{sanksiKejadian}/selesaikan', [SanksiKejadianController::class, 'selesaikan']);
+        Route::put('/sanksi-kejadian/{sanksiKejadian}', [SanksiKejadianController::class, 'update']);
+        Route::delete('/sanksi-kejadian/{sanksiKejadian}', [SanksiKejadianController::class, 'destroy']);
         Route::get('/bk-students', [StudentController::class, 'index']);
     });
 

@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Pencil, Trash2 } from 'lucide-react';
 import api from '../../../api/axios';
 
-const JENIS_LABEL = { kelas: 'Ruang Kelas', lab: 'Laboratorium', bengkel: 'Bengkel', kantor: 'Kantor', lainnya: 'Lainnya' };
+const JENIS_LABEL = { kelas: 'Ruang Kelas', lab: 'Laboratorium', bengkel: 'Bengkel', kantor: 'Kantor', tanah: 'Tanah', lainnya: 'Lainnya' };
+const FORM_KOSONG = { nama: '', kode_ruangan: '', jenis: 'kelas', kapasitas: '', teacher_id: '', keterangan: '' };
 
 export default function RoomsTab() {
   const [rooms, setRooms] = useState([]);
   const [teachers, setTeachers] = useState([]);
-  const [form, setForm] = useState({ nama: '', kode_ruangan: '', jenis: 'kelas', kapasitas: '', teacher_id: '', keterangan: '' });
+  const [form, setForm] = useState(FORM_KOSONG);
+  const [editingId, setEditingId] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -17,16 +19,40 @@ export default function RoomsTab() {
     api.get('/teachers').then((res) => setTeachers(res.data));
   }, []);
 
-  const handleAdd = async (e) => {
+  const bukaEdit = (r) => {
+    setEditingId(r.id);
+    setForm({
+      nama: r.nama,
+      kode_ruangan: r.kode_ruangan || '',
+      jenis: r.jenis,
+      kapasitas: r.kapasitas ?? '',
+      teacher_id: r.teacher_id || '',
+      keterangan: r.keterangan || '',
+    });
+  };
+
+  const batalEdit = () => {
+    setEditingId(null);
+    setForm(FORM_KOSONG);
+    setError('');
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError(''); setLoading(true);
     try {
-      await api.post('/rooms', { ...form, teacher_id: form.teacher_id || null });
-      setForm({ nama: '', kode_ruangan: '', jenis: 'kelas', kapasitas: '', teacher_id: '', keterangan: '' });
+      const payload = { ...form, teacher_id: form.teacher_id || null };
+      if (editingId) {
+        await api.put(`/rooms/${editingId}`, payload);
+      } else {
+        await api.post('/rooms', payload);
+      }
+      setEditingId(null);
+      setForm(FORM_KOSONG);
       load();
     } catch (err) {
       const msgs = err.response?.data?.errors;
-      setError(msgs ? Object.values(msgs).flat().join(', ') : err.response?.data?.message || 'Gagal menambah ruang.');
+      setError(msgs ? Object.values(msgs).flat().join(', ') : err.response?.data?.message || `Gagal ${editingId ? 'menyimpan perubahan' : 'menambah ruang'}.`);
     } finally {
       setLoading(false);
     }
@@ -44,8 +70,8 @@ export default function RoomsTab() {
 
   return (
     <div className="space-y-6">
-      <form onSubmit={handleAdd} className="surface-card p-5 space-y-3">
-        <h2 className="font-display font-semibold text-ink-900">Tambah Ruang / Lab / Bengkel</h2>
+      <form onSubmit={handleSubmit} className="surface-card p-5 space-y-3">
+        <h2 className="font-display font-semibold text-ink-900">{editingId ? 'Edit Prasarana' : 'Tambah Ruang / Lab / Bengkel'}</h2>
         {error && <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2">{error}</p>}
         <div className="grid grid-cols-4 gap-3">
           <input placeholder="Kode ruangan" value={form.kode_ruangan} onChange={(e) => setForm({ ...form, kode_ruangan: e.target.value })} className="field-input" />
@@ -60,7 +86,17 @@ export default function RoomsTab() {
           </select>
           <input placeholder="Keterangan" value={form.keterangan} onChange={(e) => setForm({ ...form, keterangan: e.target.value })} className="field-input col-span-2" />
         </div>
-        <button disabled={loading} className="btn-primary"><Plus className="w-4 h-4" /> {loading ? 'Menyimpan...' : 'Tambah Ruang'}</button>
+        <div className="flex gap-2">
+          <button disabled={loading} className="btn-primary">
+            {editingId ? <Pencil className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+            {loading ? 'Menyimpan...' : editingId ? 'Simpan Perubahan' : 'Tambah Ruang'}
+          </button>
+          {editingId && (
+            <button type="button" onClick={batalEdit} className="text-sm font-medium text-ink-500 hover:text-ink-700 border border-line-200 rounded-xl px-4 py-2 transition">
+              Batal
+            </button>
+          )}
+        </div>
       </form>
 
       <div className="surface-card p-5">
@@ -87,7 +123,12 @@ export default function RoomsTab() {
                 <td className="text-center text-ink-700 whitespace-nowrap px-2">{r.kapasitas ?? '-'}</td>
                 <td className="text-ink-700 whitespace-nowrap px-2">{r.teacher?.user?.name || '-'}</td>
                 <td className="text-center text-ink-700 whitespace-nowrap px-2">{r.assets_count}</td>
-                <td className="text-right whitespace-nowrap px-2"><button onClick={() => handleDelete(r)} className="text-ink-300 hover:text-honey-700"><Trash2 className="w-4 h-4" /></button></td>
+                <td className="text-right whitespace-nowrap px-2">
+                  <div className="flex items-center justify-end gap-2">
+                    <button onClick={() => bukaEdit(r)} title="Edit" className="text-ink-300 hover:text-brand-700"><Pencil className="w-4 h-4" /></button>
+                    <button onClick={() => handleDelete(r)} title="Hapus" className="text-ink-300 hover:text-honey-700"><Trash2 className="w-4 h-4" /></button>
+                  </div>
+                </td>
               </tr>
             ))}
             {rooms.length === 0 && <tr><td colSpan="7" className="py-6 text-center text-ink-300 whitespace-nowrap px-2">Belum ada data ruang.</td></tr>}

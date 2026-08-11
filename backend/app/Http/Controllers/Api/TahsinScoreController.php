@@ -5,13 +5,14 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Student;
 use App\Models\TahsinScore;
-use App\Models\TahunAjaran;
 use Illuminate\Http\Request;
 
 /**
  * Tahsin (perbaikan bacaan Al-Quran) — beda dari Nilai Akademik, SEMUA guru
  * boleh mencatat untuk siswa/kelas manapun (tidak dikunci ke Tugas Mengajar
  * mapel tertentu), karena bimbingan Tahsin bukan bagian dari 1 mapel spesifik.
+ * Juga tidak terikat tahun ajaran — progres bacaan Al-Quran murid berjalan
+ * terus lintas tahun, bukan sesuatu yang "reset" tiap ganti tahun ajaran.
  */
 class TahsinScoreController extends Controller
 {
@@ -20,13 +21,9 @@ class TahsinScoreController extends Controller
         $data = $request->validate([
             'class_room_id' => 'nullable|exists:class_rooms,id',
             'student_id' => 'nullable|exists:students,id',
-            'tahun_ajaran_id' => 'nullable|exists:tahun_ajarans,id',
         ]);
 
-        $tahunAjaranId = $data['tahun_ajaran_id'] ?? TahunAjaran::aktifId();
-
         return TahsinScore::with(['student.user', 'student.classRoom', 'recordedBy'])
-            ->where('tahun_ajaran_id', $tahunAjaranId)
             ->when(!empty($data['class_room_id']), fn ($q) => $q->whereHas('student', fn ($q2) => $q2->where('class_room_id', $data['class_room_id'])))
             ->when(!empty($data['student_id']), fn ($q) => $q->where('student_id', $data['student_id']))
             ->orderByDesc('tanggal')
@@ -67,10 +64,6 @@ class TahsinScoreController extends Controller
 
     public function update(Request $request, TahsinScore $tahsinScore)
     {
-        if ($tahsinScore->tahun_ajaran_id !== TahunAjaran::aktifId()) {
-            return response()->json(['message' => 'Catatan ini milik tahun ajaran yang tidak aktif dan tidak bisa diubah.'], 422);
-        }
-
         $data = $request->validate([
             'jilid' => 'required|integer|min:1|max:6',
             'halaman' => 'required|integer|min:1',
@@ -85,10 +78,6 @@ class TahsinScoreController extends Controller
 
     public function destroy(TahsinScore $tahsinScore)
     {
-        if ($tahsinScore->tahun_ajaran_id !== TahunAjaran::aktifId()) {
-            return response()->json(['message' => 'Catatan ini milik tahun ajaran yang tidak aktif dan tidak bisa dihapus.'], 422);
-        }
-
         $tahsinScore->delete();
 
         return response()->json(['message' => 'Catatan Tahsin dihapus.']);
@@ -102,7 +91,6 @@ class TahsinScoreController extends Controller
         }
 
         return TahsinScore::where('student_id', $student->id)
-            ->where('tahun_ajaran_id', TahunAjaran::aktifId())
             ->orderByDesc('tanggal')
             ->get();
     }
