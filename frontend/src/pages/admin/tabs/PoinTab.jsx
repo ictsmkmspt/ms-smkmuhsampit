@@ -1,17 +1,14 @@
-import ViolationReportTab from './ViolationReportTab';
-import AchievementReportTab from './AchievementReportTab';
-import RekapBkTab from './RekapBkTab';
 import PoinPelanggaranTab from '../settings/PoinPelanggaranTab';
 import PoinPrestasiTab from '../settings/PoinPrestasiTab';
 import SanksiTab from '../kesiswaan/SanksiTab';
 
+// Rekap Pelanggaran/Prestasi/BK sudah pindah ke menu Laporan (lihat
+// LaporanTab.jsx) — di sini tinggal pengaturan sistem poin: jenis
+// pelanggaran/prestasi dan eskalasi Sanksi Bertingkat.
 export const POIN_SUBMENU = [
-  { key: 'rekap-pelanggaran', label: 'Rekap Pelanggaran',      component: ViolationReportTab },
-  { key: 'rekap-prestasi',    label: 'Rekap Prestasi',         component: AchievementReportTab },
-  { key: 'rekap-bk',          label: 'Rekap BK',               component: RekapBkTab },
-  { key: 'jenis-pelanggaran', label: 'Jenis Pelanggaran',      component: PoinPelanggaranTab, restrictTo: ['waka_kesiswaan'] },
-  { key: 'jenis-prestasi',    label: 'Jenis Prestasi',         component: PoinPrestasiTab, restrictTo: ['waka_kesiswaan'] },
-  { key: 'sanksi',            label: 'Sanksi Bertingkat',      component: SanksiTab, restrictTo: ['waka_kesiswaan'] },
+  { key: 'jenis-pelanggaran', label: 'Jenis Pelanggaran', component: PoinPelanggaranTab, restrictTo: ['waka_kesiswaan'] },
+  { key: 'jenis-prestasi',    label: 'Jenis Prestasi',    component: PoinPrestasiTab, restrictTo: ['waka_kesiswaan'] },
+  { key: 'sanksi',            label: 'Sanksi Bertingkat', component: SanksiTab, restrictTo: ['waka_kesiswaan'] },
 ];
 
 export default function PoinTab({ activeSub }) {

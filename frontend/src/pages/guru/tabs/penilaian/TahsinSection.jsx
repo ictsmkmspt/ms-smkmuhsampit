@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Pencil, Trash2 } from 'lucide-react';
 import api from '../../../../api/axios';
 import TruncateText from '../../../../components/TruncateText';
@@ -40,18 +40,31 @@ export default function TahsinSection() {
 
   useEffect(() => { api.get('/classes').then((res) => setClasses(res.data)); }, []);
 
+  // Ref penanda request kelas/siswa paling baru — dipakai karena
+  // loadClassScores/loadSiswaHistory juga dipanggil langsung dari
+  // refreshAfterMutation (bukan cuma dari efek di bawah), supaya respons
+  // yang datang belakangan tidak menimpa data kelas/siswa yang sudah
+  // berpindah duluan.
+  const classReqRef = useRef(0);
+  const siswaReqRef = useRef(0);
+
   const loadClassScores = (classId) => {
-    api.get('/tahsin-scores', { params: { class_room_id: classId } }).then((res) => setClassScores(res.data));
+    const reqId = ++classReqRef.current;
+    api.get('/tahsin-scores', { params: { class_room_id: classId } }).then((res) => {
+      if (reqId === classReqRef.current) setClassScores(res.data);
+    });
   };
 
   useEffect(() => {
     if (!kelasFilter) { setRoster([]); setClassScores([]); return; }
+    let cancelled = false;
     setSelectedSiswa(null);
     setLoadingRoster(true);
     api.get('/students', { params: { class_room_id: kelasFilter } })
-      .then((res) => setRoster(res.data))
-      .finally(() => setLoadingRoster(false));
+      .then((res) => { if (!cancelled) setRoster(res.data); })
+      .finally(() => { if (!cancelled) setLoadingRoster(false); });
     loadClassScores(kelasFilter);
+    return () => { cancelled = true; };
   }, [kelasFilter]);
 
   const latestFor = useMemo(() => {
@@ -67,9 +80,10 @@ export default function TahsinSection() {
 
   const loadSiswaHistory = (studentId) => {
     setLoadingHistory(true);
+    const reqId = ++siswaReqRef.current;
     api.get('/tahsin-scores', { params: { student_id: studentId } })
-      .then((res) => setSiswaHistory(res.data))
-      .finally(() => setLoadingHistory(false));
+      .then((res) => { if (reqId === siswaReqRef.current) setSiswaHistory(res.data); })
+      .finally(() => { if (reqId === siswaReqRef.current) setLoadingHistory(false); });
   };
 
   const selectSiswa = (s) => {

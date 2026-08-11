@@ -7,6 +7,7 @@ import DailyGroupedBarChart from '../../../components/DailyGroupedBarChart';
 import { MASTER_DATA_SUBMENU } from './MasterDataTab';
 import { ALUMNI_SUBMENU } from './AlumniMenuTab';
 import { POIN_SUBMENU } from './PoinTab';
+import { LAPORAN_SUBMENU } from './LaporanTab';
 import { PKL_SUBMENU } from './PklTab';
 import { KURIKULUM_SUBMENU } from './KurikulumTab';
 import { SARPRAS_SUBMENU } from './SarprasTab';
@@ -344,8 +345,8 @@ const KURIKULUM_SUBMENU_DATAR = KURIKULUM_SUBMENU.flatMap((item) =>
 const MENU_UTAMA = [
   { key: 'master', label: 'Master Data', desc: 'Siswa, guru, kelas & wali', icon: Database, color: '#0B1B3A', submenu: MASTER_DATA_SUBMENU },
   { key: 'alumni', label: 'Alumni', desc: 'Data siswa yang sudah lulus', icon: GraduationCap, color: '#3FB27F', submenu: ALUMNI_SUBMENU },
-  { key: 'absensi', label: 'Rekap Absensi', desc: 'Kehadiran siswa harian', icon: ClipboardCheck, color: '#2a78d6' },
-  { key: 'poin', label: 'Poin', desc: 'Pelanggaran, prestasi & sanksi', icon: ClipboardList, color: '#B9504F', submenu: POIN_SUBMENU },
+  { key: 'laporan', label: 'Laporan', desc: 'Absensi, poin, BK & nilai', icon: ClipboardCheck, color: '#2a78d6', submenu: LAPORAN_SUBMENU },
+  { key: 'poin', label: 'Poin', desc: 'Jenis poin & sanksi bertingkat', icon: ClipboardList, color: '#B9504F', submenu: POIN_SUBMENU },
   { key: 'pkl', label: 'PKL', desc: 'IDUKA & penempatan siswa', icon: Briefcase, color: '#15803D', submenu: PKL_SUBMENU },
   { key: 'kurikulum', label: 'Pembelajaran', desc: 'Kalender, mapel & jadwal', icon: BookOpen, color: '#eb6834', submenu: KURIKULUM_SUBMENU_DATAR },
   { key: 'sarpras-staf', label: 'Teknisi & Kepala Bengkel', desc: 'Penanggung jawab ruang', icon: HardHat, color: '#6B7280' },

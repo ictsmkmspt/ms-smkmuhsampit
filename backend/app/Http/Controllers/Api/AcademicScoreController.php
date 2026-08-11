@@ -572,4 +572,28 @@ class AcademicScoreController extends Controller
             ->orderByDesc('tanggal')
             ->get();
     }
+
+    /**
+     * Rekap Nilai Akademik lintas kelas/mapel/guru — dipakai menu Laporan
+     * di dashboard Admin (Waka Kurikulum). Beda dari index() yang dikunci
+     * ke Tugas Mengajar 1 guru, ini murni laporan baca-saja tanpa batasan
+     * guru, cuma disaring kelas/mapel/tahun ajaran (default aktif).
+     */
+    public function laporan(Request $request)
+    {
+        $data = $request->validate([
+            'class_room_id' => 'nullable|exists:class_rooms,id',
+            'subject_id' => 'nullable|exists:subjects,id',
+            'tahun_ajaran_id' => 'nullable|exists:tahun_ajarans,id',
+        ]);
+
+        $tahunAjaranId = $data['tahun_ajaran_id'] ?? TahunAjaran::aktifId();
+
+        return AcademicScore::with(['student.user', 'student.classRoom', 'subject', 'recordedBy'])
+            ->where('tahun_ajaran_id', $tahunAjaranId)
+            ->when(!empty($data['class_room_id']), fn ($q) => $q->whereHas('student', fn ($q2) => $q2->where('class_room_id', $data['class_room_id'])))
+            ->when(!empty($data['subject_id']), fn ($q) => $q->where('subject_id', $data['subject_id']))
+            ->orderByDesc('tanggal')
+            ->get();
+    }
 }

@@ -460,20 +460,33 @@ Route::middleware('auth:sanctum')->group(function () {
         // Tahsin/Tahfidz/Tadarus — beda dari nilai akademik di atas, SEMUA
         // guru boleh mencatat untuk kelas/siswa manapun (tidak dikunci ke
         // Tugas Mengajar), lihat komentar di masing-masing controller.
-        Route::get('/tahsin-scores', [TahsinScoreController::class, 'index']);
+        // GET index-nya didaftarkan terpisah di grup role:guru,admin,
+        // waka_kesiswaan di bawah (dipakai juga oleh menu Laporan Admin),
+        // supaya tulis/ubah/hapus tetap eksklusif guru.
         Route::post('/tahsin-scores/bulk', [TahsinScoreController::class, 'storeBulk']);
         Route::put('/tahsin-scores/{tahsinScore}', [TahsinScoreController::class, 'update']);
         Route::delete('/tahsin-scores/{tahsinScore}', [TahsinScoreController::class, 'destroy']);
 
-        Route::get('/tahfidz-scores', [TahfidzScoreController::class, 'index']);
         Route::post('/tahfidz-scores/bulk', [TahfidzScoreController::class, 'storeBulk']);
         Route::put('/tahfidz-scores/{tahfidzScore}', [TahfidzScoreController::class, 'update']);
         Route::delete('/tahfidz-scores/{tahfidzScore}', [TahfidzScoreController::class, 'destroy']);
 
-        Route::get('/tadarus-scores', [TadarusScoreController::class, 'index']);
         Route::post('/tadarus-scores/bulk', [TadarusScoreController::class, 'storeBulk']);
         Route::put('/tadarus-scores/{tadarusScore}', [TadarusScoreController::class, 'update']);
         Route::delete('/tadarus-scores/{tadarusScore}', [TadarusScoreController::class, 'destroy']);
+    });
+
+    // Laporan Nilai Akademik (Waka Kurikulum) & Tahsin/Tahfidz/Tadarus
+    // (Waka Kesiswaan) di menu Laporan Admin — baca-saja, guru tetap bisa
+    // akses index Tahsin/Tahfidz/Tadarus yang sama untuk menu Penilaiannya.
+    Route::middleware('role:guru,admin,waka_kesiswaan')->group(function () {
+        Route::get('/tahsin-scores', [TahsinScoreController::class, 'index']);
+        Route::get('/tahfidz-scores', [TahfidzScoreController::class, 'index']);
+        Route::get('/tadarus-scores', [TadarusScoreController::class, 'index']);
+    });
+
+    Route::middleware('role:admin,waka_kurikulum')->group(function () {
+        Route::get('/academic-scores/laporan', [AcademicScoreController::class, 'laporan']);
     });
 
     Route::middleware('role:siswa')->group(function () {
