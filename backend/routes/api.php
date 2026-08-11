@@ -119,6 +119,7 @@ Route::middleware('auth:sanctum')->group(function () {
         // supaya Waka Humas (menu Alumni, cuma baca) ikut bisa akses tanpa
         // bentrok URI ganda dengan rute ini.
         Route::post('/parents', [WaliController::class, 'store']);
+        Route::put('/parents/{id}', [WaliController::class, 'update']);
         Route::post('/parents/{parentId}/link', [WaliController::class, 'link']);
         Route::delete('/parents/{parentId}/link/{studentId}', [WaliController::class, 'unlink']);
         Route::delete('/parents/{id}', [WaliController::class, 'destroy']);
@@ -296,13 +297,16 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/classes/{classRoom}', [ClassRoomController::class, 'destroy']);
         Route::delete('/tahun-ajaran/{id}', [TahunAjaranController::class, 'destroy']);
         Route::post('/tu', [TuController::class, 'store']);
+        Route::put('/tu/{id}', [TuController::class, 'update']);
         Route::delete('/tu/{id}', [TuController::class, 'destroy']);
         Route::put('/tu/{id}/reset-password', [TuController::class, 'resetPassword']);
         Route::post('/bk', [BkAccountController::class, 'store']);
+        Route::put('/bk/{id}', [BkAccountController::class, 'update']);
         Route::delete('/bk/{id}', [BkAccountController::class, 'destroy']);
         Route::put('/bk/{id}/reset-password', [BkAccountController::class, 'resetPassword']);
         Route::get('/admin-accounts', [AdminAccountController::class, 'index']);
         Route::post('/admin-accounts', [AdminAccountController::class, 'store']);
+        Route::put('/admin-accounts/{id}', [AdminAccountController::class, 'update']);
         Route::delete('/admin-accounts/{id}', [AdminAccountController::class, 'destroy']);
         Route::put('/admin-accounts/{id}/reset-password', [AdminAccountController::class, 'resetPassword']);
 

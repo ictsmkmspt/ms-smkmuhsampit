@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Plus, Trash2, UserPlus, Link2, Download, Upload, KeyRound } from 'lucide-react';
+import { Plus, Trash2, UserPlus, Link2, Download, Upload, KeyRound, Check, X } from 'lucide-react';
 import api from '../../../api/axios';
 import TruncateText from '../../../components/TruncateText';
 
@@ -18,6 +18,11 @@ export default function WaliTab() {
   const [linkingId, setLinkingId] = useState(null);
   const [linkForm, setLinkForm] = useState({ student_id: '', hubungan: '' });
   const [linkError, setLinkError] = useState('');
+
+  const [editingId, setEditingId] = useState(null);
+  const [editForm, setEditForm] = useState({ name: '', phone: '' });
+  const [editError, setEditError] = useState('');
+  const [editSaving, setEditSaving] = useState(false);
 
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState(null);
@@ -67,6 +72,29 @@ export default function WaliTab() {
     setLinkingId(parentId);
     setLinkForm({ student_id: '', hubungan: '' });
     setLinkError('');
+    setEditingId(null);
+  };
+
+  const openEditForm = (p) => {
+    setEditingId(p.id);
+    setEditForm({ name: p.name || '', phone: p.phone || '' });
+    setEditError('');
+    setLinkingId(null);
+  };
+
+  const handleSaveEdit = async (id) => {
+    setEditError('');
+    setEditSaving(true);
+    try {
+      await api.put(`/parents/${id}`, editForm);
+      setEditingId(null);
+      loadParents();
+    } catch (err) {
+      const msgs = err.response?.data?.errors;
+      setEditError(msgs ? Object.values(msgs).flat().join(', ') : err.response?.data?.message || 'Gagal menyimpan perubahan.');
+    } finally {
+      setEditSaving(false);
+    }
   };
 
   const handleLink = async (parentId) => {
@@ -214,6 +242,9 @@ export default function WaliTab() {
                   >
                     <Link2 className="w-3.5 h-3.5" /> Hubungkan Anak
                   </button>
+                  <button onClick={() => openEditForm(p)} className="text-ink-400 hover:text-brand-600 text-xs border border-line-200 rounded-lg px-2 py-1">
+                    Edit
+                  </button>
                   <button onClick={() => handleResetPassword(p.id, p.name)} className="text-ink-400 hover:text-brand-600" title="Reset Password ke default (123456)">
                     <KeyRound className="w-4 h-4" />
                   </button>
@@ -222,6 +253,32 @@ export default function WaliTab() {
                   </button>
                 </div>
               </div>
+
+              {editingId === p.id && (
+                <div className="mt-3 pt-3 border-t border-line-200 space-y-2">
+                  {editError && <p className="text-xs text-honey-700">{editError}</p>}
+                  <div className="flex flex-wrap items-end gap-2">
+                    <div>
+                      <label className="block text-xs font-medium text-ink-500 mb-1">Nama</label>
+                      <input value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} className="field-input text-sm" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-ink-500 mb-1">No. HP</label>
+                      <input value={editForm.phone} onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })} className="field-input text-sm" />
+                    </div>
+                    <button
+                      onClick={() => handleSaveEdit(p.id)}
+                      disabled={editSaving}
+                      className="flex items-center gap-1 text-xs font-medium text-white bg-brand-600 hover:bg-brand-700 disabled:opacity-50 rounded-lg px-3 py-2 transition"
+                    >
+                      <Check className="w-3.5 h-3.5" /> {editSaving ? 'Menyimpan...' : 'Simpan'}
+                    </button>
+                    <button onClick={() => setEditingId(null)} className="flex items-center gap-1 text-xs font-medium text-ink-500 hover:bg-mist-50 rounded-lg px-3 py-2 transition">
+                      <X className="w-3.5 h-3.5" /> Batal
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {p.children?.length > 0 ? (
                 <div className="mt-3 flex flex-wrap gap-2">

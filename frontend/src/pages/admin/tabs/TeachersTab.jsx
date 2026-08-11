@@ -59,7 +59,7 @@ export default function TeachersTab() {
 
   const startEdit = (t) => {
     setEditId(t.id);
-    setEditData({ name: t.user?.name || '', jenis_kelamin: t.jenis_kelamin || '' });
+    setEditData({ name: t.user?.name || '', email: t.user?.email || '', nip: t.nip || '', jenis_kelamin: t.jenis_kelamin || '' });
   };
 
   const handleSaveEdit = async (id) => {
@@ -218,6 +218,8 @@ export default function TeachersTab() {
                   <td colSpan="5" className="py-3 whitespace-nowrap px-2">
                     <div className="grid grid-cols-2 gap-2 mb-2">
                       <input value={editData.name} onChange={(e) => setEditData({ ...editData, name: e.target.value })} className="field-input py-1.5 text-sm" placeholder="Nama" />
+                      <input value={editData.email} onChange={(e) => setEditData({ ...editData, email: e.target.value })} className="field-input py-1.5 text-sm" placeholder="Email" type="email" />
+                      <input value={editData.nip} onChange={(e) => setEditData({ ...editData, nip: e.target.value })} className="field-input py-1.5 text-sm" placeholder="NIP" />
                       <select value={editData.jenis_kelamin} onChange={(e) => setEditData({ ...editData, jenis_kelamin: e.target.value })} className="field-input py-1.5 text-sm text-ink-700">
                         <option value="">— Jenis Kelamin —</option>
                         <option value="L">Laki-laki</option>

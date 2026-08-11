@@ -39,6 +39,20 @@ class WaliController extends Controller
         return response()->json($user, 201);
     }
 
+    public function update(Request $request, $id)
+    {
+        $parent = User::where('role', 'wali')->findOrFail($id);
+
+        $data = $request->validate([
+            'name' => 'sometimes|string|max:100',
+            'phone' => 'sometimes|string|max:20|unique:users,phone,' . $parent->id,
+        ]);
+
+        $parent->update($data);
+
+        return $parent->fresh();
+    }
+
     public function link(Request $request, $parentId)
     {
         $data = $request->validate([

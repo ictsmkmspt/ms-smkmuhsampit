@@ -72,14 +72,16 @@ class StudentController extends Controller
     {
         $data = $request->validate([
             'name' => 'sometimes|string|max:100',
+            'email' => 'sometimes|email|unique:users,email,' . $student->user_id,
+            'nis' => 'sometimes|string|unique:students,nis,' . $student->id,
             'jenis_kelamin' => 'nullable|in:L,P',
             'class_room_id' => 'nullable|exists:class_rooms,id',
         ]);
 
-        if (isset($data['name'])) {
-            $student->user->update(['name' => $data['name']]);
+        if (isset($data['name']) || isset($data['email'])) {
+            $student->user->update(array_intersect_key($data, array_flip(['name', 'email'])));
         }
-        $student->update($request->only('class_room_id', 'jenis_kelamin'));
+        $student->update($request->only('nis', 'class_room_id', 'jenis_kelamin'));
 
         return $student->load(['user', 'classRoom']);
     }

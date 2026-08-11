@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Plus, Trash2, Download, Upload, KeyRound } from 'lucide-react';
+import { Plus, Trash2, Download, Upload, KeyRound, Save } from 'lucide-react';
 import api from '../../../api/axios';
 import TruncateText from '../../../components/TruncateText';
 
@@ -19,6 +19,10 @@ export default function StudentsTab() {
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState(null);
   const fileInputRef = useRef(null);
+
+  const [editId, setEditId] = useState(null);
+  const [editData, setEditData] = useState({});
+  const [saving, setSaving] = useState(false);
 
   const loadStudents = () => api.get('/students').then((res) => setStudents(res.data));
   const loadClasses = () => api.get('/classes').then((res) => setClasses(res.data));
@@ -57,6 +61,31 @@ export default function StudentsTab() {
       alert(res.data.message);
     } catch (err) {
       alert(err.response?.data?.message || 'Gagal mereset password.');
+    }
+  };
+
+  const startEdit = (s) => {
+    setEditId(s.id);
+    setEditData({
+      name: s.user?.name || '',
+      email: s.user?.email || '',
+      nis: s.nis || '',
+      jenis_kelamin: s.jenis_kelamin || '',
+      class_room_id: s.class_room_id || '',
+    });
+  };
+
+  const handleSaveEdit = async (id) => {
+    setSaving(true);
+    try {
+      await api.put(`/students/${id}`, editData);
+      setEditId(null);
+      loadStudents();
+    } catch (err) {
+      const msgs = err.response?.data?.errors;
+      alert(msgs ? Object.values(msgs).flat().join(', ') : err.response?.data?.message || 'Gagal menyimpan perubahan.');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -230,7 +259,7 @@ export default function StudentsTab() {
         <table className="w-full text-sm min-w-[640px]">
           <thead>
             <tr className="text-left text-ink-500 border-b border-line-200">
-              <th className="pb-2 font-medium whitespace-nowrap px-2">Nama</th><th className="font-medium whitespace-nowrap px-2">NIS</th><th className="font-medium whitespace-nowrap px-2">Jenis Kelamin</th><th className="font-medium whitespace-nowrap px-2">Kelas</th><th className="font-medium whitespace-nowrap px-2">Barcode</th><th className="whitespace-nowrap px-2"></th>
+              <th className="pb-2 font-medium whitespace-nowrap px-2">Nama</th><th className="font-medium whitespace-nowrap px-2">Email</th><th className="font-medium whitespace-nowrap px-2">NIS</th><th className="font-medium whitespace-nowrap px-2">Jenis Kelamin</th><th className="font-medium whitespace-nowrap px-2">Kelas</th><th className="font-medium whitespace-nowrap px-2">Barcode</th><th className="whitespace-nowrap px-2"></th>
             </tr>
           </thead>
           <tbody>
@@ -249,7 +278,7 @@ export default function StudentsTab() {
                 if (kelasName !== lastKelas) {
                   rows.push(
                     <tr key={`header-${kelasName}`}>
-                      <td colSpan="6" className="pt-4 pb-1 whitespace-nowrap px-2">
+                      <td colSpan="7" className="pt-4 pb-1 whitespace-nowrap px-2">
                         <span className="badge-soft badge-brand text-[11px]">
                           {kelasName || 'Belum Ada Kelas'}
                         </span>
@@ -258,15 +287,48 @@ export default function StudentsTab() {
                   );
                   lastKelas = kelasName;
                 }
+                if (editId === s.id) {
+                  rows.push(
+                    <tr key={s.id} className="border-t border-line-200 bg-mist-50">
+                      <td colSpan="7" className="py-3 whitespace-nowrap px-2">
+                        <div className="grid grid-cols-2 gap-2 mb-2">
+                          <input value={editData.name} onChange={(e) => setEditData({ ...editData, name: e.target.value })} className="field-input py-1.5 text-sm" placeholder="Nama" />
+                          <input value={editData.email} onChange={(e) => setEditData({ ...editData, email: e.target.value })} className="field-input py-1.5 text-sm" placeholder="Email" type="email" />
+                          <input value={editData.nis} onChange={(e) => setEditData({ ...editData, nis: e.target.value })} className="field-input py-1.5 text-sm" placeholder="NIS" />
+                          <select value={editData.jenis_kelamin} onChange={(e) => setEditData({ ...editData, jenis_kelamin: e.target.value })} className="field-input py-1.5 text-sm text-ink-700">
+                            <option value="">— Jenis Kelamin —</option>
+                            <option value="L">Laki-laki</option>
+                            <option value="P">Perempuan</option>
+                          </select>
+                          <select value={editData.class_room_id} onChange={(e) => setEditData({ ...editData, class_room_id: e.target.value })} className="field-input py-1.5 text-sm text-ink-700 col-span-2">
+                            <option value="">— Belum Ada Kelas —</option>
+                            {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                          </select>
+                        </div>
+                        <div className="flex gap-2">
+                          <button onClick={() => handleSaveEdit(s.id)} disabled={saving} className="flex items-center gap-1.5 text-xs font-medium text-white bg-brand-600 hover:bg-brand-700 rounded-lg px-3 py-1.5">
+                            <Save className="w-3.5 h-3.5" /> {saving ? 'Menyimpan...' : 'Simpan'}
+                          </button>
+                          <button onClick={() => setEditId(null)} className="text-xs font-medium text-ink-500 hover:text-ink-700 px-2 py-1.5">Batal</button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                  return;
+                }
                 rows.push(
                   <tr key={s.id} className="border-t border-line-200">
                     <td className="py-2.5 text-ink-900 whitespace-nowrap px-2"><TruncateText text={s.user?.name} /></td>
+                    <td className="text-ink-700 whitespace-nowrap px-2"><TruncateText text={s.user?.email} /></td>
                     <td className="text-ink-700 whitespace-nowrap px-2">{s.nis}</td>
                     <td className="text-ink-700 whitespace-nowrap px-2">{JK_LABEL[s.jenis_kelamin] || '-'}</td>
                     <td className="text-ink-700 whitespace-nowrap px-2">{s.class_room?.name || '-'}</td>
                     <td className="font-mono text-xs text-brand-600 whitespace-nowrap px-2">{s.barcode_code}</td>
                     <td className="text-right whitespace-nowrap px-2">
                       <div className="flex justify-end gap-2">
+                        <button onClick={() => startEdit(s)} className="text-ink-400 hover:text-brand-600 text-xs border border-line-200 rounded-lg px-2 py-1">
+                          Edit
+                        </button>
                         <button onClick={() => handleResetPassword(s.id, s.user?.name)} className="text-ink-400 hover:text-brand-600" title="Reset Password ke default (123456)">
                           <KeyRound className="w-4 h-4" />
                         </button>
@@ -281,7 +343,7 @@ export default function StudentsTab() {
               return rows;
             })()}
             {students.length === 0 && (
-              <tr><td colSpan="6" className="py-6 text-center text-ink-300 whitespace-nowrap px-2">Belum ada siswa.</td></tr>
+              <tr><td colSpan="7" className="py-6 text-center text-ink-300 whitespace-nowrap px-2">Belum ada siswa.</td></tr>
             )}
           </tbody>
         </table>

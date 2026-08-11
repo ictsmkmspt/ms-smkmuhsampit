@@ -34,6 +34,20 @@ class BkAccountController extends Controller
         return response()->json($user, 201);
     }
 
+    public function update(Request $request, $id)
+    {
+        $user = User::where('role', 'bk')->findOrFail($id);
+
+        $data = $request->validate([
+            'name' => 'sometimes|string|max:100',
+            'email' => 'sometimes|email|unique:users,email,' . $user->id,
+        ]);
+
+        $user->update($data);
+
+        return $user->fresh();
+    }
+
     public function destroy($id)
     {
         $user = User::where('role', 'bk')->findOrFail($id);

@@ -38,6 +38,30 @@ class AdminAccountController extends Controller
     }
 
     /**
+     * Ubah data akun — termasuk `role`, jadi dijaga sama seperti destroy():
+     * tidak boleh menurunkan peran Super Admin TERAKHIR ke peran lain,
+     * supaya sistem tidak pernah kehabisan akun admin penuh sama sekali.
+     */
+    public function update(Request $request, $id)
+    {
+        $user = User::whereIn('role', self::ROLES)->findOrFail($id);
+
+        $data = $request->validate([
+            'name' => 'sometimes|string|max:100',
+            'email' => 'sometimes|email|unique:users,email,' . $user->id,
+            'role' => 'sometimes|in:admin,waka_kesiswaan,waka_kurikulum,waka_humas,waka_sarpras',
+        ]);
+
+        if (isset($data['role']) && $data['role'] !== 'admin' && $user->role === 'admin' && User::where('role', 'admin')->count() <= 1) {
+            return response()->json(['message' => 'Tidak bisa mengubah peran Super Admin terakhir — sistem wajib punya minimal 1 akun Super Admin.'], 422);
+        }
+
+        $user->update($data);
+
+        return $user->fresh();
+    }
+
+    /**
      * Hapus akun Super Admin/Admin. Ditolak kalau targetnya akun yang sedang
      * login sendiri (supaya tidak tiba-tiba logout paksa di tengah sesi), dan
      * ditolak kalau targetnya Super Admin TERAKHIR (supaya sistem tidak

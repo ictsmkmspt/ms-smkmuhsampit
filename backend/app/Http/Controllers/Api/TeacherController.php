@@ -51,13 +51,15 @@ class TeacherController extends Controller
     {
         $data = $request->validate([
             'name' => 'sometimes|string|max:100',
+            'email' => 'sometimes|email|unique:users,email,' . $teacher->user_id,
+            'nip' => 'sometimes|string|unique:teachers,nip,' . $teacher->id,
             'jenis_kelamin' => 'nullable|in:L,P',
         ]);
 
-        if (isset($data['name'])) {
-            $teacher->user->update(['name' => $data['name']]);
+        if (isset($data['name']) || isset($data['email'])) {
+            $teacher->user->update(array_intersect_key($data, array_flip(['name', 'email'])));
         }
-        $teacher->update($request->only('jenis_kelamin'));
+        $teacher->update($request->only('nip', 'jenis_kelamin'));
 
         return $teacher->load('user');
     }
