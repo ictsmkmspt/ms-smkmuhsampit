@@ -15,7 +15,8 @@ const KATEGORI_LABEL = { akademik: 'Akademik', perilaku: 'Perilaku', sosial: 'So
  * role guru), jadi di sini ada filter Kelas sendiri supaya BK bisa lihat
  * kelas mana pun atau "Semua Kelas" sekaligus. Terikat tahun ajaran aktif
  * (tidak ada pemilih tahun ajaran seperti di dashboard Admin — dashboard
- * BK memang cuma untuk kerja tahun berjalan).
+ * BK memang cuma untuk kerja tahun berjalan). Baca-saja — edit/hapus
+ * kejadian sanksi sengaja cuma ada di Rekap BK Admin/Waka (RekapBkTab.jsx).
  */
 export default function SanksiCatatanSection() {
   const [classes, setClasses] = useState([]);

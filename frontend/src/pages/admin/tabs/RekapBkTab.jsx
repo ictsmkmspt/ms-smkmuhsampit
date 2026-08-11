@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Search, AlertTriangle, CheckCircle2, HeartHandshake, ChevronLeft, ChevronRight, FileDown, Pencil, Trash2 } from 'lucide-react';
+import { Search, AlertTriangle, CheckCircle2, HeartHandshake, ChevronLeft, ChevronRight, FileDown, Trash2 } from 'lucide-react';
 import api from '../../../api/axios';
 import TruncateText from '../../../components/TruncateText';
 import CetakSuratPeringatanModal from '../../../components/CetakSuratPeringatanModal';
@@ -23,19 +23,13 @@ export default function RekapBkTab() {
   const [kejadian, setKejadian] = useState([]);
   const [catatan, setCatatan] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [sanksiRules, setSanksiRules] = useState([]);
 
   const [kejadianPage, setKejadianPage] = useState(1);
   const [catatanPage, setCatatanPage] = useState(1);
   const [cetakSurat, setCetakSurat] = useState(null);
 
-  const [editingKejadianId, setEditingKejadianId] = useState(null);
-  const [editSanksiRuleId, setEditSanksiRuleId] = useState('');
-  const [savingEdit, setSavingEdit] = useState(false);
-
   useEffect(() => {
     api.get('/classes').then((res) => setClasses(res.data));
-    api.get('/sanksi-rules').then((res) => setSanksiRules(res.data));
   }, []);
 
   const loadAll = () => {
@@ -53,30 +47,6 @@ export default function RekapBkTab() {
   };
 
   useEffect(loadAll, [tahunAjaranId]); // eslint-disable-line
-
-  const bukaEditKejadian = (k) => {
-    setEditingKejadianId(k.id);
-    setEditSanksiRuleId(k.sanksi_rule?.id ? String(k.sanksi_rule.id) : '');
-  };
-
-  const batalEditKejadian = () => {
-    setEditingKejadianId(null);
-    setEditSanksiRuleId('');
-  };
-
-  const simpanEditKejadian = async (id) => {
-    if (!editSanksiRuleId) return;
-    setSavingEdit(true);
-    try {
-      await api.put(`/sanksi-kejadian/${id}`, { sanksi_rule_id: editSanksiRuleId });
-      batalEditKejadian();
-      loadAll();
-    } catch (err) {
-      alert(err.response?.data?.message || 'Gagal menyimpan perubahan.');
-    } finally {
-      setSavingEdit(false);
-    }
-  };
 
   const hapusKejadian = async (k) => {
     if (!confirm(`Hapus kejadian sanksi "${k.student?.user?.name}" (${k.sanksi_rule?.nama || '-'})?`)) return;
@@ -181,50 +151,25 @@ export default function RekapBkTab() {
           ) : (
             <div className="space-y-2">
               {kejadianPaginated.map((k) => (
-                editingKejadianId === k.id ? (
-                  <div key={k.id} className="border border-brand-200 bg-brand-50/40 rounded-lg px-3 py-2 text-sm space-y-2">
+                <div key={k.id} className="border border-line-200 rounded-lg px-3 py-2 flex items-center justify-between gap-2 text-sm">
+                  <div className="min-w-0">
                     <p className="text-ink-900 font-medium truncate"><TruncateText text={k.student?.user?.name} /> <span className="text-ink-400 font-normal">· {k.student?.class_room?.name || '-'}</span></p>
-                    <select value={editSanksiRuleId} onChange={(e) => setEditSanksiRuleId(e.target.value)} className="field-input text-sm w-full">
-                      <option value="">— Pilih Tahap Sanksi —</option>
-                      {sanksiRules.map((r) => <option key={r.id} value={r.id}>{r.nama}</option>)}
-                    </select>
-                    <div className="flex gap-2">
-                      <button
-                        disabled={savingEdit || !editSanksiRuleId}
-                        onClick={() => simpanEditKejadian(k.id)}
-                        className="text-xs font-medium text-white bg-brand-600 hover:bg-brand-700 disabled:opacity-50 rounded-lg px-3 py-1.5"
-                      >
-                        {savingEdit ? 'Menyimpan...' : 'Simpan'}
-                      </button>
-                      <button onClick={batalEditKejadian} className="text-xs font-medium text-ink-500 hover:text-ink-700 px-3 py-1.5">
-                        Batal
-                      </button>
-                    </div>
+                    <p className="text-xs text-ink-500 truncate">{new Date(k.created_at).toLocaleDateString('id-ID')} &middot; {k.sanksi_rule?.nama || '-'}</p>
                   </div>
-                ) : (
-                  <div key={k.id} className="border border-line-200 rounded-lg px-3 py-2 flex items-center justify-between gap-2 text-sm">
-                    <div className="min-w-0">
-                      <p className="text-ink-900 font-medium truncate"><TruncateText text={k.student?.user?.name} /> <span className="text-ink-400 font-normal">· {k.student?.class_room?.name || '-'}</span></p>
-                      <p className="text-xs text-ink-500 truncate">{new Date(k.created_at).toLocaleDateString('id-ID')} &middot; {k.sanksi_rule?.nama || '-'}</p>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <button
-                        onClick={() => setCetakSurat(k)}
-                        title="Buat Surat Peringatan (Word)"
-                        className="p-1.5 rounded-lg text-ink-400 hover:text-brand-600 hover:bg-mist-50"
-                      >
-                        <FileDown className="w-4 h-4" />
-                      </button>
-                      <button onClick={() => bukaEditKejadian(k)} title="Edit" className="p-1.5 rounded-lg text-ink-400 hover:text-brand-600 hover:bg-mist-50">
-                        <Pencil className="w-4 h-4" />
-                      </button>
-                      <button onClick={() => hapusKejadian(k)} title="Hapus" className="p-1.5 rounded-lg text-ink-400 hover:text-honey-700 hover:bg-mist-50">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                      <span className={`badge-soft ${k.status === 'selesai' ? 'badge-brand' : 'badge-honey'}`}>{k.status === 'selesai' ? 'Selesai' : 'Diproses'}</span>
-                    </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      onClick={() => setCetakSurat(k)}
+                      title="Buat Surat Peringatan (Word)"
+                      className="p-1.5 rounded-lg text-ink-400 hover:text-brand-600 hover:bg-mist-50"
+                    >
+                      <FileDown className="w-4 h-4" />
+                    </button>
+                    <button onClick={() => hapusKejadian(k)} title="Hapus" className="p-1.5 rounded-lg text-ink-400 hover:text-honey-700 hover:bg-mist-50">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                    <span className={`badge-soft ${k.status === 'selesai' ? 'badge-brand' : 'badge-honey'}`}>{k.status === 'selesai' ? 'Selesai' : 'Diproses'}</span>
                   </div>
-                )
+                </div>
               ))}
               {kejadian.length === 0 && <p className="py-6 text-center text-ink-300 text-sm">Belum ada kejadian sanksi untuk filter ini.</p>}
             </div>
