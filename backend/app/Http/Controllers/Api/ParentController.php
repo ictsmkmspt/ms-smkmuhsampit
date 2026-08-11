@@ -87,7 +87,44 @@ class ParentController extends Controller
                 'poin'   => $n->skor,
             ]);
 
+        $surahList = config('quran_surah');
+        $namaSurah = fn ($nomor) => $surahList[$nomor]['nama'] ?? "Surah #{$nomor}";
+
+        $tahsin = TahsinScore::where('student_id', $studentId)
+            ->orderByDesc('tanggal')->limit(15)->get()
+            ->map(fn ($n) => [
+                'type'   => 'tahsin',
+                'date'   => $n->tanggal,
+                'title'  => "Tahsin Jilid {$n->jilid}",
+                'detail' => "Halaman {$n->halaman}",
+                'status' => null,
+                'poin'   => null,
+            ]);
+
+        $tahfidz = TahfidzScore::where('student_id', $studentId)
+            ->orderByDesc('tanggal')->limit(15)->get()
+            ->map(fn ($n) => [
+                'type'   => 'tahfidz',
+                'date'   => $n->tanggal,
+                'title'  => 'Tahfidz: ' . $namaSurah($n->surah),
+                'detail' => "Ayat {$n->ayat_mulai}-{$n->ayat_selesai}",
+                'status' => null,
+                'poin'   => null,
+            ]);
+
+        $tadarus = TadarusScore::where('student_id', $studentId)
+            ->orderByDesc('tanggal')->limit(15)->get()
+            ->map(fn ($n) => [
+                'type'   => 'tadarus',
+                'date'   => $n->tanggal,
+                'title'  => 'Tadarus: ' . $namaSurah($n->surah),
+                'detail' => "Ayat {$n->ayat_mulai}-{$n->ayat_selesai}",
+                'status' => null,
+                'poin'   => null,
+            ]);
+
         $timeline = $attendances->concat($violations)->concat($achievements)->concat($academicScores)
+            ->concat($tahsin)->concat($tahfidz)->concat($tadarus)
             ->sortByDesc('date')->values()->take(20);
 
         return response()->json([
@@ -155,6 +192,65 @@ class ParentController extends Controller
             ->where('tahun_ajaran_id', TahunAjaran::aktifId())
             ->orderByDesc('tanggal')
             ->get();
+    }
+
+    /**
+     * Linimasa gabungan Nilai Akademik + Tahsin + Tahfidz + Tadarus 1 anak,
+     * dari yang terbaru — dipakai panel "Aktivitas Penilaian" di Beranda
+     * Wali, sengaja terpisah dari activity() (yang isinya absensi/
+     * pelanggaran/prestasi/nilai tercampur) supaya wali bisa fokus lihat
+     * perkembangan bacaan Al-Quran & nilai anaknya di 1 tempat.
+     */
+    public function penilaianActivity(Request $request, $studentId)
+    {
+        if (!$request->user()->children()->where('students.id', $studentId)->exists()) {
+            return response()->json(['message' => 'Anda tidak berwenang melihat data siswa ini.'], 403);
+        }
+
+        $surahList = config('quran_surah');
+        $namaSurah = fn ($nomor) => $surahList[$nomor]['nama'] ?? "Surah #{$nomor}";
+
+        $akademik = AcademicScore::with('subject')->where('student_id', $studentId)
+            ->orderByDesc('tanggal')->limit(20)->get()
+            ->map(fn ($n) => [
+                'type' => 'akademik',
+                'date' => $n->tanggal,
+                'title' => $n->nama_kegiatan,
+                'detail' => $n->subject?->nama,
+                'skor' => $n->skor,
+            ]);
+
+        $tahsin = TahsinScore::where('student_id', $studentId)
+            ->orderByDesc('tanggal')->limit(20)->get()
+            ->map(fn ($n) => [
+                'type' => 'tahsin',
+                'date' => $n->tanggal,
+                'title' => "Tahsin Jilid {$n->jilid}",
+                'detail' => "Halaman {$n->halaman}" . ($n->keterangan ? " · {$n->keterangan}" : ''),
+            ]);
+
+        $tahfidz = TahfidzScore::where('student_id', $studentId)
+            ->orderByDesc('tanggal')->limit(20)->get()
+            ->map(fn ($n) => [
+                'type' => 'tahfidz',
+                'date' => $n->tanggal,
+                'title' => 'Tahfidz: ' . $namaSurah($n->surah),
+                'detail' => "Ayat {$n->ayat_mulai}-{$n->ayat_selesai}" . ($n->keterangan ? " · {$n->keterangan}" : ''),
+            ]);
+
+        $tadarus = TadarusScore::where('student_id', $studentId)
+            ->orderByDesc('tanggal')->limit(20)->get()
+            ->map(fn ($n) => [
+                'type' => 'tadarus',
+                'date' => $n->tanggal,
+                'title' => 'Tadarus: ' . $namaSurah($n->surah),
+                'detail' => "Ayat {$n->ayat_mulai}-{$n->ayat_selesai}" . ($n->keterangan ? " · {$n->keterangan}" : ''),
+            ]);
+
+        $timeline = $akademik->concat($tahsin)->concat($tahfidz)->concat($tadarus)
+            ->sortByDesc('date')->values()->take(30);
+
+        return response()->json(['timeline' => $timeline]);
     }
 
     /**

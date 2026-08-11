@@ -234,7 +234,6 @@ export default function TahfidzSection() {
             <thead>
               <tr className="text-left text-ink-500 border-b border-line-200">
                 <th className="pb-2 font-medium whitespace-nowrap px-2">Nama Siswa</th>
-                <th className="font-medium whitespace-nowrap px-2">NIS</th>
                 <th className="font-medium whitespace-nowrap px-2">Riwayat Terakhir</th>
                 <th className="whitespace-nowrap px-2"></th>
               </tr>
@@ -245,7 +244,6 @@ export default function TahfidzSection() {
                 return (
                   <tr key={s.id} className="border-t border-line-200">
                     <td className="py-2.5 whitespace-nowrap px-2 text-ink-900"><TruncateText text={s.user?.name} /></td>
-                    <td className="text-ink-700 whitespace-nowrap px-2">{s.nis}</td>
                     <td className="whitespace-nowrap px-2">
                       {last ? (
                         <span className="text-ink-700">{namaSurah(last.surah)} : {last.ayat_mulai}-{last.ayat_selesai} <span className="text-xs text-ink-400">({last.tanggal})</span></span>
@@ -255,7 +253,7 @@ export default function TahfidzSection() {
                     </td>
                     <td className="text-right whitespace-nowrap px-2">
                       <button onClick={() => selectSiswa(s)} className="text-xs font-medium text-brand-700 bg-brand-50 hover:bg-brand-100 rounded-lg px-3 py-1.5 transition">
-                        Lihat Riwayat
+                        Tambah Catatan
                       </button>
                     </td>
                   </tr>

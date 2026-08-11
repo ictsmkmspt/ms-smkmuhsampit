@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Home, CalendarClock, CalendarRange } from 'lucide-react';
+import { CalendarClock } from 'lucide-react';
 import LeaderboardPrestasi from '../../../components/LeaderboardPrestasi';
 import KalenderAkademikView from '../../../components/KalenderAkademikView';
 import JadwalPelajaranView from '../../../components/JadwalPelajaranView';
@@ -8,9 +8,9 @@ import JadwalPelajaranView from '../../../components/JadwalPelajaranView';
 // tengah, label pendek di HP) — 3 tab sejajar: Beranda (leaderboard),
 // Jadwal Pelajaran, dan Kalender Akademik, bukan digabung 1 scroll panjang.
 const SUB_TABS = [
-  { key: 'beranda', label: 'Beranda', labelShort: 'Beranda', icon: Home },
-  { key: 'jadwal', label: 'Jadwal Pelajaran', labelShort: 'Jadwal', icon: CalendarClock },
-  { key: 'kalender', label: 'Kalender Akademik', labelShort: 'Kalender', icon: CalendarRange },
+  { key: 'beranda', label: 'Beranda', labelShort: 'Beranda' },
+  { key: 'jadwal', label: 'Jadwal Pelajaran', labelShort: 'Jadwal' },
+  { key: 'kalender', label: 'Kalender Akademik', labelShort: 'Kalender' },
 ];
 
 export default function BerandaTab() {
@@ -29,7 +29,6 @@ export default function BerandaTab() {
                 isActive ? 'bg-brand-600 text-white shadow-sm' : 'text-ink-700 hover:bg-mist-50 hover:text-ink-900'
               }`}
             >
-              <t.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               <span className="sm:hidden">{t.labelShort}</span>
               <span className="hidden sm:inline">{t.label}</span>
             </button>

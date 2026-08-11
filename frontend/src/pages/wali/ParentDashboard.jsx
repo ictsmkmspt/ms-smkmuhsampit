@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { LogOut, School, Trophy, AlertOctagon, Clock, ChevronDown, ChevronLeft, ChevronRight, Wallet, UserCog, Home, BookOpen, CalendarRange, ClipboardList } from 'lucide-react';
+import { LogOut, School, Trophy, AlertOctagon, Clock, ChevronDown, ChevronLeft, ChevronRight, Wallet, UserCog, Home, BookOpen, BookMarked, ScrollText, CalendarRange, ClipboardList } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api/axios';
 import LeaderboardPrestasi from '../../components/LeaderboardPrestasi';
@@ -33,6 +33,16 @@ const TYPE_CONFIG = {
   pelanggaran: { icon: AlertOctagon, badge: 'badge-rose' },
   prestasi: { icon: Trophy, badge: 'badge-honey' },
   nilai: { icon: ClipboardList, badge: 'badge-brand' },
+  tahsin: { icon: BookOpen, badge: 'badge-brand' },
+  tahfidz: { icon: BookMarked, badge: 'badge-brand' },
+  tadarus: { icon: ScrollText, badge: 'badge-brand' },
+};
+
+const PENILAIAN_TYPE_CONFIG = {
+  akademik: { icon: ClipboardList },
+  tahsin: { icon: BookOpen },
+  tahfidz: { icon: BookMarked },
+  tadarus: { icon: ScrollText },
 };
 
 export default function ParentDashboard() {
@@ -44,6 +54,8 @@ export default function ParentDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [activityPage, setActivityPage] = useState(1);
+  const [penilaianActivity, setPenilaianActivity] = useState(null);
+  const [penilaianActivityPage, setPenilaianActivityPage] = useState(1);
   const [spp, setSpp] = useState([]);
   const [tagihanLain, setTagihanLain] = useState([]);
   const [showTagihanDetail, setShowTagihanDetail] = useState(false);
@@ -79,6 +91,7 @@ export default function ParentDashboard() {
     if (!selectedId) return;
     setLoading(true);
     setActivityPage(1);
+    setPenilaianActivityPage(1);
     setShowTagihanDetail(false);
     setSppDetailPage(1);
     setLainDetailPage(1);
@@ -86,6 +99,10 @@ export default function ParentDashboard() {
       .then((res) => setActivity(res.data))
       .catch(() => setError('Gagal memuat aktivitas.'))
       .finally(() => setLoading(false));
+
+    api.get(`/my-children/${selectedId}/penilaian-activity`)
+      .then((res) => setPenilaianActivity(res.data))
+      .catch(() => setPenilaianActivity(null));
 
     api.get(`/my-children/${selectedId}/spp`)
       .then((res) => setSpp(res.data))
@@ -110,6 +127,9 @@ export default function ParentDashboard() {
 
   const timelineTotalPages = Math.max(1, Math.ceil((activity?.timeline?.length || 0) / PAGE_SIZE));
   const timelinePaginated = (activity?.timeline || []).slice((activityPage - 1) * PAGE_SIZE, activityPage * PAGE_SIZE);
+
+  const penilaianTimelineTotalPages = Math.max(1, Math.ceil((penilaianActivity?.timeline?.length || 0) / PAGE_SIZE));
+  const penilaianTimelinePaginated = (penilaianActivity?.timeline || []).slice((penilaianActivityPage - 1) * PAGE_SIZE, penilaianActivityPage * PAGE_SIZE);
 
   const sppBelumLunas = spp.filter((s) => s.status !== 'lunas');
   const sppTunggakan = sppBelumLunas.reduce((sum, s) => sum + Number(s.nominal || 0) - Number(s.jumlah_dibayar || 0), 0);
@@ -326,6 +346,15 @@ export default function ParentDashboard() {
           <>
             {/* Tagihan (SPP + Tagihan Lain digabung 1 tabel) */}
             <div className="surface-card p-5 mb-6">
+              {selectedChild && (
+                <div className="pb-3 mb-3 border-b border-line-200">
+                  <p className="font-display font-semibold text-ink-900">{selectedChild.user?.name}</p>
+                  <p className="text-sm text-ink-500">
+                    {selectedChild.class_room?.name || 'Belum ada kelas'} · NIS {selectedChild.nis}
+                  </p>
+                </div>
+              )}
+
               <h2 className="font-display font-semibold text-ink-900 mb-4 flex items-center gap-2">
                 <Wallet className="w-4 h-4 text-ink-500" /> Tagihan
               </h2>
@@ -333,13 +362,13 @@ export default function ParentDashboard() {
               <div className="flex items-center justify-between flex-wrap gap-4">
                 <div className="flex flex-wrap gap-6">
                   <div>
-                    <p className="text-xs text-ink-500">Tunggakan SPP</p>
+                    <p className="text-xs text-ink-500">Tagihan SPP</p>
                     <p className={`text-xl font-display font-semibold ${sppTunggakan > 0 ? 'text-honey-700' : 'text-brand-600'}`}>
                       {formatRupiah(sppTunggakan)}
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs text-ink-500">Tunggakan Tagihan Lain</p>
+                    <p className="text-xs text-ink-500">Tagihan Lain</p>
                     <p className={`text-xl font-display font-semibold ${tagihanLainTunggakan > 0 ? 'text-honey-700' : 'text-brand-600'}`}>
                       {formatRupiah(tagihanLainTunggakan)}
                     </p>
@@ -360,79 +389,133 @@ export default function ParentDashboard() {
               </button>
             </div>
 
-            {/* Aktivitas terkini */}
-            <div className="surface-card p-5">
-              {selectedChild && (
-                <div className="flex items-center justify-between flex-wrap gap-3 pb-4 mb-4 border-b border-line-200">
-                  <div>
-                    <h2 className="font-display font-semibold text-ink-900 text-lg">{selectedChild.user?.name}</h2>
-                    <p className="text-sm text-ink-500">
-                      {selectedChild.class_room?.name || 'Belum ada kelas'} · NIS {selectedChild.nis}
-                    </p>
-                  </div>
-                  <div className="flex gap-2">
+            {/* Aktivitas Terkini & Aktivitas Penilaian bersebelahan di layar lebar,
+                bertumpuk di HP (grid-cols-1 lg:grid-cols-2). */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Aktivitas terkini */}
+              <div className="surface-card p-5">
+                {selectedChild && (
+                  <div className="flex items-center justify-center flex-wrap gap-2 pb-4 mb-4 border-b border-line-200">
                     <span className="badge-soft badge-rose">Poin Pelanggaran: {selectedChild.total_poin ?? 0}</span>
                     <span className="badge-soft badge-honey">Poin Prestasi: {selectedChild.total_prestasi ?? 0}</span>
                   </div>
-                </div>
-              )}
+                )}
 
-              <h2 className="font-display font-semibold text-ink-900 mb-4">Aktivitas Terkini</h2>
+                <h2 className="font-display font-semibold text-ink-900 mb-4">Aktivitas Terkini</h2>
 
-              {loading ? (
-                <p className="text-center text-ink-300 py-6">Memuat...</p>
-              ) : error ? (
-                <p className="text-center text-honey-700 py-6">{error}</p>
-              ) : (
-                <ul className="divide-y divide-line-200">
-                  {timelinePaginated.map((item, i) => {
-                    const config = TYPE_CONFIG[item.type] || TYPE_CONFIG.absensi;
-                    const Icon = config.icon;
-                    return (
-                      <li key={i} className="py-3 flex items-start gap-3">
-                        <div className="w-8 h-8 rounded-full bg-mist-50 flex items-center justify-center shrink-0 mt-0.5">
-                          <Icon className="w-4 h-4 text-ink-500" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between gap-2">
-                            <p className="text-sm font-medium text-ink-900">{item.title}</p>
-                            <span className="text-xs text-ink-400 shrink-0">{item.date}</span>
+                {loading ? (
+                  <p className="text-center text-ink-300 py-6">Memuat...</p>
+                ) : error ? (
+                  <p className="text-center text-honey-700 py-6">{error}</p>
+                ) : (
+                  <ul className="divide-y divide-line-200">
+                    {timelinePaginated.map((item, i) => {
+                      const config = TYPE_CONFIG[item.type] || TYPE_CONFIG.absensi;
+                      const Icon = config.icon;
+                      return (
+                        <li key={i} className="py-3 flex items-start gap-3">
+                          <div className="w-8 h-8 rounded-full bg-mist-50 flex items-center justify-center shrink-0 mt-0.5">
+                            <Icon className="w-4 h-4 text-ink-500" />
                           </div>
-                          {item.detail && <p className="text-xs text-ink-500 mt-0.5">{item.detail}</p>}
-                          {item.poin != null && (
-                            <span className={`badge-soft ${config.badge} mt-1.5 inline-block`}>
-                              {item.type === 'nilai' ? `Skor: ${item.poin}` : `+${item.poin} poin`}
-                            </span>
-                          )}
-                        </div>
-                      </li>
-                    );
-                  })}
-                  {(!activity?.timeline || activity.timeline.length === 0) && (
-                    <li className="py-6 text-center text-sm text-ink-300">Belum ada aktivitas tercatat.</li>
-                  )}
-                </ul>
-              )}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-2">
+                              <p className="text-sm font-medium text-ink-900">{item.title}</p>
+                              <span className="text-xs text-ink-400 shrink-0">{item.date}</span>
+                            </div>
+                            {item.detail && <p className="text-xs text-ink-500 mt-0.5">{item.detail}</p>}
+                            {item.poin != null && (
+                              <span className={`badge-soft ${config.badge} mt-1.5 inline-block`}>
+                                {item.type === 'nilai' ? `Skor: ${item.poin}` : `+${item.poin} poin`}
+                              </span>
+                            )}
+                          </div>
+                        </li>
+                      );
+                    })}
+                    {(!activity?.timeline || activity.timeline.length === 0) && (
+                      <li className="py-6 text-center text-sm text-ink-300">Belum ada aktivitas tercatat.</li>
+                    )}
+                  </ul>
+                )}
 
-              {activity?.timeline?.length > PAGE_SIZE && (
-                <div className="flex items-center justify-between mt-3 pt-3 border-t border-line-200">
-                  <button
-                    onClick={() => setActivityPage((p) => Math.max(1, p - 1))}
-                    disabled={activityPage === 1}
-                    className="flex items-center gap-1 text-xs font-medium text-ink-500 hover:text-brand-600 disabled:opacity-30"
-                  >
-                    <ChevronLeft className="w-3.5 h-3.5" /> Sebelumnya
-                  </button>
-                  <span className="text-xs text-ink-400">Halaman {activityPage} / {timelineTotalPages}</span>
-                  <button
-                    onClick={() => setActivityPage((p) => Math.min(timelineTotalPages, p + 1))}
-                    disabled={activityPage === timelineTotalPages}
-                    className="flex items-center gap-1 text-xs font-medium text-ink-500 hover:text-brand-600 disabled:opacity-30"
-                  >
-                    Selanjutnya <ChevronRight className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              )}
+                {activity?.timeline?.length > PAGE_SIZE && (
+                  <div className="flex items-center justify-between mt-3 pt-3 border-t border-line-200">
+                    <button
+                      onClick={() => setActivityPage((p) => Math.max(1, p - 1))}
+                      disabled={activityPage === 1}
+                      className="flex items-center gap-1 text-xs font-medium text-ink-500 hover:text-brand-600 disabled:opacity-30"
+                    >
+                      <ChevronLeft className="w-3.5 h-3.5" /> Sebelumnya
+                    </button>
+                    <span className="text-xs text-ink-400">Halaman {activityPage} / {timelineTotalPages}</span>
+                    <button
+                      onClick={() => setActivityPage((p) => Math.min(timelineTotalPages, p + 1))}
+                      disabled={activityPage === timelineTotalPages}
+                      className="flex items-center gap-1 text-xs font-medium text-ink-500 hover:text-brand-600 disabled:opacity-30"
+                    >
+                      Selanjutnya <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Aktivitas Penilaian — Nilai Akademik + Tahsin/Tahfidz/Tadarus,
+                  terpisah dari Aktivitas Terkini supaya wali bisa fokus lihat
+                  perkembangan bacaan Al-Quran & nilai anaknya. */}
+              <div className="surface-card p-5">
+                <h2 className="font-display font-semibold text-ink-900 mb-4">Aktivitas Penilaian</h2>
+
+                {!penilaianActivity ? (
+                  <p className="text-center text-ink-300 py-6">Memuat...</p>
+                ) : (
+                  <ul className="divide-y divide-line-200">
+                    {penilaianTimelinePaginated.map((item, i) => {
+                      const config = PENILAIAN_TYPE_CONFIG[item.type] || PENILAIAN_TYPE_CONFIG.akademik;
+                      const Icon = config.icon;
+                      return (
+                        <li key={i} className="py-3 flex items-start gap-3">
+                          <div className="w-8 h-8 rounded-full bg-mist-50 flex items-center justify-center shrink-0 mt-0.5">
+                            <Icon className="w-4 h-4 text-ink-500" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-2">
+                              <p className="text-sm font-medium text-ink-900">{item.title}</p>
+                              <span className="text-xs text-ink-400 shrink-0">{item.date}</span>
+                            </div>
+                            {item.detail && <p className="text-xs text-ink-500 mt-0.5">{item.detail}</p>}
+                            {item.type === 'akademik' && item.skor != null && (
+                              <span className="badge-soft badge-brand mt-1.5 inline-block">Nilai: {item.skor}</span>
+                            )}
+                          </div>
+                        </li>
+                      );
+                    })}
+                    {(!penilaianActivity?.timeline || penilaianActivity.timeline.length === 0) && (
+                      <li className="py-6 text-center text-sm text-ink-300">Belum ada aktivitas penilaian tercatat.</li>
+                    )}
+                  </ul>
+                )}
+
+                {penilaianActivity?.timeline?.length > PAGE_SIZE && (
+                  <div className="flex items-center justify-between mt-3 pt-3 border-t border-line-200">
+                    <button
+                      onClick={() => setPenilaianActivityPage((p) => Math.max(1, p - 1))}
+                      disabled={penilaianActivityPage === 1}
+                      className="flex items-center gap-1 text-xs font-medium text-ink-500 hover:text-brand-600 disabled:opacity-30"
+                    >
+                      <ChevronLeft className="w-3.5 h-3.5" /> Sebelumnya
+                    </button>
+                    <span className="text-xs text-ink-400">Halaman {penilaianActivityPage} / {penilaianTimelineTotalPages}</span>
+                    <button
+                      onClick={() => setPenilaianActivityPage((p) => Math.min(penilaianTimelineTotalPages, p + 1))}
+                      disabled={penilaianActivityPage === penilaianTimelineTotalPages}
+                      className="flex items-center gap-1 text-xs font-medium text-ink-500 hover:text-brand-600 disabled:opacity-30"
+                    >
+                      Selanjutnya <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </>
         )}

@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { ClipboardList, BookOpen, BookMarked, ScrollText } from 'lucide-react';
 import NilaiTab from './NilaiTab';
 import TahsinSection from './penilaian/TahsinSection';
 import TahfidzSection from './penilaian/TahfidzSection';
@@ -9,10 +8,10 @@ import TadarusSection from './penilaian/TadarusSection';
 // ke Tugas Mengajar guru, komponen lama dipakai apa adanya) dan 3 modul baru
 // Tahsin/Tahfidz/Tadarus yang SEMUA guru boleh isi untuk kelas/siswa manapun.
 const SECTIONS = [
-  { key: 'akademik', label: 'Nilai Akademik', icon: ClipboardList, component: NilaiTab },
-  { key: 'tahsin', label: 'Tahsin', icon: BookOpen, component: TahsinSection },
-  { key: 'tahfidz', label: 'Tahfidz', icon: BookMarked, component: TahfidzSection },
-  { key: 'tadarus', label: 'Tadarus', icon: ScrollText, component: TadarusSection },
+  { key: 'akademik', label: 'Nilai Akademik', component: NilaiTab },
+  { key: 'tahsin', label: 'Tahsin', component: TahsinSection },
+  { key: 'tahfidz', label: 'Tahfidz', component: TahfidzSection },
+  { key: 'tadarus', label: 'Tadarus', component: TadarusSection },
 ];
 
 export default function PenilaianTab() {
@@ -29,11 +28,10 @@ export default function PenilaianTab() {
             <button
               key={s.key}
               onClick={() => setActive(s.key)}
-              className={`flex items-center gap-1.5 px-3 sm:px-4 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-medium whitespace-nowrap transition ${
+              className={`px-3 sm:px-4 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-medium whitespace-nowrap transition ${
                 isActive ? 'bg-brand-600 text-white shadow-sm' : 'text-ink-700 hover:bg-mist-50 hover:text-ink-900'
               }`}
             >
-              <s.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               {s.label}
             </button>
           );

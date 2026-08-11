@@ -1,17 +1,16 @@
 import { useState } from 'react';
-import { Users, NotebookPen, Star, CalendarClock } from 'lucide-react';
 import BimbinganSiswaTab from './pkl/BimbinganSiswaTab';
 import JurnalPembimbinganTab from './pkl/JurnalPembimbinganTab';
 import PenilaianIdukaTab from './pkl/PenilaianIdukaTab';
 import JadwalMonitoringTab from './pkl/JadwalMonitoringTab';
 
-// Gaya sub-menu sama seperti sub-menu Ortu (pill putih rata tengah, ikon +
-// label ringkas) — label dipersingkat: Siswa, Jurnal, Nilai, Monitoring.
+// Gaya sub-menu sama seperti sub-menu Ortu (pill putih rata tengah) —
+// label dipersingkat: Siswa, Jurnal, Nilai, Monitoring.
 const SECTIONS = [
-  { key: 'siswa', label: 'Siswa', icon: Users, component: BimbinganSiswaTab },
-  { key: 'pembimbingan', label: 'Jurnal', icon: NotebookPen, component: JurnalPembimbinganTab },
-  { key: 'penilaian', label: 'Nilai', icon: Star, component: PenilaianIdukaTab },
-  { key: 'monitoring', label: 'Monitoring', icon: CalendarClock, component: JadwalMonitoringTab },
+  { key: 'siswa', label: 'Siswa', component: BimbinganSiswaTab },
+  { key: 'pembimbingan', label: 'Jurnal', component: JurnalPembimbinganTab },
+  { key: 'penilaian', label: 'Nilai', component: PenilaianIdukaTab },
+  { key: 'monitoring', label: 'Monitoring', component: JadwalMonitoringTab },
 ];
 
 export default function BimbinganPklTab() {
@@ -28,11 +27,10 @@ export default function BimbinganPklTab() {
             <button
               key={s.key}
               onClick={() => setActive(s.key)}
-              className={`flex items-center gap-1.5 px-3 sm:px-4 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-medium whitespace-nowrap transition ${
+              className={`px-3 sm:px-4 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-medium whitespace-nowrap transition ${
                 isActive ? 'bg-brand-600 text-white shadow-sm' : 'text-ink-700 hover:bg-mist-50 hover:text-ink-900'
               }`}
             >
-              <s.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               {s.label}
             </button>
           );

@@ -35,6 +35,11 @@ export default function LaporanPeroranganSection() {
   const [sppPage, setSppPage] = useState(1);
   const [lainPage, setLainPage] = useState(1);
 
+  const [payingId, setPayingId] = useState(null); // `${type}-${id}` yang sedang diproses (bayar lunas)
+  const [partialTarget, setPartialTarget] = useState(null); // `${type}-${id}` yang lagi buka form bayar sebagian
+  const [partialAmount, setPartialAmount] = useState('');
+  const [payingPartial, setPayingPartial] = useState(false);
+
   useEffect(() => {
     api.get('/classes').then((res) => setClasses(res.data));
     setLoadingRoster(true);
@@ -71,6 +76,120 @@ export default function LaporanPeroranganSection() {
     setSelectedStudent(null);
     setSpp([]);
     setTagihanLain([]);
+  };
+
+  const reloadDetail = () => {
+    if (!selectedStudent) return;
+    api.get(`/spp/siswa/${selectedStudent.id}`).then((res) => setSpp(res.data.spp));
+    api.get(`/tagihan-lain/siswa/${selectedStudent.id}`).then((res) => setTagihanLain(res.data.tagihan));
+  };
+
+  const endpointFor = (type, id) => (type === 'spp' ? `/spp/${id}` : `/tagihan-lain/${id}`);
+  const labelFor = (type, item) => (type === 'spp' ? `${BULAN[item.bulan - 1]} ${item.tahun}` : item.nama_tagihan);
+
+  const bayarLunas = async (type, item) => {
+    if (!confirm(`Tandai "${labelFor(type, item)}" atas nama ${selectedStudent.user?.name} sebagai LUNAS?`)) return;
+    const key = `${type}-${item.id}`;
+    setPayingId(key);
+    try {
+      await api.put(`${endpointFor(type, item.id)}/status`, { status: 'lunas' });
+      reloadDetail();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Gagal mencatat pembayaran.');
+    } finally {
+      setPayingId(null);
+    }
+  };
+
+  const batalLunas = async (type, item) => {
+    if (!confirm(`Tandai "${labelFor(type, item)}" atas nama ${selectedStudent.user?.name} jadi "Belum Bayar" lagi?`)) return;
+    const key = `${type}-${item.id}`;
+    setPayingId(key);
+    try {
+      await api.put(`${endpointFor(type, item.id)}/status`, { status: 'belum_bayar' });
+      reloadDetail();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Gagal membatalkan status lunas.');
+    } finally {
+      setPayingId(null);
+    }
+  };
+
+  const openPartial = (type, item) => {
+    setPartialTarget(`${type}-${item.id}`);
+    setPartialAmount('');
+  };
+
+  const submitPartial = async (type, item) => {
+    const jumlah = Number(partialAmount);
+    if (!jumlah || jumlah < 1) return;
+    setPayingPartial(true);
+    try {
+      await api.put(`${endpointFor(type, item.id)}/bayar-sebagian`, { jumlah });
+      setPartialTarget(null);
+      setPartialAmount('');
+      reloadDetail();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Gagal mencatat pembayaran sebagian.');
+    } finally {
+      setPayingPartial(false);
+    }
+  };
+
+  const renderAksi = (type, item) => {
+    const key = `${type}-${item.id}`;
+    if (item.status === 'lunas') {
+      return (
+        <button
+          onClick={() => batalLunas(type, item)}
+          disabled={payingId === key}
+          className="text-xs font-medium text-ink-500 hover:text-honey-700 disabled:opacity-60 border border-line-200 rounded-lg px-2 py-1"
+        >
+          {payingId === key ? '...' : 'Batal Lunas'}
+        </button>
+      );
+    }
+    if (partialTarget === key) {
+      const sisa = item.nominal - (item.jumlah_dibayar || 0);
+      return (
+        <div className="flex items-center gap-1.5">
+          <input
+            type="number" autoFocus min={1} max={sisa}
+            value={partialAmount} onChange={(e) => setPartialAmount(e.target.value)}
+            placeholder={`Maks ${sisa}`}
+            className="field-input py-1 px-2 text-xs w-24"
+          />
+          <button
+            onClick={() => submitPartial(type, item)}
+            disabled={payingPartial || !partialAmount}
+            className="text-xs font-medium text-white bg-brand-600 hover:bg-brand-700 disabled:opacity-50 rounded-lg px-2 py-1"
+          >
+            {payingPartial ? '...' : 'Simpan'}
+          </button>
+          <button onClick={() => setPartialTarget(null)} className="text-xs font-medium text-ink-500 hover:text-ink-700 px-1">
+            Batal
+          </button>
+        </div>
+      );
+    }
+    return (
+      <div className="flex items-center gap-1.5">
+        <button
+          onClick={() => openPartial(type, item)}
+          disabled={payingId === key}
+          className="text-xs font-medium text-brand-700 bg-brand-50 hover:bg-brand-100 disabled:opacity-60 rounded-lg px-2 py-1"
+        >
+          Bayar Sebagian
+        </button>
+        <button
+          onClick={() => bayarLunas(type, item)}
+          disabled={payingId === key}
+          className="text-xs font-medium text-white bg-[#15803D] hover:bg-[#116530] disabled:opacity-60 rounded-lg px-2 py-1"
+        >
+          {payingId === key ? '...' : 'Lunas'}
+        </button>
+      </div>
+    );
   };
 
   const tunggakanSpp = spp.filter((s) => s.status !== 'lunas').reduce((sum, s) => sum + (s.nominal - (s.jumlah_dibayar || 0)), 0);
@@ -131,6 +250,7 @@ export default function LaporanPeroranganSection() {
                       <th className="font-medium text-right whitespace-nowrap px-2">Nominal</th>
                       <th className="font-medium whitespace-nowrap px-2">Status</th>
                       <th className="font-medium whitespace-nowrap px-2">Tanggal Bayar</th>
+                      <th className="font-medium whitespace-nowrap px-2">Aksi</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -143,6 +263,7 @@ export default function LaporanPeroranganSection() {
                         </td>
                         <td className="whitespace-nowrap px-2">{statusBadge(s.status)}</td>
                         <td className="text-ink-500 text-xs whitespace-nowrap px-2">{s.tanggal_bayar || '-'}</td>
+                        <td className="whitespace-nowrap px-2">{renderAksi('spp', s)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -191,6 +312,7 @@ export default function LaporanPeroranganSection() {
                       <th className="font-medium whitespace-nowrap px-2">Status</th>
                       <th className="font-medium whitespace-nowrap px-2">Tanggal Bayar</th>
                       <th className="font-medium whitespace-nowrap px-2">Keterangan</th>
+                      <th className="font-medium whitespace-nowrap px-2">Aksi</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -204,6 +326,7 @@ export default function LaporanPeroranganSection() {
                         <td className="whitespace-nowrap px-2">{statusBadge(t.status)}</td>
                         <td className="text-ink-500 text-xs whitespace-nowrap px-2">{t.tanggal_bayar || '-'}</td>
                         <td className="text-ink-500 text-xs whitespace-nowrap px-2"><TruncateText text={t.keterangan || '-'} maxWidth="10rem" /></td>
+                        <td className="whitespace-nowrap px-2">{renderAksi('lain', t)}</td>
                       </tr>
                     ))}
                   </tbody>
