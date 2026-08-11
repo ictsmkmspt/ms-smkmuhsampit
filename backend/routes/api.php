@@ -507,7 +507,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/my-children/{studentId}/tahsin-scores', [ParentController::class, 'tahsinScores']);
         Route::get('/my-children/{studentId}/tahfidz-scores', [ParentController::class, 'tahfidzScores']);
         Route::get('/my-children/{studentId}/tadarus-scores', [ParentController::class, 'tadarusScores']);
-        Route::get('/my-children/{studentId}/penilaian-activity', [ParentController::class, 'penilaianActivity']);
     });
 
     Route::middleware('role:tu')->group(function () {
