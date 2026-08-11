@@ -5,7 +5,7 @@ import TruncateText from '../../../../components/TruncateText';
 import { useAuth } from '../../../../context/AuthContext';
 
 const emptyForm = {
-  name: '', email: '',
+  name: '',
   nama_perusahaan: '', alamat: '', penanggung_jawab: '', telepon: '',
   latitude: '', longitude: '', radius_meter: '100',
 };
@@ -128,17 +128,16 @@ export default function DudiTab() {
           {error && <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2 mb-3">{error}</p>}
 
           <p className="text-xs font-medium text-ink-500 mb-2">Akun login</p>
-          <p className="text-xs text-ink-500 mb-2">Password akun otomatis dibuat "123456" — wajib diganti saat login pertama.</p>
+          <p className="text-xs text-ink-500 mb-2">Login pakai No. HP di bawah ini (bukan email). Password akun otomatis dibuat "123456" — wajib diganti saat login pertama.</p>
           <div className="grid grid-cols-2 gap-3 mb-4">
-            <input placeholder="Email login" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="field-input col-span-2" required autoComplete="off" />
+            <input placeholder="Nama Instruktur" value={form.penanggung_jawab} onChange={(e) => setForm({ ...form, penanggung_jawab: e.target.value })} className="field-input" required />
+            <input placeholder="No. HP (login)" value={form.telepon} onChange={(e) => setForm({ ...form, telepon: e.target.value })} className="field-input" required autoComplete="off" />
           </div>
 
           <p className="text-xs font-medium text-ink-500 mb-2">Profil perusahaan</p>
           <div className="grid grid-cols-2 gap-3 mb-4">
             <input placeholder="Nama perusahaan/instansi" value={form.nama_perusahaan} onChange={(e) => setForm({ ...form, nama_perusahaan: e.target.value })} className="field-input col-span-2" required />
             <input placeholder="Alamat" value={form.alamat} onChange={(e) => setForm({ ...form, alamat: e.target.value })} className="field-input col-span-2" />
-            <input placeholder="Nama Instruktur" value={form.penanggung_jawab} onChange={(e) => setForm({ ...form, penanggung_jawab: e.target.value })} className="field-input" required />
-            <input placeholder="Telepon" value={form.telepon} onChange={(e) => setForm({ ...form, telepon: e.target.value })} className="field-input" />
           </div>
 
           <div className="flex items-center justify-between mb-2">
@@ -187,7 +186,7 @@ export default function DudiTab() {
                       <input value={editData.nama_perusahaan} onChange={(e) => setEditData({ ...editData, nama_perusahaan: e.target.value })} className="field-input py-1.5 text-sm" placeholder="Nama perusahaan" />
                       <input value={editData.penanggung_jawab} onChange={(e) => setEditData({ ...editData, penanggung_jawab: e.target.value })} className="field-input py-1.5 text-sm" placeholder="Nama Instruktur" />
                       <input value={editData.alamat} onChange={(e) => setEditData({ ...editData, alamat: e.target.value })} className="field-input py-1.5 text-sm col-span-2" placeholder="Alamat" />
-                      <input value={editData.telepon} onChange={(e) => setEditData({ ...editData, telepon: e.target.value })} className="field-input py-1.5 text-sm" placeholder="Telepon" />
+                      <input value={editData.telepon} onChange={(e) => setEditData({ ...editData, telepon: e.target.value })} className="field-input py-1.5 text-sm" placeholder="No. HP (login)" required />
                     </div>
                     <div className="flex items-center justify-between mb-1.5">
                       <p className="text-xs font-medium text-ink-500">Lokasi &amp; radius (GPS)</p>

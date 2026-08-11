@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import QRCode from 'qrcode';
 import {
   LogOut, Clock, ChevronDown, UserCog, ChevronLeft, ChevronRight,
@@ -12,6 +12,9 @@ import EditProfileModal from '../../components/EditProfileModal';
 import LeaderboardPrestasi from '../../components/LeaderboardPrestasi';
 import JadwalPelajaranView from '../../components/JadwalPelajaranView';
 import KalenderAkademikView from '../../components/KalenderAkademikView';
+import PenilaianQuranTabs from '../../components/PenilaianQuranTabs';
+
+const PENILAIAN_ENDPOINTS = { akademik: '/my-academic-scores', tahsin: '/my-tahsin-scores', tahfidz: '/my-tahfidz-scores', tadarus: '/my-tadarus-scores' };
 
 const PAGE_SIZE = 5;
 
@@ -39,24 +42,6 @@ export default function SiswaDashboard() {
   const [poinHistory, setPoinHistory] = useState([]);
   const [poinPage, setPoinPage] = useState(1);
   const [absensiPage, setAbsensiPage] = useState(1);
-  const [academicScores, setAcademicScores] = useState([]);
-
-  // Nilai dikelompokkan per mapel — sama seperti tab Nilai di portal Ortu —
-  // supaya siswa langsung lihat rata-rata tiap mapel, bukan cuma daftar
-  // datar semua kegiatan tercampur. Sengaja ditaruh di sini (sebelum return
-  // awal untuk status PKL yang masih loading di bawah), bukan dekat JSX-nya,
-  // supaya urutan Hooks tetap konsisten tiap render (Rules of Hooks).
-  const nilaiPerMapel = useMemo(() => {
-    const map = new Map();
-    academicScores.forEach((n) => {
-      const key = n.subject?.id ?? 0;
-      if (!map.has(key)) map.set(key, { nama: n.subject?.nama || 'Lainnya', items: [] });
-      map.get(key).items.push(n);
-    });
-    return [...map.values()]
-      .map((g) => ({ ...g, rataRata: (g.items.reduce((sum, s) => sum + s.skor, 0) / g.items.length).toFixed(1) }))
-      .sort((a, b) => a.nama.localeCompare(b.nama));
-  }, [academicScores]);
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [showEditProfil, setShowEditProfil] = useState(false);
@@ -95,7 +80,6 @@ export default function SiswaDashboard() {
 
     api.get('/my-profile').then((res) => setProfile(res.data));
     api.get('/my-attendances').then((res) => setHistory(res.data));
-    api.get('/my-academic-scores').then((res) => setAcademicScores(res.data));
 
     Promise.all([api.get('/my-violations'), api.get('/my-achievements')]).then(([v, a]) => {
       const gabungan = [
@@ -326,40 +310,15 @@ export default function SiswaDashboard() {
   );
 
   const nilaiContent = (
-    <div className="max-w-md mx-auto space-y-4">
-      <h2 className="font-display font-semibold text-ink-900 flex items-center gap-2">
-        <ClipboardList className="w-4 h-4 text-ink-500" /> Nilai Akademik
+    <div className="max-w-md mx-auto">
+      <h2 className="font-display font-semibold text-ink-900 flex items-center gap-2 mb-4">
+        <ClipboardList className="w-4 h-4 text-ink-500" /> Penilaian
       </h2>
-      {nilaiPerMapel.length === 0 ? (
-        <div className="surface-card p-6 text-center">
-          <ClipboardList className="w-8 h-8 text-ink-300 mx-auto mb-2" />
-          <p className="text-sm text-ink-500">Belum ada nilai tercatat.</p>
-        </div>
-      ) : (
-        nilaiPerMapel.map((g) => (
-          <div key={g.nama} className="surface-card p-4">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="font-display font-semibold text-ink-900 text-sm">{g.nama}</h3>
-              <span className="badge-soft badge-brand">rata-rata {g.rataRata}</span>
-            </div>
-            <ul className="divide-y divide-line-200">
-              {g.items.map((n) => (
-                <li key={n.id} className="py-2 flex items-center justify-between gap-3 text-sm">
-                  <div className="min-w-0">
-                    <p className="text-ink-900 truncate">{n.nama_kegiatan}</p>
-                    <p className="text-xs text-ink-500">{n.tanggal}{n.recorded_by?.name && <> &middot; Guru: {n.recorded_by.name}</>}</p>
-                  </div>
-                  <span className="font-display font-semibold text-ink-900 shrink-0">{n.skor}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))
-      )}
+      <PenilaianQuranTabs endpoints={PENILAIAN_ENDPOINTS} />
     </div>
   );
 
-  const BOTTOM_TABS_LEFT = [{ key: 'nilai', label: 'Nilai', icon: ClipboardList }];
+  const BOTTOM_TABS_LEFT = [{ key: 'nilai', label: 'Penilaian', icon: ClipboardList }];
   const BOTTOM_TABS_RIGHT = isPkl ? [{ key: 'pkl', label: 'PKL', icon: Briefcase }] : [];
 
   return (

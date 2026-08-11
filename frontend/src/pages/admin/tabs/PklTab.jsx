@@ -1,9 +1,13 @@
 import DudiTab from './pkl/DudiTab';
 import PenempatanTab from './pkl/PenempatanTab';
+import MonitoringJadwalTab from './pkl/MonitoringJadwalTab';
 
 export const PKL_SUBMENU = [
   { key: 'dudi',        label: 'Kelola IDUKA',     component: DudiTab, restrictTo: ['waka_humas', 'waka_kurikulum'] },
   { key: 'penempatan',  label: 'Penempatan PKL',  component: PenempatanTab, restrictTo: ['waka_humas', 'waka_kurikulum'] },
+  // Jadwal Monitoring GLOBAL (berlaku semua guru) sengaja cuma milik
+  // Waka Kurikulum, bukan Waka Humas — beda dari 2 menu di atas.
+  { key: 'monitoring',  label: 'Jadwal Monitoring', component: MonitoringJadwalTab, restrictTo: ['waka_kurikulum'] },
 ];
 
 export default function PklTab({ activeSub }) {

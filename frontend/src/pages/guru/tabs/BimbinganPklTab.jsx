@@ -1,15 +1,17 @@
 import { useState } from 'react';
-import { Users, NotebookPen, Star } from 'lucide-react';
+import { Users, NotebookPen, Star, CalendarClock } from 'lucide-react';
 import BimbinganSiswaTab from './pkl/BimbinganSiswaTab';
 import JurnalPembimbinganTab from './pkl/JurnalPembimbinganTab';
 import PenilaianIdukaTab from './pkl/PenilaianIdukaTab';
+import JadwalMonitoringTab from './pkl/JadwalMonitoringTab';
 
 // Gaya sub-menu sama seperti sub-menu Ortu (pill putih rata tengah, ikon +
-// label ringkas) — label dipersingkat: Siswa, Jurnal, Nilai.
+// label ringkas) — label dipersingkat: Siswa, Jurnal, Nilai, Monitoring.
 const SECTIONS = [
   { key: 'siswa', label: 'Siswa', icon: Users, component: BimbinganSiswaTab },
   { key: 'pembimbingan', label: 'Jurnal', icon: NotebookPen, component: JurnalPembimbinganTab },
   { key: 'penilaian', label: 'Nilai', icon: Star, component: PenilaianIdukaTab },
+  { key: 'monitoring', label: 'Monitoring', icon: CalendarClock, component: JadwalMonitoringTab },
 ];
 
 export default function BimbinganPklTab() {

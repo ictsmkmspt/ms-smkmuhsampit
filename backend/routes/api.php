@@ -2,6 +2,9 @@
 
 use App\Http\Controllers\Api\AcademicEventController;
 use App\Http\Controllers\Api\AcademicScoreController;
+use App\Http\Controllers\Api\TahsinScoreController;
+use App\Http\Controllers\Api\TahfidzScoreController;
+use App\Http\Controllers\Api\TadarusScoreController;
 use App\Http\Controllers\Api\AchievementController;
 use App\Http\Controllers\Api\AchievementTypeController;
 use App\Http\Controllers\Api\AdminAccountController;
@@ -21,6 +24,7 @@ use App\Http\Controllers\Api\PklAttendanceController;
 use App\Http\Controllers\Api\PklJournalController;
 use App\Http\Controllers\Api\PklPenilaianController;
 use App\Http\Controllers\Api\PklPembimbinganJournalController;
+use App\Http\Controllers\Api\PklMonitoringJadwalController;
 use App\Http\Controllers\Api\PklPlacementController;
 use App\Http\Controllers\Api\PeriodTemplateController;
 use App\Http\Controllers\Api\PpdbController;
@@ -65,6 +69,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/me/password', [AuthController::class, 'changePassword']);
     Route::get('/leaderboard/prestasi', [AchievementController::class, 'leaderboard']);
     Route::post('/logout', [AuthController::class, 'logout']);
+    // Data referensi 114 surah — dipakai guru (input Tadarus) maupun
+    // siswa/wali (menampilkan nama surah di riwayat), jadi tidak dikunci
+    // ke satu role tertentu.
+    Route::get('/quran-surah', [TadarusScoreController::class, 'daftarSurah']);
 
     // Didaftarkan SEBELUM grup role:admin (yang punya apiResource('dudi', ...)
     // dengan rute wildcard /dudi/{dudi}) — supaya /dudi/profile & /dudi/tanda-tangan
@@ -236,11 +244,20 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('role:admin,waka_kurikulum')->group(function () {
         Route::apiResource('subjects', SubjectController::class)->except(['show', 'index']);
         Route::post('/teaching-assignments/generate-kode-guru', [TeachingAssignmentController::class, 'generateKodeGuru']);
+        Route::put('/teaching-assignments/reorder', [TeachingAssignmentController::class, 'reorder']);
         Route::apiResource('teaching-assignments', TeachingAssignmentController::class)->except(['show']);
         Route::apiResource('period-templates', PeriodTemplateController::class)->except(['show']);
         Route::get('/schedules/grid', [ScheduleController::class, 'grid']);
         Route::get('/schedules/export-excel', [ScheduleExportController::class, 'exportExcel']);
         Route::apiResource('schedules', ScheduleController::class)->except(['show', 'index']);
+        // Jadwal Monitoring PKL global — dibuat admin/waka_kurikulum. GET-nya
+        // didaftarkan terpisah di grup role:admin,waka_kurikulum,guru di bawah
+        // (guru cuma boleh lihat, bukan kelola).
+        Route::apiResource('pkl-monitoring-jadwal', PklMonitoringJadwalController::class)->except(['show', 'index']);
+    });
+
+    Route::middleware('role:admin,waka_kurikulum,guru')->group(function () {
+        Route::get('/pkl-monitoring-jadwal', [PklMonitoringJadwalController::class, 'index']);
     });
 
     // Menu "Pengembangan" — fitur yang masih tahap uji coba, sengaja cuma
@@ -435,6 +452,24 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/academic-scores/kegiatan', [AcademicScoreController::class, 'destroyKegiatan']);
         Route::put('/academic-scores/{academicScore}', [AcademicScoreController::class, 'update']);
         Route::delete('/academic-scores/{academicScore}', [AcademicScoreController::class, 'destroy']);
+
+        // Tahsin/Tahfidz/Tadarus — beda dari nilai akademik di atas, SEMUA
+        // guru boleh mencatat untuk kelas/siswa manapun (tidak dikunci ke
+        // Tugas Mengajar), lihat komentar di masing-masing controller.
+        Route::get('/tahsin-scores', [TahsinScoreController::class, 'index']);
+        Route::post('/tahsin-scores/bulk', [TahsinScoreController::class, 'storeBulk']);
+        Route::put('/tahsin-scores/{tahsinScore}', [TahsinScoreController::class, 'update']);
+        Route::delete('/tahsin-scores/{tahsinScore}', [TahsinScoreController::class, 'destroy']);
+
+        Route::get('/tahfidz-scores', [TahfidzScoreController::class, 'index']);
+        Route::post('/tahfidz-scores/bulk', [TahfidzScoreController::class, 'storeBulk']);
+        Route::put('/tahfidz-scores/{tahfidzScore}', [TahfidzScoreController::class, 'update']);
+        Route::delete('/tahfidz-scores/{tahfidzScore}', [TahfidzScoreController::class, 'destroy']);
+
+        Route::get('/tadarus-scores', [TadarusScoreController::class, 'index']);
+        Route::post('/tadarus-scores/bulk', [TadarusScoreController::class, 'storeBulk']);
+        Route::put('/tadarus-scores/{tadarusScore}', [TadarusScoreController::class, 'update']);
+        Route::delete('/tadarus-scores/{tadarusScore}', [TadarusScoreController::class, 'destroy']);
     });
 
     Route::middleware('role:siswa')->group(function () {
@@ -453,6 +488,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/pkl-jurnal', [PklJournalController::class, 'simpanKegiatan']);
         Route::get('/my-schedule', [ScheduleController::class, 'mySchedule']);
         Route::get('/my-academic-scores', [AcademicScoreController::class, 'myScores']);
+        Route::get('/my-tahsin-scores', [TahsinScoreController::class, 'myScores']);
+        Route::get('/my-tahfidz-scores', [TahfidzScoreController::class, 'myScores']);
+        Route::get('/my-tadarus-scores', [TadarusScoreController::class, 'myScores']);
     });
 
     Route::middleware('role:wali')->group(function () {
@@ -462,6 +500,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/my-children/{studentId}/tagihan-lain', [ParentController::class, 'tagihanLain']);
         Route::get('/my-children/{studentId}/schedule', [ScheduleController::class, 'childSchedule']);
         Route::get('/my-children/{studentId}/academic-scores', [ParentController::class, 'academicScores']);
+        Route::get('/my-children/{studentId}/tahsin-scores', [ParentController::class, 'tahsinScores']);
+        Route::get('/my-children/{studentId}/tahfidz-scores', [ParentController::class, 'tahfidzScores']);
+        Route::get('/my-children/{studentId}/tadarus-scores', [ParentController::class, 'tadarusScores']);
     });
 
     Route::middleware('role:tu')->group(function () {

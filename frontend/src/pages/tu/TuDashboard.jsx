@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { LogOut, LayoutDashboard, Receipt, Wallet, GraduationCap, Settings, Menu, X, Pencil, FileBarChart } from 'lucide-react';
+import { LogOut, LayoutDashboard, Receipt, Wallet, GraduationCap, Settings, Menu, X, Pencil, FileBarChart, ChevronDown } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useSchoolProfile } from '../../context/SchoolProfileContext';
 import DashboardTab from './tabs/DashboardTab';
@@ -19,10 +19,20 @@ const TABS = [
   { key: 'pengaturan', label: 'Pengaturan', icon: Settings, component: PengaturanTab },
 ];
 
+// Sub-menu dropdown khusus nav "Laporan" — cuma 1 item yang butuh dropdown
+// jadi tidak digeneralisasi ke semua TABS (beda dengan pola dropdown navbar
+// atas di AdminDashboard yang punya banyak menu bertingkat).
+const LAPORAN_SUBMENU = [
+  { key: 'ringkasan', label: 'Ringkasan' },
+  { key: 'perorangan', label: 'Perorangan' },
+];
+
 export default function TuDashboard() {
   const { user, logout } = useAuth();
   const { profile } = useSchoolProfile();
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeLaporanSub, setActiveLaporanSub] = useState('ringkasan');
+  const [laporanOpen, setLaporanOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [showEditProfil, setShowEditProfil] = useState(false);
 
@@ -33,6 +43,41 @@ export default function TuDashboard() {
   const navItems = () => TABS.map((tab) => {
     const Icon = tab.icon;
     const isActive = activeTab === tab.key;
+
+    if (tab.key === 'laporan') {
+      return (
+        <div key={tab.key}>
+          <button
+            onClick={() => setLaporanOpen((v) => !v)}
+            className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition ${
+              isActive ? 'bg-white/10 text-white' : 'text-white/70 hover:bg-white/5 hover:text-white'
+            }`}
+          >
+            <Icon className="w-4 h-4 shrink-0" /> {tab.label}
+            <ChevronDown className={`w-3.5 h-3.5 ml-auto shrink-0 transition-transform ${laporanOpen ? 'rotate-180' : ''}`} />
+          </button>
+          {laporanOpen && (
+            <div className="mt-1 ml-6 space-y-0.5 border-l border-white/10 pl-3">
+              {LAPORAN_SUBMENU.map((sub) => {
+                const subActive = isActive && activeLaporanSub === sub.key;
+                return (
+                  <button
+                    key={sub.key}
+                    onClick={() => { setActiveTab('laporan'); setActiveLaporanSub(sub.key); setMobileOpen(false); }}
+                    className={`w-full flex items-center px-3 py-2 rounded-lg text-xs font-medium transition ${
+                      subActive ? 'bg-white/10 text-[#F2B705]' : 'text-white/60 hover:bg-white/5 hover:text-white'
+                    }`}
+                  >
+                    {sub.label}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      );
+    }
+
     return (
       <button
         key={tab.key}
@@ -141,7 +186,11 @@ export default function TuDashboard() {
       {/* ===== Konten utama ===== */}
       <div className="mt-14 md:mt-0 md:ml-64">
         <div className="px-4 md:px-8 py-6 max-w-5xl mx-auto">
-          {ActiveComponent && <ActiveComponent />}
+          {activeTab === 'laporan' ? (
+            <LaporanTab activeSub={activeLaporanSub} />
+          ) : (
+            ActiveComponent && <ActiveComponent />
+          )}
         </div>
       </div>
 

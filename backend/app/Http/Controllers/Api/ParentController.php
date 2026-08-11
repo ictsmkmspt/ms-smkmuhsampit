@@ -9,7 +9,10 @@ use App\Models\Attendance;
 use App\Models\Spp;
 use App\Models\Student;
 use App\Models\TagihanLain;
+use App\Models\TahfidzScore;
+use App\Models\TahsinScore;
 use App\Models\TahunAjaran;
+use App\Models\TadarusScore;
 use App\Models\Violation;
 use Illuminate\Http\Request;
 
@@ -109,6 +112,46 @@ class ParentController extends Controller
 
         return AcademicScore::with('subject', 'recordedBy')
             ->where('student_id', $studentId)
+            ->where('tahun_ajaran_id', TahunAjaran::aktifId())
+            ->orderByDesc('tanggal')
+            ->get();
+    }
+
+    /**
+     * Riwayat Tahsin/Tahfidz/Tadarus 1 anak — dipakai sub-menu Penilaian di
+     * dashboard Wali. Pola sama seperti academicScores() di atas.
+     */
+    public function tahsinScores(Request $request, $studentId)
+    {
+        if (!$request->user()->children()->where('students.id', $studentId)->exists()) {
+            return response()->json(['message' => 'Anda tidak berwenang melihat data siswa ini.'], 403);
+        }
+
+        return TahsinScore::where('student_id', $studentId)
+            ->where('tahun_ajaran_id', TahunAjaran::aktifId())
+            ->orderByDesc('tanggal')
+            ->get();
+    }
+
+    public function tahfidzScores(Request $request, $studentId)
+    {
+        if (!$request->user()->children()->where('students.id', $studentId)->exists()) {
+            return response()->json(['message' => 'Anda tidak berwenang melihat data siswa ini.'], 403);
+        }
+
+        return TahfidzScore::where('student_id', $studentId)
+            ->where('tahun_ajaran_id', TahunAjaran::aktifId())
+            ->orderByDesc('tanggal')
+            ->get();
+    }
+
+    public function tadarusScores(Request $request, $studentId)
+    {
+        if (!$request->user()->children()->where('students.id', $studentId)->exists()) {
+            return response()->json(['message' => 'Anda tidak berwenang melihat data siswa ini.'], 403);
+        }
+
+        return TadarusScore::where('student_id', $studentId)
             ->where('tahun_ajaran_id', TahunAjaran::aktifId())
             ->orderByDesc('tanggal')
             ->get();

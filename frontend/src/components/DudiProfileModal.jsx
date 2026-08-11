@@ -115,10 +115,10 @@ export default function DudiProfileModal({ dudi, onClose, onSaved }) {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-ink-500 mb-1">No. HP</label>
+                  <label className="block text-xs font-medium text-ink-500 mb-1">No. HP (dipakai untuk login)</label>
                   <input
                     value={telepon} onChange={(e) => setTelepon(e.target.value)}
-                    className="field-input text-sm" maxLength={30}
+                    className="field-input text-sm" maxLength={30} required
                   />
                 </div>
                 <div className="flex gap-2">

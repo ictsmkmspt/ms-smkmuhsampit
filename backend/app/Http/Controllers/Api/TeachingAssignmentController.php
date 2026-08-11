@@ -18,7 +18,8 @@ class TeachingAssignmentController extends Controller
 
         $query = TeachingAssignment::with(['teacher.user', 'subject', 'classRoom'])
             ->withCount('schedules')
-            ->where('tahun_ajaran_id', $tahunAjaranId);
+            ->where('tahun_ajaran_id', $tahunAjaranId)
+            ->orderBy('urutan');
 
         if ($request->filled('class_room_id')) {
             $query->where('class_room_id', $request->class_room_id);
@@ -52,6 +53,9 @@ class TeachingAssignmentController extends Controller
         ]);
 
         $data['tahun_ajaran_id'] = $tahunAjaranId;
+        // Penugasan baru ditaruh paling akhir tabel, bukan ikut nyempil ke
+        // posisi 0 (yang akan mendorong semua baris lain kalau dibiarkan default null/0).
+        $data['urutan'] = (TeachingAssignment::where('tahun_ajaran_id', $tahunAjaranId)->max('urutan') ?? -1) + 1;
 
         $assignment = TeachingAssignment::create($data);
 
@@ -86,15 +90,48 @@ class TeachingAssignmentController extends Controller
     }
 
     /**
+     * Simpan urutan baru hasil drag-and-drop di tabel Daftar Penugasan.
+     * "ids" wajib berisi SELURUH id penugasan tahun ajaran aktif (bukan
+     * sebagian) — urutan array itu langsung jadi nilai `urutan` (0, 1, 2, ...).
+     */
+    public function reorder(Request $request)
+    {
+        $tahunAjaranId = TahunAjaran::aktifId();
+
+        $data = $request->validate([
+            'ids'   => 'required|array|min:1',
+            'ids.*' => 'integer|exists:teaching_assignments,id',
+        ]);
+
+        $milikTahunIni = TeachingAssignment::where('tahun_ajaran_id', $tahunAjaranId)
+            ->whereIn('id', $data['ids'])
+            ->count();
+
+        if ($milikTahunIni !== count($data['ids'])) {
+            return response()->json(['message' => 'Sebagian penugasan bukan milik tahun ajaran aktif.'], 422);
+        }
+
+        foreach ($data['ids'] as $index => $id) {
+            TeachingAssignment::where('id', $id)->update(['urutan' => $index]);
+        }
+
+        return TeachingAssignment::with(['teacher.user', 'subject', 'classRoom'])
+            ->withCount('schedules')
+            ->where('tahun_ajaran_id', $tahunAjaranId)
+            ->orderBy('urutan')
+            ->get();
+    }
+
+    /**
      * Generate ulang Kode Guru untuk semua penugasan di tahun ajaran aktif —
      * urutan hurufnya (A, B, C, ... Z, AA, AB, dst) mengikuti urutan baris
-     * di tabel Daftar Penugasan (yang diurutkan kode mata pelajaran), BUKAN
-     * urutan nama guru: guru yang penugasannya tampil duluan di tabel dapat
-     * huruf duluan. Kalau guru itu punya lebih dari 1 penugasan, tiap
-     * penugasannya dibedakan dengan angka di belakang huruf sesuai urutan
-     * kemunculannya di tabel juga (A1, A2, dst) — kalau cuma 1 penugasan,
-     * hurufnya saja tanpa angka. Kode ini langsung disalin ke Schedule.kode
-     * supaya jadwal yang sudah ditempatkan ikut ter-update.
+     * di tabel Daftar Penugasan (kolom `urutan`, bisa diatur manual lewat
+     * drag-and-drop), BUKAN urutan nama guru: guru yang penugasannya tampil
+     * duluan di tabel dapat huruf duluan. Kalau guru itu punya lebih dari 1
+     * penugasan, tiap penugasannya dibedakan dengan angka di belakang huruf
+     * sesuai urutan kemunculannya di tabel juga (A1, A2, dst) — kalau cuma 1
+     * penugasan, hurufnya saja tanpa angka. Kode ini langsung disalin ke
+     * Schedule.kode supaya jadwal yang sudah ditempatkan ikut ter-update.
      */
     public function generateKodeGuru(Request $request)
     {
@@ -102,9 +139,8 @@ class TeachingAssignmentController extends Controller
 
         $assignments = TeachingAssignment::with(['teacher.user', 'subject'])
             ->where('tahun_ajaran_id', $tahunAjaranId)
-            ->get()
-            ->sortBy(fn ($a) => $a->subject?->kode ?? '')
-            ->values();
+            ->orderBy('urutan')
+            ->get();
 
         $jumlahPerGuru = $assignments->countBy('teacher_id');
         $hurufPerGuru = [];
@@ -130,6 +166,7 @@ class TeachingAssignmentController extends Controller
         return TeachingAssignment::with(['teacher.user', 'subject', 'classRoom'])
             ->withCount('schedules')
             ->where('tahun_ajaran_id', $tahunAjaranId)
+            ->orderBy('urutan')
             ->get();
     }
 

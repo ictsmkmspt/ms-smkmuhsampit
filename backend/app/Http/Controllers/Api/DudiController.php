@@ -9,6 +9,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 
 class DudiController extends Controller
 {
@@ -32,12 +33,11 @@ class DudiController extends Controller
     {
         $data = $request->validate([
             'name'             => 'required|string|max:100',
-            'email'            => 'required|email|unique:users,email',
+            'telepon'          => 'required|string|max:30|unique:users,phone',
             'password'         => 'nullable|min:6',
             'nama_perusahaan'  => 'required|string|max:150',
             'alamat'           => 'nullable|string|max:255',
             'penanggung_jawab' => 'nullable|string|max:100',
-            'telepon'          => 'nullable|string|max:30',
             'latitude'         => 'required|numeric|between:-90,90',
             'longitude'        => 'required|numeric|between:-180,180',
             'radius_meter'     => 'required|integer|min:10|max:5000',
@@ -46,7 +46,7 @@ class DudiController extends Controller
         return DB::transaction(function () use ($data) {
             $user = User::create([
                 'name'     => $data['name'],
-                'email'    => $data['email'],
+                'phone'    => $data['telepon'],
                 'password' => bcrypt($data['password'] ?? '123456'),
                 'role'     => 'dudi',
             ]);
@@ -56,7 +56,7 @@ class DudiController extends Controller
                 'nama_perusahaan'  => $data['nama_perusahaan'],
                 'alamat'           => $data['alamat'] ?? null,
                 'penanggung_jawab' => $data['penanggung_jawab'] ?? null,
-                'telepon'          => $data['telepon'] ?? null,
+                'telepon'          => $data['telepon'],
                 'latitude'         => $data['latitude'],
                 'longitude'        => $data['longitude'],
                 'radius_meter'     => $data['radius_meter'],
@@ -73,7 +73,7 @@ class DudiController extends Controller
             'nama_perusahaan'  => 'sometimes|string|max:150',
             'alamat'           => 'nullable|string|max:255',
             'penanggung_jawab' => 'nullable|string|max:100',
-            'telepon'          => 'nullable|string|max:30',
+            'telepon'          => ['sometimes', 'string', 'max:30', Rule::unique('users', 'phone')->ignore($dudi->user_id)],
             'latitude'         => 'sometimes|numeric|between:-90,90',
             'longitude'        => 'sometimes|numeric|between:-180,180',
             'radius_meter'     => 'sometimes|integer|min:10|max:5000',
@@ -81,6 +81,11 @@ class DudiController extends Controller
 
         if (isset($data['name'])) {
             $dudi->user->update(['name' => $data['name']]);
+        }
+        // telepon = akun login DUDI (users.phone) — disinkronkan tiap kali
+        // admin mengubahnya di sini, bukan cuma disimpan di profil dudis.
+        if (isset($data['telepon'])) {
+            $dudi->user->update(['phone' => $data['telepon']]);
         }
 
         $dudi->update(collect($data)->except('name')->all());
@@ -116,8 +121,10 @@ class DudiController extends Controller
      * DUDI mengubah data profilnya sendiri (bukan admin) — dipakai menu
      * "Edit Profil" di dashboard DUDI. Sengaja dibatasi cuma nama instruktur
      * & no HP (bukan nama perusahaan/alamat, itu data resmi yang tetap
-     * dikelola admin lewat Master Data > DUDI). Sengaja tidak termasuk
-     * email/password di sini juga, itu urusan terpisah.
+     * dikelola admin lewat Master Data > DUDI). No HP wajib diisi (bukan
+     * nullable lagi) karena itu sekaligus akun login (users.phone) —
+     * mengosongkannya akan mengunci akun ini sendiri. Sengaja tidak
+     * termasuk password di sini juga, itu urusan terpisah.
      */
     public function updateProfile(Request $request)
     {
@@ -128,11 +135,11 @@ class DudiController extends Controller
 
         $data = $request->validate([
             'name'    => 'required|string|max:100',
-            'telepon' => 'nullable|string|max:30',
+            'telepon' => ['required', 'string', 'max:30', Rule::unique('users', 'phone')->ignore($dudi->user_id)],
         ]);
 
-        $dudi->user->update(['name' => $data['name']]);
-        $dudi->update(['telepon' => $data['telepon'] ?? null]);
+        $dudi->user->update(['name' => $data['name'], 'phone' => $data['telepon']]);
+        $dudi->update(['telepon' => $data['telepon']]);
 
         return response()->json([
             'message' => 'Profil berhasil diperbarui.',
@@ -166,7 +173,7 @@ class DudiController extends Controller
 
         return response()->json([
             'message' => 'Tanda tangan berhasil disimpan.',
-            'dudi'    => $dudi->fresh(),
+            'dudi'    => $dudi->fresh('user'),
         ]);
     }
 }

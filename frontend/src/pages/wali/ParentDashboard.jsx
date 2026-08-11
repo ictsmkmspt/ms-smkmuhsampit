@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { LogOut, School, Trophy, AlertOctagon, Clock, ChevronDown, ChevronLeft, ChevronRight, Wallet, UserCog, X, Home, BookOpen, CalendarRange, ClipboardList } from 'lucide-react';
+import { LogOut, School, Trophy, AlertOctagon, Clock, ChevronDown, ChevronLeft, ChevronRight, Wallet, UserCog, Home, BookOpen, CalendarRange, ClipboardList } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api/axios';
 import LeaderboardPrestasi from '../../components/LeaderboardPrestasi';
 import EditProfileModal from '../../components/EditProfileModal';
 import KalenderAkademikView from '../../components/KalenderAkademikView';
 import JadwalPelajaranView from '../../components/JadwalPelajaranView';
+import PenilaianQuranTabs from '../../components/PenilaianQuranTabs';
 
 // Navigasi utama sekarang navbar bawah (gaya sama dengan dashboard Guru) —
 // cuma 2 tab pokok: Beranda & Nilai. Kalender Akademik dan Jadwal Pelajaran
@@ -13,7 +14,7 @@ import JadwalPelajaranView from '../../components/JadwalPelajaranView';
 // (ringkasan tagihan + aktivitas) sendiri.
 const BOTTOM_TABS = [
   { key: 'beranda', label: 'Beranda', icon: Home },
-  { key: 'nilai', label: 'Nilai', icon: ClipboardList },
+  { key: 'nilai', label: 'Penilaian', icon: ClipboardList },
 ];
 
 const BERANDA_SUB_TABS = [
@@ -45,9 +46,9 @@ export default function ParentDashboard() {
   const [activityPage, setActivityPage] = useState(1);
   const [spp, setSpp] = useState([]);
   const [tagihanLain, setTagihanLain] = useState([]);
-  const [academicScores, setAcademicScores] = useState([]);
-  const [showSppDetail, setShowSppDetail] = useState(false);
-  const [showTagihanLainDetail, setShowTagihanLainDetail] = useState(false);
+  const [showTagihanDetail, setShowTagihanDetail] = useState(false);
+  const [sppDetailPage, setSppDetailPage] = useState(1);
+  const [lainDetailPage, setLainDetailPage] = useState(1);
   const [menuOpen, setMenuOpen] = useState(false);
   const [showEditProfil, setShowEditProfil] = useState(false);
   const [activeTab, setActiveTab] = useState('beranda');
@@ -78,8 +79,9 @@ export default function ParentDashboard() {
     if (!selectedId) return;
     setLoading(true);
     setActivityPage(1);
-    setShowSppDetail(false);
-    setShowTagihanLainDetail(false);
+    setShowTagihanDetail(false);
+    setSppDetailPage(1);
+    setLainDetailPage(1);
     api.get(`/my-children/${selectedId}/activity`)
       .then((res) => setActivity(res.data))
       .catch(() => setError('Gagal memuat aktivitas.'))
@@ -92,25 +94,17 @@ export default function ParentDashboard() {
     api.get(`/my-children/${selectedId}/tagihan-lain`)
       .then((res) => setTagihanLain(res.data))
       .catch(() => setTagihanLain([]));
-
-    api.get(`/my-children/${selectedId}/academic-scores`)
-      .then((res) => setAcademicScores(res.data))
-      .catch(() => setAcademicScores([]));
   }, [selectedId]);
 
-  // Nilai dikelompokkan per mapel — supaya wali langsung lihat rata-rata
-  // tiap mapel, bukan cuma daftar datar semua kegiatan tercampur.
-  const nilaiPerMapel = useMemo(() => {
-    const map = new Map();
-    academicScores.forEach((n) => {
-      const key = n.subject?.id ?? 0;
-      if (!map.has(key)) map.set(key, { nama: n.subject?.nama || 'Lainnya', items: [] });
-      map.get(key).items.push(n);
-    });
-    return [...map.values()]
-      .map((g) => ({ ...g, rataRata: (g.items.reduce((sum, s) => sum + s.skor, 0) / g.items.length).toFixed(1) }))
-      .sort((a, b) => a.nama.localeCompare(b.nama));
-  }, [academicScores]);
+  // Endpoint sub-menu Penilaian (Nilai Akademik/Tahsin/Tahfidz/Tadarus) ikut
+  // berganti begitu anak yang dipilih berganti — PenilaianQuranTabs mengambil
+  // ulang datanya sendiri tiap prop ini berubah.
+  const penilaianEndpoints = useMemo(() => ({
+    akademik: `/my-children/${selectedId}/academic-scores`,
+    tahsin: `/my-children/${selectedId}/tahsin-scores`,
+    tahfidz: `/my-children/${selectedId}/tahfidz-scores`,
+    tadarus: `/my-children/${selectedId}/tadarus-scores`,
+  }), [selectedId]);
 
   const selectedChild = children.find((c) => c.id === selectedId);
 
@@ -241,42 +235,94 @@ export default function ParentDashboard() {
             )}
 
             {activeTab === 'nilai' && (
-              <div className="space-y-4">
-                <h2 className="font-display font-semibold text-ink-900">
-                  Nilai Akademik <span className="text-ink-500 font-sans font-normal text-sm">— {selectedChild?.user?.name}</span>
+              <div>
+                <h2 className="font-display font-semibold text-ink-900 mb-4">
+                  Penilaian <span className="text-ink-500 font-sans font-normal text-sm">— {selectedChild?.user?.name}</span>
                 </h2>
-                {nilaiPerMapel.length === 0 ? (
-                  <div className="surface-card p-6 text-center">
-                    <ClipboardList className="w-8 h-8 text-ink-300 mx-auto mb-2" />
-                    <p className="text-sm text-ink-500">Belum ada nilai tercatat.</p>
-                  </div>
-                ) : (
-                  nilaiPerMapel.map((g) => (
-                    <div key={g.nama} className="surface-card p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <h3 className="font-display font-semibold text-ink-900 text-sm">{g.nama}</h3>
-                        <span className="badge-soft badge-brand">rata-rata {g.rataRata}</span>
-                      </div>
-                      <ul className="divide-y divide-line-200">
-                        {g.items.map((n) => (
-                          <li key={n.id} className="py-2 flex items-center justify-between gap-3 text-sm">
-                            <div className="min-w-0">
-                              <p className="text-ink-900 truncate">{n.nama_kegiatan}</p>
-                              <p className="text-xs text-ink-500">{n.tanggal}{n.recorded_by?.name && <> &middot; Guru: {n.recorded_by.name}</>}</p>
-                            </div>
-                            <span className="font-display font-semibold text-ink-900 shrink-0">{n.skor}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  ))
-                )}
+                <PenilaianQuranTabs endpoints={penilaianEndpoints} />
               </div>
             )}
           </>
         )}
 
-        {activeTab === 'beranda' && berandaSub === 'ringkasan' && children.length > 0 && (
+        {activeTab === 'beranda' && berandaSub === 'ringkasan' && children.length > 0 && showTagihanDetail && (
+          <div className="space-y-6">
+            {/* Halaman penuh (bukan popup) — sama seperti Laporan Perorangan di
+                dashboard TU, cuma untuk 1 anak yang sedang dipilih. */}
+            <div className="surface-card p-5">
+              <div className="flex items-center justify-between gap-3 pb-4 mb-4 border-b border-line-200">
+                <div className="min-w-0">
+                  <h2 className="font-display font-semibold text-ink-900 text-lg">Detail Tagihan</h2>
+                  <p className="text-sm text-ink-500 truncate">
+                    {selectedChild?.user?.name} · {selectedChild?.class_room?.name || '-'}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowTagihanDetail(false)}
+                  className="shrink-0 flex items-center gap-1.5 text-xs font-medium text-ink-500 hover:text-ink-700 border border-line-200 rounded-lg px-3 py-1.5"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" /> Kembali
+                </button>
+              </div>
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-ink-500">Total Tunggakan (SPP + Tagihan Lain)</p>
+                <p className="text-lg font-display font-semibold text-honey-700">{formatRupiah(sppTunggakan + tagihanLainTunggakan)}</p>
+              </div>
+            </div>
+
+            <div className="surface-card p-5">
+              <h3 className="font-display font-semibold text-ink-900 mb-3">Riwayat SPP</h3>
+              <PaginatedTagihanList
+                items={spp}
+                page={sppDetailPage}
+                setPage={setSppDetailPage}
+                emptyText="Belum ada tagihan SPP tercatat."
+                renderItem={(s) => (
+                  <li key={s.id} className="py-2.5 flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-ink-900 truncate">{BULAN[s.bulan - 1]} {s.tahun}</p>
+                      <p className="text-xs text-ink-500">
+                        {formatRupiah(s.nominal)}
+                        {s.status === 'sebagian' && (
+                          <span className="text-honey-700"> · sisa {formatRupiah(s.nominal - s.jumlah_dibayar)}</span>
+                        )}
+                      </p>
+                    </div>
+                    {statusBadge(s.status)}
+                  </li>
+                )}
+              />
+            </div>
+
+            <div className="surface-card p-5">
+              <h3 className="font-display font-semibold text-ink-900 mb-3 flex items-center gap-2">
+                <Wallet className="w-4 h-4 text-ink-500" /> Riwayat Tagihan Lain
+              </h3>
+              <PaginatedTagihanList
+                items={tagihanLain}
+                page={lainDetailPage}
+                setPage={setLainDetailPage}
+                emptyText="Belum ada tagihan lain tercatat."
+                renderItem={(t) => (
+                  <li key={t.id} className="py-2.5 flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-ink-900 truncate">{t.nama_tagihan}</p>
+                      <p className="text-xs text-ink-500">
+                        {formatRupiah(t.nominal)}
+                        {t.status === 'sebagian' && (
+                          <span className="text-honey-700"> · sisa {formatRupiah(t.nominal - t.jumlah_dibayar)}</span>
+                        )}
+                      </p>
+                    </div>
+                    {statusBadge(t.status)}
+                  </li>
+                )}
+              />
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'beranda' && berandaSub === 'ringkasan' && children.length > 0 && !showTagihanDetail && (
           <>
             {/* Tagihan (SPP + Tagihan Lain digabung 1 tabel) */}
             <div className="surface-card p-5 mb-6">
@@ -306,20 +352,12 @@ export default function ParentDashboard() {
                 )}
               </div>
 
-              <div className="grid grid-cols-2 gap-3 mt-4">
-                <button
-                  onClick={() => setShowSppDetail(true)}
-                  className="flex items-center justify-center gap-1.5 text-sm font-medium text-ink-700 bg-mist-50 hover:bg-mist-100 border border-line-200 rounded-xl px-4 py-2 transition"
-                >
-                  Detail SPP
-                </button>
-                <button
-                  onClick={() => setShowTagihanLainDetail(true)}
-                  className="flex items-center justify-center gap-1.5 text-sm font-medium text-ink-700 bg-mist-50 hover:bg-mist-100 border border-line-200 rounded-xl px-4 py-2 transition"
-                >
-                  Detail Tagihan Lain
-                </button>
-              </div>
+              <button
+                onClick={() => { setShowTagihanDetail(true); setSppDetailPage(1); setLainDetailPage(1); }}
+                className="w-full flex items-center justify-center gap-1.5 text-sm font-medium text-ink-700 bg-mist-50 hover:bg-mist-100 border border-line-200 rounded-xl px-4 py-2 transition mt-4"
+              >
+                Detail Tagihan
+              </button>
             </div>
 
             {/* Aktivitas terkini */}
@@ -399,7 +437,7 @@ export default function ParentDashboard() {
           </>
         )}
 
-        {activeTab === 'beranda' && berandaSub === 'ringkasan' && (
+        {activeTab === 'beranda' && berandaSub === 'ringkasan' && !showTagihanDetail && (
           <div className="mt-6">
             <LeaderboardPrestasi />
           </div>
@@ -437,74 +475,47 @@ export default function ParentDashboard() {
         <EditProfileModal onClose={() => setShowEditProfil(false)} />
       )}
 
-      {showSppDetail && (
-        <TagihanDetailModal title="Detail SPP" onClose={() => setShowSppDetail(false)}>
-          {spp.length === 0 ? (
-            <p className="text-sm text-ink-500 text-center py-6">Belum ada tagihan SPP tercatat.</p>
-          ) : (
-            <ul className="divide-y divide-line-200">
-              {spp.map((s) => (
-                <li key={s.id} className="py-2.5 flex items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-ink-900 truncate">{BULAN[s.bulan - 1]} {s.tahun}</p>
-                    <p className="text-xs text-ink-500">
-                      {formatRupiah(s.nominal)}
-                      {s.status === 'sebagian' && (
-                        <span className="text-honey-700"> · sisa {formatRupiah(s.nominal - s.jumlah_dibayar)}</span>
-                      )}
-                    </p>
-                  </div>
-                  {statusBadge(s.status)}
-                </li>
-              ))}
-            </ul>
-          )}
-        </TagihanDetailModal>
-      )}
-
-      {showTagihanLainDetail && (
-        <TagihanDetailModal title="Detail Tagihan Lain" onClose={() => setShowTagihanLainDetail(false)}>
-          {tagihanLain.length === 0 ? (
-            <p className="text-sm text-ink-500 text-center py-6">Belum ada tagihan lain tercatat.</p>
-          ) : (
-            <ul className="divide-y divide-line-200">
-              {tagihanLain.map((t) => (
-                <li key={t.id} className="py-2.5 flex items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-ink-900 truncate">{t.nama_tagihan}</p>
-                    <p className="text-xs text-ink-500">
-                      {formatRupiah(t.nominal)}
-                      {t.status === 'sebagian' && (
-                        <span className="text-honey-700"> · sisa {formatRupiah(t.nominal - t.jumlah_dibayar)}</span>
-                      )}
-                    </p>
-                  </div>
-                  {statusBadge(t.status)}
-                </li>
-              ))}
-            </ul>
-          )}
-        </TagihanDetailModal>
-      )}
     </div>
   );
 }
 
-function TagihanDetailModal({ title, onClose, children }) {
+// Daftar tagihan dipaginasi (PAGE_SIZE sama dengan Aktivitas Terkini) —
+// dipakai untuk SPP & Tagihan Lain di halaman "Detail Tagihan" supaya
+// riwayat bertahun-tahun tidak jadi 1 daftar panjang tak berujung,
+// sama seperti pola Laporan Perorangan di dashboard TU. Halaman penuh
+// (bukan popup) karena butuh 2 seksi bertumpuk (SPP + Tagihan Lain) yang
+// bisa jadi panjang kalau dipaginasi.
+function PaginatedTagihanList({ items, page, setPage, renderItem, emptyText }) {
+  const totalPages = Math.max(1, Math.ceil(items.length / PAGE_SIZE));
+  const paginated = items.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-ink-900/40" onClick={onClose} />
-      <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[80vh] flex flex-col">
-        <div className="flex items-center justify-between p-5 border-b border-line-200 shrink-0">
-          <h3 className="font-display font-semibold text-ink-900">{title}</h3>
-          <button onClick={onClose} className="text-ink-300 hover:text-ink-600">
-            <X className="w-5 h-5" />
+    <div>
+      {items.length === 0 ? (
+        <p className="text-sm text-ink-500 text-center py-4">{emptyText}</p>
+      ) : (
+        <ul className="divide-y divide-line-200">{paginated.map(renderItem)}</ul>
+      )}
+      {items.length > PAGE_SIZE && (
+        <div className="flex items-center justify-between mt-2 pt-2 border-t border-line-200">
+          <button
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={page === 1}
+            className="flex items-center gap-1 text-xs font-medium text-ink-500 hover:text-brand-600 disabled:opacity-30"
+          >
+            <ChevronLeft className="w-3.5 h-3.5" /> Sebelumnya
+          </button>
+          <span className="text-xs text-ink-400">Halaman {page} / {totalPages}</span>
+          <button
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            disabled={page === totalPages}
+            className="flex items-center gap-1 text-xs font-medium text-ink-500 hover:text-brand-600 disabled:opacity-30"
+          >
+            Selanjutnya <ChevronRight className="w-3.5 h-3.5" />
           </button>
         </div>
-        <div className="overflow-y-auto p-5">
-          {children}
-        </div>
-      </div>
+      )}
     </div>
   );
 }
+

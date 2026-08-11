@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { LogOut, FileText, Briefcase, ChevronDown, UserCog, Home, ClipboardList, QrCode } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import BerandaTab from './tabs/BerandaTab';
-import NilaiTab from './tabs/NilaiTab';
+import PenilaianTab from './tabs/PenilaianTab';
 import ScanTab from './tabs/ScanTab';
 import LaporanTab from './tabs/LaporanTab';
 import BimbinganPklTab from './tabs/BimbinganPklTab';
@@ -13,9 +13,9 @@ import EditProfileModal from '../../components/EditProfileModal';
 // tombol "Scan" di tengah (submenunya ada di dalam ScanTab: Kehadiran,
 // Sholat Zuhur, Poin Prestasi, Poin Pelanggaran).
 const ALL_TABS = [
-  { key: 'beranda', label: 'Beranda', icon: Home,          component: BerandaTab },
-  { key: 'nilai',   label: 'Nilai',   icon: ClipboardList, component: NilaiTab },
-  { key: 'scan',    label: 'Scan',    icon: QrCode,        component: ScanTab },
+  { key: 'beranda',   label: 'Beranda',   icon: Home,          component: BerandaTab },
+  { key: 'penilaian', label: 'Penilaian', icon: ClipboardList, component: PenilaianTab },
+  { key: 'scan',      label: 'Scan',      icon: QrCode,        component: ScanTab },
   { key: 'pkl',     label: 'PKL',     icon: Briefcase,      component: BimbinganPklTab },
   { key: 'laporan', label: 'Laporan', icon: FileText,       component: LaporanTab },
 ];
@@ -46,7 +46,7 @@ export default function GuruDashboard() {
   // Navbar bawah: Beranda/Nilai selalu di kiri, PKL/Laporan di kanan, tombol
   // Scan melayang di tengah — dipisah di sini supaya kedua sisi tetap
   // seimbang (pakai flex-1 masing-masing).
-  const leftTabs = TABS.filter((t) => t.key === 'beranda' || t.key === 'nilai');
+  const leftTabs = TABS.filter((t) => t.key === 'beranda' || t.key === 'penilaian');
   const rightTabs = TABS.filter((t) => t.key === 'pkl' || t.key === 'laporan');
 
   useEffect(() => {

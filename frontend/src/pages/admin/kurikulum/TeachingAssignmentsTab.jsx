@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Plus, Trash2, Pencil, Check, X, Wand2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Plus, Trash2, Pencil, Check, X, Wand2, GripVertical } from 'lucide-react';
 import api from '../../../api/axios';
 import { useTahunAjaran, useTahunAjaranParam } from '../../../context/TahunAjaranContext';
 
@@ -19,10 +19,11 @@ export default function TeachingAssignmentsTab() {
   const [editJam, setEditJam] = useState('');
   const [editSaving, setEditSaving] = useState(false);
 
-  const assignmentsUrut = useMemo(
-    () => [...assignments].sort((a, b) => (a.subject?.kode || '').localeCompare(b.subject?.kode || '')),
-    [assignments]
-  );
+  // Drag-and-drop urutan baris — server jadi acuan urutan (kolom `urutan`,
+  // dikembalikan sudah terurut dari index()), jadi cukup pakai state
+  // `assignments` apa adanya tanpa sort ulang di frontend.
+  const [dragId, setDragId] = useState(null);
+  const [savingOrder, setSavingOrder] = useState(false);
 
   const load = () => api.get('/teaching-assignments', { params: tahunParam }).then((res) => setAssignments(res.data));
   useEffect(() => {
@@ -83,6 +84,34 @@ export default function TeachingAssignmentsTab() {
     }
   };
 
+  const handleDragStart = (id) => setDragId(id);
+
+  const handleDragEnter = (id) => {
+    if (dragId === null || dragId === id) return;
+    setAssignments((prev) => {
+      const items = [...prev];
+      const fromIndex = items.findIndex((a) => a.id === dragId);
+      const toIndex = items.findIndex((a) => a.id === id);
+      if (fromIndex === -1 || toIndex === -1) return prev;
+      const [moved] = items.splice(fromIndex, 1);
+      items.splice(toIndex, 0, moved);
+      return items;
+    });
+  };
+
+  const handleDragEnd = async () => {
+    setDragId(null);
+    setSavingOrder(true);
+    try {
+      await api.put('/teaching-assignments/reorder', { ids: assignments.map((a) => a.id) });
+    } catch (err) {
+      alert(err.response?.data?.message || 'Gagal menyimpan urutan.');
+      load(); // kembalikan ke urutan tersimpan terakhir kalau gagal
+    } finally {
+      setSavingOrder(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="surface-card p-4 border-l-4 border-l-brand-400">
@@ -133,11 +162,16 @@ export default function TeachingAssignmentsTab() {
             </button>
           )}
         </div>
-        <p className="text-xs text-ink-500 mb-4">Kolom "Terjadwal" menghitung otomatis dari isian di menu Jadwal Pelajaran. Target jam boleh dikosongkan kalau memang tidak dipatok rata per minggu (mis. mapel blok/kejuruan). Kode Guru dibuat lewat tombol di atas — tidak perlu diisi manual — dan kode inilah yang tampil di Jadwal Pelajaran.</p>
+        <p className="text-xs text-ink-500 mb-4">
+          Kolom "Terjadwal" menghitung otomatis dari isian di menu Jadwal Pelajaran. Target jam boleh dikosongkan kalau memang tidak dipatok rata per minggu (mis. mapel blok/kejuruan).
+          {tahunAktif && ' Seret baris pakai ikon di kiri untuk mengatur urutan tabel.'} Kode Guru dibuat lewat tombol di atas mengikuti urutan baris ini — tidak perlu diisi manual — dan kode inilah yang tampil di Jadwal Pelajaran.
+          {savingOrder && <span className="text-brand-600"> Menyimpan urutan...</span>}
+        </p>
         <div className="table-scroll">
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-ink-500 border-b border-line-200">
+              {tahunAktif && <th className="w-6 whitespace-nowrap px-2"></th>}
               <th className="pb-2 font-medium whitespace-nowrap px-2">Kode Guru</th>
               <th className="font-medium whitespace-nowrap px-2">Kelas</th>
               <th className="font-medium whitespace-nowrap px-2">Mata Pelajaran</th>
@@ -147,8 +181,21 @@ export default function TeachingAssignmentsTab() {
             </tr>
           </thead>
           <tbody>
-            {assignmentsUrut.map((a) => (
-              <tr key={a.id} className="border-t border-line-200">
+            {assignments.map((a) => (
+              <tr
+                key={a.id}
+                className={`border-t border-line-200 ${dragId === a.id ? 'opacity-40' : ''}`}
+                draggable={tahunAktif}
+                onDragStart={() => handleDragStart(a.id)}
+                onDragEnter={() => handleDragEnter(a.id)}
+                onDragOver={(e) => e.preventDefault()}
+                onDragEnd={handleDragEnd}
+              >
+                {tahunAktif && (
+                  <td className="whitespace-nowrap px-2 cursor-grab active:cursor-grabbing text-ink-300 hover:text-ink-500">
+                    <GripVertical className="w-4 h-4" />
+                  </td>
+                )}
                 <td className="py-2.5 whitespace-nowrap px-2"><span className="badge-soft badge-brand font-mono">{a.kode_guru || '-'}</span></td>
                 <td className="text-ink-900 whitespace-nowrap px-2">{a.class_room?.name}</td>
                 <td className="text-ink-700 whitespace-nowrap px-2">
@@ -184,7 +231,7 @@ export default function TeachingAssignmentsTab() {
                 </td>
               </tr>
             ))}
-            {assignments.length === 0 && <tr><td colSpan="6" className="py-6 text-center text-ink-300 whitespace-nowrap px-2">{tahunAktif ? 'Belum ada penugasan untuk tahun ajaran aktif.' : 'Tidak ada penugasan untuk tahun ajaran ini.'}</td></tr>}
+            {assignments.length === 0 && <tr><td colSpan={tahunAktif ? 7 : 6} className="py-6 text-center text-ink-300 whitespace-nowrap px-2">{tahunAktif ? 'Belum ada penugasan untuk tahun ajaran aktif.' : 'Tidak ada penugasan untuk tahun ajaran ini.'}</td></tr>}
           </tbody>
         </table>
         </div>

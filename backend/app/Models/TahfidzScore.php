@@ -1,0 +1,34 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+
+class TahfidzScore extends Model
+{
+    protected $fillable = ['student_id', 'tahun_ajaran_id', 'surah', 'ayat_mulai', 'ayat_selesai', 'keterangan', 'tanggal', 'recorded_by'];
+
+    protected static function booted(): void
+    {
+        static::creating(function (TahfidzScore $score) {
+            if (empty($score->tahun_ajaran_id)) {
+                $score->tahun_ajaran_id = TahunAjaran::aktifId();
+            }
+        });
+    }
+
+    public function student()
+    {
+        return $this->belongsTo(Student::class);
+    }
+
+    public function tahunAjaran()
+    {
+        return $this->belongsTo(TahunAjaran::class);
+    }
+
+    public function recordedBy()
+    {
+        return $this->belongsTo(User::class, 'recorded_by');
+    }
+}
