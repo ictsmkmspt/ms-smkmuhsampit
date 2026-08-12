@@ -3,14 +3,17 @@ import { CalendarClock } from 'lucide-react';
 import LeaderboardPrestasi from '../../../components/LeaderboardPrestasi';
 import KalenderAkademikView from '../../../components/KalenderAkademikView';
 import JadwalPelajaranView from '../../../components/JadwalPelajaranView';
+import AnnouncementBoard from '../../../components/AnnouncementBoard';
 
 // Sub-menu di atas konten, gaya sama dengan sub-menu Ortu (pill putih rata
-// tengah, label pendek di HP) — 3 tab sejajar: Beranda (leaderboard),
-// Jadwal Pelajaran, dan Kalender Akademik, bukan digabung 1 scroll panjang.
+// tengah, label pendek di HP) — 4 tab sejajar: Beranda (leaderboard),
+// Jadwal Pelajaran, Kalender Akademik, dan Pengumuman, bukan digabung 1
+// scroll panjang.
 const SUB_TABS = [
   { key: 'beranda', label: 'Beranda', labelShort: 'Beranda' },
   { key: 'jadwal', label: 'Jadwal Pelajaran', labelShort: 'Jadwal' },
   { key: 'kalender', label: 'Kalender Akademik', labelShort: 'Kalender' },
+  { key: 'pengumuman', label: 'Pengumuman', labelShort: 'Pengumuman' },
 ];
 
 export default function BerandaTab() {
@@ -48,6 +51,8 @@ export default function BerandaTab() {
       )}
 
       {activeTab === 'kalender' && <KalenderAkademikView />}
+
+      {activeTab === 'pengumuman' && <AnnouncementBoard canManage />}
     </div>
   );
 }

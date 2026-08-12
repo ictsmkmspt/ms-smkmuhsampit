@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, CheckCircle2, HeartHandshake, ChevronLeft, ChevronRight } from 'lucide-react';
 import api from '../../../../api/axios';
 import TruncateText from '../../../../components/TruncateText';
+import { fmtDMY } from '../../../../utils/date';
 
 const PAGE_SIZE = 6;
 const KATEGORI_LABEL = { akademik: 'Akademik', perilaku: 'Perilaku', sosial: 'Sosial', keluarga: 'Keluarga', lainnya: 'Lainnya' };
@@ -69,7 +70,7 @@ export default function BkReportSection() {
                 <div key={k.id} className="border border-line-200 rounded-lg px-3 py-2 flex items-center justify-between gap-2 text-sm">
                   <div className="min-w-0">
                     <p className="text-ink-900 font-medium truncate"><TruncateText text={k.student?.user?.name} /></p>
-                    <p className="text-xs text-ink-500 truncate">{new Date(k.created_at).toLocaleDateString('id-ID')} &middot; {k.sanksi_rule?.nama || '-'}</p>
+                    <p className="text-xs text-ink-500 truncate">{fmtDMY(k.created_at)} &middot; {k.sanksi_rule?.nama || '-'}</p>
                   </div>
                   <span className={`badge-soft shrink-0 ${k.status === 'selesai' ? 'badge-brand' : 'badge-honey'}`}>{k.status === 'selesai' ? 'Selesai' : 'Diproses'}</span>
                 </div>
@@ -102,7 +103,7 @@ export default function BkReportSection() {
                     <p className="text-ink-900 font-medium truncate"><TruncateText text={c.student?.user?.name} /></p>
                     <span className={`badge-soft shrink-0 ${c.status === 'selesai' ? 'badge-brand' : 'badge-honey'}`}>{c.status === 'selesai' ? 'Selesai' : 'Berjalan'}</span>
                   </div>
-                  <p className="text-xs text-ink-500 mt-0.5">{c.tanggal} &middot; {KATEGORI_LABEL[c.kategori]}{c.sanksi_kejadian && <> &middot; ↳ {c.sanksi_kejadian.sanksi_rule?.nama}</>}</p>
+                  <p className="text-xs text-ink-500 mt-0.5">{fmtDMY(c.tanggal)} &middot; {KATEGORI_LABEL[c.kategori]}{c.sanksi_kejadian && <> &middot; ↳ {c.sanksi_kejadian.sanksi_rule?.nama}</>}</p>
                   <p className="text-xs text-ink-700 mt-1"><TruncateText text={c.catatan} /></p>
                 </div>
               ))}

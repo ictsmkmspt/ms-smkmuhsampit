@@ -4,6 +4,7 @@ import api from '../../../../api/axios';
 import PklAttendanceDetailModal from '../../../../components/PklAttendanceDetailModal';
 import PklJournalModal from '../../../../components/PklJournalModal';
 import TruncateText from '../../../../components/TruncateText';
+import { fmtDMY } from '../../../../utils/date';
 
 export default function BimbinganSiswaTab() {
   const [list, setList] = useState([]);
@@ -67,7 +68,7 @@ export default function BimbinganSiswaTab() {
                     <p className="text-xs text-ink-500">{p.student?.class_room?.name || '-'}</p>
                   </td>
                   <td className="text-ink-700 whitespace-nowrap px-2"><TruncateText text={p.dudi?.nama_perusahaan} /></td>
-                  <td className="text-ink-700 text-xs whitespace-nowrap px-2">{p.tanggal_mulai} s/d {p.tanggal_selesai}</td>
+                  <td className="text-ink-700 text-xs whitespace-nowrap px-2">{fmtDMY(p.tanggal_mulai)} s/d {fmtDMY(p.tanggal_selesai)}</td>
                   <td className="text-right py-2 whitespace-nowrap px-2">
                     <TombolAksi p={p} />
                   </td>
@@ -112,7 +113,7 @@ export default function BimbinganSiswaTab() {
                     <p className="text-xs text-ink-500">{p.student?.class_room?.name || '-'}</p>
                   </td>
                   <td className="text-ink-700 whitespace-nowrap px-2"><TruncateText text={p.dudi?.nama_perusahaan} /></td>
-                  <td className="text-ink-700 text-xs whitespace-nowrap px-2">{p.tanggal_mulai} s/d {p.tanggal_selesai}</td>
+                  <td className="text-ink-700 text-xs whitespace-nowrap px-2">{fmtDMY(p.tanggal_mulai)} s/d {fmtDMY(p.tanggal_selesai)}</td>
                   <td className="text-right py-2 whitespace-nowrap px-2">
                     <TombolAksi p={p} />
                   </td>

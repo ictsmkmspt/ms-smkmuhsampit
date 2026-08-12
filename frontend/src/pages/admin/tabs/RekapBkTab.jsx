@@ -3,6 +3,7 @@ import { Search, AlertTriangle, CheckCircle2, HeartHandshake, ChevronLeft, Chevr
 import api from '../../../api/axios';
 import TruncateText from '../../../components/TruncateText';
 import CetakSuratPeringatanModal from '../../../components/CetakSuratPeringatanModal';
+import { fmtDMY } from '../../../utils/date';
 import { useTahunAjaran, useTahunAjaranParam } from '../../../context/TahunAjaranContext';
 
 const PAGE_SIZE = 6;
@@ -154,7 +155,7 @@ export default function RekapBkTab() {
                 <div key={k.id} className="border border-line-200 rounded-lg px-3 py-2 flex items-center justify-between gap-2 text-sm">
                   <div className="min-w-0">
                     <p className="text-ink-900 font-medium truncate"><TruncateText text={k.student?.user?.name} /> <span className="text-ink-400 font-normal">· {k.student?.class_room?.name || '-'}</span></p>
-                    <p className="text-xs text-ink-500 truncate">{new Date(k.created_at).toLocaleDateString('id-ID')} &middot; {k.sanksi_rule?.nama || '-'}</p>
+                    <p className="text-xs text-ink-500 truncate">{fmtDMY(k.created_at)} &middot; {k.sanksi_rule?.nama || '-'}</p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     <button
@@ -199,7 +200,7 @@ export default function RekapBkTab() {
                     <p className="text-ink-900 font-medium truncate"><TruncateText text={c.student?.user?.name} /> <span className="text-ink-400 font-normal">· {c.student?.class_room?.name || '-'}</span></p>
                     <span className={`badge-soft shrink-0 ${c.status === 'selesai' ? 'badge-brand' : 'badge-honey'}`}>{c.status === 'selesai' ? 'Selesai' : 'Berjalan'}</span>
                   </div>
-                  <p className="text-xs text-ink-500 mt-0.5">{c.tanggal} &middot; {KATEGORI_LABEL[c.kategori]}{c.sanksi_kejadian && <> &middot; ↳ {c.sanksi_kejadian.sanksi_rule?.nama}</>}</p>
+                  <p className="text-xs text-ink-500 mt-0.5">{fmtDMY(c.tanggal)} &middot; {KATEGORI_LABEL[c.kategori]}{c.sanksi_kejadian && <> &middot; ↳ {c.sanksi_kejadian.sanksi_rule?.nama}</>}</p>
                   <p className="text-xs text-ink-700 mt-1"><TruncateText text={c.catatan} /></p>
                 </div>
               ))}

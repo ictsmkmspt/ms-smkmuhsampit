@@ -3,6 +3,8 @@ import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import api from '../../../api/axios';
 import StudentViolationModal from '../../../components/StudentViolationModal';
 import TruncateText from '../../../components/TruncateText';
+import DateInput from '../../../components/DateInput';
+import { fmtDMY } from '../../../utils/date';
 import { useAuth } from '../../../context/AuthContext';
 import { useTahunAjaran, useTahunAjaranParam } from '../../../context/TahunAjaranContext';
 
@@ -159,8 +161,7 @@ export default function ViolationReportTab() {
           </p>
 
           <div className="flex gap-2 mb-3">
-            <input
-              type="date"
+            <DateInput
               value={date}
               onChange={(e) => setDate(e.target.value)}
               className="field-input text-sm flex-1"
@@ -178,7 +179,7 @@ export default function ViolationReportTab() {
                     {v.student?.user?.name} <span className="text-ink-400 font-normal">· {v.student?.class_room?.name || '-'}</span>
                   </p>
                   <p className="text-xs text-ink-500 truncate">
-                    {v.date} · {v.violation_type?.name || (v.type === 'alpa' ? 'Tidak Hadir' : '-')}
+                    {fmtDMY(v.date)} · {v.violation_type?.name || (v.type === 'alpa' ? 'Tidak Hadir' : '-')}
                   </p>
                 </div>
                 <span className="text-honey-700 font-medium shrink-0">+{v.poin}</span>

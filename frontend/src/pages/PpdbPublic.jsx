@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { UserPlus, Search, CheckCircle2 } from 'lucide-react';
 import api from '../api/axios';
 import { useSchoolProfile } from '../context/SchoolProfileContext';
+import DateInput from '../components/DateInput';
 
 const STATUS_LABEL = { mendaftar: 'Mendaftar', verifikasi: 'Sedang Diverifikasi', diterima: 'Diterima', ditolak: 'Ditolak' };
 const STATUS_BADGE = { mendaftar: 'badge-soft', verifikasi: 'badge-honey', diterima: 'badge-brand', ditolak: 'badge-soft' };
@@ -129,7 +130,7 @@ export default function PpdbPublic() {
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <input placeholder="Tempat Lahir" value={form.tempat_lahir} onChange={(e) => setForm({ ...form, tempat_lahir: e.target.value })} className="field-input" />
-                    <input type="date" placeholder="Tanggal Lahir" value={form.tanggal_lahir} onChange={(e) => setForm({ ...form, tanggal_lahir: e.target.value })} className="field-input" />
+                    <DateInput placeholder="Tanggal Lahir" value={form.tanggal_lahir} onChange={(e) => setForm({ ...form, tanggal_lahir: e.target.value })} className="field-input" />
                   </div>
                   <textarea placeholder="Alamat" value={form.alamat} onChange={(e) => setForm({ ...form, alamat: e.target.value })} className="field-input w-full" rows={2} />
                   <input placeholder="Asal Sekolah" value={form.asal_sekolah} onChange={(e) => setForm({ ...form, asal_sekolah: e.target.value })} className="field-input w-full" />

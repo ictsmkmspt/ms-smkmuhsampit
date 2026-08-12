@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { GraduationCap, ChevronRight, ChevronLeft, Trash2, KeyRound } from 'lucide-react';
 import api from '../../../api/axios';
 import { useAuth } from '../../../context/AuthContext';
+import { fmtDMY } from '../../../utils/date';
 
 export default function WaliAlumniTab() {
   const { user } = useAuth();
@@ -112,7 +113,7 @@ export default function WaliAlumniTab() {
                         <span key={c.id} className="flex items-center gap-1.5 text-xs bg-mist-50 border border-line-200 rounded-lg px-2.5 py-1.5">
                           <span className="text-ink-900 font-medium">{c.user?.name}</span>
                           {c.pivot?.hubungan && <span className="text-ink-400">({c.pivot.hubungan})</span>}
-                          {c.tanggal_lulus && <span className="text-ink-400">· Lulus {c.tanggal_lulus}</span>}
+                          {c.tanggal_lulus && <span className="text-ink-400">· Lulus {fmtDMY(c.tanggal_lulus)}</span>}
                         </span>
                       ))}
                     </div>

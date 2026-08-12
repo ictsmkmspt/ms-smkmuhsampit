@@ -3,6 +3,8 @@ import { Plus, Trash2, ScanBarcode, X } from 'lucide-react';
 import api from '../../../api/axios';
 import AssetSearchSelect from '../../../components/AssetSearchSelect';
 import BarcodeScanner from '../../../components/BarcodeScanner';
+import DateInput from '../../../components/DateInput';
+import { fmtDMY } from '../../../utils/date';
 
 const STATUS_LABEL = { dilaporkan: 'Dilaporkan', diproses: 'Diproses', selesai: 'Selesai' };
 const STATUS_BADGE = { dilaporkan: 'badge-soft', diproses: 'badge-honey', selesai: 'badge-brand' };
@@ -106,7 +108,7 @@ export default function MaintenanceTab() {
               <ScanBarcode className="w-4 h-4" />
             </button>
           </div>
-          <input type="date" value={form.tanggal_lapor} onChange={(e) => setForm({ ...form, tanggal_lapor: e.target.value })} className="field-input" required />
+          <DateInput value={form.tanggal_lapor} onChange={(e) => setForm({ ...form, tanggal_lapor: e.target.value })} className="field-input" required />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <input placeholder="Pelapor" value={form.pelapor} onChange={(e) => setForm({ ...form, pelapor: e.target.value })} className="field-input" />
             <textarea placeholder="Deskripsi kerusakan" value={form.deskripsi} onChange={(e) => setForm({ ...form, deskripsi: e.target.value })} className="field-input" rows={2} required />
@@ -132,7 +134,7 @@ export default function MaintenanceTab() {
           <tbody>
             {requests.map((r) => (
               <tr key={r.id} className="border-t border-line-200">
-                <td className="py-2.5 font-mono text-ink-700 whitespace-nowrap px-2">{r.tanggal_lapor}</td>
+                <td className="py-2.5 font-mono text-ink-700 whitespace-nowrap px-2">{fmtDMY(r.tanggal_lapor)}</td>
                 <td className="text-ink-700 whitespace-nowrap px-2">{r.asset?.nama || r.room?.nama || '-'}</td>
                 <td className="text-ink-700 max-w-[16rem] whitespace-nowrap px-2">{r.deskripsi}</td>
                 <td className="text-ink-700 whitespace-nowrap px-2">{r.pelapor || '-'}</td>

@@ -3,6 +3,7 @@ import { ChevronLeft, ChevronRight, Wallet, Receipt, TrendingUp, Download, Searc
 import api from '../../../../api/axios';
 import { BULAN, formatRupiah, StatTile, Avatar } from '../../shared';
 import TruncateText from '../../../../components/TruncateText';
+import { fmtDMY } from '../../../../utils/date';
 
 function downloadBlob(res, filename) {
   const url = window.URL.createObjectURL(new Blob([res.data]));
@@ -158,7 +159,7 @@ export default function RingkasanSection() {
                   <tbody>
                     {rincianGabungan.map((r) => (
                       <tr key={`${r._jenis}-${r.id}`} className="border-t border-line-200">
-                        <td className="py-2 text-ink-700 text-xs whitespace-nowrap px-2">{r.tanggal_bayar}</td>
+                        <td className="py-2 text-ink-700 text-xs whitespace-nowrap px-2">{fmtDMY(r.tanggal_bayar)}</td>
                         <td className="text-ink-900 whitespace-nowrap px-2"><TruncateText text={r.student?.user?.name} maxWidth="10rem" /></td>
                         <td className="text-ink-700 whitespace-nowrap px-2">{r._jenis}</td>
                         <td className="text-ink-700 whitespace-nowrap px-2"><TruncateText text={r._label} maxWidth="10rem" /></td>

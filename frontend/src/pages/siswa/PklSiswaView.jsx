@@ -5,6 +5,8 @@ import {
 } from 'lucide-react';
 import api from '../../api/axios';
 import PklJurnalTab from './PklJurnalTab';
+import DateInput from '../../components/DateInput';
+import { fmtDMY } from '../../utils/date';
 
 const STATUS_LABEL = { hadir: 'Hadir', izin: 'Izin', sakit: 'Sakit', alpa: 'Alpa' };
 const STATUS_BADGE = { hadir: 'badge-brand', izin: 'badge-honey', sakit: 'badge-honey', alpa: 'badge-rose' };
@@ -264,8 +266,8 @@ export default function PklSiswaView({ placement, tab }) {
                     <div key={h.id} className="border border-line-200 rounded-lg px-3 py-2 text-sm">
                       {editingRowId === h.id ? (
                         <div className="space-y-2">
-                          <input
-                            type="date" value={editRowTanggal} onChange={(e) => setEditRowTanggal(e.target.value)}
+                          <DateInput
+                            value={editRowTanggal} onChange={(e) => setEditRowTanggal(e.target.value)}
                             max={maxTanggalIzin} className="field-input text-sm"
                           />
                           <select
@@ -292,7 +294,7 @@ export default function PklSiswaView({ placement, tab }) {
                       ) : (
                         <div className="flex items-center justify-between">
                           <div>
-                            <p className="text-ink-900 font-medium">{h.date}</p>
+                            <p className="text-ink-900 font-medium">{fmtDMY(h.date)}</p>
                             <p className="text-xs text-ink-500">
                               {h.status === 'hadir'
                                 ? `${h.time_in ? h.time_in.slice(0, 5) : '--:--'} – ${h.time_out ? h.time_out.slice(0, 5) : '--:--'}`
@@ -343,8 +345,8 @@ export default function PklSiswaView({ placement, tab }) {
 
               <div>
                 <label className="block text-xs font-medium text-ink-500 mb-1">Tanggal</label>
-                <input
-                  type="date" value={izinTanggal} onChange={(e) => setIzinTanggal(e.target.value)}
+                <DateInput
+                  value={izinTanggal} onChange={(e) => setIzinTanggal(e.target.value)}
                   max={maxTanggalIzin} className="field-input" required
                 />
                 <p className="text-xs text-ink-400 mt-1">Bisa untuk hari yang sudah lewat, atau maksimal 7 hari ke depan.</p>

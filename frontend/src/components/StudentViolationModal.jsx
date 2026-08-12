@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { X, Pencil, Trash2 } from 'lucide-react';
 import api from '../api/axios';
 import TruncateText from './TruncateText';
+import DateInput from './DateInput';
+import { fmtDMY } from '../utils/date';
 import { useTahunAjaranParam } from '../context/TahunAjaranContext';
 
 export default function StudentViolationModal({ student, onClose, onChanged, readOnly = false }) {
@@ -69,7 +71,7 @@ export default function StudentViolationModal({ student, onClose, onChanged, rea
   };
 
   const handleDelete = async (v) => {
-    if (!confirm(`Hapus catatan pelanggaran "${v.violation_type?.name || '-'}" tanggal ${v.date}? Poin akan dikembalikan.`)) return;
+    if (!confirm(`Hapus catatan pelanggaran "${v.violation_type?.name || '-'}" tanggal ${fmtDMY(v.date)}? Poin akan dikembalikan.`)) return;
     try {
       await api.delete(`/violations/${v.id}`);
       await loadViolations();
@@ -97,11 +99,11 @@ export default function StudentViolationModal({ student, onClose, onChanged, rea
         <div className="p-5 flex flex-wrap gap-3 items-end border-b border-line-200">
           <div>
             <label className="block text-xs font-medium text-ink-500 mb-1">Dari Tanggal</label>
-            <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="field-input text-sm" />
+            <DateInput value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="field-input text-sm" />
           </div>
           <div>
             <label className="block text-xs font-medium text-ink-500 mb-1">Sampai Tanggal</label>
-            <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="field-input text-sm" />
+            <DateInput value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="field-input text-sm" />
           </div>
           <div>
             <label className="block text-xs font-medium text-ink-500 mb-1">Jenis Pelanggaran</label>
@@ -167,7 +169,7 @@ export default function StudentViolationModal({ student, onClose, onChanged, rea
                     </tr>
                   ) : (
                     <tr key={v.id} className="border-t border-line-200">
-                      <td className="py-2.5 text-ink-700 align-top whitespace-nowrap px-2">{v.date}</td>
+                      <td className="py-2.5 text-ink-700 align-top whitespace-nowrap px-2">{fmtDMY(v.date)}</td>
                       <td className="text-ink-900 align-top whitespace-nowrap px-2">
                         {v.violation_type?.name || (v.type === 'alpa' ? 'Tidak Hadir' : v.type === 'telat' ? 'Terlambat' : '-')}
                         {v.note && <p className="text-xs text-ink-400 mt-0.5"><TruncateText text={v.note} maxWidth="16rem" /></p>}

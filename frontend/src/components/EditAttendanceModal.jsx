@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { X, Save } from 'lucide-react';
 import api from '../api/axios';
+import { fmtDMY } from '../utils/date';
 
 export default function EditAttendanceModal({ record, onClose, onSaved }) {
   const [status, setStatus] = useState(record.status === 'alpa' ? 'hadir' : record.status);
@@ -34,7 +35,7 @@ export default function EditAttendanceModal({ record, onClose, onSaved }) {
         <div className="flex items-start justify-between p-5 border-b border-line-200">
           <div>
             <h3 className="font-display font-semibold text-ink-900">{record.student?.user?.name}</h3>
-            <p className="text-xs text-ink-500 mt-0.5">{record.student?.class_room?.name || '-'} · {record.date}</p>
+            <p className="text-xs text-ink-500 mt-0.5">{record.student?.class_room?.name || '-'} · {fmtDMY(record.date)}</p>
           </div>
           <button onClick={onClose} className="text-ink-300 hover:text-ink-600">
             <X className="w-5 h-5" />

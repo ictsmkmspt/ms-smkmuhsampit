@@ -156,7 +156,9 @@ class ParentController extends Controller
 
     /**
      * Riwayat Tahsin/Tahfidz/Tadarus 1 anak — dipakai sub-menu Penilaian di
-     * dashboard Wali. Pola sama seperti academicScores() di atas.
+     * dashboard Wali. BEDA dari academicScores() di atas: tidak difilter
+     * tahun ajaran (Tahsin/Tahfidz/Tadarus tidak terikat tahun ajaran,
+     * lihat TahsinScore/TahfidzScore/TadarusScore).
      */
     public function tahsinScores(Request $request, $studentId)
     {
@@ -165,7 +167,6 @@ class ParentController extends Controller
         }
 
         return TahsinScore::where('student_id', $studentId)
-            ->where('tahun_ajaran_id', TahunAjaran::aktifId())
             ->orderByDesc('tanggal')
             ->get();
     }
@@ -177,7 +178,6 @@ class ParentController extends Controller
         }
 
         return TahfidzScore::where('student_id', $studentId)
-            ->where('tahun_ajaran_id', TahunAjaran::aktifId())
             ->orderByDesc('tanggal')
             ->get();
     }
@@ -189,7 +189,6 @@ class ParentController extends Controller
         }
 
         return TadarusScore::where('student_id', $studentId)
-            ->where('tahun_ajaran_id', TahunAjaran::aktifId())
             ->orderByDesc('tanggal')
             ->get();
     }

@@ -4,6 +4,7 @@ import api from '../../../api/axios';
 import { useAuth } from '../../../context/AuthContext';
 import CategoryBarChart from '../../../components/CategoryBarChart';
 import DailyGroupedBarChart from '../../../components/DailyGroupedBarChart';
+import DateInput from '../../../components/DateInput';
 import { MASTER_DATA_SUBMENU } from './MasterDataTab';
 import { ALUMNI_SUBMENU } from './AlumniMenuTab';
 import { POIN_SUBMENU } from './PoinTab';
@@ -605,8 +606,7 @@ export default function DashboardHomeTab({ onNavigate }) {
                 <button onClick={() => setTanggalGrafik((t) => geserTanggal(t, -1))} className="w-7 h-7 flex items-center justify-center rounded-lg text-ink-500 hover:bg-mist-50" title="Hari sebelumnya">
                   <ChevronLeft className="w-4 h-4" />
                 </button>
-                <input
-                  type="date"
+                <DateInput
                   value={tanggalGrafik}
                   onChange={(e) => e.target.value && setTanggalGrafik(e.target.value)}
                   className="text-sm font-medium text-ink-900 px-2 text-center bg-transparent border-none focus:outline-none"

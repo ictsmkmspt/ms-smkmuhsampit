@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { NotebookPen, CheckCircle2, BellRing } from 'lucide-react';
 import api from '../../../api/axios';
+import { fmtDMY } from '../../../utils/date';
 
 export default function DudiJurnalPembimbinganTab() {
   const [pending, setPending] = useState([]);
@@ -69,7 +70,7 @@ export default function DudiJurnalPembimbinganTab() {
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <p className="text-ink-900 font-medium">{e.teacher?.user?.name}</p>
-                    <p className="text-xs text-ink-500">{e.date}</p>
+                    <p className="text-xs text-ink-500">{fmtDMY(e.date)}</p>
                   </div>
                   <button
                     onClick={() => handleVerifikasi(e.id)}
@@ -101,7 +102,7 @@ export default function DudiJurnalPembimbinganTab() {
             {all.map((e) => (
               <div key={e.id} className="border border-line-200 rounded-lg px-3 py-2.5 text-sm">
                 <div className="flex items-center justify-between">
-                  <p className="text-ink-900 font-medium">{e.teacher?.user?.name} <span className="text-ink-400 font-normal text-xs">· {e.date}</span></p>
+                  <p className="text-ink-900 font-medium">{e.teacher?.user?.name} <span className="text-ink-400 font-normal text-xs">· {fmtDMY(e.date)}</span></p>
                   {e.verified_at && (
                     <span className="flex items-center gap-1 text-xs text-brand-700">
                       <CheckCircle2 className="w-3.5 h-3.5" /> Diverifikasi

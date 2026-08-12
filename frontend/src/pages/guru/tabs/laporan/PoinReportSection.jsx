@@ -3,6 +3,8 @@ import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import api from '../../../../api/axios';
 import StudentViolationModal from '../../../../components/StudentViolationModal';
 import TruncateText from '../../../../components/TruncateText';
+import DateInput from '../../../../components/DateInput';
+import { fmtDMY } from '../../../../utils/date';
 
 const PAGE_SIZE = 5;
 const SUMMARY_PAGE_SIZE = 40;
@@ -109,7 +111,7 @@ export default function PoinReportSection() {
           <h2 className="font-display font-semibold text-ink-900 mb-3">Riwayat Kejadian Pelanggaran</h2>
 
           <div className="flex gap-2 mb-3">
-            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="field-input text-sm flex-1" />
+            <DateInput value={date} onChange={(e) => setDate(e.target.value)} className="field-input text-sm flex-1" />
             <button onClick={loadDetail} className="text-xs font-medium text-white bg-brand-600 hover:bg-brand-700 rounded-lg px-3 whitespace-nowrap">Filter</button>
           </div>
 
@@ -119,7 +121,7 @@ export default function PoinReportSection() {
                 <div className="min-w-0">
                   <p className="text-ink-900 font-medium truncate">{v.student?.user?.name}</p>
                   <p className="text-xs text-ink-500 truncate">
-                    {v.date} · {v.violation_type?.name || (v.type === 'alpa' ? 'Tidak Hadir' : '-')}
+                    {fmtDMY(v.date)} · {v.violation_type?.name || (v.type === 'alpa' ? 'Tidak Hadir' : '-')}
                   </p>
                 </div>
                 <span className="text-honey-700 font-medium shrink-0">+{v.poin}</span>

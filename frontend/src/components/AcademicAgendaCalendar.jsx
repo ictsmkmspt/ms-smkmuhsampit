@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { ChevronLeft, ChevronRight, Printer } from 'lucide-react';
+import { fmtDMY } from '../utils/date';
 
 export const JENIS_LABEL = {
   semester_ganjil: 'Semester Ganjil', semester_genap: 'Semester Genap',
@@ -16,10 +17,9 @@ const NAMA_HARI = ['Sen', 'Sel', 'Rab', 'Kam', "Jum'at", 'Sab', 'Min'];
 
 const pad2 = (n) => String(n).padStart(2, '0');
 
-// Tampilan tabel pakai dd-mm-yyyy (format tanggal Indonesia) — data
-// tersimpan & dikirim ke API tetap format ISO (yyyy-mm-dd) seperti biasa,
-// cuma tampilannya yang dibalik.
-export const fmtDMY = (tanggalIso) => (tanggalIso ? tanggalIso.split('-').reverse().join('-') : '-');
+// Re-export supaya file yang sudah import fmtDMY dari sini tidak perlu
+// diubah — sumber aslinya sekarang di utils/date.js.
+export { fmtDMY };
 
 function keFormatTanggal(d) {
   return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;

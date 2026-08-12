@@ -3,6 +3,7 @@ import { AlertTriangle, X, CheckCircle2, NotebookPen, FileDown } from 'lucide-re
 import api from '../../../api/axios';
 import TruncateText from '../../../components/TruncateText';
 import CetakSuratPeringatanModal from '../../../components/CetakSuratPeringatanModal';
+import { fmtDMY, fmtDMYHM } from '../../../utils/date';
 
 const STATUS_LABEL = { diproses: 'Diproses', selesai: 'Selesai' };
 const STATUS_BADGE = { diproses: 'badge-honey', selesai: 'badge-brand' };
@@ -95,7 +96,7 @@ export default function SanksiSiswaTab({ onCatatTindakLanjut }) {
                   </td>
                   <td className="text-ink-700 whitespace-nowrap px-2">{k.sanksi_rule?.nama || '-'}</td>
                   <td className="text-center text-ink-700 whitespace-nowrap px-2">{k.total_poin_saat_itu}</td>
-                  <td className="text-ink-500 font-mono text-xs whitespace-nowrap px-2">{new Date(k.created_at).toLocaleDateString('id-ID')}</td>
+                  <td className="text-ink-500 font-mono text-xs whitespace-nowrap px-2">{fmtDMY(k.created_at)}</td>
                   <td className="pr-4 text-center whitespace-nowrap px-2">
                     <span className={`badge-soft ${STATUS_BADGE[k.status]}`}>{STATUS_LABEL[k.status]}</span>
                   </td>
@@ -132,7 +133,7 @@ export default function SanksiSiswaTab({ onCatatTindakLanjut }) {
               {viewing.status === 'selesai' ? (
                 <div className="rounded-xl bg-brand-50 border border-brand-200 p-3">
                   <p className="text-xs font-medium text-brand-700 flex items-center gap-1.5 mb-1"><CheckCircle2 className="w-3.5 h-3.5" /> Selesai ditindaklanjuti</p>
-                  <p className="text-xs text-ink-500">oleh {viewing.diproses_oleh?.name || '-'} &middot; {viewing.selesai_at ? new Date(viewing.selesai_at).toLocaleString('id-ID') : ''}</p>
+                  <p className="text-xs text-ink-500">oleh {viewing.diproses_oleh?.name || '-'} &middot; {viewing.selesai_at ? fmtDMYHM(viewing.selesai_at) : ''}</p>
                   {viewing.catatan_penyelesaian && <p className="text-sm text-ink-700 mt-2">{viewing.catatan_penyelesaian}</p>}
                 </div>
               ) : (

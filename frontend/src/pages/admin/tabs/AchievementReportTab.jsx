@@ -3,6 +3,8 @@ import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import api from '../../../api/axios';
 import StudentAchievementModal from '../../../components/StudentAchievementModal';
 import TruncateText from '../../../components/TruncateText';
+import DateInput from '../../../components/DateInput';
+import { fmtDMY } from '../../../utils/date';
 import { useAuth } from '../../../context/AuthContext';
 import { useTahunAjaran, useTahunAjaranParam } from '../../../context/TahunAjaranContext';
 
@@ -154,8 +156,7 @@ export default function AchievementReportTab() {
           </p>
 
           <div className="flex gap-2 mb-3">
-            <input
-              type="date"
+            <DateInput
               value={date}
               onChange={(e) => setDate(e.target.value)}
               className="field-input text-sm flex-1"
@@ -173,7 +174,7 @@ export default function AchievementReportTab() {
                     {a.student?.user?.name} <span className="text-ink-400 font-normal">· {a.student?.class_room?.name || '-'}</span>
                   </p>
                   <p className="text-xs text-ink-500 truncate">
-                    {a.date} · {a.achievement_type?.name || '-'}
+                    {fmtDMY(a.date)} · {a.achievement_type?.name || '-'}
                   </p>
                 </div>
                 <span className="text-brand-700 font-medium shrink-0">+{a.poin}</span>

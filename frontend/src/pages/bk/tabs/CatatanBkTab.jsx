@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { Plus, Trash2, HeartHandshake } from 'lucide-react';
 import api from '../../../api/axios';
 import TruncateText from '../../../components/TruncateText';
+import DateInput from '../../../components/DateInput';
+import { fmtDMY } from '../../../utils/date';
 
 const KATEGORI_LABEL = { akademik: 'Akademik', perilaku: 'Perilaku', sosial: 'Sosial', keluarga: 'Keluarga', lainnya: 'Lainnya' };
 const KOSONG = { student_id: '', sanksi_kejadian_id: '', tanggal: '', kategori: 'perilaku', catatan: '', tindak_lanjut: '' };
@@ -101,7 +103,7 @@ export default function CatatanBkTab({ prefill, onPrefillUsed }) {
               <option key={s.id} value={s.id}>{s.user?.name} — {s.class_room?.name || 'tanpa kelas'}</option>
             ))}
           </select>
-          <input type="date" value={form.tanggal} onChange={(e) => setForm({ ...form, tanggal: e.target.value })} className="field-input" required />
+          <DateInput value={form.tanggal} onChange={(e) => setForm({ ...form, tanggal: e.target.value })} className="field-input" required />
           <select value={form.kategori} onChange={(e) => setForm({ ...form, kategori: e.target.value })} className="field-input text-ink-700">
             {Object.entries(KATEGORI_LABEL).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
           </select>
@@ -144,7 +146,7 @@ export default function CatatanBkTab({ prefill, onPrefillUsed }) {
                   <div className="text-xs text-ink-400">{c.student?.class_room?.name}</div>
                   {c.sanksi_kejadian && <div className="text-[11px] text-honey-700 mt-0.5">↳ {c.sanksi_kejadian.sanksi_rule?.nama}</div>}
                 </td>
-                <td className="text-ink-700 font-mono whitespace-nowrap px-2">{c.tanggal}</td>
+                <td className="text-ink-700 font-mono whitespace-nowrap px-2">{fmtDMY(c.tanggal)}</td>
                 <td className="text-ink-700 whitespace-nowrap px-2">{KATEGORI_LABEL[c.kategori]}</td>
                 <td className="text-ink-700 max-w-[16rem] whitespace-nowrap px-2"><TruncateText text={c.catatan} /></td>
                 <td className="text-ink-700 max-w-[14rem] whitespace-nowrap px-2">

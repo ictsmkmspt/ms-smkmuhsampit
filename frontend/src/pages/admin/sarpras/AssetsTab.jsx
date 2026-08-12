@@ -7,6 +7,7 @@ import api from '../../../api/axios';
 import { filterAssets } from '../../../components/AssetSearchSelect';
 import ExportKirModal from '../../../components/ExportKirModal';
 import TruncateText from '../../../components/TruncateText';
+import DateInput from '../../../components/DateInput';
 
 const FORM_KOSONG = {
   nama: '', merk_model: '', no_seri_pabrik: '', ukuran: '', bahan: '', tanggal_perolehan: '', kode_aset: '',
@@ -181,7 +182,7 @@ export default function AssetsTab() {
           <input placeholder="No. Seri Pabrik" value={form.no_seri_pabrik} onChange={(e) => setForm({ ...form, no_seri_pabrik: e.target.value })} className="field-input" />
           <input placeholder="Ukuran" value={form.ukuran} onChange={(e) => setForm({ ...form, ukuran: e.target.value })} className="field-input" />
           <input placeholder="Bahan" value={form.bahan} onChange={(e) => setForm({ ...form, bahan: e.target.value })} className="field-input" />
-          <input type="date" value={form.tanggal_perolehan} onChange={(e) => setForm({ ...form, tanggal_perolehan: e.target.value })} className="field-input" />
+          <DateInput value={form.tanggal_perolehan} onChange={(e) => setForm({ ...form, tanggal_perolehan: e.target.value })} className="field-input" />
           <input placeholder="Kode Barang" value={form.kode_aset} onChange={(e) => setForm({ ...form, kode_aset: e.target.value })} className="field-input" required />
           <select value={form.room_id} onChange={(e) => setForm({ ...form, room_id: e.target.value })} className="field-input text-ink-700">
             <option value="">Tanpa ruang</option>

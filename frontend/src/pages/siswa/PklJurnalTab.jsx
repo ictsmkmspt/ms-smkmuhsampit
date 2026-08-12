@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { NotebookPen, Printer, MessageSquare, Plus, Pencil, Trash2 } from 'lucide-react';
 import api from '../../api/axios';
+import DateInput from '../../components/DateInput';
 
 /**
  * Jurnal Kegiatan PKL untuk siswa — beda dari absensi (jam masuk/pulang).
@@ -120,8 +121,8 @@ export default function PklJurnalTab({ placement }) {
             <form onSubmit={handleTambah} className="space-y-3">
               <div>
                 <label className="block text-xs font-medium text-ink-500 mb-1">Tanggal</label>
-                <input
-                  type="date" value={tanggal} onChange={(e) => setTanggal(e.target.value)}
+                <DateInput
+                  value={tanggal} onChange={(e) => setTanggal(e.target.value)}
                   max={today} className="field-input"
                 />
               </div>
@@ -167,8 +168,8 @@ export default function PklJurnalTab({ placement }) {
                     <div key={h.id} className="border border-line-200 rounded-lg px-3 py-2.5 text-sm">
                       {editingId === h.id ? (
                         <div className="space-y-2">
-                          <input
-                            type="date" value={editTanggal} onChange={(e) => setEditTanggal(e.target.value)}
+                          <DateInput
+                            value={editTanggal} onChange={(e) => setEditTanggal(e.target.value)}
                             max={today} className="field-input text-sm"
                           />
                           <textarea

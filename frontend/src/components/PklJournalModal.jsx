@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { X, MessageSquare, Printer, Pencil, Trash2 } from 'lucide-react';
 import api from '../api/axios';
+import DateInput from './DateInput';
+import { fmtDMY } from '../utils/date';
 
 export default function PklJournalModal({ placement, onClose, canIsiCatatan = false, showCetak = true }) {
   const [entries, setEntries] = useState([]);
@@ -113,8 +115,8 @@ export default function PklJournalModal({ placement, onClose, canIsiCatatan = fa
               <div key={e.id} className="border border-line-200 rounded-lg px-3 py-2.5 text-sm">
                 {editingKegiatanId === e.id ? (
                   <div className="space-y-2">
-                    <input
-                      type="date" value={editTanggal} onChange={(ev) => setEditTanggal(ev.target.value)}
+                    <DateInput
+                      value={editTanggal} onChange={(ev) => setEditTanggal(ev.target.value)}
                       className="field-input text-sm"
                     />
                     <textarea
@@ -133,7 +135,7 @@ export default function PklJournalModal({ placement, onClose, canIsiCatatan = fa
                 ) : (
                   <>
                     <div className="flex items-start justify-between gap-2 mb-1">
-                      <p className="text-ink-500 text-xs font-medium">{e.date}</p>
+                      <p className="text-ink-500 text-xs font-medium">{fmtDMY(e.date)}</p>
                       {!e.catatan && (
                         <div className="flex items-center gap-2 shrink-0">
                           <button onClick={() => mulaiEditKegiatan(e)} className="text-ink-400 hover:text-brand-600" title="Edit kegiatan">

@@ -3,6 +3,7 @@ import { Search, Pencil, Check, X, RefreshCw, Trash2, Receipt, Info, CheckCircle
 import api from '../../../api/axios';
 import { BULAN, formatRupiah, Avatar } from '../shared';
 import TruncateText from '../../../components/TruncateText';
+import { fmtDMY } from '../../../utils/date';
 
 export default function TagihanTab() {
   const now = new Date();
@@ -326,7 +327,7 @@ export default function TagihanTab() {
                       <p className="text-xs text-ink-400 mt-0.5">sisa {formatRupiah(s.nominal - s.jumlah_dibayar)}</p>
                     )}
                   </td>
-                  <td className="text-ink-700 text-xs whitespace-nowrap px-2">{s.tanggal_bayar || '-'}</td>
+                  <td className="text-ink-700 text-xs whitespace-nowrap px-2">{fmtDMY(s.tanggal_bayar)}</td>
                   <td className="text-right whitespace-nowrap px-2">
                     <div className="flex justify-end items-center gap-2">
                       {s.status !== 'lunas' && (

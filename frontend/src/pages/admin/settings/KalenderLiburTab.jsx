@@ -2,10 +2,8 @@ import { useEffect, useState } from 'react';
 import { Plus, Trash2, CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react';
 import api from '../../../api/axios';
 import TruncateText from '../../../components/TruncateText';
-
-// Tampilan tabel pakai dd-mm-yyyy (format tanggal Indonesia) — data tetap
-// format ISO (yyyy-mm-dd), cuma tampilannya yang dibalik.
-const fmtDMY = (tanggalIso) => tanggalIso.split('-').reverse().join('-');
+import DateInput from '../../../components/DateInput';
+import { fmtDMY } from '../../../utils/date';
 
 const LIBUR_PER_HALAMAN = 10;
 
@@ -106,8 +104,7 @@ export default function KalenderLiburTab() {
           <form onSubmit={handleAdd}>
             <h2 className="font-display font-semibold text-ink-900 mb-4">Tambah Hari Libur</h2>
             <div className="flex flex-wrap gap-3">
-              <input
-                type="date"
+              <DateInput
                 value={form.date}
                 onChange={(e) => setForm({ ...form, date: e.target.value })}
                 className="field-input"
@@ -134,8 +131,7 @@ export default function KalenderLiburTab() {
             <div className="flex flex-wrap gap-3 items-end">
               <div>
                 <label className="block text-xs font-medium text-ink-500 mb-1">Dari Tanggal</label>
-                <input
-                  type="date"
+                <DateInput
                   value={rangeForm.date_from}
                   onChange={(e) => setRangeForm({ ...rangeForm, date_from: e.target.value })}
                   className="field-input"
@@ -144,8 +140,7 @@ export default function KalenderLiburTab() {
               </div>
               <div>
                 <label className="block text-xs font-medium text-ink-500 mb-1">Sampai Tanggal</label>
-                <input
-                  type="date"
+                <DateInput
                   value={rangeForm.date_to}
                   onChange={(e) => setRangeForm({ ...rangeForm, date_to: e.target.value })}
                   className="field-input"

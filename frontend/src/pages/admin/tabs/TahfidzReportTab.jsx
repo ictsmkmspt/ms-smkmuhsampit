@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Undo2 } from 'lucide-react';
 import api from '../../../api/axios';
 import TruncateText from '../../../components/TruncateText';
+import { fmtDMY } from '../../../utils/date';
 
 /**
  * Rekap Tahfidz — menu Laporan khusus Waka Kesiswaan, baca-saja. Sama pola
@@ -89,7 +90,7 @@ export default function TahfidzReportTab() {
             {siswaHistory.map((row) => (
               <li key={row.id} className="py-2.5">
                 <p className="text-sm text-ink-900">{namaSurah(row.surah)} : {row.ayat_mulai}-{row.ayat_selesai}</p>
-                <p className="text-xs text-ink-500">{row.tanggal}{row.keterangan ? ` · ${row.keterangan}` : ''}{row.recorded_by?.name ? ` · Dicatat oleh ${row.recorded_by.name}` : ''}</p>
+                <p className="text-xs text-ink-500">{fmtDMY(row.tanggal)}{row.keterangan ? ` · ${row.keterangan}` : ''}{row.recorded_by?.name ? ` · Dicatat oleh ${row.recorded_by.name}` : ''}</p>
               </li>
             ))}
           </ul>
@@ -131,7 +132,7 @@ export default function TahfidzReportTab() {
                     <td className="py-2.5 whitespace-nowrap px-2 text-ink-900"><TruncateText text={s.user?.name} /></td>
                     <td className="whitespace-nowrap px-2">
                       {last ? (
-                        <span className="text-ink-700">{namaSurah(last.surah)} : {last.ayat_mulai}-{last.ayat_selesai} <span className="text-xs text-ink-400">({last.tanggal})</span></span>
+                        <span className="text-ink-700">{namaSurah(last.surah)} : {last.ayat_mulai}-{last.ayat_selesai} <span className="text-xs text-ink-400">({fmtDMY(last.tanggal)})</span></span>
                       ) : (
                         <span className="text-xs text-ink-400">Belum ada catatan</span>
                       )}

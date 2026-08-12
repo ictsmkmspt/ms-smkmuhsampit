@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Plus, Printer, CheckCircle2, Pencil, Trash2 } from 'lucide-react';
 import api from '../../../../api/axios';
+import DateInput from '../../../../components/DateInput';
+import { fmtDMY } from '../../../../utils/date';
 
 export default function JurnalPembimbinganTab() {
   const today = new Date().toISOString().slice(0, 10);
@@ -140,8 +142,8 @@ export default function JurnalPembimbinganTab() {
             ) : (
               <form onSubmit={handleSubmit} className="space-y-2 mb-4 border border-line-200 rounded-xl p-4">
                 {error && <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2">{error}</p>}
-                <input
-                  type="date" value={tanggal} onChange={(e) => setTanggal(e.target.value)}
+                <DateInput
+                  value={tanggal} onChange={(e) => setTanggal(e.target.value)}
                   max={today} className="field-input text-sm" required
                 />
                 <textarea
@@ -175,7 +177,7 @@ export default function JurnalPembimbinganTab() {
                 {filtered.map((e) => (
                   <div key={e.id} className="border border-line-200 rounded-lg px-3 py-2.5 text-sm">
                     <div className="flex items-start justify-between gap-2">
-                      <p className="text-ink-500 text-xs font-medium mb-1">{e.date}</p>
+                      <p className="text-ink-500 text-xs font-medium mb-1">{fmtDMY(e.date)}</p>
                       <div className="flex items-center gap-2 shrink-0">
                         {!e.verified_at && (
                           <>

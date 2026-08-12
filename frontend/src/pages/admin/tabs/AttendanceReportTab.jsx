@@ -3,6 +3,8 @@ import { Search, Trash2, Pencil, Printer } from 'lucide-react';
 import api from '../../../api/axios';
 import EditAttendanceModal from '../../../components/EditAttendanceModal';
 import TruncateText from '../../../components/TruncateText';
+import DateInput from '../../../components/DateInput';
+import { fmtDMY } from '../../../utils/date';
 import { useAuth } from '../../../context/AuthContext';
 
 const BULAN = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
@@ -47,7 +49,7 @@ export default function AttendanceReportTab() {
   };
 
   const handleDelete = async (r) => {
-    if (!confirm(`Hapus data kehadiran ${r.student?.user?.name} pada ${r.date}? Siswa ini akan otomatis menjadi "alpa".`)) return;
+    if (!confirm(`Hapus data kehadiran ${r.student?.user?.name} pada ${fmtDMY(r.date)}? Siswa ini akan otomatis menjadi "alpa".`)) return;
     setDeletingId(r.id);
     try {
       await api.post('/attendance/update-status', {
@@ -82,7 +84,7 @@ export default function AttendanceReportTab() {
       <div className="surface-card p-5 flex flex-wrap gap-3 items-end">
         <div>
           <label className="block text-xs font-medium text-ink-500 mb-1">Tanggal</label>
-          <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="field-input" />
+          <DateInput value={date} onChange={(e) => setDate(e.target.value)} className="field-input" />
         </div>
         <div>
           <label className="block text-xs font-medium text-ink-500 mb-1">Kelas</label>

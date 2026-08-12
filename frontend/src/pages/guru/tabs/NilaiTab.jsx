@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { Plus, Pencil, Trash2, X, ClipboardList, FileSpreadsheet } from 'lucide-react';
 import api from '../../../api/axios';
 import TruncateText from '../../../components/TruncateText';
+import DateInput from '../../../components/DateInput';
+import { fmtDMY } from '../../../utils/date';
 
 const hariIniIso = () => {
   const d = new Date();
@@ -312,7 +314,7 @@ export default function NilaiTab() {
                         {g.recordedByName && <p className="text-xs text-ink-400">Guru: {g.recordedByName}</p>}
                       </td>
                       <td className="text-ink-500 whitespace-nowrap px-2">{g.subject?.nama} &middot; {g.classRoomName}</td>
-                      <td className="text-ink-500 font-mono text-xs whitespace-nowrap px-2">{g.tanggal}</td>
+                      <td className="text-ink-500 font-mono text-xs whitespace-nowrap px-2">{fmtDMY(g.tanggal)}</td>
                       <td className="text-center text-ink-700 whitespace-nowrap px-2">{g.items.length}</td>
                       <td className="pr-4 text-center font-semibold text-ink-900 whitespace-nowrap px-2">{g.rataRata}</td>
                     </tr>
@@ -358,7 +360,7 @@ export default function NilaiTab() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <input placeholder="Nama kegiatan (mis. PR Bab 3)" value={form.nama_kegiatan} onChange={(e) => setForm({ ...form, nama_kegiatan: e.target.value })} className="field-input" required />
-                <input type="date" value={form.tanggal} onChange={(e) => setForm({ ...form, tanggal: e.target.value })} className="field-input" required />
+                <DateInput value={form.tanggal} onChange={(e) => setForm({ ...form, tanggal: e.target.value })} className="field-input" required />
               </div>
               <p className="text-xs text-ink-400">Isi skor 0–100 per siswa — yang dikosongkan otomatis tercatat <b>0</b>, bukan dilewati.</p>
               <div className="divide-y divide-line-200 border border-line-200 rounded-xl overflow-hidden">
@@ -390,7 +392,7 @@ export default function NilaiTab() {
             <div className="flex items-center justify-between p-5 border-b border-line-200 shrink-0">
               <div className="min-w-0">
                 <h3 className="font-display font-semibold text-ink-900 truncate">{viewingKegiatan?.nama_kegiatan}</h3>
-                <p className="text-xs text-ink-500 mt-0.5">{viewingKegiatan?.subject?.nama} &middot; {viewingKegiatan?.classRoomName} &middot; {viewingKegiatan?.tanggal} &middot; rata-rata {viewingKegiatan?.rataRata}</p>
+                <p className="text-xs text-ink-500 mt-0.5">{viewingKegiatan?.subject?.nama} &middot; {viewingKegiatan?.classRoomName} &middot; {fmtDMY(viewingKegiatan?.tanggal)} &middot; rata-rata {viewingKegiatan?.rataRata}</p>
                 {viewingKegiatan?.recordedByName && <p className="text-xs text-ink-400 mt-0.5">Dicatat oleh: {viewingKegiatan.recordedByName}</p>}
               </div>
               <div className="flex items-center gap-2 shrink-0">
@@ -404,7 +406,7 @@ export default function NilaiTab() {
                 <p className="text-xs font-medium text-ink-500">Ubah nama &amp; tanggal kegiatan ini untuk semua siswa sekaligus</p>
                 <div className="grid grid-cols-2 gap-3">
                   <input placeholder="Nama kegiatan" value={editKegiatanForm.nama_kegiatan} onChange={(e) => setEditKegiatanForm({ ...editKegiatanForm, nama_kegiatan: e.target.value })} className="field-input" required />
-                  <input type="date" value={editKegiatanForm.tanggal} onChange={(e) => setEditKegiatanForm({ ...editKegiatanForm, tanggal: e.target.value })} className="field-input" required />
+                  <DateInput value={editKegiatanForm.tanggal} onChange={(e) => setEditKegiatanForm({ ...editKegiatanForm, tanggal: e.target.value })} className="field-input" required />
                 </div>
                 <div className="flex gap-2">
                   <button disabled={editKegiatanSaving} className="btn-primary text-sm flex-1 justify-center">{editKegiatanSaving ? 'Menyimpan...' : 'Simpan'}</button>
@@ -443,7 +445,7 @@ export default function NilaiTab() {
             <form onSubmit={handleSaveEdit} className="p-5 space-y-3">
               <input placeholder="Nama kegiatan" value={editForm.nama_kegiatan} onChange={(e) => setEditForm({ ...editForm, nama_kegiatan: e.target.value })} className="field-input w-full" required />
               <div className="grid grid-cols-2 gap-3">
-                <input type="date" value={editForm.tanggal} onChange={(e) => setEditForm({ ...editForm, tanggal: e.target.value })} className="field-input" required />
+                <DateInput value={editForm.tanggal} onChange={(e) => setEditForm({ ...editForm, tanggal: e.target.value })} className="field-input" required />
                 <input type="number" min="0" max="100" value={editForm.skor} onChange={(e) => setEditForm({ ...editForm, skor: e.target.value })} className="field-input" required />
               </div>
               <button disabled={editSaving} className="btn-primary w-full justify-center">{editSaving ? 'Menyimpan...' : 'Simpan'}</button>

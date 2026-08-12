@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { LogOut, School, Trophy, AlertOctagon, Clock, ChevronDown, ChevronLeft, ChevronRight, Wallet, UserCog, Home, BookOpen, BookMarked, ScrollText, CalendarRange, ClipboardList } from 'lucide-react';
+import { LogOut, School, Trophy, AlertOctagon, Clock, ChevronDown, ChevronLeft, ChevronRight, Wallet, UserCog, Home, BookOpen, BookMarked, ScrollText, CalendarRange, ClipboardList, Megaphone } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api/axios';
 import LeaderboardPrestasi from '../../components/LeaderboardPrestasi';
@@ -7,6 +7,8 @@ import EditProfileModal from '../../components/EditProfileModal';
 import KalenderAkademikView from '../../components/KalenderAkademikView';
 import JadwalPelajaranView from '../../components/JadwalPelajaranView';
 import PenilaianQuranTabs from '../../components/PenilaianQuranTabs';
+import AnnouncementBoard from '../../components/AnnouncementBoard';
+import { fmtDMY } from '../../utils/date';
 
 // Navigasi utama sekarang navbar bawah (gaya sama dengan dashboard Guru) —
 // cuma 2 tab pokok: Beranda & Nilai. Kalender Akademik dan Jadwal Pelajaran
@@ -15,6 +17,7 @@ import PenilaianQuranTabs from '../../components/PenilaianQuranTabs';
 const BOTTOM_TABS = [
   { key: 'beranda', label: 'Beranda', icon: Home },
   { key: 'nilai', label: 'Penilaian', icon: ClipboardList },
+  { key: 'pengumuman', label: 'Pengumuman', icon: Megaphone },
 ];
 
 const BERANDA_SUB_TABS = [
@@ -237,6 +240,8 @@ export default function ParentDashboard() {
               </div>
             )}
 
+            {activeTab === 'pengumuman' && <AnnouncementBoard />}
+
             {activeTab === 'nilai' && (
               <div>
                 <h2 className="font-display font-semibold text-ink-900 mb-4">
@@ -400,7 +405,7 @@ export default function ParentDashboard() {
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between gap-2">
                               <p className="text-sm font-medium text-ink-900">{item.title}</p>
-                              <span className="text-xs text-ink-400 shrink-0">{item.date}</span>
+                              <span className="text-xs text-ink-400 shrink-0">{fmtDMY(item.date)}</span>
                             </div>
                             {item.detail && <p className="text-xs text-ink-500 mt-0.5">{item.detail}</p>}
                             {item.poin != null && (

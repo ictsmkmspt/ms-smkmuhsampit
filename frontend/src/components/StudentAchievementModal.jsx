@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { X, Pencil, Trash2 } from 'lucide-react';
 import api from '../api/axios';
 import TruncateText from './TruncateText';
+import DateInput from './DateInput';
+import { fmtDMY } from '../utils/date';
 import { useTahunAjaranParam } from '../context/TahunAjaranContext';
 
 export default function StudentAchievementModal({ student, onClose, onChanged, readOnly = false }) {
@@ -67,7 +69,7 @@ export default function StudentAchievementModal({ student, onClose, onChanged, r
   };
 
   const handleDelete = async (a) => {
-    if (!confirm(`Hapus catatan prestasi "${a.achievement_type?.name || '-'}" tanggal ${a.date}? Poin akan dikembalikan.`)) return;
+    if (!confirm(`Hapus catatan prestasi "${a.achievement_type?.name || '-'}" tanggal ${fmtDMY(a.date)}? Poin akan dikembalikan.`)) return;
     try {
       await api.delete(`/achievements/${a.id}`);
       await loadAchievements();
@@ -95,11 +97,11 @@ export default function StudentAchievementModal({ student, onClose, onChanged, r
         <div className="p-5 flex flex-wrap gap-3 items-end border-b border-line-200">
           <div>
             <label className="block text-xs font-medium text-ink-500 mb-1">Dari Tanggal</label>
-            <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="field-input text-sm" />
+            <DateInput value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="field-input text-sm" />
           </div>
           <div>
             <label className="block text-xs font-medium text-ink-500 mb-1">Sampai Tanggal</label>
-            <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="field-input text-sm" />
+            <DateInput value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="field-input text-sm" />
           </div>
           <div>
             <label className="block text-xs font-medium text-ink-500 mb-1">Jenis Prestasi</label>
@@ -165,7 +167,7 @@ export default function StudentAchievementModal({ student, onClose, onChanged, r
                     </tr>
                   ) : (
                     <tr key={a.id} className="border-t border-line-200">
-                      <td className="py-2.5 text-ink-700 align-top whitespace-nowrap px-2">{a.date}</td>
+                      <td className="py-2.5 text-ink-700 align-top whitespace-nowrap px-2">{fmtDMY(a.date)}</td>
                       <td className="text-ink-900 align-top whitespace-nowrap px-2">
                         {a.achievement_type?.name || '-'}
                         {a.note && <p className="text-xs text-ink-400 mt-0.5"><TruncateText text={a.note} maxWidth="16rem" /></p>}

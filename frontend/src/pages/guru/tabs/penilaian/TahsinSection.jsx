@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Pencil, Trash2 } from 'lucide-react';
 import api from '../../../../api/axios';
 import TruncateText from '../../../../components/TruncateText';
+import DateInput from '../../../../components/DateInput';
+import { fmtDMY } from '../../../../utils/date';
 
 const hariIniIso = () => {
   const d = new Date();
@@ -170,7 +172,7 @@ export default function TahsinSection() {
               {JILID_OPTIONS.map((j) => <option key={j} value={j}>Jilid {j}</option>)}
             </select>
             <input type="number" min="1" placeholder="Halaman" value={satuForm.halaman} onChange={(e) => setSatuForm({ ...satuForm, halaman: e.target.value })} className="field-input text-sm" />
-            <input type="date" value={satuForm.tanggal} onChange={(e) => setSatuForm({ ...satuForm, tanggal: e.target.value })} className="field-input text-sm" required />
+            <DateInput value={satuForm.tanggal} onChange={(e) => setSatuForm({ ...satuForm, tanggal: e.target.value })} className="field-input text-sm" required />
             <input placeholder="Keterangan (opsional)" value={satuForm.keterangan} onChange={(e) => setSatuForm({ ...satuForm, keterangan: e.target.value })} className="field-input text-sm" />
           </div>
           <button disabled={satuSaving} className="btn-primary text-sm w-full justify-center">{satuSaving ? 'Menyimpan...' : 'Simpan Catatan'}</button>
@@ -192,7 +194,7 @@ export default function TahsinSection() {
                       </select>
                       <input type="number" min="1" placeholder="Halaman" value={editForm.halaman} onChange={(e) => setEditForm({ ...editForm, halaman: e.target.value })} className="field-input text-sm" required />
                     </div>
-                    <input type="date" value={editForm.tanggal} onChange={(e) => setEditForm({ ...editForm, tanggal: e.target.value })} className="field-input text-sm w-full" required />
+                    <DateInput value={editForm.tanggal} onChange={(e) => setEditForm({ ...editForm, tanggal: e.target.value })} className="field-input text-sm w-full" required />
                     <input placeholder="Keterangan (opsional)" value={editForm.keterangan} onChange={(e) => setEditForm({ ...editForm, keterangan: e.target.value })} className="field-input text-sm w-full" />
                     <div className="flex gap-2">
                       <button disabled={editSaving} className="btn-primary text-sm flex-1 justify-center">{editSaving ? 'Menyimpan...' : 'Simpan'}</button>
@@ -204,7 +206,7 @@ export default function TahsinSection() {
                 <li key={row.id} className="py-2.5 flex items-center justify-between gap-3">
                   <div className="min-w-0">
                     <p className="text-sm text-ink-900">Jilid {row.jilid} &middot; Hal. {row.halaman}</p>
-                    <p className="text-xs text-ink-500">{row.tanggal}{row.keterangan ? ` · ${row.keterangan}` : ''}</p>
+                    <p className="text-xs text-ink-500">{fmtDMY(row.tanggal)}{row.keterangan ? ` · ${row.keterangan}` : ''}</p>
                   </div>
                   <div className="flex gap-2 shrink-0">
                     <button onClick={() => bukaEdit(row)} className="text-ink-300 hover:text-brand-700"><Pencil className="w-4 h-4" /></button>
@@ -252,7 +254,7 @@ export default function TahsinSection() {
                     <td className="py-2.5 whitespace-nowrap px-2 text-ink-900"><TruncateText text={s.user?.name} /></td>
                     <td className="whitespace-nowrap px-2">
                       {last ? (
-                        <span className="text-ink-700">Jilid {last.jilid} &middot; Hal. {last.halaman} <span className="text-xs text-ink-400">({last.tanggal})</span></span>
+                        <span className="text-ink-700">Jilid {last.jilid} &middot; Hal. {last.halaman} <span className="text-xs text-ink-400">({fmtDMY(last.tanggal)})</span></span>
                       ) : (
                         <span className="text-xs text-ink-400">Belum ada catatan</span>
                       )}

@@ -3,7 +3,7 @@ import QRCode from 'qrcode';
 import {
   LogOut, Clock, ChevronDown, UserCog, ChevronLeft, ChevronRight,
   Award, AlertTriangle, ClipboardCheck, NotebookPen, ClipboardList,
-  QrCode, BookOpen, CalendarRange, Briefcase,
+  QrCode, BookOpen, CalendarRange, Briefcase, Megaphone,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api/axios';
@@ -13,6 +13,8 @@ import LeaderboardPrestasi from '../../components/LeaderboardPrestasi';
 import JadwalPelajaranView from '../../components/JadwalPelajaranView';
 import KalenderAkademikView from '../../components/KalenderAkademikView';
 import PenilaianQuranTabs from '../../components/PenilaianQuranTabs';
+import AnnouncementBoard from '../../components/AnnouncementBoard';
+import { fmtDMY } from '../../utils/date';
 
 const PENILAIAN_ENDPOINTS = { akademik: '/my-academic-scores', tahsin: '/my-tahsin-scores', tahfidz: '/my-tahfidz-scores', tadarus: '/my-tadarus-scores' };
 
@@ -24,6 +26,7 @@ const QR_SUB_TABS = [
   { key: 'qr', label: 'QR', icon: QrCode },
   { key: 'jadwal', label: 'Jadwal', icon: BookOpen },
   { key: 'kalender', label: 'Kalender', icon: CalendarRange },
+  { key: 'pengumuman', label: 'Pengumuman', icon: Megaphone },
 ];
 
 // Sub-menu di dalam tab PKL — "Beranda" tidak perlu lagi di sini karena
@@ -206,7 +209,7 @@ export default function SiswaDashboard() {
             <li key={`${item.jenis}-${item.id}`} className="py-2.5 flex items-center justify-between text-sm gap-2">
               <div className="min-w-0">
                 <p className="text-ink-900 truncate">{item.nama || '-'}</p>
-                <p className="text-xs text-ink-500">{item.date}</p>
+                <p className="text-xs text-ink-500">{fmtDMY(item.date)}</p>
               </div>
               <span className={`flex items-center gap-1 text-xs font-medium shrink-0 ${
                 item.jenis === 'prestasi' ? 'text-brand-700' : 'text-honey-700'
@@ -253,7 +256,7 @@ export default function SiswaDashboard() {
         <ul className="divide-y divide-line-200">
           {absensiPaginated.map((h) => (
             <li key={h.id} className="py-2.5 flex items-center justify-between text-sm">
-              <span className="text-ink-700">{h.date}</span>
+              <span className="text-ink-700">{fmtDMY(h.date)}</span>
 
               <span className="flex items-center gap-2">
                 <span className="flex items-center gap-1 text-xs text-ink-500">
@@ -387,6 +390,11 @@ export default function SiswaDashboard() {
           {qrSub === 'kalender' && (
             <div className="max-w-md mx-auto">
               <KalenderAkademikView />
+            </div>
+          )}
+          {qrSub === 'pengumuman' && (
+            <div className="max-w-md mx-auto">
+              <AnnouncementBoard />
             </div>
           )}
         </>

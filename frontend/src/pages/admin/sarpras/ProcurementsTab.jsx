@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 import api from '../../../api/axios';
+import DateInput from '../../../components/DateInput';
+import { fmtDMY } from '../../../utils/date';
 
 const STATUS_LABEL = { diajukan: 'Diajukan', disetujui: 'Disetujui', ditolak: 'Ditolak', dibeli: 'Dibeli' };
 const STATUS_BADGE = { diajukan: 'badge-soft', disetujui: 'badge-honey', ditolak: 'badge-soft', dibeli: 'badge-brand' };
@@ -58,7 +60,7 @@ export default function ProcurementsTab() {
         <div className="grid grid-cols-3 gap-3">
           <input placeholder="Nama barang" value={form.nama_barang} onChange={(e) => setForm({ ...form, nama_barang: e.target.value })} className="field-input col-span-2" required />
           <input type="number" min="1" placeholder="Jumlah" value={form.jumlah} onChange={(e) => setForm({ ...form, jumlah: e.target.value })} className="field-input" required />
-          <input type="date" value={form.tanggal_pengajuan} onChange={(e) => setForm({ ...form, tanggal_pengajuan: e.target.value })} className="field-input" required />
+          <DateInput value={form.tanggal_pengajuan} onChange={(e) => setForm({ ...form, tanggal_pengajuan: e.target.value })} className="field-input" required />
           <textarea placeholder="Alasan pengajuan" value={form.alasan} onChange={(e) => setForm({ ...form, alasan: e.target.value })} className="field-input col-span-2" rows={2} required />
         </div>
         <button disabled={loading} className="btn-primary"><Plus className="w-4 h-4" /> {loading ? 'Menyimpan...' : 'Ajukan'}</button>
@@ -81,7 +83,7 @@ export default function ProcurementsTab() {
           <tbody>
             {items.map((p) => (
               <tr key={p.id} className="border-t border-line-200">
-                <td className="py-2.5 font-mono text-ink-700 whitespace-nowrap px-2">{p.tanggal_pengajuan}</td>
+                <td className="py-2.5 font-mono text-ink-700 whitespace-nowrap px-2">{fmtDMY(p.tanggal_pengajuan)}</td>
                 <td className="text-ink-900 whitespace-nowrap px-2">{p.nama_barang}</td>
                 <td className="text-center text-ink-700 whitespace-nowrap px-2">{p.jumlah}</td>
                 <td className="text-ink-700 max-w-[16rem] whitespace-nowrap px-2">{p.alasan}</td>

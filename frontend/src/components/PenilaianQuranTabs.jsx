@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ClipboardList, BookOpen, BookMarked, ScrollText } from 'lucide-react';
 import api from '../api/axios';
+import { fmtDMY } from '../utils/date';
 
 const SUB_TABS = [
   { key: 'akademik', label: 'Nilai Akademik', labelShort: 'Akademik', icon: ClipboardList },
@@ -108,7 +109,7 @@ export default function PenilaianQuranTabs({ endpoints }) {
                     <li key={n.id} className="py-2 flex items-center justify-between gap-3 text-sm">
                       <div className="min-w-0">
                         <p className="text-ink-900 truncate">{n.nama_kegiatan}</p>
-                        <p className="text-xs text-ink-500">{n.tanggal}{n.recorded_by?.name && <> &middot; Guru: {n.recorded_by.name}</>}</p>
+                        <p className="text-xs text-ink-500">{fmtDMY(n.tanggal)}{n.recorded_by?.name && <> &middot; Guru: {n.recorded_by.name}</>}</p>
                       </div>
                       <span className="font-display font-semibold text-ink-900 shrink-0">{n.skor}</span>
                     </li>
@@ -135,7 +136,7 @@ export default function PenilaianQuranTabs({ endpoints }) {
                   {g.items.map((n) => (
                     <li key={n.id} className="py-2 text-sm">
                       <p className="text-ink-900">Halaman {n.halaman}</p>
-                      <p className="text-xs text-ink-500">{n.tanggal}{n.keterangan && <> &middot; {n.keterangan}</>}</p>
+                      <p className="text-xs text-ink-500">{fmtDMY(n.tanggal)}{n.keterangan && <> &middot; {n.keterangan}</>}</p>
                     </li>
                   ))}
                 </ul>
@@ -160,7 +161,7 @@ export default function PenilaianQuranTabs({ endpoints }) {
                   {g.items.map((n) => (
                     <li key={n.id} className="py-2 text-sm">
                       <p className="text-ink-900">Ayat {n.ayat_mulai}–{n.ayat_selesai}</p>
-                      <p className="text-xs text-ink-500">{n.tanggal}{n.keterangan && <> &middot; {n.keterangan}</>}</p>
+                      <p className="text-xs text-ink-500">{fmtDMY(n.tanggal)}{n.keterangan && <> &middot; {n.keterangan}</>}</p>
                     </li>
                   ))}
                 </ul>
@@ -185,7 +186,7 @@ export default function PenilaianQuranTabs({ endpoints }) {
                   {g.items.map((n) => (
                     <li key={n.id} className="py-2 text-sm">
                       <p className="text-ink-900">Ayat {n.ayat_mulai}–{n.ayat_selesai}</p>
-                      <p className="text-xs text-ink-500">{n.tanggal}{n.keterangan && <> &middot; {n.keterangan}</>}</p>
+                      <p className="text-xs text-ink-500">{fmtDMY(n.tanggal)}{n.keterangan && <> &middot; {n.keterangan}</>}</p>
                     </li>
                   ))}
                 </ul>

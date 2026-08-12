@@ -4,6 +4,7 @@ import api from '../../../api/axios';
 import TruncateText from '../../../components/TruncateText';
 import DailyGroupedBarChart from '../../../components/DailyGroupedBarChart';
 import CategoryBarChart from '../../../components/CategoryBarChart';
+import { fmtDMY } from '../../../utils/date';
 import { useTahunAjaran, useTahunAjaranParam } from '../../../context/TahunAjaranContext';
 
 const RENTANG_NILAI = [
@@ -220,7 +221,7 @@ export default function NilaiAkademikReportTab() {
         <div className="flex items-center justify-between gap-3 pb-4 mb-4 border-b border-line-200">
           <div className="min-w-0">
             <h3 className="font-display font-semibold text-ink-900 truncate">{selectedKegiatan.nama_kegiatan}</h3>
-            <p className="text-xs text-ink-500">{selectedKelas.name} &middot; {selectedMapel.nama} &middot; {selectedKegiatan.tanggal}</p>
+            <p className="text-xs text-ink-500">{selectedKelas.name} &middot; {selectedMapel.nama} &middot; {fmtDMY(selectedKegiatan.tanggal)}</p>
           </div>
           <button
             onClick={() => setSelectedKegiatan(null)}
@@ -288,7 +289,7 @@ export default function NilaiAkademikReportTab() {
                 {kegiatanMapel.map((k) => (
                   <tr key={`${k.tanggal}||${k.nama_kegiatan}`} className="border-t border-line-200">
                     <td className="py-2.5 text-ink-900 whitespace-nowrap px-2"><TruncateText text={k.nama_kegiatan} maxWidth="14rem" /></td>
-                    <td className="text-ink-500 text-xs whitespace-nowrap px-2">{k.tanggal}</td>
+                    <td className="text-ink-500 text-xs whitespace-nowrap px-2">{fmtDMY(k.tanggal)}</td>
                     <td className="text-right text-ink-700 whitespace-nowrap px-2">{k.jumlah}</td>
                     <td className="text-right font-semibold text-ink-900 whitespace-nowrap px-2">{k.rerata}</td>
                     <td className="text-right whitespace-nowrap px-2">

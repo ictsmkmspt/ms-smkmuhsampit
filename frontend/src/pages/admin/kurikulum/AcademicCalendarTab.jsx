@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Plus, Trash2, Save, CalendarRange, ChevronLeft, ChevronRight } from 'lucide-react';
 import api from '../../../api/axios';
 import AgendaCalendar, { JENIS_LABEL, JENIS_WARNA, fmtDMY, kelompokkanLibur } from '../../../components/AcademicAgendaCalendar';
+import DateInput from '../../../components/DateInput';
 import { useTahunAjaran, useTahunAjaranParam } from '../../../context/TahunAjaranContext';
 
 export default function AcademicCalendarTab() {
@@ -87,11 +88,11 @@ export default function AcademicCalendarTab() {
           <div className="flex flex-wrap items-end gap-3">
             <div>
               <label className="block text-xs font-medium text-ink-500 mb-1">Tanggal Mulai</label>
-              <input type="date" value={tanggal.tanggal_mulai || ''} onChange={(e) => setTanggal({ ...tanggal, tanggal_mulai: e.target.value })} className="field-input" />
+              <DateInput value={tanggal.tanggal_mulai || ''} onChange={(e) => setTanggal({ ...tanggal, tanggal_mulai: e.target.value })} className="field-input" />
             </div>
             <div>
               <label className="block text-xs font-medium text-ink-500 mb-1">Tanggal Selesai</label>
-              <input type="date" value={tanggal.tanggal_selesai || ''} onChange={(e) => setTanggal({ ...tanggal, tanggal_selesai: e.target.value })} className="field-input" />
+              <DateInput value={tanggal.tanggal_selesai || ''} onChange={(e) => setTanggal({ ...tanggal, tanggal_selesai: e.target.value })} className="field-input" />
             </div>
             <button onClick={handleSaveTahun} disabled={savingTahun} className="btn-primary"><Save className="w-4 h-4" /> {savingTahun ? 'Menyimpan...' : 'Simpan'}</button>
           </div>
@@ -113,11 +114,11 @@ export default function AcademicCalendarTab() {
             </select>
             <div>
               <label className="block text-xs font-medium text-ink-500 mb-1">Dari Tanggal</label>
-              <input type="date" value={form.tanggal_mulai} onChange={(e) => setForm({ ...form, tanggal_mulai: e.target.value })} className="field-input w-full" required />
+              <DateInput value={form.tanggal_mulai} onChange={(e) => setForm({ ...form, tanggal_mulai: e.target.value })} className="field-input w-full" required />
             </div>
             <div>
               <label className="block text-xs font-medium text-ink-500 mb-1">Sampai Tanggal</label>
-              <input type="date" value={form.tanggal_selesai} onChange={(e) => setForm({ ...form, tanggal_selesai: e.target.value })} className="field-input w-full" required />
+              <DateInput value={form.tanggal_selesai} onChange={(e) => setForm({ ...form, tanggal_selesai: e.target.value })} className="field-input w-full" required />
             </div>
             <input placeholder="Keterangan (opsional)" value={form.keterangan} onChange={(e) => setForm({ ...form, keterangan: e.target.value })} className="field-input" />
           </div>

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AcademicEventController;
 use App\Http\Controllers\Api\AcademicScoreController;
+use App\Http\Controllers\Api\AnnouncementController;
 use App\Http\Controllers\Api\TahsinScoreController;
 use App\Http\Controllers\Api\TahfidzScoreController;
 use App\Http\Controllers\Api\TadarusScoreController;
@@ -353,6 +354,18 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('role:admin,waka_kesiswaan,waka_kurikulum,guru,wali,siswa')->group(function () {
         Route::get('/holidays', [HolidayController::class, 'index']);
         Route::get('/academic-events', [AcademicEventController::class, 'index']);
+    });
+
+    // Papan Pengumuman — semua guru boleh membuat/mengubah/menghapus
+    // pengumumannya sendiri (dicek di controller), sedangkan pembacanya
+    // dibuka luas (semua role sekolah) supaya siswa & wali/ortu ikut lihat.
+    Route::middleware('role:admin,waka_kesiswaan,waka_kurikulum,waka_humas,waka_sarpras,guru,wali,siswa,bk,tu')->group(function () {
+        Route::get('/announcements', [AnnouncementController::class, 'index']);
+    });
+    Route::middleware('role:guru')->group(function () {
+        Route::post('/announcements', [AnnouncementController::class, 'store']);
+        Route::put('/announcements/{announcement}', [AnnouncementController::class, 'update']);
+        Route::delete('/announcements/{announcement}', [AnnouncementController::class, 'destroy']);
     });
 
     // /tahun-ajaran dipisah dari grup di atas — dipakai dropdown pilih tahun

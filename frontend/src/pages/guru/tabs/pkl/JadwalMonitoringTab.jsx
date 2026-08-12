@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { CalendarClock } from 'lucide-react';
 import api from '../../../../api/axios';
+import { fmtDMY } from '../../../../utils/date';
 
 const hariIniIso = () => {
   const d = new Date();
@@ -49,7 +50,7 @@ export default function JadwalMonitoringTab() {
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-ink-900">{j.judul}</p>
                   <p className="text-xs text-ink-500 mt-0.5">
-                    {j.tanggal_rencana}{j.tanggal_selesai && j.tanggal_selesai !== j.tanggal_rencana ? ` s/d ${j.tanggal_selesai}` : ''}
+                    {fmtDMY(j.tanggal_rencana)}{j.tanggal_selesai && j.tanggal_selesai !== j.tanggal_rencana ? ` s/d ${fmtDMY(j.tanggal_selesai)}` : ''}
                   </p>
                   {j.catatan && <p className="text-xs text-ink-500 mt-1">{j.catatan}</p>}
                 </div>

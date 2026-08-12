@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { X, PenSquare, CheckCircle2, Printer, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
 import api from '../api/axios';
+import DateInput from './DateInput';
+import { fmtDMY } from '../utils/date';
 
 const STATUS_LABEL = { hadir: 'Hadir', izin: 'Izin', sakit: 'Sakit', alpa: 'Alpa' };
 const STATUS_BADGE = { hadir: 'badge-brand', izin: 'badge-honey', sakit: 'badge-honey', alpa: 'badge-rose' };
@@ -114,8 +116,8 @@ export default function PklAttendanceDetailModal({ placement, onClose, canVerify
             <form onSubmit={handleKoreksi} className="space-y-2 w-full">
               {error && <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2">{error}</p>}
               <div className="flex flex-wrap gap-2">
-                <input
-                  type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })}
+                <DateInput
+                  value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })}
                   className="field-input text-sm" required
                 />
                 <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} className="field-input text-sm">
@@ -180,7 +182,7 @@ export default function PklAttendanceDetailModal({ placement, onClose, canVerify
                 <tbody>
                   {paginated.map((a) => (
                     <tr key={a.id} className="border-t border-line-200 align-top">
-                      <td className="py-2.5 text-ink-700 whitespace-nowrap px-2">{a.date}</td>
+                      <td className="py-2.5 text-ink-700 whitespace-nowrap px-2">{fmtDMY(a.date)}</td>
                       <td className="text-ink-900 whitespace-nowrap px-2">{a.time_in ? a.time_in.slice(0, 5) : '-'}</td>
                       <td className="text-ink-900 whitespace-nowrap px-2">{a.time_out ? a.time_out.slice(0, 5) : '-'}</td>
                       <td className="whitespace-nowrap px-2">

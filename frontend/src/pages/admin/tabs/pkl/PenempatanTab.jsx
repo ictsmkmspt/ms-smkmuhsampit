@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { Plus, Trash2, ClipboardList, PowerOff } from 'lucide-react';
 import api from '../../../../api/axios';
 import TruncateText from '../../../../components/TruncateText';
+import DateInput from '../../../../components/DateInput';
+import { fmtDMY } from '../../../../utils/date';
 import { useAuth } from '../../../../context/AuthContext';
 import { useTahunAjaran, useTahunAjaranParam } from '../../../../context/TahunAjaranContext';
 
@@ -172,11 +174,11 @@ export default function PenempatanTab() {
             </select>
             <div>
               <label className="block text-xs font-medium text-ink-500 mb-1">Tanggal Mulai</label>
-              <input type="date" value={form.tanggal_mulai} onChange={(e) => setForm({ ...form, tanggal_mulai: e.target.value })} className="field-input w-full" required />
+              <DateInput value={form.tanggal_mulai} onChange={(e) => setForm({ ...form, tanggal_mulai: e.target.value })} className="field-input w-full" required />
             </div>
             <div>
               <label className="block text-xs font-medium text-ink-500 mb-1">Tanggal Selesai</label>
-              <input type="date" value={form.tanggal_selesai} onChange={(e) => setForm({ ...form, tanggal_selesai: e.target.value })} className="field-input w-full" required />
+              <DateInput value={form.tanggal_selesai} onChange={(e) => setForm({ ...form, tanggal_selesai: e.target.value })} className="field-input w-full" required />
             </div>
           </div>
           <button disabled={loading} className="btn-primary mt-4">
@@ -245,7 +247,7 @@ export default function PenempatanTab() {
                 </td>
                 <td className="text-ink-700 whitespace-nowrap px-2"><TruncateText text={p.dudi?.nama_perusahaan} /></td>
                 <td className="text-ink-700 whitespace-nowrap px-2"><TruncateText text={p.guru_pembimbing?.user?.name} /></td>
-                <td className="text-ink-700 text-xs whitespace-nowrap px-2">{p.tanggal_mulai} s/d {p.tanggal_selesai}</td>
+                <td className="text-ink-700 text-xs whitespace-nowrap px-2">{fmtDMY(p.tanggal_mulai)} s/d {fmtDMY(p.tanggal_selesai)}</td>
                 <td className="whitespace-nowrap px-2">
                   {canEdit ? (
                     <button onClick={() => handleUbahStatus(p, p.status === 'aktif' ? 'selesai' : 'aktif')}>

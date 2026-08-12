@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { Plus, Trash2, Save, CalendarClock } from 'lucide-react';
 import api from '../../../../api/axios';
 import TruncateText from '../../../../components/TruncateText';
+import DateInput from '../../../../components/DateInput';
+import { fmtDMY } from '../../../../utils/date';
 
 const hariIniIso = () => {
   const d = new Date();
@@ -86,11 +88,11 @@ export default function MonitoringJadwalTab() {
           <input placeholder="Judul (mis. Monitoring PKL Tahap 1)" value={form.judul} onChange={(e) => setForm({ ...form, judul: e.target.value })} className="field-input sm:col-span-2" required />
           <div>
             <label className="block text-xs font-medium text-ink-500 mb-1">Tanggal Mulai</label>
-            <input type="date" value={form.tanggal_rencana} onChange={(e) => setForm({ ...form, tanggal_rencana: e.target.value })} className="field-input" required />
+            <DateInput value={form.tanggal_rencana} onChange={(e) => setForm({ ...form, tanggal_rencana: e.target.value })} className="field-input" required />
           </div>
           <div>
             <label className="block text-xs font-medium text-ink-500 mb-1">Tanggal Selesai (opsional)</label>
-            <input type="date" value={form.tanggal_selesai} onChange={(e) => setForm({ ...form, tanggal_selesai: e.target.value })} className="field-input" />
+            <DateInput value={form.tanggal_selesai} onChange={(e) => setForm({ ...form, tanggal_selesai: e.target.value })} className="field-input" />
           </div>
           <input placeholder="Catatan (opsional)" value={form.catatan} onChange={(e) => setForm({ ...form, catatan: e.target.value })} className="field-input sm:col-span-2" />
         </div>
@@ -124,8 +126,8 @@ export default function MonitoringJadwalTab() {
                       <td colSpan="5" className="py-3 whitespace-nowrap px-2">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2">
                           <input value={editData.judul} onChange={(e) => setEditData({ ...editData, judul: e.target.value })} className="field-input py-1.5 text-sm sm:col-span-2" placeholder="Judul" />
-                          <input type="date" value={editData.tanggal_rencana} onChange={(e) => setEditData({ ...editData, tanggal_rencana: e.target.value })} className="field-input py-1.5 text-sm" />
-                          <input type="date" value={editData.tanggal_selesai} onChange={(e) => setEditData({ ...editData, tanggal_selesai: e.target.value })} className="field-input py-1.5 text-sm" />
+                          <DateInput value={editData.tanggal_rencana} onChange={(e) => setEditData({ ...editData, tanggal_rencana: e.target.value })} className="field-input py-1.5 text-sm" />
+                          <DateInput value={editData.tanggal_selesai} onChange={(e) => setEditData({ ...editData, tanggal_selesai: e.target.value })} className="field-input py-1.5 text-sm" />
                           <input value={editData.catatan} onChange={(e) => setEditData({ ...editData, catatan: e.target.value })} className="field-input py-1.5 text-sm sm:col-span-2" placeholder="Catatan" />
                         </div>
                         <div className="flex gap-2">
@@ -140,7 +142,7 @@ export default function MonitoringJadwalTab() {
                     <tr key={j.id} className="border-t border-line-200">
                       <td className="py-2.5 whitespace-nowrap px-2 text-ink-900 font-medium"><TruncateText text={j.judul} /></td>
                       <td className="text-ink-700 text-xs whitespace-nowrap px-2">
-                        {j.tanggal_rencana}{j.tanggal_selesai && j.tanggal_selesai !== j.tanggal_rencana ? ` s/d ${j.tanggal_selesai}` : ''}
+                        {fmtDMY(j.tanggal_rencana)}{j.tanggal_selesai && j.tanggal_selesai !== j.tanggal_rencana ? ` s/d ${fmtDMY(j.tanggal_selesai)}` : ''}
                       </td>
                       <td className="text-ink-500 whitespace-nowrap px-2"><TruncateText text={j.catatan || '-'} maxWidth="12rem" /></td>
                       <td className="text-ink-500 whitespace-nowrap px-2">{j.dibuat_oleh?.name || '-'}</td>

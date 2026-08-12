@@ -4,6 +4,7 @@ import api from '../../../api/axios';
 import PklAttendanceDetailModal from '../../../components/PklAttendanceDetailModal';
 import PklJournalModal from '../../../components/PklJournalModal';
 import TruncateText from '../../../components/TruncateText';
+import { fmtDMY } from '../../../utils/date';
 
 export default function DudiAbsensiTab() {
   const [list, setList] = useState([]);
@@ -96,7 +97,7 @@ export default function DudiAbsensiTab() {
                     {a.student?.user?.name} <span className="text-ink-400 font-normal">· {a.student?.class_room?.name || '-'}</span>
                   </p>
                   <p className="text-xs text-ink-500">
-                    {a.date} · Masuk {a.time_in ? a.time_in.slice(0, 5) : '-'} · Pulang {a.time_out ? a.time_out.slice(0, 5) : '-'}
+                    {fmtDMY(a.date)} · Masuk {a.time_in ? a.time_in.slice(0, 5) : '-'} · Pulang {a.time_out ? a.time_out.slice(0, 5) : '-'}
                   </p>
                 </div>
                 <button
@@ -145,7 +146,7 @@ export default function DudiAbsensiTab() {
                     <p className="text-ink-900 font-medium"><TruncateText text={p.student?.user?.name} /></p>
                     <p className="text-xs text-ink-500">{p.student?.class_room?.name || '-'}</p>
                   </td>
-                  <td className="text-ink-700 text-xs whitespace-nowrap px-2">{p.tanggal_mulai} s/d {p.tanggal_selesai}</td>
+                  <td className="text-ink-700 text-xs whitespace-nowrap px-2">{fmtDMY(p.tanggal_mulai)} s/d {fmtDMY(p.tanggal_selesai)}</td>
                   <td className="text-right py-2 whitespace-nowrap px-2">
                     <TombolAksi p={p} />
                   </td>
@@ -189,7 +190,7 @@ export default function DudiAbsensiTab() {
                     <p className="text-ink-900 font-medium"><TruncateText text={p.student?.user?.name} /></p>
                     <p className="text-xs text-ink-500">{p.student?.class_room?.name || '-'}</p>
                   </td>
-                  <td className="text-ink-700 text-xs whitespace-nowrap px-2">{p.tanggal_mulai} s/d {p.tanggal_selesai}</td>
+                  <td className="text-ink-700 text-xs whitespace-nowrap px-2">{fmtDMY(p.tanggal_mulai)} s/d {fmtDMY(p.tanggal_selesai)}</td>
                   <td className="text-right py-2 whitespace-nowrap px-2">
                     <TombolAksi p={p} />
                   </td>

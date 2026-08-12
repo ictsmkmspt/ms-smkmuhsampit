@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Printer } from 'lucide-react';
 import api from '../../api/axios';
 import { useSchoolProfile } from '../../context/SchoolProfileContext';
+import { fmtDMY } from '../../utils/date';
 
 const NAMA_BULAN = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
 const NAMA_HARI = ['S', 'S', 'R', 'K', 'J', 'S', 'M'];
@@ -16,10 +17,6 @@ const JENIS_WARNA = {
 };
 
 const pad2 = (n) => String(n).padStart(2, '0');
-
-// Tampilan tabel pakai dd-mm-yyyy (format tanggal Indonesia) — data tetap
-// format ISO (yyyy-mm-dd), cuma tampilannya yang dibalik.
-const fmtDMY = (tanggalIso) => tanggalIso.split('-').reverse().join('-');
 
 // Bulan yang dicetak mengikuti rentang tanggal tahun ajaran aktif (kalau
 // sudah diisi di menu Kalender Akademik) — supaya kalender cetak benar-benar

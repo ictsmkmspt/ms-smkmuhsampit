@@ -3,6 +3,7 @@ import { Search, ChevronLeft, ChevronRight, Undo2, Wallet, CalendarDays } from '
 import api from '../../../../api/axios';
 import { BULAN, formatRupiah, Avatar } from '../../shared';
 import TruncateText from '../../../../components/TruncateText';
+import { fmtDMY } from '../../../../utils/date';
 
 const PAGE_SIZE = 10;
 
@@ -262,7 +263,7 @@ export default function LaporanPeroranganSection() {
                           {s.status === 'sebagian' && <span className="text-honey-700"> · dibayar {formatRupiah(s.jumlah_dibayar)}</span>}
                         </td>
                         <td className="whitespace-nowrap px-2">{statusBadge(s.status)}</td>
-                        <td className="text-ink-500 text-xs whitespace-nowrap px-2">{s.tanggal_bayar || '-'}</td>
+                        <td className="text-ink-500 text-xs whitespace-nowrap px-2">{fmtDMY(s.tanggal_bayar)}</td>
                         <td className="whitespace-nowrap px-2">{renderAksi('spp', s)}</td>
                       </tr>
                     ))}
@@ -324,7 +325,7 @@ export default function LaporanPeroranganSection() {
                           {t.status === 'sebagian' && <span className="text-honey-700"> · dibayar {formatRupiah(t.jumlah_dibayar)}</span>}
                         </td>
                         <td className="whitespace-nowrap px-2">{statusBadge(t.status)}</td>
-                        <td className="text-ink-500 text-xs whitespace-nowrap px-2">{t.tanggal_bayar || '-'}</td>
+                        <td className="text-ink-500 text-xs whitespace-nowrap px-2">{fmtDMY(t.tanggal_bayar)}</td>
                         <td className="text-ink-500 text-xs whitespace-nowrap px-2"><TruncateText text={t.keterangan || '-'} maxWidth="10rem" /></td>
                         <td className="whitespace-nowrap px-2">{renderAksi('lain', t)}</td>
                       </tr>

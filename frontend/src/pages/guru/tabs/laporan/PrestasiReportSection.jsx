@@ -3,6 +3,8 @@ import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import api from '../../../../api/axios';
 import StudentAchievementModal from '../../../../components/StudentAchievementModal';
 import TruncateText from '../../../../components/TruncateText';
+import DateInput from '../../../../components/DateInput';
+import { fmtDMY } from '../../../../utils/date';
 
 const PAGE_SIZE = 5;
 
@@ -85,7 +87,7 @@ export default function PrestasiReportSection() {
           <h2 className="font-display font-semibold text-ink-900 mb-3">Riwayat Kejadian Prestasi</h2>
 
           <div className="flex gap-2 mb-3">
-            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="field-input text-sm flex-1" />
+            <DateInput value={date} onChange={(e) => setDate(e.target.value)} className="field-input text-sm flex-1" />
             <button onClick={loadDetail} className="text-xs font-medium text-white bg-brand-600 hover:bg-brand-700 rounded-lg px-3 whitespace-nowrap">Filter</button>
           </div>
 
@@ -95,7 +97,7 @@ export default function PrestasiReportSection() {
                 <div className="min-w-0">
                   <p className="text-ink-900 font-medium truncate">{a.student?.user?.name}</p>
                   <p className="text-xs text-ink-500 truncate">
-                    {a.date} · {a.achievement_type?.name || '-'}
+                    {fmtDMY(a.date)} · {a.achievement_type?.name || '-'}
                   </p>
                 </div>
                 <span className="text-brand-700 font-medium shrink-0">+{a.poin}</span>

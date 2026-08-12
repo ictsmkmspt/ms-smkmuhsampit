@@ -3,6 +3,7 @@ import { GraduationCap, ChevronRight, ChevronLeft, Undo2 } from 'lucide-react';
 import api from '../../../api/axios';
 import TruncateText from '../../../components/TruncateText';
 import { useAuth } from '../../../context/AuthContext';
+import { fmtDMY } from '../../../utils/date';
 
 export default function AlumniTab() {
   const { user } = useAuth();
@@ -98,7 +99,7 @@ export default function AlumniTab() {
                     <tr key={s.id} className="border-t border-line-200">
                       <td className="py-2.5 text-ink-900 whitespace-nowrap px-2"><TruncateText text={s.user?.name} /></td>
                       <td className="text-ink-700 whitespace-nowrap px-2">{s.nis}</td>
-                      <td className="text-ink-700 whitespace-nowrap px-2">{s.tanggal_lulus || '-'}</td>
+                      <td className="text-ink-700 whitespace-nowrap px-2">{fmtDMY(s.tanggal_lulus)}</td>
                     </tr>
                   ))}
                 </tbody>

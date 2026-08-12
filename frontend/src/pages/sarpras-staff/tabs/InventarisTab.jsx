@@ -8,6 +8,7 @@ import { filterAssets } from '../../../components/AssetSearchSelect';
 import BarcodeScanner from '../../../components/BarcodeScanner';
 import ExportKirModal from '../../../components/ExportKirModal';
 import TruncateText from '../../../components/TruncateText';
+import DateInput from '../../../components/DateInput';
 import { useAuth } from '../../../context/AuthContext';
 
 const FORM_KOSONG = {
@@ -208,7 +209,7 @@ export default function InventarisTab() {
             <input placeholder="No. Seri Pabrik" value={form.no_seri_pabrik} onChange={(e) => setForm({ ...form, no_seri_pabrik: e.target.value })} className="field-input" />
             <input placeholder="Ukuran" value={form.ukuran} onChange={(e) => setForm({ ...form, ukuran: e.target.value })} className="field-input" />
             <input placeholder="Bahan" value={form.bahan} onChange={(e) => setForm({ ...form, bahan: e.target.value })} className="field-input" />
-            <input type="date" value={form.tanggal_perolehan} onChange={(e) => setForm({ ...form, tanggal_perolehan: e.target.value })} className="field-input" />
+            <DateInput value={form.tanggal_perolehan} onChange={(e) => setForm({ ...form, tanggal_perolehan: e.target.value })} className="field-input" />
             <input placeholder="Kode Barang" value={form.kode_aset} onChange={(e) => setForm({ ...form, kode_aset: e.target.value })} className="field-input" required />
             <input placeholder="Ket. Mutasi dll" value={form.keterangan} onChange={(e) => setForm({ ...form, keterangan: e.target.value })} className="field-input" />
           </div>
