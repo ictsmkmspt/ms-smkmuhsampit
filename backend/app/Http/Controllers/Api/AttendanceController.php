@@ -636,6 +636,54 @@ class AttendanceController extends Controller
 
 
     /**
+     * Status absensi HARI INI apa adanya, tanpa tebak-tebakan pkl/libur/alpa
+     * (beda dari report() di atas yang buat kebutuhan laporan). Dipakai
+     * KehadiranSection di dashboard Guru: (1) dengan class_room_id, supaya
+     * status yang sudah tercatat tetap tampil walau ganti kelas/reload;
+     * (2) tanpa class_room_id, buat daftar "Belum Absensi Hari Ini" se-sekolah.
+     * Sengaja TIDAK dibatasi ke kelas wali (beda dari report()) — sama seperti
+     * attendanceManual(), semua guru boleh input/lihat status kelas manapun.
+     * Alpa dicek dari tabel Violation (type=alpa), bukan Attendance, karena
+     * attendanceManual() memang tidak membuat catatan Attendance buat alpa.
+     */
+    public function todayStatus(Request $request)
+    {
+        $request->validate([
+            'class_room_id' => 'nullable|exists:class_rooms,id',
+        ]);
+
+        $today = now()->format('Y-m-d');
+
+        $students = Student::with(['user', 'classRoom'])
+            ->when($request->filled('class_room_id'), fn ($q) => $q->where('class_room_id', $request->class_room_id))
+            ->where('students.status', 'aktif')
+            ->join('users', 'users.id', '=', 'students.user_id')
+            ->join('class_rooms', 'class_rooms.id', '=', 'students.class_room_id')
+            ->orderBy('class_rooms.name')
+            ->orderBy('users.name')
+            ->select('students.*')
+            ->get();
+
+        $attendances = Attendance::where('date', $today)
+            ->whereIn('student_id', $students->pluck('id'))
+            ->get()->keyBy('student_id');
+
+        $alpaIds = Violation::where('date', $today)->where('type', 'alpa')
+            ->whereIn('student_id', $students->pluck('id'))
+            ->pluck('student_id');
+
+        $hasil = $students->map(function ($student) use ($attendances, $alpaIds) {
+            $status = $attendances->get($student->id)?->status;
+            if (!$status && $alpaIds->contains($student->id)) {
+                $status = 'alpa';
+            }
+            return ['student' => $student, 'date' => now()->format('Y-m-d'), 'status' => $status];
+        });
+
+        return response()->json(['date' => $today, 'students' => $hasil]);
+    }
+
+    /**
      * Catat kehadiran secara manual (hadir/izin/sakit) tanpa scan barcode.
      * Dipanggil dari form Absensi Manual di halaman Guru.
      */

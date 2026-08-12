@@ -5,6 +5,23 @@ import { BULAN, formatRupiah, StatTile, Avatar } from '../../shared';
 import TruncateText from '../../../../components/TruncateText';
 import { fmtDMY } from '../../../../utils/date';
 
+const PAGE_SIZE = 15;
+
+function Pager({ page, totalPages, totalItems, onPrev, onNext }) {
+  if (totalItems <= PAGE_SIZE) return null;
+  return (
+    <div className="flex items-center justify-between mt-4 pt-3 border-t border-line-200">
+      <button onClick={onPrev} disabled={page === 1} className="flex items-center gap-1 text-xs font-medium text-ink-500 hover:text-brand-600 disabled:opacity-30">
+        <ChevronLeft className="w-3.5 h-3.5" /> Sebelumnya
+      </button>
+      <span className="text-xs text-ink-400">Halaman {page} / {totalPages}</span>
+      <button onClick={onNext} disabled={page === totalPages} className="flex items-center gap-1 text-xs font-medium text-ink-500 hover:text-brand-600 disabled:opacity-30">
+        Selanjutnya <ChevronRight className="w-3.5 h-3.5" />
+      </button>
+    </div>
+  );
+}
+
 function downloadBlob(res, filename) {
   const url = window.URL.createObjectURL(new Blob([res.data]));
   const link = document.createElement('a');
@@ -25,10 +42,12 @@ export default function RingkasanSection() {
   const [keuangan, setKeuangan] = useState(null);
   const [loadingKeuangan, setLoadingKeuangan] = useState(true);
   const [exportingKeuangan, setExportingKeuangan] = useState(false);
+  const [keuanganPage, setKeuanganPage] = useState(1);
 
   useEffect(() => {
     setLoadingKeuangan(true);
     setKeuangan(null);
+    setKeuanganPage(1);
     api.get('/laporan/keuangan', { params: { bulan, tahun } })
       .then((res) => setKeuangan(res.data))
       .catch(() => setKeuangan(null))
@@ -69,6 +88,7 @@ export default function RingkasanSection() {
   const [tunggakanList, setTunggakanList] = useState([]);
   const [loadingTunggakan, setLoadingTunggakan] = useState(true);
   const [exportingTunggakan, setExportingTunggakan] = useState(false);
+  const [tunggakanPage, setTunggakanPage] = useState(1);
 
   useEffect(() => {
     api.get('/classes').then((res) => setClasses(res.data));
@@ -76,6 +96,7 @@ export default function RingkasanSection() {
 
   const loadTunggakan = () => {
     setLoadingTunggakan(true);
+    setTunggakanPage(1);
     const params = {};
     if (classRoomId) params.class_room_id = classRoomId;
     if (searchTunggakan) params.search = searchTunggakan;
@@ -101,6 +122,12 @@ export default function RingkasanSection() {
   };
 
   const totalTunggakanKeseluruhan = tunggakanList.reduce((sum, t) => sum + Number(t.total_tunggakan || 0), 0);
+
+  const keuanganTotalPages = Math.max(1, Math.ceil(rincianGabungan.length / PAGE_SIZE));
+  const paginatedRincian = rincianGabungan.slice((keuanganPage - 1) * PAGE_SIZE, keuanganPage * PAGE_SIZE);
+
+  const tunggakanTotalPages = Math.max(1, Math.ceil(tunggakanList.length / PAGE_SIZE));
+  const paginatedTunggakan = tunggakanList.slice((tunggakanPage - 1) * PAGE_SIZE, tunggakanPage * PAGE_SIZE);
 
   return (
     <div className="space-y-6">
@@ -157,7 +184,7 @@ export default function RingkasanSection() {
                     </tr>
                   </thead>
                   <tbody>
-                    {rincianGabungan.map((r) => (
+                    {paginatedRincian.map((r) => (
                       <tr key={`${r._jenis}-${r.id}`} className="border-t border-line-200">
                         <td className="py-2 text-ink-700 text-xs whitespace-nowrap px-2">{fmtDMY(r.tanggal_bayar)}</td>
                         <td className="text-ink-900 whitespace-nowrap px-2"><TruncateText text={r.student?.user?.name} maxWidth="10rem" /></td>
@@ -170,6 +197,11 @@ export default function RingkasanSection() {
                 </table>
               </div>
             )}
+            <Pager
+              page={keuanganPage} totalPages={keuanganTotalPages} totalItems={rincianGabungan.length}
+              onPrev={() => setKeuanganPage((p) => Math.max(1, p - 1))}
+              onNext={() => setKeuanganPage((p) => Math.min(keuanganTotalPages, p + 1))}
+            />
           </>
         )}
       </div>
@@ -226,7 +258,7 @@ export default function RingkasanSection() {
                 </tr>
               </thead>
               <tbody>
-                {tunggakanList.map((row) => (
+                {paginatedTunggakan.map((row) => (
                   <tr key={row.student.id} className="border-t border-line-200">
                     <td className="py-2.5 whitespace-nowrap px-2">
                       <div className="flex items-center gap-2.5">
@@ -244,6 +276,11 @@ export default function RingkasanSection() {
             </table>
           </div>
         )}
+        <Pager
+          page={tunggakanPage} totalPages={tunggakanTotalPages} totalItems={tunggakanList.length}
+          onPrev={() => setTunggakanPage((p) => Math.max(1, p - 1))}
+          onNext={() => setTunggakanPage((p) => Math.min(tunggakanTotalPages, p + 1))}
+        />
       </div>
     </div>
   );

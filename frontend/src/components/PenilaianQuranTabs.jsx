@@ -17,7 +17,7 @@ const SUB_TABS = [
  * Nilai Akademik tetap punya skor (dari fitur lama); Tahsin/Tahfidz/Tadarus
  * murni catatan progres + keterangan, tanpa skor.
  */
-export default function PenilaianQuranTabs({ endpoints }) {
+export default function PenilaianQuranTabs({ endpoints, title }) {
   const [sub, setSub] = useState('akademik');
   const [academicScores, setAcademicScores] = useState([]);
   const [tahsinScores, setTahsinScores] = useState([]);
@@ -89,6 +89,8 @@ export default function PenilaianQuranTabs({ endpoints }) {
           );
         })}
       </div>
+
+      {title && <h2 className="font-display font-semibold text-ink-900">{title}</h2>}
 
       {sub === 'akademik' && (
         nilaiPerMapel.length === 0 ? (

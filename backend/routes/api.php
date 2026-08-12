@@ -365,6 +365,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('role:guru')->group(function () {
         Route::post('/announcements', [AnnouncementController::class, 'store']);
         Route::put('/announcements/{announcement}', [AnnouncementController::class, 'update']);
+        Route::post('/announcements/{announcement}/foto', [AnnouncementController::class, 'uploadFoto']);
         Route::delete('/announcements/{announcement}', [AnnouncementController::class, 'destroy']);
     });
 
@@ -405,6 +406,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/attendance/record-manual', [AttendanceController::class, 'recordManual']);
         Route::post('/attendance/update-status', [AttendanceController::class, 'updateStatus']);
         Route::get('/attendance/my-class-report', [AttendanceController::class, 'myClassReport']);
+        Route::get('/attendance/today-status', [AttendanceController::class, 'todayStatus']);
         Route::delete('/violations/{id}', [AttendanceController::class, 'violationDestroy']);
         Route::put('/violations/{id}', [AttendanceController::class, 'violationUpdate']);
         Route::post('/prayer/scan', [PrayerAttendanceController::class, 'scan']);

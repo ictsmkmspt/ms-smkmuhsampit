@@ -243,12 +243,10 @@ export default function ParentDashboard() {
             {activeTab === 'pengumuman' && <AnnouncementBoard />}
 
             {activeTab === 'nilai' && (
-              <div>
-                <h2 className="font-display font-semibold text-ink-900 mb-4">
-                  Penilaian <span className="text-ink-500 font-sans font-normal text-sm">— {selectedChild?.user?.name}</span>
-                </h2>
-                <PenilaianQuranTabs endpoints={penilaianEndpoints} />
-              </div>
+              <PenilaianQuranTabs
+                endpoints={penilaianEndpoints}
+                title={<>Penilaian <span className="text-ink-500 font-sans font-normal text-sm">— {selectedChild?.user?.name}</span></>}
+              />
             )}
           </>
         )}

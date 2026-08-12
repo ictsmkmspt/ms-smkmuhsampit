@@ -15,22 +15,29 @@ use Illuminate\Support\Facades\DB;
 class PrayerAttendanceController extends Controller
 {
     /**
-     * Rekap sholat Zuhur 1 kelas di 1 tanggal. Siswa yang belum diabsen
-     * statusnya dibiarkan NULL (bukan otomatis "tidak") — supaya guru bisa lihat
-     * jelas siapa yang sudah dan belum dicatat.
+     * Rekap sholat Zuhur di 1 tanggal. class_room_id OPSIONAL — kalau
+     * diisi, cuma 1 kelas (dipakai tabel absen manual per kelas); kalau
+     * dikosongkan, SEMUA siswa aktif se-sekolah (dipakai rekap "Belum
+     * Sholat / Belum Melapor" yang sengaja tidak terikat kelas yang
+     * sedang dipilih). Siswa yang belum diabsen statusnya dibiarkan NULL
+     * (bukan otomatis "tidak") — supaya guru bisa lihat jelas siapa yang
+     * sudah dan belum dicatat.
      */
     public function report(Request $request)
     {
         $request->validate([
-            'class_room_id' => 'required|exists:class_rooms,id',
+            'class_room_id' => 'nullable|exists:class_rooms,id',
             'date'          => 'nullable|date',
         ]);
 
         $date = $request->date ?? now()->format('Y-m-d');
 
-        $students = Student::with('user')->where('class_room_id', $request->class_room_id)
-            ->where('status', 'aktif')
+        $students = Student::with('user', 'classRoom')
+            ->when($request->filled('class_room_id'), fn ($q) => $q->where('class_room_id', $request->class_room_id))
+            ->where('students.status', 'aktif')
             ->join('users', 'users.id', '=', 'students.user_id')
+            ->join('class_rooms', 'class_rooms.id', '=', 'students.class_room_id')
+            ->orderBy('class_rooms.name')
             ->orderBy('users.name')
             ->select('students.*')
             ->get();

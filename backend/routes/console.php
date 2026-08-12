@@ -11,3 +11,7 @@ Artisan::command('inspire', function () {
 // Tagihan SPP bulan berjalan otomatis dibuat tiap tanggal 1 jam 00:10,
 // tanpa TU harus login & klik "Buat Tagihan Bulan Ini" secara manual.
 Schedule::command('spp:generate-bulanan')->monthlyOn(1, '00:10');
+
+// Foto pengumuman (Papan Pengumuman) dihapus otomatis setelah 30 hari
+// supaya storage server tidak terus membengkak — teksnya tetap disimpan.
+Schedule::command('announcements:cleanup-photos')->daily();

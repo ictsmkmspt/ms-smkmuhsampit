@@ -1,10 +1,68 @@
-import { Fragment, useEffect, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import { Search, Pencil, Check, X, Trash2, Receipt, Info, CheckCircle, Printer, Plus, Users, User, UsersRound } from 'lucide-react';
 import api from '../../../api/axios';
 import { formatRupiah, Avatar } from '../shared';
 import TruncateText from '../../../components/TruncateText';
 
 const emptyForm = { nama_tagihan: '', nominal: '', keterangan: '' };
+
+/**
+ * Pengganti <select> polos buat pilih 1 siswa — daftar siswa se-sekolah bisa
+ * ratusan baris, jadi ketik nama/NIS buat cari langsung lebih cepat daripada
+ * scroll satu-satu di dropdown native.
+ */
+function StudentSearchSelect({ students, value, onChange }) {
+  const [query, setQuery] = useState('');
+  const [open, setOpen] = useState(false);
+  const wrapRef = useRef(null);
+  const selected = students.find((s) => String(s.id) === String(value));
+
+  useEffect(() => {
+    if (!open) return;
+    const tutupKalauDiluar = (e) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener('mousedown', tutupKalauDiluar);
+    return () => document.removeEventListener('mousedown', tutupKalauDiluar);
+  }, [open]);
+
+  const q = query.trim().toLowerCase();
+  const hasil = (q
+    ? students.filter((s) => s.user?.name?.toLowerCase().includes(q) || s.nis?.toLowerCase().includes(q))
+    : students
+  ).slice(0, 50);
+
+  return (
+    <div className="relative" ref={wrapRef}>
+      <input
+        type="text"
+        value={open ? query : (selected ? `${selected.user?.name} · ${selected.class_room?.name || 'Tanpa kelas'}` : '')}
+        onChange={(e) => { setQuery(e.target.value); if (value) onChange(''); }}
+        onFocus={() => { setOpen(true); setQuery(''); }}
+        placeholder="Ketik nama atau NIS siswa..."
+        className="field-input text-ink-700 w-full"
+      />
+      {open && (
+        <div className="absolute z-40 mt-1 w-full max-h-56 overflow-y-auto bg-white border border-line-200 rounded-xl shadow-lg py-1">
+          {hasil.length === 0 ? (
+            <p className="text-xs text-ink-400 px-3 py-2">Tidak ada siswa cocok.</p>
+          ) : (
+            hasil.map((s) => (
+              <button
+                key={s.id} type="button"
+                onClick={() => { onChange(String(s.id)); setQuery(''); setOpen(false); }}
+                className="w-full text-left px-3 py-1.5 text-sm hover:bg-mist-50 flex items-center justify-between gap-2"
+              >
+                <span className="text-ink-900 min-w-0 truncate">{s.user?.name}</span>
+                <span className="text-ink-400 text-xs shrink-0">{s.nis ? `NIS ${s.nis} · ` : ''}{s.class_room?.name || 'Tanpa kelas'}</span>
+              </button>
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function TagihanLainTab() {
   const [classes, setClasses] = useState([]);
@@ -283,12 +341,7 @@ export default function TagihanLainTab() {
 
         <form onSubmit={handleSubmit} className="space-y-3">
           {target === 'satu' && (
-            <select value={studentId} onChange={(e) => setStudentId(e.target.value)} className="field-input text-ink-700 w-full">
-              <option value="">— Pilih Siswa —</option>
-              {students.map((s) => (
-                <option key={s.id} value={s.id}>{s.user?.name} · {s.class_room?.name || 'Tanpa kelas'}</option>
-              ))}
-            </select>
+            <StudentSearchSelect students={students} value={studentId} onChange={setStudentId} />
           )}
 
           {target === 'kelas' && (

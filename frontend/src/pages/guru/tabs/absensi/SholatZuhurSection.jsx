@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { ClipboardEdit } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { ClipboardEdit, AlertTriangle } from 'lucide-react';
 import BarcodeScanner from '../../../../components/BarcodeScanner';
 import api from '../../../../api/axios';
 import TruncateText from '../../../../components/TruncateText';
@@ -12,9 +12,24 @@ export default function SholatZuhurSection() {
   const [loadingId, setLoadingId]         = useState(null); // studentId + '-' + status
   const [messages, setMessages]           = useState({});
 
+  // Rekap "Belum Sholat / Belum Melapor" SENGAJA lepas dari kelas yang
+  // dipilih di tabel absen manual di atas — selalu tampilkan SEMUA siswa
+  // se-sekolah hari ini, bukan cuma 1 kelas, supaya guru langsung lihat
+  // gambaran keseluruhan tanpa harus gonta-ganti kelas satu-satu.
+  const [rekapSemua, setRekapSemua]       = useState([]); // [{ student, status }]
+  const [loadingRekap, setLoadingRekap]   = useState(true);
+
+  const loadRekapSemua = useCallback(() => {
+    setLoadingRekap(true);
+    api.get('/prayer/report').then((res) => {
+      setRekapSemua(res.data.students.filter((row) => !row.status || row.status === 'tidak'));
+    }).finally(() => setLoadingRekap(false));
+  }, []);
+
   useEffect(() => {
     api.get('/classes').then((res) => setClasses(res.data));
-  }, []);
+    loadRekapSemua();
+  }, [loadRekapSemua]);
 
   useEffect(() => {
     if (!selectedClass) { setStudents([]); setStatuses({}); setMessages({}); return; }
@@ -40,6 +55,7 @@ export default function SholatZuhurSection() {
       const res = await api.post('/prayer/scan', { code });
       if (res.data.student) {
         setStatuses((p) => ({ ...p, [res.data.student.id]: 'melaksanakan' }));
+        loadRekapSemua();
       }
       return { message: res.data.message, error: !!res.data.already_scanned };
     } catch (err) {
@@ -53,6 +69,7 @@ export default function SholatZuhurSection() {
       const res = await api.post('/prayer/manual', { student_id: student.id, status });
       setStatuses((p) => ({ ...p, [student.id]: status }));
       setMessages((p) => ({ ...p, [student.id]: { text: res.data.message, error: false } }));
+      loadRekapSemua();
     } catch (err) {
       setMessages((p) => ({ ...p, [student.id]: { text: err.response?.data?.message || 'Gagal mencatat.', error: true } }));
     } finally {
@@ -165,6 +182,45 @@ export default function SholatZuhurSection() {
               })}
             </tbody>
           </table>
+          </div>
+        )}
+      </div>
+
+      <div className="max-w-2xl mx-auto mt-6 surface-card p-5">
+        <div className="flex items-center gap-2 mb-1">
+          <AlertTriangle className="w-4 h-4 text-honey-600 shrink-0" />
+          <p className="text-sm font-semibold text-ink-700">
+            Belum Sholat / Belum Melapor <span className="text-ink-400 font-normal">({rekapSemua.length})</span>
+          </p>
+        </div>
+        <p className="text-xs text-ink-400 mb-4">
+          Semua siswa se-sekolah yang belum diabsen sama sekali hari ini, atau sudah ditandai "Tidak" — tidak terikat kelas yang dipilih di atas.
+        </p>
+
+        {loadingRekap ? (
+          <p className="text-sm text-ink-300 text-center py-4">Memuat...</p>
+        ) : rekapSemua.length === 0 ? (
+          <p className="text-sm text-ink-300 text-center py-4">Semua siswa sudah tercatat sholat/berhalangan hari ini.</p>
+        ) : (
+          <div className="table-scroll max-h-[28rem] overflow-y-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-ink-500 border-b border-line-200">
+                  <th className="pb-2 font-medium whitespace-nowrap px-2">Nama Siswa</th>
+                  <th className="pb-2 font-medium whitespace-nowrap px-2">Kelas</th>
+                  <th className="pb-2 font-medium text-right whitespace-nowrap px-2">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rekapSemua.map((row) => (
+                  <tr key={row.student.id} className="border-t border-line-200">
+                    <td className="py-2 text-ink-900 whitespace-nowrap px-2"><TruncateText text={row.student.user?.name} /></td>
+                    <td className="text-ink-500 whitespace-nowrap px-2">{row.student.class_room?.name || '-'}</td>
+                    <td className="text-right whitespace-nowrap px-2"><StatusBadge status={row.status} /></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </div>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Megaphone, Plus, Pencil, Trash2 } from 'lucide-react';
+import { Megaphone, Plus, Pencil, Trash2, Image as ImageIcon } from 'lucide-react';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
 import { fmtDMY } from '../utils/date';
@@ -12,6 +12,9 @@ const KOSONG = { judul: '', isi: '' };
  * mengatur apakah tombol "Tambah Pengumuman" ditampilkan; backend tetap
  * jadi penjaga utama (POST/PUT/DELETE dikunci role:guru + kepemilikan
  * dibuat_oleh, lihat AnnouncementController).
+ *
+ * Foto opsional — otomatis dihapus dari server 30 hari setelah dibuat
+ * (lihat CleanupAnnouncementPhotos), teks pengumumannya tetap ada.
  */
 export default function AnnouncementBoard({ canManage = false }) {
   const { user } = useAuth();
@@ -20,11 +23,13 @@ export default function AnnouncementBoard({ canManage = false }) {
 
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(KOSONG);
+  const [fotoFile, setFotoFile] = useState(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState(KOSONG);
+  const [editFotoFile, setEditFotoFile] = useState(null);
   const [editSaving, setEditSaving] = useState(false);
 
   const load = () => {
@@ -34,13 +39,23 @@ export default function AnnouncementBoard({ canManage = false }) {
 
   useEffect(load, []);
 
+  const resetForm = () => {
+    setShowForm(false);
+    setForm(KOSONG);
+    setFotoFile(null);
+    setError('');
+  };
+
   const handleTambah = async (e) => {
     e.preventDefault();
     setError(''); setSaving(true);
     try {
-      await api.post('/announcements', form);
-      setForm(KOSONG);
-      setShowForm(false);
+      const data = new FormData();
+      data.append('judul', form.judul);
+      data.append('isi', form.isi);
+      if (fotoFile) data.append('foto', fotoFile);
+      await api.post('/announcements', data, { headers: { 'Content-Type': 'multipart/form-data' } });
+      resetForm();
       load();
     } catch (err) {
       const msgs = err.response?.data?.errors;
@@ -53,13 +68,20 @@ export default function AnnouncementBoard({ canManage = false }) {
   const bukaEdit = (a) => {
     setEditingId(a.id);
     setEditForm({ judul: a.judul, isi: a.isi });
+    setEditFotoFile(null);
   };
 
   const simpanEdit = async (id) => {
     setEditSaving(true);
     try {
       await api.put(`/announcements/${id}`, editForm);
+      if (editFotoFile) {
+        const data = new FormData();
+        data.append('foto', editFotoFile);
+        await api.post(`/announcements/${id}/foto`, data, { headers: { 'Content-Type': 'multipart/form-data' } });
+      }
       setEditingId(null);
+      setEditFotoFile(null);
       load();
     } catch (err) {
       alert(err.response?.data?.message || 'Gagal menyimpan perubahan.');
@@ -109,15 +131,22 @@ export default function AnnouncementBoard({ canManage = false }) {
             rows={3}
             required
           />
+          <div>
+            <label className="flex items-center gap-1.5 text-xs font-medium text-ink-500 mb-1">
+              <ImageIcon className="w-3.5 h-3.5" /> Foto (opsional, maks 2MB, otomatis terhapus setelah 30 hari)
+            </label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => setFotoFile(e.target.files[0] || null)}
+              className="field-input text-sm"
+            />
+          </div>
           <div className="flex gap-2">
             <button disabled={saving} className="btn-primary text-sm">
               {saving ? 'Menyimpan...' : 'Terbitkan'}
             </button>
-            <button
-              type="button"
-              onClick={() => { setShowForm(false); setForm(KOSONG); setError(''); }}
-              className="text-sm font-medium text-ink-500 hover:text-ink-700 px-3"
-            >
+            <button type="button" onClick={resetForm} className="text-sm font-medium text-ink-500 hover:text-ink-700 px-3">
               Batal
             </button>
           </div>
@@ -147,11 +176,22 @@ export default function AnnouncementBoard({ canManage = false }) {
                   rows={3}
                   required
                 />
+                <div>
+                  <label className="flex items-center gap-1.5 text-xs font-medium text-ink-500 mb-1">
+                    <ImageIcon className="w-3.5 h-3.5" /> {a.foto_url ? 'Ganti foto' : 'Tambah foto'} (opsional, maks 2MB)
+                  </label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setEditFotoFile(e.target.files[0] || null)}
+                    className="field-input text-sm"
+                  />
+                </div>
                 <div className="flex gap-2">
                   <button disabled={editSaving} onClick={() => simpanEdit(a.id)} className="btn-primary text-sm">
                     {editSaving ? 'Menyimpan...' : 'Simpan'}
                   </button>
-                  <button onClick={() => setEditingId(null)} className="text-sm font-medium text-ink-500 hover:text-ink-700 px-3">
+                  <button onClick={() => { setEditingId(null); setEditFotoFile(null); }} className="text-sm font-medium text-ink-500 hover:text-ink-700 px-3">
                     Batal
                   </button>
                 </div>
@@ -168,6 +208,9 @@ export default function AnnouncementBoard({ canManage = false }) {
                   )}
                 </div>
                 <p className="text-sm text-ink-700 mt-1 whitespace-pre-wrap">{a.isi}</p>
+                {a.foto_url && (
+                  <img src={a.foto_url} alt={a.judul} className="mt-2 rounded-lg max-h-64 w-auto object-contain border border-line-200" />
+                )}
                 <p className="text-xs text-ink-400 mt-2">
                   {a.dibuat_oleh?.name || 'Guru'} &middot; {fmtDMY(a.created_at)}
                 </p>

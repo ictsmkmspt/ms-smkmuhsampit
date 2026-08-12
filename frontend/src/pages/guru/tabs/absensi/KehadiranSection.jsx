@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { UserX, CheckCircle2, AlertTriangle, ClipboardEdit } from 'lucide-react';
 import BarcodeScanner from '../../../../components/BarcodeScanner';
 import api from '../../../../api/axios';
@@ -17,16 +17,38 @@ export default function KehadiranSection() {
   const [loadingId, setLoadingId]         = useState(null);
   const [messages, setMessages]           = useState({});
 
+  // Rekap "Belum Absensi Hari Ini" SENGAJA lepas dari kelas yang dipilih di
+  // tabel absensi manual di atas — selalu tampilkan SEMUA siswa se-sekolah,
+  // sama seperti pola rekap Sholat Zuhur.
+  const [rekapSemua, setRekapSemua]       = useState([]); // [{ student, status }]
+  const [loadingRekap, setLoadingRekap]   = useState(true);
+
+  const loadRekapSemua = useCallback(() => {
+    setLoadingRekap(true);
+    api.get('/attendance/today-status').then((res) => {
+      setRekapSemua(res.data.students.filter((row) => !row.status));
+    }).finally(() => setLoadingRekap(false));
+  }, []);
+
   useEffect(() => {
     api.get('/classes').then((res) => setClasses(res.data));
-  }, []);
+    loadRekapSemua();
+  }, [loadRekapSemua]);
 
   useEffect(() => {
     if (!selectedClass) { setStudents([]); setStatuses({}); setMessages({}); return; }
     api.get('/students', { params: { class_room_id: selectedClass } }).then((res) => {
       setStudents(res.data);
-      setStatuses({});
       setMessages({});
+      // Ambil status hari ini supaya yang sudah tercatat (misal lewat scan atau
+      // sebelum ganti kelas) tetap tampil, bukan cuma yang diklik di sesi ini.
+      api.get('/attendance/today-status', { params: { class_room_id: selectedClass } }).then((rep) => {
+        const map = {};
+        rep.data.students.forEach((row) => {
+          if (row.status) map[row.student.id] = row.status;
+        });
+        setStatuses(map);
+      });
     });
   }, [selectedClass]);
 
@@ -36,6 +58,7 @@ export default function KehadiranSection() {
       const res = await api.post('/attendance/manual', { student_id: student.id, status });
       setStatuses((p) => ({ ...p, [student.id]: status }));
       setMessages((p) => ({ ...p, [student.id]: { text: res.data.message, error: false } }));
+      loadRekapSemua();
     } catch (err) {
       const msg = err.response?.data?.message || 'Gagal mencatat absensi.';
       const sudah = msg.toLowerCase().includes('sudah');
@@ -53,6 +76,7 @@ export default function KehadiranSection() {
       const res = await api.post('/attendance/process-alpa');
       setAlpaError(false);
       setAlpaMessage(res.data.message);
+      loadRekapSemua();
     } catch (err) {
       setAlpaError(true);
       setAlpaMessage(err.response?.data?.message || 'Gagal memproses alpa.');
@@ -215,6 +239,43 @@ export default function KehadiranSection() {
           }`}>
             {alpaError ? <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" /> : <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0" />}
             <span>{alpaMessage}</span>
+          </div>
+        )}
+      </div>
+
+      <div className="max-w-2xl mx-auto mt-6 surface-card p-5">
+        <div className="flex items-center gap-2 mb-1">
+          <UserX className="w-4 h-4 text-honey-600 shrink-0" />
+          <p className="text-sm font-semibold text-ink-700">
+            Belum Absensi Hari Ini <span className="text-ink-400 font-normal">({rekapSemua.length})</span>
+          </p>
+        </div>
+        <p className="text-xs text-ink-400 mb-4">
+          Semua siswa se-sekolah yang belum tercatat hadir/izin/sakit/alpa hari ini — tidak terikat kelas yang dipilih di atas.
+        </p>
+
+        {loadingRekap ? (
+          <p className="text-sm text-ink-300 text-center py-4">Memuat...</p>
+        ) : rekapSemua.length === 0 ? (
+          <p className="text-sm text-ink-300 text-center py-4">Semua siswa sudah tercatat absensinya hari ini.</p>
+        ) : (
+          <div className="table-scroll max-h-[28rem] overflow-y-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-ink-500 border-b border-line-200">
+                  <th className="pb-2 font-medium whitespace-nowrap px-2">Nama Siswa</th>
+                  <th className="pb-2 font-medium whitespace-nowrap px-2">Kelas</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rekapSemua.map((row) => (
+                  <tr key={row.student.id} className="border-t border-line-200">
+                    <td className="py-2 text-ink-900 whitespace-nowrap px-2"><TruncateText text={row.student.user?.name} /></td>
+                    <td className="text-ink-500 whitespace-nowrap px-2">{row.student.class_room?.name || '-'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </div>
