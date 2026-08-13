@@ -16,6 +16,9 @@ class PklPlacementController extends Controller
      * IDUKA (dudi_id) — dudi_id dipakai Laporan PKL > Kegiatan Siswa untuk
      * menyortir per penempatan IDUKA. `penilaian` diikutkan biar Laporan
      * bisa langsung tampilkan nilai_akhir tanpa request tambahan.
+     * Diurutkan nama IDUKA dulu (abjad), baru nama siswa (abjad) — supaya
+     * siswa yang 1 tempat PKL langsung terlihat mengelompok, sama seperti
+     * pola join+orderBy di StudentController::index().
      * Default cuma tahun ajaran yang sedang aktif — kirim ?tahun_ajaran_id= untuk lihat
      * tahun ajaran lain, atau ?semua_tahun=1 untuk lihat semua tahun ajaran sekaligus.
      */
@@ -23,16 +26,23 @@ class PklPlacementController extends Controller
     {
         $query = PklPlacement::with(['student.user', 'student.classRoom', 'dudi', 'guruPembimbing.user', 'penilaian']);
         if ($request->status) {
-            $query->where('status', $request->status);
+            $query->where('pkl_placements.status', $request->status);
         }
         if ($request->dudi_id) {
-            $query->where('dudi_id', $request->dudi_id);
+            $query->where('pkl_placements.dudi_id', $request->dudi_id);
         }
         if (!$request->boolean('semua_tahun')) {
             $tahunAjaranId = $request->filled('tahun_ajaran_id') ? $request->tahun_ajaran_id : TahunAjaran::aktifId();
-            $query->where('tahun_ajaran_id', $tahunAjaranId);
+            $query->where('pkl_placements.tahun_ajaran_id', $tahunAjaranId);
         }
-        return $query->orderByDesc('tanggal_mulai')->get();
+        return $query
+            ->join('dudis', 'dudis.id', '=', 'pkl_placements.dudi_id')
+            ->join('students', 'students.id', '=', 'pkl_placements.student_id')
+            ->join('users', 'users.id', '=', 'students.user_id')
+            ->orderBy('dudis.nama_perusahaan')
+            ->orderBy('users.name')
+            ->select('pkl_placements.*')
+            ->get();
     }
 
     /**
