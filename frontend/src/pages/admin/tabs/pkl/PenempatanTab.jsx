@@ -3,6 +3,7 @@ import { Plus, Trash2, ClipboardList, PowerOff } from 'lucide-react';
 import api from '../../../../api/axios';
 import TruncateText from '../../../../components/TruncateText';
 import DateInput from '../../../../components/DateInput';
+import StudentSearchSelect from '../../../../components/StudentSearchSelect';
 import { fmtDMY } from '../../../../utils/date';
 import { useAuth } from '../../../../context/AuthContext';
 import { useTahunAjaran, useTahunAjaranParam } from '../../../../context/TahunAjaranContext';
@@ -154,12 +155,9 @@ export default function PenempatanTab() {
           <h2 className="font-display font-semibold text-ink-900 mb-4">Buat Penempatan PKL</h2>
           {error && <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2 mb-3">{error}</p>}
           <div className="grid grid-cols-2 gap-3">
-            <select value={form.student_id} onChange={(e) => setForm({ ...form, student_id: e.target.value })} className="field-input text-ink-700 col-span-2" required>
-              <option value="">— Pilih Siswa —</option>
-              {students.map((s) => (
-                <option key={s.id} value={s.id}>{s.user?.name} · {s.class_room?.name || 'Tanpa kelas'}</option>
-              ))}
-            </select>
+            <div className="col-span-2">
+              <StudentSearchSelect students={students} value={form.student_id} onChange={(v) => setForm({ ...form, student_id: v })} />
+            </div>
             <select value={form.dudi_id} onChange={(e) => setForm({ ...form, dudi_id: e.target.value })} className="field-input text-ink-700" required>
               <option value="">— Pilih IDUKA —</option>
               {dudiList.map((d) => (

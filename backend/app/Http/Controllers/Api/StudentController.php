@@ -23,18 +23,27 @@ class StudentController extends Controller
      * Default cuma siswa aktif (dipakai hampir semua fitur: absensi, dropdown,
      * daftar Master Data > Siswa, dst). Kirim ?status=lulus untuk menu Alumni,
      * atau ?status=semua kalau perlu keduanya sekaligus.
+     * Diurutkan kelas dulu (abjad), baru nama siswa (abjad) — sama seperti
+     * pola di AttendanceController::todayStatus()/report() — supaya daftar
+     * lintas kelas rapi, bukan ikut urutan id/input.
      */
     public function index(Request $request)
     {
         $query = Student::with(['user', 'classRoom']);
         $status = $request->query('status', 'aktif');
         if ($status !== 'semua') {
-            $query->where('status', $status);
+            $query->where('students.status', $status);
         }
         if ($request->class_room_id) {
-            $query->where('class_room_id', $request->class_room_id);
+            $query->where('students.class_room_id', $request->class_room_id);
         }
-        return $query->get();
+        return $query
+            ->join('users', 'users.id', '=', 'students.user_id')
+            ->leftJoin('class_rooms', 'class_rooms.id', '=', 'students.class_room_id')
+            ->orderBy('class_rooms.name')
+            ->orderBy('users.name')
+            ->select('students.*')
+            ->get();
     }
 
     public function store(Request $request)

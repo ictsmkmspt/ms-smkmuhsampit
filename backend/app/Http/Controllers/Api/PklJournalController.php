@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\PklJournal;
 use App\Models\PklPlacement;
+use App\Models\TahunAjaran;
 use Illuminate\Http\Request;
 
 class PklJournalController extends Controller
@@ -161,6 +162,37 @@ class PklJournalController extends Controller
         return PklJournal::with('catatanBy')
             ->where('pkl_placement_id', $pklPlacement->id)
             ->orderByDesc('date')->get();
+    }
+
+    /**
+     * Jurnal kegiatan LINTAS penempatan — dipakai Laporan PKL > Kegiatan
+     * Siswa > Jurnal Kegiatan (admin/waka kurikulum). Bisa disaring per
+     * IDUKA (dudi_id) & status penempatan, default cuma tahun ajaran aktif
+     * seperti laporan PKL lainnya.
+     */
+    public function report(Request $request)
+    {
+        $data = $request->validate([
+            'dudi_id' => 'nullable|exists:dudis,id',
+            'status' => 'nullable|in:aktif,selesai',
+            'tahun_ajaran_id' => 'nullable|exists:tahun_ajarans,id',
+        ]);
+
+        $tahunAjaranId = $data['tahun_ajaran_id'] ?? TahunAjaran::aktifId();
+
+        $placementQuery = PklPlacement::where('tahun_ajaran_id', $tahunAjaranId);
+        if (!empty($data['dudi_id'])) {
+            $placementQuery->where('dudi_id', $data['dudi_id']);
+        }
+        if (!empty($data['status'])) {
+            $placementQuery->where('status', $data['status']);
+        }
+        $placementIds = $placementQuery->pluck('id');
+
+        return PklJournal::with(['student.user', 'student.classRoom', 'placement.dudi', 'placement.guruPembimbing.user', 'catatanBy'])
+            ->whereIn('pkl_placement_id', $placementIds)
+            ->orderByDesc('date')
+            ->get();
     }
 
     /**

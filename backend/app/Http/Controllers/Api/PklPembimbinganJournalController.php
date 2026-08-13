@@ -11,8 +11,10 @@ class PklPembimbinganJournalController extends Controller
     /**
      * Daftar catatan kunjungan/bimbingan — otomatis dibatasi sesuai siapa yang
      * login: guru cuma lihat catatannya sendiri, DUDI cuma lihat catatan yang
-     * ditujukan ke tempatnya, admin lihat semua. Bisa disaring lebih lanjut
-     * dengan ?dudi_id= atau ?only_pending=1 (yang belum diverifikasi saja).
+     * ditujukan ke tempatnya, admin & waka_kurikulum lihat semua (dipakai
+     * juga oleh Laporan PKL > Monitoring Guru). Bisa disaring lebih lanjut
+     * dengan ?dudi_id=, ?only_pending=1 (yang belum diverifikasi saja), atau
+     * ?teacher_id= (khusus admin/waka_kurikulum, buat pilih 1 guru pendamping).
      */
     public function index(Request $request)
     {
@@ -27,7 +29,7 @@ class PklPembimbinganJournalController extends Controller
             $dudi = $user->dudi;
             if (!$dudi) return response()->json([]);
             $query->where('dudi_id', $dudi->id);
-        } elseif ($user->role !== 'admin') {
+        } elseif (!in_array($user->role, ['admin', 'waka_kurikulum'])) {
             return response()->json(['message' => 'Anda tidak berwenang mengakses data ini.'], 403);
         }
 
@@ -36,6 +38,9 @@ class PklPembimbinganJournalController extends Controller
         }
         if ($request->boolean('only_pending')) {
             $query->whereNull('verified_at');
+        }
+        if ($request->teacher_id && in_array($user->role, ['admin', 'waka_kurikulum'])) {
+            $query->where('teacher_id', $request->teacher_id);
         }
 
         return $query->orderByDesc('date')->get();

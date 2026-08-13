@@ -6,6 +6,7 @@ import NilaiAkademikReportTab from './NilaiAkademikReportTab';
 import TahsinReportTab from './TahsinReportTab';
 import TahfidzReportTab from './TahfidzReportTab';
 import TadarusReportTab from './TadarusReportTab';
+import PklReportTab from './PklReportTab';
 
 // Sub-menu "Laporan" — kumpulan rekap yang sebelumnya tersebar (Rekap
 // Absensi jadi tab sendiri, Rekap Pelanggaran/Prestasi/BK nyempil di
@@ -22,6 +23,7 @@ export const LAPORAN_SUBMENU = [
   { key: 'prestasi', label: 'Rekap Prestasi', component: AchievementReportTab, restrictTo: ['waka_kesiswaan'] },
   { key: 'bk', label: 'Rekap BK', component: RekapBkTab, restrictTo: ['waka_kesiswaan'] },
   { key: 'nilai-akademik', label: 'Nilai Akademik', component: NilaiAkademikReportTab, restrictTo: ['waka_kurikulum'] },
+  { key: 'pkl', label: 'PKL', component: PklReportTab, restrictTo: ['waka_kurikulum'] },
   { key: 'tahsin', label: 'Tahsin', component: TahsinReportTab, restrictTo: ['waka_kesiswaan'] },
   { key: 'tahfidz', label: 'Tahfidz', component: TahfidzReportTab, restrictTo: ['waka_kesiswaan'] },
   { key: 'tadarus', label: 'Tadarus', component: TadarusReportTab, restrictTo: ['waka_kesiswaan'] },

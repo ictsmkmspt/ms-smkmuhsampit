@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\PklAttendance;
 use App\Models\PklPlacement;
+use App\Models\TahunAjaran;
 use Illuminate\Http\Request;
 
 class PklAttendanceController extends Controller
@@ -192,6 +193,52 @@ class PklAttendanceController extends Controller
 
         $label = $data['status'] === 'izin' ? 'Izin' : 'Sakit';
         return response()->json(['message' => "Pengajuan {$label} berhasil dikirim.", 'absensi' => $absensi]);
+    }
+
+    /**
+     * Rekap jumlah hadir/izin/sakit/alpa per penempatan PKL — dipakai
+     * Laporan PKL > Kegiatan Siswa > Absensi Kegiatan (admin/waka
+     * kurikulum). Bisa disaring per IDUKA (dudi_id) & status penempatan,
+     * default cuma tahun ajaran aktif seperti PklPlacementController::index().
+     */
+    public function report(Request $request)
+    {
+        $data = $request->validate([
+            'dudi_id' => 'nullable|exists:dudis,id',
+            'status' => 'nullable|in:aktif,selesai',
+            'tahun_ajaran_id' => 'nullable|exists:tahun_ajarans,id',
+        ]);
+
+        $tahunAjaranId = $data['tahun_ajaran_id'] ?? TahunAjaran::aktifId();
+
+        $query = PklPlacement::with(['student.user', 'student.classRoom', 'dudi', 'guruPembimbing.user'])
+            ->where('tahun_ajaran_id', $tahunAjaranId);
+
+        if (!empty($data['dudi_id'])) {
+            $query->where('dudi_id', $data['dudi_id']);
+        }
+        if (!empty($data['status'])) {
+            $query->where('status', $data['status']);
+        }
+
+        $placements = $query->orderBy('tanggal_mulai')->get();
+
+        $rekapPerPenempatan = PklAttendance::whereIn('pkl_placement_id', $placements->pluck('id'))
+            ->selectRaw('pkl_placement_id, status, COUNT(*) as jumlah')
+            ->groupBy('pkl_placement_id', 'status')
+            ->get()
+            ->groupBy('pkl_placement_id');
+
+        $hasil = $placements->map(function ($p) use ($rekapPerPenempatan) {
+            $rekap = ['hadir' => 0, 'izin' => 0, 'sakit' => 0, 'alpa' => 0];
+            foreach ($rekapPerPenempatan->get($p->id, collect()) as $row) {
+                $rekap[$row->status] = $row->jumlah;
+            }
+            $p->setAttribute('rekap_absensi', $rekap);
+            return $p;
+        });
+
+        return response()->json($hasil);
     }
 
     /**

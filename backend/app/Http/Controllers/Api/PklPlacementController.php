@@ -11,21 +11,48 @@ use Illuminate\Http\Request;
 class PklPlacementController extends Controller
 {
     /**
-     * Semua penempatan PKL (admin), dengan filter opsional by status.
+     * Semua penempatan PKL (admin), dengan filter opsional by status &
+     * IDUKA (dudi_id) — dudi_id dipakai Laporan PKL > Kegiatan Siswa untuk
+     * menyortir per penempatan IDUKA. `penilaian` diikutkan biar Laporan
+     * bisa langsung tampilkan nilai_akhir tanpa request tambahan.
      * Default cuma tahun ajaran yang sedang aktif — kirim ?tahun_ajaran_id= untuk lihat
      * tahun ajaran lain, atau ?semua_tahun=1 untuk lihat semua tahun ajaran sekaligus.
      */
     public function index(Request $request)
     {
-        $query = PklPlacement::with(['student.user', 'student.classRoom', 'dudi', 'guruPembimbing.user']);
+        $query = PklPlacement::with(['student.user', 'student.classRoom', 'dudi', 'guruPembimbing.user', 'penilaian']);
         if ($request->status) {
             $query->where('status', $request->status);
+        }
+        if ($request->dudi_id) {
+            $query->where('dudi_id', $request->dudi_id);
         }
         if (!$request->boolean('semua_tahun')) {
             $tahunAjaranId = $request->filled('tahun_ajaran_id') ? $request->tahun_ajaran_id : TahunAjaran::aktifId();
             $query->where('tahun_ajaran_id', $tahunAjaranId);
         }
         return $query->orderByDesc('tanggal_mulai')->get();
+    }
+
+    /**
+     * Daftar guru yang SEDANG ditugaskan sebagai pembimbing PKL (unik, cuma
+     * guru yang punya minimal 1 penempatan sebagai guru_pembimbing) — dipakai
+     * dropdown filter Laporan PKL > Monitoring Guru, supaya langsung berisi
+     * guru yang relevan, bukan semua guru sekolah. Default cuma tahun ajaran
+     * aktif, sama seperti index().
+     */
+    public function guruPembimbing(Request $request)
+    {
+        $tahunAjaranId = $request->filled('tahun_ajaran_id') ? $request->tahun_ajaran_id : TahunAjaran::aktifId();
+
+        $teacherIds = PklPlacement::where('tahun_ajaran_id', $tahunAjaranId)
+            ->whereNotNull('guru_pembimbing_id')
+            ->distinct()
+            ->pluck('guru_pembimbing_id');
+
+        return Teacher::with('user')->whereIn('id', $teacherIds)->get()
+            ->sortBy(fn ($t) => $t->user?->name)
+            ->values();
     }
 
     /**

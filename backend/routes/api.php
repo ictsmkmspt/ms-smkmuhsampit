@@ -331,6 +331,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/pkl-placements', [PklPlacementController::class, 'index']);
     });
 
+    // Dipakai Laporan PKL > Monitoring Guru (admin/Waka Kurikulum saja).
+    // WAJIB didaftarkan sebelum GET /pkl-placements/{pklPlacement} di bawah
+    // — kalau tidak, "guru-pembimbing" akan ketangkap sebagai id placement.
+    Route::middleware('role:admin,waka_kurikulum')->group(function () {
+        Route::get('/pkl-placements/guru-pembimbing', [PklPlacementController::class, 'guruPembimbing']);
+    });
+
     // Daftar IDUKA — Waka Kurikulum cuma boleh baca (dipakai buat pilih
     // IDUKA di form Penempatan PKL — tulisnya cuma admin & Waka Humas,
     // lihat grup di atas).
@@ -449,6 +456,19 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/pkl-attendances/{pklAttendance}', [PklAttendanceController::class, 'hapus']);
         Route::get('/pkl-placements/{pklPlacement}/jurnal', [PklJournalController::class, 'riwayatPenempatan']);
         Route::get('/pkl-pembimbingan', [PklPembimbinganJournalController::class, 'index']);
+    });
+
+    // Laporan PKL (admin/Waka Kurikulum) — waka_kurikulum ditambahkan di grup
+    // baru ini (bukan menimpa grup role:admin,guru,dudi di atas) supaya guru
+    // & DUDI tetap bisa baca jurnal bimbingannya sendiri seperti biasa lewat
+    // route yang sama. rekap absensi PKL cuma butuh baca, jadi rute baru.
+    Route::middleware('role:admin,guru,dudi,waka_kurikulum')->group(function () {
+        Route::get('/pkl-pembimbingan', [PklPembimbinganJournalController::class, 'index']);
+    });
+
+    Route::middleware('role:admin,waka_kurikulum')->group(function () {
+        Route::get('/pkl-attendances/report', [PklAttendanceController::class, 'report']);
+        Route::get('/pkl-jurnal/report', [PklJournalController::class, 'report']);
     });
 
     Route::middleware('role:admin,dudi')->group(function () {
