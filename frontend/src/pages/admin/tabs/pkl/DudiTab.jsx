@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Plus, Trash2, Save, Building2, MapPin, KeyRound } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { Plus, Trash2, Save, Building2, MapPin, KeyRound, Download, Upload } from 'lucide-react';
 import api from '../../../../api/axios';
 import TruncateText from '../../../../components/TruncateText';
 import { useAuth } from '../../../../context/AuthContext';
@@ -27,6 +27,10 @@ export default function DudiTab() {
   const [editData, setEditData] = useState({});
   const [saving, setSaving] = useState(false);
   const [locatingEdit, setLocatingEdit] = useState(false);
+
+  const [importing, setImporting] = useState(false);
+  const [importResult, setImportResult] = useState(null);
+  const fileInputRef = useRef(null);
 
   const load = () => api.get('/dudi').then((res) => setList(res.data));
   useEffect(() => { load(); }, []);
@@ -113,6 +117,47 @@ export default function DudiTab() {
     }
   };
 
+  const handleDownloadTemplate = async () => {
+    const res = await api.get('/dudi/import/template', { responseType: 'blob' });
+    const url = window.URL.createObjectURL(new Blob([res.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', 'template_import_iduka.xlsx');
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  };
+
+  const handleImportClick = () => fileInputRef.current?.click();
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setImporting(true);
+    setImportResult(null);
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const res = await api.post('/dudi/import', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      setImportResult(res.data);
+      load();
+    } catch (err) {
+      setImportResult({
+        message: err.response?.data?.message || 'Gagal mengimpor data. Pastikan format file sesuai template.',
+        gagal: [],
+      });
+    } finally {
+      setImporting(false);
+      e.target.value = '';
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="surface-card p-4 border-l-4 border-l-brand-400 flex gap-2">
@@ -121,6 +166,62 @@ export default function DudiTab() {
           IDUKA (Industri, Dunia Usaha, dan Dunia Kerja) = perusahaan/instansi tempat siswa PKL. Setiap IDUKA punya akun login sendiri untuk memantau kehadiran dan memverifikasi absensi siswa bimbingannya. Lokasi &amp; radius dipakai untuk memvalidasi absen masuk/pulang siswa lewat GPS.
         </p>
       </div>
+
+      {canEdit && (
+        <div className="surface-card p-5 flex flex-wrap items-center gap-3">
+          <h2 className="font-display font-semibold text-ink-900 mr-auto">Import Data IDUKA dari Excel</h2>
+          <button
+            onClick={handleDownloadTemplate}
+            className="flex items-center gap-1.5 text-sm font-medium text-ink-700 bg-mist-50 hover:bg-mist-100 border border-line-200 rounded-xl px-4 py-2 transition"
+          >
+            <Download className="w-4 h-4" /> Download Template
+          </button>
+          <button
+            onClick={handleImportClick}
+            disabled={importing}
+            className="flex items-center gap-1.5 text-sm font-medium text-white bg-brand-600 hover:bg-brand-700 disabled:opacity-50 rounded-xl px-4 py-2 transition"
+          >
+            <Upload className="w-4 h-4" /> {importing ? 'Mengimpor...' : 'Import Excel'}
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".xlsx,.xls,.csv"
+            onChange={handleFileChange}
+            className="hidden"
+          />
+        </div>
+      )}
+
+      {importResult && (
+        <div className="surface-card p-5">
+          <p className={`text-sm font-medium ${importResult.gagal?.length > 0 ? 'text-honey-700' : 'text-brand-600'}`}>
+            {importResult.message}
+          </p>
+          {importResult.gagal?.length > 0 && (
+            <div className="table-scroll">
+            <table className="w-full text-sm mt-3">
+              <thead>
+                <tr className="text-left text-ink-500 border-b border-line-200">
+                  <th className="pb-2 font-medium whitespace-nowrap px-2">Baris</th>
+                  <th className="font-medium whitespace-nowrap px-2">Kolom</th>
+                  <th className="font-medium whitespace-nowrap px-2">Alasan Gagal</th>
+                </tr>
+              </thead>
+              <tbody>
+                {importResult.gagal.map((g, i) => (
+                  <tr key={i} className="border-t border-line-200">
+                    <td className="py-2 text-ink-900 whitespace-nowrap px-2">{g.baris}</td>
+                    <td className="text-ink-700 whitespace-nowrap px-2">{g.kolom}</td>
+                    <td className="text-honey-700 whitespace-nowrap px-2"><TruncateText text={g.alasan} maxWidth="16rem" /></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            </div>
+          )}
+        </div>
+      )}
 
       {canEdit && (
         <form onSubmit={handleAdd} className="surface-card p-5">

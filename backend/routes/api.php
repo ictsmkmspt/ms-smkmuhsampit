@@ -189,6 +189,8 @@ Route::middleware('auth:sanctum')->group(function () {
     // didaftarkan di grup shared read-only di bawah). Verifikasi pendaftar
     // PPDB dipindah ke grup "Pengembangan" (admin-only) di bawah.
     Route::middleware('role:admin,waka_humas')->group(function () {
+        Route::get('/dudi/import/template', [DudiController::class, 'downloadTemplate']);
+        Route::post('/dudi/import', [DudiController::class, 'import']);
         Route::apiResource('dudi', DudiController::class)->except(['show', 'index']);
         Route::put('/dudi/{dudi}/reset-password', [DudiController::class, 'resetPassword']);
     });

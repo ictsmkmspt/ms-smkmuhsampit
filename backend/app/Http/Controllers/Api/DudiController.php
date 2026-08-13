@@ -2,14 +2,17 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Exports\DudiTemplateExport;
 use App\Http\Controllers\Api\Concerns\ResetsPasswordToDefault;
 use App\Http\Controllers\Controller;
+use App\Imports\DudiImport;
 use App\Models\Dudi;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use Maatwebsite\Excel\Facades\Excel;
 
 class DudiController extends Controller
 {
@@ -64,6 +67,47 @@ class DudiController extends Controller
 
             return response()->json($dudi->load('user'), 201);
         });
+    }
+
+    /**
+     * Download file Excel (.xlsx) kosong berisi contoh format kolom untuk import
+     * akun IDUKA. Isi datanya, lalu upload lewat fitur Import.
+     */
+    public function downloadTemplate()
+    {
+        return Excel::download(new DudiTemplateExport, 'template_import_iduka.xlsx');
+    }
+
+    /**
+     * Import banyak akun IDUKA sekaligus dari file Excel (.xlsx) yang diupload.
+     * Format kolom harus sesuai template (nama_perusahaan, alamat,
+     * penanggung_jawab, telepon, latitude, longitude, radius_meter). Kolom
+     * "password" opsional, sama seperti import siswa. Baris yang gagal tidak
+     * menghentikan proses, cukup dilaporkan di akhir.
+     */
+    public function import(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:xlsx,xls,csv',
+        ]);
+
+        $import = new DudiImport;
+        Excel::import($import, $request->file('file'));
+
+        $gagal = [];
+        foreach ($import->failures() as $failure) {
+            $gagal[] = [
+                'baris'  => $failure->row(),
+                'kolom'  => $failure->attribute(),
+                'alasan' => implode(' ', $failure->errors()),
+            ];
+        }
+
+        return response()->json([
+            'message'  => $import->successCount . ' IDUKA berhasil diimport, ' . count($gagal) . ' baris gagal.',
+            'berhasil' => $import->successCount,
+            'gagal'    => $gagal,
+        ]);
     }
 
     public function update(Request $request, Dudi $dudi)
