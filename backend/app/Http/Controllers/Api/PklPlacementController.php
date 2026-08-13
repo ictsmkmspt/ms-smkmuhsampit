@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\PklPlacement;
+use App\Models\Student;
 use App\Models\Teacher;
 use App\Models\TahunAjaran;
 use Illuminate\Http\Request;
@@ -104,6 +105,59 @@ class PklPlacementController extends Controller
             $placement->load(['student.user', 'dudi', 'guruPembimbing.user']),
             201
         );
+    }
+
+    /**
+     * Buat penempatan PKL untuk BANYAK siswa sekaligus (1 IDUKA + 1 guru
+     * pembimbing + 1 jadwal untuk semuanya) — dipakai roster "Buat
+     * Penempatan PKL" di layar admin: pilih kelas, centang siswa, isi IDUKA
+     * & jadwal sekali. Siswa yang sudah punya penempatan aktif DILEWATI
+     * (bukan menggagalkan seluruh batch), sama seperti pola
+     * TagihanLainController::storeBulk() — supaya 1 siswa bermasalah tidak
+     * menghentikan siswa lain dalam batch yang sama.
+     */
+    public function storeBulk(Request $request)
+    {
+        $data = $request->validate([
+            'student_ids'          => 'required|array|min:1',
+            'student_ids.*'        => 'exists:students,id',
+            'dudi_id'              => 'required|exists:dudis,id',
+            'guru_pembimbing_id'   => 'nullable|exists:teachers,id',
+            'tanggal_mulai'        => 'required|date',
+            'tanggal_selesai'      => 'required|date|after_or_equal:tanggal_mulai',
+        ]);
+
+        $studentIdsSudahAktif = PklPlacement::whereIn('student_id', $data['student_ids'])
+            ->where('status', 'aktif')
+            ->pluck('student_id');
+
+        $studentIdsBaru = collect($data['student_ids'])->diff($studentIdsSudahAktif)->values();
+
+        foreach ($studentIdsBaru as $studentId) {
+            PklPlacement::create([
+                'student_id'         => $studentId,
+                'dudi_id'            => $data['dudi_id'],
+                'guru_pembimbing_id' => $data['guru_pembimbing_id'] ?? null,
+                'tanggal_mulai'      => $data['tanggal_mulai'],
+                'tanggal_selesai'    => $data['tanggal_selesai'],
+                'status'             => 'aktif',
+            ]);
+        }
+
+        $namaDilewati = $studentIdsSudahAktif->isEmpty() ? [] : Student::with('user')
+            ->whereIn('id', $studentIdsSudahAktif)
+            ->get()
+            ->map(fn ($s) => $s->user?->name ?? "Siswa #{$s->id}")
+            ->values();
+
+        $dibuat = $studentIdsBaru->count();
+        $dilewati = count($namaDilewati);
+
+        return response()->json([
+            'message'  => "{$dibuat} penempatan PKL berhasil dibuat" . ($dilewati ? ", {$dilewati} siswa dilewati (sudah punya penempatan aktif)." : '.'),
+            'dibuat'   => $dibuat,
+            'dilewati' => $namaDilewati,
+        ], 201);
     }
 
     public function update(Request $request, PklPlacement $pklPlacement)

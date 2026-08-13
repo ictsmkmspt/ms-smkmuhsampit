@@ -201,6 +201,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('role:admin,waka_kurikulum')->group(function () {
         Route::post('/pkl-placements/tutup-semua-aktif', [PklPlacementController::class, 'tutupSemuaAktif']);
         Route::post('/pkl-placements/aktifkan-semua-selesai', [PklPlacementController::class, 'aktifkanSemuaSelesai']);
+        Route::post('/pkl-placements/bulk', [PklPlacementController::class, 'storeBulk']);
         Route::apiResource('pkl-placements', PklPlacementController::class)->except(['show', 'index']);
     });
 
