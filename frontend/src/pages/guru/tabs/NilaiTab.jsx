@@ -179,7 +179,11 @@ export default function NilaiTab() {
       map.get(key).items.push(row);
     });
     return [...map.values()]
-      .map((g) => ({ ...g, rataRata: (g.items.reduce((sum, s) => sum + s.skor, 0) / g.items.length).toFixed(1) }))
+      .map((g) => ({
+        ...g,
+        rataRata: (g.items.reduce((sum, s) => sum + s.skor, 0) / g.items.length).toFixed(1),
+        items: [...g.items].sort((a, b) => (a.student?.user?.name || '').localeCompare(b.student?.user?.name || '')),
+      }))
       .sort((a, b) => b.tanggal.localeCompare(a.tanggal));
   }, [scores]);
 
