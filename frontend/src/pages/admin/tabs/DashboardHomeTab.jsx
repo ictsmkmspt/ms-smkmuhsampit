@@ -337,6 +337,14 @@ const KURIKULUM_SUBMENU_DATAR = KURIKULUM_SUBMENU.flatMap((item) =>
   item.children ? item.children.map((c) => ({ key: c.key, label: c.label })) : [{ key: item.key, label: item.label }]
 );
 
+// "Laporan" juga punya 1 grup bertingkat ("PKL" -> Kegiatan Siswa/Monitoring
+// Guru) — diratakan dengan pola yang sama. Grup tanpa diratakan tidak bisa
+// dinavigasi langsung (tidak punya komponen sendiri), makanya WAJIB diratakan
+// di sini, bukan dikirim mentah ke MENU_UTAMA.
+const LAPORAN_SUBMENU_DATAR = LAPORAN_SUBMENU.flatMap((item) =>
+  item.children ? item.children.map((c) => ({ key: c.key, label: c.label })) : [{ key: item.key, label: item.label }]
+);
+
 // Akses cepat ke semua menu utama — cuma buat Super Admin (role lain sudah
 // punya dashboard ringkas sendiri di atas, dan sebagian besar menu di sini
 // memang di luar bidangnya). `key` mengikuti TABS di AdminDashboard.jsx.
@@ -352,7 +360,7 @@ const MENU_UTAMA = [
   { key: 'ppdb', label: 'PPDB', desc: 'Formulir & pengaturan pendaftaran online', icon: UserPlus, color: '#0F766E', submenu: PPDB_SUBMENU },
   { key: 'sarpras-staf', label: 'Teknisi & Kepala Bengkel', desc: 'Penanggung jawab ruang', icon: HardHat, color: '#6B7280' },
   { key: 'sarpras', label: 'Sarana & Prasarana', desc: 'Ruang, aset & pemeliharaan', icon: Wrench, color: '#F2B705', submenu: SARPRAS_SUBMENU },
-  { key: 'laporan', label: 'Laporan', desc: 'Absensi, poin, BK & nilai', icon: ClipboardCheck, color: '#2a78d6', submenu: LAPORAN_SUBMENU },
+  { key: 'laporan', label: 'Laporan', desc: 'Absensi, poin, BK & nilai', icon: ClipboardCheck, color: '#2a78d6', submenu: LAPORAN_SUBMENU_DATAR },
   { key: 'pengaturan', label: 'Pengaturan', desc: 'Profil sekolah & cadangan data', icon: Settings, color: '#7C5CBF', submenu: SETTINGS_SUBMENU },
 ];
 
