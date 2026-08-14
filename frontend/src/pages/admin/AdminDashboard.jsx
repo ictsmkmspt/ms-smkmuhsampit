@@ -3,7 +3,7 @@ import {
   LogOut, Database, ClipboardList, ClipboardCheck, Settings, ChevronDown, ChevronLeft, ChevronRight, Menu, X,
   Users, GraduationCap, School, UserCog, Briefcase, LayoutDashboard, Building2,
   Clock, AlertOctagon, Trophy, CalendarDays, Wallet, Pencil, Image, ShieldCheck,
-  AlertTriangle, BookOpen, BookMarked, ScrollText, CalendarClock, CalendarRange, Warehouse, Boxes, Wrench, PackagePlus, UserPlus, DatabaseBackup, FlaskConical, Sparkles, HardHat, HeartHandshake, FileBarChart,
+  AlertTriangle, BookOpen, BookMarked, ScrollText, CalendarClock, CalendarRange, Warehouse, Boxes, Wrench, UserPlus, Power, DatabaseBackup, Sparkles, HardHat, HeartHandshake, FileBarChart,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useSchoolProfile } from '../../context/SchoolProfileContext';
@@ -12,7 +12,7 @@ import AlumniMenuTab, { ALUMNI_SUBMENU } from './tabs/AlumniMenuTab';
 import PoinTab, { POIN_SUBMENU } from './tabs/PoinTab';
 import SettingsTab, { SETTINGS_SUBMENU } from './tabs/SettingsTab';
 import PklTab, { PKL_SUBMENU } from './tabs/PklTab';
-import PengembanganTab, { PENGEMBANGAN_SUBMENU } from './tabs/PengembanganTab';
+import PpdbTab, { PPDB_SUBMENU } from './tabs/PpdbTab';
 import KurikulumTab, { KURIKULUM_SUBMENU } from './tabs/KurikulumTab';
 import SarprasTab, { SARPRAS_SUBMENU } from './tabs/SarprasTab';
 import RoomStaffTab from './sarpras/RoomStaffTab';
@@ -32,13 +32,13 @@ const ROLE_LABEL = {
 
 const MASTER_ICONS = { siswa: Users, guru: GraduationCap, kelas: School, wali: UserCog, tu: Wallet, bk: HeartHandshake, admin: ShieldCheck };
 const ALUMNI_ICONS = { siswa: GraduationCap, wali: UserCog };
-const SETTINGS_ICONS = { sekolah: Image, jam: Clock, backup: DatabaseBackup };
+const SETTINGS_ICONS = { sekolah: Image, 'tahun-ajaran': CalendarRange, jam: Clock, backup: DatabaseBackup };
 const PKL_ICONS = { dudi: Building2, penempatan: ClipboardList, monitoring: CalendarClock };
 const LAPORAN_ICONS = { absensi: ClipboardCheck, pelanggaran: AlertOctagon, prestasi: Trophy, bk: HeartHandshake, 'nilai-akademik': ClipboardList, pkl: Briefcase, tahsin: BookOpen, tahfidz: BookMarked, tadarus: ScrollText };
 const POIN_ICONS = { 'jenis-pelanggaran': AlertOctagon, 'jenis-prestasi': Trophy, sanksi: AlertTriangle };
 const KURIKULUM_ICONS = { kalender: CalendarRange, akademik: CalendarRange, libur: CalendarDays, mapel: BookOpen, tugas: UserCog, jadwal: CalendarClock, template: Sparkles };
 const SARPRAS_ICONS = { ruang: Warehouse, aset: Boxes, pemeliharaan: Wrench };
-const PENGEMBANGAN_ICONS = { ppdb: UserPlus, pengadaan: PackagePlus };
+const PPDB_ICONS = { formulir: UserPlus, pengaturan: Power };
 
 export default function AdminDashboard() {
   return (
@@ -73,11 +73,11 @@ function AdminDashboardContent() {
     { key: 'poin',       label: 'Poin',        icon: ClipboardList,   hasDropdown: true, submenu: poinSubmenu, subIcons: POIN_ICONS, roles: ['waka_kesiswaan'] },
     { key: 'pkl',        label: 'PKL',         icon: Briefcase,       hasDropdown: true, submenu: pklSubmenu, subIcons: PKL_ICONS, roles: ['waka_humas', 'waka_kurikulum'] },
     { key: 'kurikulum',  label: 'Pembelajaran', icon: BookOpen,        hasDropdown: true, submenu: KURIKULUM_SUBMENU, subIcons: KURIKULUM_ICONS, roles: ['waka_kurikulum'] },
+    { key: 'ppdb',       label: 'PPDB',        icon: UserPlus,        hasDropdown: true, submenu: PPDB_SUBMENU, subIcons: PPDB_ICONS, roles: [] },
     { key: 'sarpras-staf', label: 'Teknisi & Kepala Bengkel', icon: HardHat, component: RoomStaffTab, roles: ['waka_sarpras'] },
     { key: 'sarpras',    label: 'Sarana dan Prasarana', icon: Wrench, hasDropdown: true, submenu: SARPRAS_SUBMENU, subIcons: SARPRAS_ICONS, roles: ['waka_sarpras'] },
     { key: 'laporan',    label: 'Laporan',     icon: FileBarChart,   hasDropdown: true, submenu: laporanSubmenu, subIcons: LAPORAN_ICONS, roles: ['waka_kesiswaan', 'waka_kurikulum'] },
     { key: 'pengaturan', label: 'Pengaturan',  icon: Settings,        hasDropdown: true, submenu: settingsSubmenu, subIcons: SETTINGS_ICONS, roles: [] },
-    { key: 'pengembangan', label: 'Pengembangan', icon: FlaskConical, hasDropdown: true, submenu: PENGEMBANGAN_SUBMENU, subIcons: PENGEMBANGAN_ICONS, roles: [] },
   ].filter((t) => bisaLihat(t.roles));
   // Default sub Master Data beda per peran karena "guru"/"tu" disembunyikan
   // dari Kesiswaan (dan sebaliknya siswa/kelas/wali/alumni cuma milik
@@ -87,7 +87,7 @@ function AdminDashboardContent() {
   const [activeAlumniSub, setActiveAlumniSub] = useState('siswa');
   const [activeSettingsSub, setActiveSettingsSub] = useState('jam');
   const [activePklSub, setActivePklSub] = useState('dudi');
-  const [activePengembanganSub, setActivePengembanganSub] = useState('ppdb');
+  const [activePpdbSub, setActivePpdbSub] = useState('formulir');
   const [activePoinSub, setActivePoinSub] = useState('jenis-pelanggaran');
   // Default beda per peran — Waka Kurikulum cuma punya akses ke
   // "nilai-akademik" di menu Laporan ini, sub lain milik Kesiswaan.
@@ -112,7 +112,7 @@ function AdminDashboardContent() {
     if (key === 'alumni') return [activeAlumniSub, setActiveAlumniSub];
     if (key === 'pengaturan') return [activeSettingsSub, setActiveSettingsSub];
     if (key === 'pkl') return [activePklSub, setActivePklSub];
-    if (key === 'pengembangan') return [activePengembanganSub, setActivePengembanganSub];
+    if (key === 'ppdb') return [activePpdbSub, setActivePpdbSub];
     if (key === 'poin') return [activePoinSub, setActivePoinSub];
     if (key === 'laporan') return [activeLaporanSub, setActiveLaporanSub];
     if (key === 'kurikulum') return [activeKurikulumSub, setActiveKurikulumSub];
@@ -384,8 +384,8 @@ function AdminDashboardContent() {
             <SettingsTab activeSub={activeSettingsSub} />
           ) : activeTab === 'pkl' ? (
             <PklTab activeSub={activePklSub} />
-          ) : activeTab === 'pengembangan' ? (
-            <PengembanganTab activeSub={activePengembanganSub} />
+          ) : activeTab === 'ppdb' ? (
+            <PpdbTab activeSub={activePpdbSub} />
           ) : activeTab === 'laporan' ? (
             <LaporanTab activeSub={activeLaporanSub} />
           ) : activeTab === 'poin' ? (

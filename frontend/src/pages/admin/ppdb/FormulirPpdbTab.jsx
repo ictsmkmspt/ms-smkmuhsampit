@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Trash2, Power } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import api from '../../../api/axios';
 import TruncateText from '../../../components/TruncateText';
 
@@ -10,22 +10,9 @@ export default function FormulirPpdbTab() {
   const [pendaftar, setPendaftar] = useState([]);
   const [statusFilter, setStatusFilter] = useState('');
   const [savingId, setSavingId] = useState(null);
-  const [dibuka, setDibuka] = useState(true);
-  const [savingToggle, setSavingToggle] = useState(false);
 
   const load = (status) => api.get('/ppdb', { params: { status: status || undefined } }).then((res) => setPendaftar(res.data));
   useEffect(() => { load(statusFilter); }, [statusFilter]);
-  useEffect(() => { api.get('/ppdb/pengaturan').then((res) => setDibuka(res.data.dibuka)); }, []);
-
-  const handleToggle = async () => {
-    setSavingToggle(true);
-    try {
-      const res = await api.put('/ppdb/pengaturan', { dibuka: !dibuka });
-      setDibuka(res.data.dibuka);
-    } finally {
-      setSavingToggle(false);
-    }
-  };
 
   const handleUpdateStatus = async (p, status) => {
     setSavingId(p.id);
@@ -51,24 +38,12 @@ export default function FormulirPpdbTab() {
         </p>
       </div>
 
-      <div className="surface-card p-5 flex items-center justify-between flex-wrap gap-3">
-        <div className="flex items-center gap-3">
-          <label className="text-sm font-medium text-ink-700">Filter Status</label>
-          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="field-input text-ink-700 w-48">
-            <option value="">Semua</option>
-            {Object.entries(STATUS_LABEL).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
-          </select>
-        </div>
-        <button
-          onClick={handleToggle}
-          disabled={savingToggle}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition ${
-            dibuka ? 'bg-brand-50 text-brand-700 border border-brand-200 hover:bg-brand-100' : 'bg-honey-50 text-honey-700 border border-honey-200 hover:bg-honey-100'
-          }`}
-        >
-          <Power className="w-4 h-4" />
-          {savingToggle ? 'Menyimpan...' : dibuka ? 'Pendaftaran Online: Aktif' : 'Pendaftaran Online: Nonaktif'}
-        </button>
+      <div className="surface-card p-5 flex items-center gap-3">
+        <label className="text-sm font-medium text-ink-700">Filter Status</label>
+        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="field-input text-ink-700 w-48">
+          <option value="">Semua</option>
+          {Object.entries(STATUS_LABEL).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+        </select>
       </div>
 
       <div className="surface-card p-5">

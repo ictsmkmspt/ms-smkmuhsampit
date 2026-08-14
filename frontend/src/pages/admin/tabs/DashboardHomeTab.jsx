@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Users, GraduationCap, School, Building2, AlertTriangle, ChevronLeft, ChevronRight, ChevronDown, ArrowRight, Briefcase, ClipboardCheck, BookOpen, DoorOpen, Package, CheckCircle2, XCircle, ClipboardList, Wrench, Database, Settings, FlaskConical, HardHat } from 'lucide-react';
+import { Users, GraduationCap, School, Building2, AlertTriangle, ChevronLeft, ChevronRight, ChevronDown, ArrowRight, Briefcase, ClipboardCheck, BookOpen, DoorOpen, Package, CheckCircle2, XCircle, ClipboardList, Wrench, Database, Settings, UserPlus, HardHat } from 'lucide-react';
 import api from '../../../api/axios';
 import { useAuth } from '../../../context/AuthContext';
 import CategoryBarChart from '../../../components/CategoryBarChart';
@@ -13,7 +13,7 @@ import { PKL_SUBMENU } from './PklTab';
 import { KURIKULUM_SUBMENU } from './KurikulumTab';
 import { SARPRAS_SUBMENU } from './SarprasTab';
 import { SETTINGS_SUBMENU } from './SettingsTab';
-import { PENGEMBANGAN_SUBMENU } from './PengembanganTab';
+import { PPDB_SUBMENU } from './PpdbTab';
 
 // Langkah pengaturan awal Waka Kesiswaan, berurutan sesuai ketergantungan
 // datanya: Kelas harus ada dulu sebelum Siswa bisa dimasukkan, Siswa harus
@@ -349,11 +349,11 @@ const MENU_UTAMA = [
   { key: 'poin', label: 'Poin', desc: 'Jenis poin & sanksi bertingkat', icon: ClipboardList, color: '#B9504F', submenu: POIN_SUBMENU },
   { key: 'pkl', label: 'PKL', desc: 'IDUKA & penempatan siswa', icon: Briefcase, color: '#15803D', submenu: PKL_SUBMENU },
   { key: 'kurikulum', label: 'Pembelajaran', desc: 'Kalender, mapel & jadwal', icon: BookOpen, color: '#eb6834', submenu: KURIKULUM_SUBMENU_DATAR },
+  { key: 'ppdb', label: 'PPDB', desc: 'Formulir & pengaturan pendaftaran online', icon: UserPlus, color: '#0F766E', submenu: PPDB_SUBMENU },
   { key: 'sarpras-staf', label: 'Teknisi & Kepala Bengkel', desc: 'Penanggung jawab ruang', icon: HardHat, color: '#6B7280' },
   { key: 'sarpras', label: 'Sarana & Prasarana', desc: 'Ruang, aset & pemeliharaan', icon: Wrench, color: '#F2B705', submenu: SARPRAS_SUBMENU },
   { key: 'laporan', label: 'Laporan', desc: 'Absensi, poin, BK & nilai', icon: ClipboardCheck, color: '#2a78d6', submenu: LAPORAN_SUBMENU },
   { key: 'pengaturan', label: 'Pengaturan', desc: 'Profil sekolah & cadangan data', icon: Settings, color: '#7C5CBF', submenu: SETTINGS_SUBMENU },
-  { key: 'pengembangan', label: 'Pengembangan', desc: 'PPDB online & pengadaan', icon: FlaskConical, color: '#0F766E', submenu: PENGEMBANGAN_SUBMENU },
 ];
 
 function MenuUtama({ onNavigate }) {
