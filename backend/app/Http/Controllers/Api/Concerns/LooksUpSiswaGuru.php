@@ -22,9 +22,9 @@ trait LooksUpSiswaGuru
     private function cariSiswaGuruByKode(string $kode): ?array
     {
         // status='aktif' — siswa alumni/pindah TIDAK boleh ketemu cuma
-        // karena masih bawa kartu barcode lama.
+        // karena masih bawa kartu QR lama.
         $siswa = Student::with(['user', 'classRoom'])
-            ->where(fn ($q) => $q->where('barcode_code', $kode)->orWhere('nis', $kode))
+            ->where(fn ($q) => $q->where('qr_code', $kode)->orWhere('nis', $kode))
             ->where('status', 'aktif')
             ->first();
         if ($siswa) {
@@ -32,7 +32,7 @@ trait LooksUpSiswaGuru
         }
 
         $guru = Teacher::with('user')
-            ->where(fn ($q) => $q->where('barcode_code', $kode)->orWhere('nip', $kode))
+            ->where(fn ($q) => $q->where('qr_code', $kode)->orWhere('nip', $kode))
             ->first();
         if ($guru) {
             return ['tipe' => 'guru', 'model' => $guru];

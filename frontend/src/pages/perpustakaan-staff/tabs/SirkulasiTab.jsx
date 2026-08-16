@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { BookOpen, Undo2, Search, CheckCircle2 } from 'lucide-react';
-import BarcodeScanner from '../../../components/BarcodeScanner';
+import QrCodeScanner from '../../../components/QrCodeScanner';
 import api from '../../../api/axios';
 import { fmtDMY } from '../../../utils/date';
 
@@ -174,7 +174,7 @@ export default function SirkulasiTab() {
           <p className="text-sm font-semibold text-ink-900 mb-3">
             {step === 'scan-buku' ? 'Scan QR Buku' : 'Scan / Cari Peminjam (Siswa/Guru)'}
           </p>
-          <BarcodeScanner onDecode={handleDecode} />
+          <QrCodeScanner onDecode={handleDecode} />
           <div className="flex gap-2 mt-3">
             <input
               value={kodeManual} onChange={(e) => setKodeManual(e.target.value)}

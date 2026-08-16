@@ -3,7 +3,7 @@ import { Html5Qrcode } from 'html5-qrcode';
 import { CheckCircle2, AlertTriangle } from 'lucide-react';
 import api from '../api/axios';
 
-export default function BarcodeScanner({ onDecode }) {
+export default function QrCodeScanner({ onDecode }) {
   const [message, setMessage] = useState('');
   const [isError, setIsError] = useState(false);
   const scannerRef = useRef(null);
@@ -76,6 +76,16 @@ export default function BarcodeScanner({ onDecode }) {
   return (
     <div className="max-w-md mx-auto">
       <div className="relative rounded-2xl overflow-hidden bg-ink-900 aspect-square">
+        {/* html5-qrcode cuma memaksa LEBAR video lewat inline style, tinggi
+            dibiarkan ikut rasio asli kamera (jarang persegi) — akibatnya
+            kotak panduan scan-nya yang secara hitungan sebenarnya persegi
+            (qrbox: 250 → {`{width:250, height:250}`}) tampil persegi
+            panjang karena viewfinder-nya sendiri tidak persegi. Video
+            dipaksa penuhi kontainer persegi ini (object-fit: cover, tanpa
+            distorsi) supaya viewfinder-nya ikut persegi & kotak panduannya
+            benar-benar persegi di layar. !important perlu untuk menimpa
+            inline style width dari library-nya. */}
+        <style>{'#reader video { width: 100% !important; height: 100% !important; object-fit: cover !important; }'}</style>
         <div id="reader" className="w-full h-full" />
       </div>
 

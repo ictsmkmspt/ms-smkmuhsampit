@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\DB;
  * keputusan scope di plan). Peminjam bisa Siswa ATAU Guru (relasi
  * polimorfik peminjam_type/peminjam_id, morph map didaftarkan di
  * AppServiceProvider). Semua lookup pakai path segment (kode eksemplar
- * & barcode formatnya aman, tidak mengandung '/' seperti kode aset).
+ * & kode QR formatnya aman, tidak mengandung '/' seperti kode aset).
  */
 class PerpustakaanSirkulasiController extends Controller
 {
@@ -38,10 +38,10 @@ class PerpustakaanSirkulasiController extends Controller
     private function cariPeminjamByKode(string $kode): ?array
     {
         // status='aktif' — siswa alumni/pindah TIDAK boleh bisa pinjam
-        // cuma karena masih bawa kartu barcode lama, konsisten dengan
+        // cuma karena masih bawa kartu QR lama, konsisten dengan
         // cariPeminjamNama() yang sudah lebih dulu memfilter ini.
         $siswa = Student::with(['user', 'classRoom'])
-            ->where(fn ($q) => $q->where('barcode_code', $kode)->orWhere('nis', $kode))
+            ->where(fn ($q) => $q->where('qr_code', $kode)->orWhere('nis', $kode))
             ->where('status', 'aktif')
             ->first();
         if ($siswa) {
@@ -49,7 +49,7 @@ class PerpustakaanSirkulasiController extends Controller
         }
 
         $guru = Teacher::with('user')
-            ->where('barcode_code', $kode)->orWhere('nip', $kode)->first();
+            ->where('qr_code', $kode)->orWhere('nip', $kode)->first();
         if ($guru) {
             return ['tipe' => 'guru', 'model' => $guru];
         }
@@ -78,7 +78,7 @@ class PerpustakaanSirkulasiController extends Controller
     }
 
     /**
-     * Cari 1 peminjam persis (scan barcode ATAU ketik NIS/NIP manual) —
+     * Cari 1 peminjam persis (scan QR Code ATAU ketik NIS/NIP manual) —
      * beserta rekap ringkas biar pengurus lihat riwayatnya SEBELUM
      * konfirmasi pinjaman baru.
      */

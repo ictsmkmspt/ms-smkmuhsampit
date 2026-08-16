@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { ClipboardEdit, AlertTriangle } from 'lucide-react';
-import BarcodeScanner from '../../../../components/BarcodeScanner';
+import QrCodeScanner from '../../../../components/QrCodeScanner';
 import api from '../../../../api/axios';
 import TruncateText from '../../../../components/TruncateText';
 
@@ -48,7 +48,7 @@ export default function SholatZuhurSection() {
     });
   }, [selectedClass]);
 
-  // Dipanggil BarcodeScanner tiap kali kamera berhasil membaca QR siswa.
+  // Dipanggil QrCodeScanner tiap kali kamera berhasil membaca QR siswa.
   // Scan = otomatis "melaksanakan".
   const handleDecode = async (code) => {
     try {
@@ -88,7 +88,7 @@ export default function SholatZuhurSection() {
     <div>
       <p className="text-center text-sm text-ink-500 mb-4">Arahkan kamera ke QR siswa saat sholat Zuhur</p>
       <div className="max-w-md mx-auto">
-        <BarcodeScanner onDecode={handleDecode} />
+        <QrCodeScanner onDecode={handleDecode} />
       </div>
 
       <div className="max-w-2xl mx-auto mt-6 surface-card p-5">

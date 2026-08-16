@@ -26,7 +26,7 @@ class Asset extends Model
 
     /**
      * Total seluruh kondisi digabung — dipakai tampilan ringkas (mis.
-     * label QR/barcode) yang tidak perlu tahu rinciannya per kondisi.
+     * label QR Code) yang tidak perlu tahu rinciannya per kondisi.
      */
     protected function jumlah(): Attribute
     {

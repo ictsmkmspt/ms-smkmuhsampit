@@ -145,7 +145,7 @@ export default function StudentsTab() {
     const zip = new JSZip();
 
     for (const s of students) {
-      const dataUrl = await QRCode.toDataURL(s.barcode_code, {
+      const dataUrl = await QRCode.toDataURL(s.qr_code, {
         width: 400,
         margin: 2,
       });
@@ -326,7 +326,7 @@ export default function StudentsTab() {
                     <td className="text-ink-700 whitespace-nowrap px-2">{s.nis}</td>
                     <td className="text-ink-700 whitespace-nowrap px-2">{JK_LABEL[s.jenis_kelamin] || '-'}</td>
                     <td className="text-ink-700 whitespace-nowrap px-2">{s.class_room?.name || '-'}</td>
-                    <td className="font-mono text-xs text-brand-600 whitespace-nowrap px-2">{s.barcode_code}</td>
+                    <td className="font-mono text-xs text-brand-600 whitespace-nowrap px-2">{s.qr_code}</td>
                     <td className="text-right whitespace-nowrap px-2">
                       <div className="flex justify-end gap-2">
                         <button onClick={() => startEdit(s)} className="text-ink-400 hover:text-brand-600 text-xs border border-line-200 rounded-lg px-2 py-1">

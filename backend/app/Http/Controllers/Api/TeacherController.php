@@ -43,7 +43,7 @@ class TeacherController extends Controller
             return Teacher::create([
                 'user_id' => $user->id,
                 'nip' => $data['nip'],
-                'barcode_code' => 'GRU-' . strtoupper(Str::random(8)),
+                'qr_code' => 'GRU-' . strtoupper(Str::random(8)),
                 'jenis_kelamin' => $data['jenis_kelamin'] ?? null,
             ])->load('user');
         });

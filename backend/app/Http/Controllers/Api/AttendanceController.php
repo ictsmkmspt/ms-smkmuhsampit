@@ -44,7 +44,7 @@ class AttendanceController extends Controller
     {
         $request->validate(['code' => 'required|string']);
 
-        $student = Student::with('user')->where('barcode_code', $request->code)->first();
+        $student = Student::with('user')->where('qr_code', $request->code)->first();
 
         if (!$student) {
             throw ValidationException::withMessages([
@@ -708,7 +708,7 @@ class AttendanceController extends Controller
     }
 
     /**
-     * Catat kehadiran secara manual (hadir/izin/sakit) tanpa scan barcode.
+     * Catat kehadiran secara manual (hadir/izin/sakit) tanpa scan QR Code.
      * Dipanggil dari form Absensi Manual di halaman Guru.
      */
     public function attendanceManual(Request $request)

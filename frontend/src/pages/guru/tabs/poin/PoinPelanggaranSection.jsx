@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { ClipboardEdit, AlertTriangle, CheckCircle2, PlusCircle } from 'lucide-react';
-import BarcodeScanner from '../../../../components/BarcodeScanner';
+import QrCodeScanner from '../../../../components/QrCodeScanner';
 import StudentViolationModal from '../../../../components/StudentViolationModal';
 import TruncateText from '../../../../components/TruncateText';
 import api from '../../../../api/axios';
@@ -40,7 +40,7 @@ export default function PoinPelanggaranSection() {
 
   const handleDecode = async (code) => {
     try {
-      const res = await api.get(`/students/barcode/${code}`);
+      const res = await api.get(`/students/qr-code/${code}`);
       setScannedStudent(res.data);
       setScanTypeId('');
       setScanNote('');
@@ -100,7 +100,7 @@ export default function PoinPelanggaranSection() {
     <div>
       <p className="text-center text-sm text-ink-500 mb-4">Arahkan kamera ke QR Code siswa</p>
       <div className="max-w-md mx-auto">
-        <BarcodeScanner onDecode={handleDecode} />
+        <QrCodeScanner onDecode={handleDecode} />
       </div>
 
       {scannedStudent && (

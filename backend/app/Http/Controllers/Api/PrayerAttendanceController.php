@@ -176,13 +176,13 @@ class PrayerAttendanceController extends Controller
     }
 
     /**
-     * Scan barcode -> langsung dicatat "melaksanakan" (mirip scan absensi kelas).
+     * Scan QR Code -> langsung dicatat "melaksanakan" (mirip scan absensi kelas).
      */
     public function scan(Request $request)
     {
         $request->validate(['code' => 'required|string']);
 
-        $student = Student::with('user')->where('barcode_code', $request->code)->first();
+        $student = Student::with('user')->where('qr_code', $request->code)->first();
 
         if (!$student) {
             return response()->json(['message' => 'QR Code tidak dikenali / siswa tidak ditemukan.'], 404);

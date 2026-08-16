@@ -23,8 +23,8 @@ export default function AssetsTab() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [query, setQuery] = useState('');
-  const [barcodeAsset, setBarcodeAsset] = useState(null);
-  const [barcodeImg, setBarcodeImg] = useState('');
+  const [qrAsset, setQrAsset] = useState(null);
+  const [qrImg, setQrImg] = useState('');
   const [zipping, setZipping] = useState(false);
   const [showExportKir, setShowExportKir] = useState(false);
   const [importing, setImporting] = useState(false);
@@ -78,12 +78,12 @@ export default function AssetsTab() {
   const assetTersaring = useMemo(() => filterAssets(assets, query), [assets, query]);
   const { page, setPage, totalPages, paginated: assetHalaman } = usePagination(assetTersaring, 40);
 
-  const showBarcode = async (a) => {
-    setBarcodeAsset(a);
-    setBarcodeImg(await QRCode.toDataURL(a.kode_aset, { width: 320, margin: 2, color: { dark: '#22344A', light: '#FFFFFF' } }));
+  const showQrCode = async (a) => {
+    setQrAsset(a);
+    setQrImg(await QRCode.toDataURL(a.kode_aset, { width: 320, margin: 2, color: { dark: '#22344A', light: '#FFFFFF' } }));
   };
 
-  const downloadAllBarcodes = async () => {
+  const downloadAllQrCodes = async () => {
     setZipping(true);
     try {
       const zip = new JSZip();
@@ -223,7 +223,7 @@ export default function AssetsTab() {
             </div>
             <div className="flex gap-2 flex-wrap">
               <button
-                onClick={downloadAllBarcodes}
+                onClick={downloadAllQrCodes}
                 disabled={zipping || assets.length === 0}
                 className="flex items-center gap-1.5 text-sm font-medium text-ink-700 bg-mist-50 hover:bg-mist-100 disabled:opacity-50 disabled:cursor-not-allowed border border-line-200 rounded-xl px-4 py-2 transition shrink-0"
               >
@@ -284,7 +284,7 @@ export default function AssetsTab() {
                 <td className="text-ink-700 whitespace-nowrap px-2"><TruncateText text={a.keterangan || '-'} maxWidth="10rem" /></td>
                 <td className="text-right whitespace-nowrap px-2">
                   <div className="flex items-center justify-end gap-2">
-                    <button onClick={() => showBarcode(a)} title="Lihat QR" className="text-ink-300 hover:text-brand-700"><QrCode className="w-4 h-4" /></button>
+                    <button onClick={() => showQrCode(a)} title="Lihat QR" className="text-ink-300 hover:text-brand-700"><QrCode className="w-4 h-4" /></button>
                     <button onClick={() => window.open(`/print/aset-label?ids=${a.id}`, '_blank')} title="Cetak label" className="text-ink-300 hover:text-brand-700"><Printer className="w-4 h-4" /></button>
                     <button onClick={() => handleDelete(a)} title="Hapus" className="text-ink-300 hover:text-honey-700"><Trash2 className="w-4 h-4" /></button>
                   </div>
@@ -298,18 +298,18 @@ export default function AssetsTab() {
         <Pagination page={page} totalPages={totalPages} onChange={setPage} />
       </div>
 
-      {barcodeAsset && (
-        <div className="fixed inset-0 z-50 bg-ink-900/60 flex items-center justify-center p-4" onClick={() => setBarcodeAsset(null)}>
+      {qrAsset && (
+        <div className="fixed inset-0 z-50 bg-ink-900/60 flex items-center justify-center p-4" onClick={() => setQrAsset(null)}>
           <div className="surface-card p-5 max-w-xs w-full text-center" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-3">
-              <h3 className="font-display font-semibold text-ink-900 truncate">{barcodeAsset.nama}</h3>
-              <button onClick={() => setBarcodeAsset(null)} className="text-ink-300 hover:text-honey-700 shrink-0"><X className="w-5 h-5" /></button>
+              <h3 className="font-display font-semibold text-ink-900 truncate">{qrAsset.nama}</h3>
+              <button onClick={() => setQrAsset(null)} className="text-ink-300 hover:text-honey-700 shrink-0"><X className="w-5 h-5" /></button>
             </div>
-            {barcodeImg && <img src={barcodeImg} alt={barcodeAsset.kode_aset} className="mx-auto rounded-lg" width={220} height={220} />}
-            <p className="font-mono text-sm text-ink-700 mt-2">{barcodeAsset.kode_aset}</p>
+            {qrImg && <img src={qrImg} alt={qrAsset.kode_aset} className="mx-auto rounded-lg" width={220} height={220} />}
+            <p className="font-mono text-sm text-ink-700 mt-2">{qrAsset.kode_aset}</p>
             <a
-              href={barcodeImg}
-              download={`${barcodeAsset.kode_aset}.png`}
+              href={qrImg}
+              download={`${qrAsset.kode_aset}.png`}
               className="inline-flex items-center gap-1.5 text-sm font-medium text-ink-700 bg-mist-50 hover:bg-mist-100 border border-line-200 rounded-xl px-4 py-2 transition mt-3"
             >
               <Download className="w-4 h-4" /> Unduh

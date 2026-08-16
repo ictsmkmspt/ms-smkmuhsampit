@@ -45,7 +45,7 @@ class AssetController extends Controller
      * (termasuk mengandung "/") dan segmen URL akan merusak kode semacam
      * itu (mis. "INV/26/00001" jadi terpotong sebagai 3 segmen path).
      */
-    public function findByBarcode(Request $request)
+    public function findByQrCode(Request $request)
     {
         $code = (string) $request->query('code');
         $query = Asset::with('room')->where('kode_aset', $code);

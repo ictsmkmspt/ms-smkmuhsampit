@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Search, CheckCircle2, UserCheck, Clock } from 'lucide-react';
-import BarcodeScanner from './BarcodeScanner';
+import QrCodeScanner from './QrCodeScanner';
 import api from '../api/axios';
 
 const KEPERLUAN_OPTIONS = ['Membaca/Belajar', 'Mengerjakan Tugas', 'Mengajar', 'Internet', 'Lainnya'];
@@ -106,7 +106,7 @@ export default function KunjunganForm({ basePath }) {
       {!sukses && !pengunjung && (
         <div className="surface-card p-4">
           <p className="text-sm font-semibold text-ink-900 mb-3">Scan / Cari Pengunjung (Siswa/Guru)</p>
-          <BarcodeScanner onDecode={cariKode} />
+          <QrCodeScanner onDecode={cariKode} />
           <div className="flex gap-2 mt-3">
             <input
               value={kodeManual} onChange={(e) => setKodeManual(e.target.value)}

@@ -62,7 +62,7 @@ class StudentsImport implements ToModel, WithHeadingRow, WithValidation, SkipsOn
                 'class_room_id' => $classRoomId,
                 'nis'           => $row['nis'],
                 'jenis_kelamin' => !empty($row['jenis_kelamin']) ? strtoupper(trim($row['jenis_kelamin'])) : null,
-                'barcode_code'  => 'STD-' . strtoupper(Str::random(8)),
+                'qr_code'  => 'STD-' . strtoupper(Str::random(8)),
             ]);
         });
     }

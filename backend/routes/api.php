@@ -245,7 +245,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Hapus data tetap khusus grup admin/waka_sarpras di atas.
     Route::middleware('role:admin,waka_sarpras,teknisi,kepala_bengkel')->group(function () {
         Route::get('/rooms', [RoomController::class, 'index']);
-        Route::get('/assets/qr', [AssetController::class, 'findByBarcode']);
+        Route::get('/assets/qr', [AssetController::class, 'findByQrCode']);
         Route::get('/assets', [AssetController::class, 'index']);
         Route::get('/assets/export-kir', [AssetController::class, 'exportKir']);
     });
@@ -430,7 +430,7 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::middleware('role:admin,guru')->group(function () {
-        Route::get('/students/barcode/{code}', [StudentController::class, 'findByBarcode']);
+        Route::get('/students/qr-code/{code}', [StudentController::class, 'findByQrCode']);
         Route::post('/attendance/scan', [AttendanceController::class, 'scan']);
         Route::post('/attendance/manual', [AttendanceController::class, 'attendanceManual']);
         Route::post('/attendance/process-alpa', [AttendanceController::class, 'processAlpa']);

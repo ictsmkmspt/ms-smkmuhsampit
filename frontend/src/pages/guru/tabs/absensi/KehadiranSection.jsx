@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { UserX, CheckCircle2, AlertTriangle, ClipboardEdit } from 'lucide-react';
-import BarcodeScanner from '../../../../components/BarcodeScanner';
+import QrCodeScanner from '../../../../components/QrCodeScanner';
 import api from '../../../../api/axios';
 import TruncateText from '../../../../components/TruncateText';
 
@@ -92,7 +92,7 @@ export default function KehadiranSection() {
     <div>
       <p className="text-center text-sm text-ink-500 mb-4">Arahkan kamera ke QR siswa</p>
       <div className="max-w-md mx-auto">
-        <BarcodeScanner />
+        <QrCodeScanner />
       </div>
 
       <div className="max-w-2xl mx-auto mt-6 surface-card p-5">

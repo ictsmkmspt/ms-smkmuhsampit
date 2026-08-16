@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Plus, ScanBarcode, X } from 'lucide-react';
+import { Plus, ScanQrCode, X } from 'lucide-react';
 import api from '../../../api/axios';
 import AssetSearchSelect from '../../../components/AssetSearchSelect';
-import BarcodeScanner from '../../../components/BarcodeScanner';
+import QrCodeScanner from '../../../components/QrCodeScanner';
 import DateInput from '../../../components/DateInput';
 import Pagination from '../../../components/Pagination';
 import usePagination from '../../../hooks/usePagination';
@@ -119,7 +119,7 @@ export default function PemeliharaanTab() {
               />
             </div>
             <button type="button" onClick={() => setScanning(true)} title="Pindai QR aset" className="w-11 h-11 flex items-center justify-center rounded-xl border border-line-200 text-ink-500 hover:text-brand-700 hover:bg-mist-50 transition shrink-0">
-              <ScanBarcode className="w-4 h-4" />
+              <ScanQrCode className="w-4 h-4" />
             </button>
           </div>
           <DateInput value={form.tanggal_lapor} onChange={(e) => setForm({ ...form, tanggal_lapor: e.target.value })} className="field-input" required />
@@ -187,7 +187,7 @@ export default function PemeliharaanTab() {
               <h3 className="font-display font-semibold text-ink-900">Pindai QR Aset</h3>
               <button onClick={() => setScanning(false)} className="text-ink-300 hover:text-honey-700"><X className="w-5 h-5" /></button>
             </div>
-            <BarcodeScanner onDecode={handleScan} />
+            <QrCodeScanner onDecode={handleScan} />
           </div>
         </div>
       )}

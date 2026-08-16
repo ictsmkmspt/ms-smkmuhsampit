@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Plus, Search, QrCode, Download, X, ScanBarcode, Printer, FileSpreadsheet, Upload } from 'lucide-react';
+import { Plus, Search, QrCode, Download, X, ScanQrCode, Printer, FileSpreadsheet, Upload } from 'lucide-react';
 import QRCode from 'qrcode';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import api from '../../../api/axios';
 import { filterAssets } from '../../../components/AssetSearchSelect';
-import BarcodeScanner from '../../../components/BarcodeScanner';
+import QrCodeScanner from '../../../components/QrCodeScanner';
 import ExportKirModal from '../../../components/ExportKirModal';
 import TruncateText from '../../../components/TruncateText';
 import DateInput from '../../../components/DateInput';
@@ -33,8 +33,8 @@ export default function InventarisTab() {
   const [loading, setLoading] = useState(false);
   const [query, setQuery] = useState('');
   const [roomFilter, setRoomFilter] = useState('');
-  const [barcodeAsset, setBarcodeAsset] = useState(null);
-  const [barcodeImg, setBarcodeImg] = useState('');
+  const [qrAsset, setQrAsset] = useState(null);
+  const [qrImg, setQrImg] = useState('');
   const [zipping, setZipping] = useState(false);
   const [scanning, setScanning] = useState(false);
   const [showExportKir, setShowExportKir] = useState(false);
@@ -95,12 +95,12 @@ export default function InventarisTab() {
   }, [assets, query, roomFilter]);
   const { page, setPage, totalPages, paginated: assetHalaman } = usePagination(assetTersaring, 40);
 
-  const showBarcode = async (a) => {
-    setBarcodeAsset(a);
-    setBarcodeImg(await QRCode.toDataURL(a.kode_aset, { width: 320, margin: 2, color: { dark: '#22344A', light: '#FFFFFF' } }));
+  const showQrCode = async (a) => {
+    setQrAsset(a);
+    setQrImg(await QRCode.toDataURL(a.kode_aset, { width: 320, margin: 2, color: { dark: '#22344A', light: '#FFFFFF' } }));
   };
 
-  const downloadAllBarcodes = async () => {
+  const downloadAllQrCodes = async () => {
     setZipping(true);
     try {
       const zip = new JSZip();
@@ -252,10 +252,10 @@ export default function InventarisTab() {
               <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Cari kode / nama…" className="field-input pl-9 w-full sm:w-56" />
             </div>
             <button type="button" onClick={() => setScanning(true)} title="Pindai QR aset" className="w-11 h-11 flex items-center justify-center rounded-xl border border-line-200 text-ink-500 hover:text-brand-700 hover:bg-mist-50 transition shrink-0">
-              <ScanBarcode className="w-4 h-4" />
+              <ScanQrCode className="w-4 h-4" />
             </button>
             <button
-              onClick={downloadAllBarcodes}
+              onClick={downloadAllQrCodes}
               disabled={zipping || assets.length === 0}
               className="flex items-center gap-1.5 text-sm font-medium text-ink-700 bg-mist-50 hover:bg-mist-100 disabled:opacity-50 disabled:cursor-not-allowed border border-line-200 rounded-xl px-4 py-2 transition shrink-0"
             >
@@ -315,7 +315,7 @@ export default function InventarisTab() {
                 <td className="text-ink-700 whitespace-nowrap px-2"><TruncateText text={a.keterangan || '-'} maxWidth="10rem" /></td>
                 <td className="text-right whitespace-nowrap px-2">
                   <div className="flex items-center justify-end gap-2">
-                    <button onClick={() => showBarcode(a)} title="Lihat QR" className="text-ink-300 hover:text-brand-700"><QrCode className="w-4 h-4" /></button>
+                    <button onClick={() => showQrCode(a)} title="Lihat QR" className="text-ink-300 hover:text-brand-700"><QrCode className="w-4 h-4" /></button>
                     <button onClick={() => window.open(`/print/aset-label?ids=${a.id}`, '_blank')} title="Cetak label" className="text-ink-300 hover:text-brand-700"><Printer className="w-4 h-4" /></button>
                   </div>
                 </td>
@@ -328,18 +328,18 @@ export default function InventarisTab() {
         <Pagination page={page} totalPages={totalPages} onChange={setPage} />
       </div>
 
-      {barcodeAsset && (
-        <div className="fixed inset-0 z-50 bg-ink-900/60 flex items-center justify-center p-4" onClick={() => setBarcodeAsset(null)}>
+      {qrAsset && (
+        <div className="fixed inset-0 z-50 bg-ink-900/60 flex items-center justify-center p-4" onClick={() => setQrAsset(null)}>
           <div className="surface-card p-5 max-w-xs w-full text-center" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-3">
-              <h3 className="font-display font-semibold text-ink-900 truncate">{barcodeAsset.nama}</h3>
-              <button onClick={() => setBarcodeAsset(null)} className="text-ink-300 hover:text-honey-700 shrink-0"><X className="w-5 h-5" /></button>
+              <h3 className="font-display font-semibold text-ink-900 truncate">{qrAsset.nama}</h3>
+              <button onClick={() => setQrAsset(null)} className="text-ink-300 hover:text-honey-700 shrink-0"><X className="w-5 h-5" /></button>
             </div>
-            {barcodeImg && <img src={barcodeImg} alt={barcodeAsset.kode_aset} className="mx-auto rounded-lg" width={220} height={220} />}
-            <p className="font-mono text-sm text-ink-700 mt-2">{barcodeAsset.kode_aset}</p>
+            {qrImg && <img src={qrImg} alt={qrAsset.kode_aset} className="mx-auto rounded-lg" width={220} height={220} />}
+            <p className="font-mono text-sm text-ink-700 mt-2">{qrAsset.kode_aset}</p>
             <a
-              href={barcodeImg}
-              download={`${barcodeAsset.kode_aset}.png`}
+              href={qrImg}
+              download={`${qrAsset.kode_aset}.png`}
               className="inline-flex items-center gap-1.5 text-sm font-medium text-ink-700 bg-mist-50 hover:bg-mist-100 border border-line-200 rounded-xl px-4 py-2 transition mt-3"
             >
               <Download className="w-4 h-4" /> Unduh
@@ -355,7 +355,7 @@ export default function InventarisTab() {
               <h3 className="font-display font-semibold text-ink-900">Pindai QR Aset</h3>
               <button onClick={() => setScanning(false)} className="text-ink-300 hover:text-honey-700"><X className="w-5 h-5" /></button>
             </div>
-            <BarcodeScanner onDecode={handleScan} />
+            <QrCodeScanner onDecode={handleScan} />
           </div>
         </div>
       )}

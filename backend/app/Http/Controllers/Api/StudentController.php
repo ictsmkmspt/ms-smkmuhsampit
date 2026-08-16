@@ -70,7 +70,7 @@ class StudentController extends Controller
                 'class_room_id' => $data['class_room_id'] ?? null,
                 'nis' => $data['nis'],
                 'jenis_kelamin' => $data['jenis_kelamin'] ?? null,
-                'barcode_code' => 'STD-' . strtoupper(Str::random(8)),
+                'qr_code' => 'STD-' . strtoupper(Str::random(8)),
             ]);
 
             return $student->load(['user', 'classRoom']);
@@ -150,12 +150,12 @@ class StudentController extends Controller
     }
 
     /**
-     * Cari siswa berdasarkan barcode_code, TANPA mencatat absensi.
+     * Cari siswa berdasarkan qr_code, TANPA mencatat absensi.
      * Dipakai oleh fitur scan QR di halaman Poin Pelanggaran (guru).
      */
-    public function findByBarcode(string $code)
+    public function findByQrCode(string $code)
     {
-        $student = Student::with(['user', 'classRoom'])->where('barcode_code', $code)->first();
+        $student = Student::with(['user', 'classRoom'])->where('qr_code', $code)->first();
 
         if (!$student) {
             return response()->json([

@@ -93,9 +93,9 @@ export default function SiswaDashboard() {
   }, [pklPlacement]); // eslint-disable-line
 
   useEffect(() => {
-    if (!profile?.barcode_code) return;
+    if (!profile?.qr_code) return;
 
-    QRCode.toDataURL(profile.barcode_code, {
+    QRCode.toDataURL(profile.qr_code, {
       width: 400,
       margin: 2,
       errorCorrectionLevel: 'M',
@@ -176,7 +176,7 @@ export default function SiswaDashboard() {
           )}
 
           <p className="font-mono text-xs text-ink-700 mt-3 tracking-wide">
-            {profile?.barcode_code}
+            {profile?.qr_code}
           </p>
 
           <p className="text-[11px] text-ink-500 mt-1">

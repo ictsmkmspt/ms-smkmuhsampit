@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\DB;
 
 class Student extends Model
 {
-    protected $fillable = ['user_id', 'class_room_id', 'nis', 'jenis_kelamin', 'barcode_code', 'total_poin', 'total_prestasi', 'status', 'tanggal_lulus'];
+    protected $fillable = ['user_id', 'class_room_id', 'nis', 'jenis_kelamin', 'qr_code', 'total_poin', 'total_prestasi', 'status', 'tanggal_lulus'];
 
     public function user()
     {
