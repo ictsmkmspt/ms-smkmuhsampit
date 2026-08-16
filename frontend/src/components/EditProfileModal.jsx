@@ -111,14 +111,18 @@ export default function EditProfileModal({ onClose }) {
               <label className="block text-xs font-medium text-ink-500 mb-1">Password Baru</label>
               <input
                 type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)}
-                className="field-input" required minLength={6} autoComplete="new-password"
+                className="field-input" required minLength={8}
+                pattern="(?=.*[A-Z])(?=.*[^A-Za-z0-9]).{8,}"
+                title="Minimal 8 karakter, wajib ada huruf besar dan simbol"
+                autoComplete="new-password"
               />
+              <p className="text-[11px] text-ink-400 mt-1">Minimal 8 karakter, wajib ada huruf besar dan simbol (mis. ! @ # $).</p>
             </div>
             <div>
               <label className="block text-xs font-medium text-ink-500 mb-1">Ulangi Password Baru</label>
               <input
                 type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
-                className="field-input" required minLength={6} autoComplete="new-password"
+                className="field-input" required minLength={8} autoComplete="new-password"
               />
             </div>
             <button disabled={savingPassword} className="btn-primary w-full justify-center">

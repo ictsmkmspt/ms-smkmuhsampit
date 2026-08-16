@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Search, AlertTriangle, History, BookOpenCheck, Download } from 'lucide-react';
+import { Search, AlertTriangle, History, BookOpenCheck, Download, UserCheck } from 'lucide-react';
 import api from '../../../api/axios';
 import TruncateText from '../../../components/TruncateText';
 import DateInput from '../../../components/DateInput';
@@ -11,6 +11,7 @@ const SUB_TABS = [
   { key: 'aktif', label: 'Aktif', icon: BookOpenCheck },
   { key: 'terlambat', label: 'Terlambat', icon: AlertTriangle },
   { key: 'riwayat', label: 'Riwayat', icon: History },
+  { key: 'kunjungan', label: 'Kunjungan', icon: UserCheck },
 ];
 
 const STATUS_BADGE = { dipinjam: 'badge-honey', dikembalikan: 'badge-brand', rusak: 'badge-rose', hilang: 'badge-rose' };
@@ -58,6 +59,42 @@ function DaftarPeminjaman({ data }) {
   );
 }
 
+function DaftarKunjungan({ data }) {
+  const { page, setPage, totalPages, paginated } = usePagination(data, 15);
+
+  return (
+    <>
+      <div className="table-scroll">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="text-left text-ink-500 border-b border-line-200">
+              <th className="pb-2 font-medium px-2">Tanggal</th>
+              <th className="font-medium px-2">Pengunjung</th>
+              <th className="font-medium px-2">Keperluan</th>
+              <th className="font-medium px-2">Dicatat Oleh</th>
+            </tr>
+          </thead>
+          <tbody>
+            {paginated.map((k) => (
+              <tr key={k.id} className="border-t border-line-200">
+                <td className="text-ink-700 px-2 whitespace-nowrap">{fmtDMY(k.tanggal)}</td>
+                <td className="text-ink-700 px-2">
+                  <span className={`badge-soft ${k.pengunjung_type === 'guru' ? 'badge-honey' : 'badge-brand'} mr-1.5`}>{k.pengunjung_type === 'guru' ? 'Guru' : 'Siswa'}</span>
+                  {k.pengunjung?.user?.name || '-'}
+                </td>
+                <td className="text-ink-700 px-2"><TruncateText text={k.keperluan} maxWidth="12rem" /></td>
+                <td className="text-ink-700 px-2">{k.dicatat_oleh?.name || '-'}</td>
+              </tr>
+            ))}
+            {data.length === 0 && <tr><td colSpan={4} className="py-6 text-center text-ink-300 px-2">Tidak ada data.</td></tr>}
+          </tbody>
+        </table>
+      </div>
+      <Pagination page={page} totalPages={totalPages} onChange={setPage} />
+    </>
+  );
+}
+
 export default function PeminjamanTab() {
   const [subTab, setSubTab] = useState('aktif');
   const [data, setData] = useState([]);
@@ -67,7 +104,10 @@ export default function PeminjamanTab() {
   const [mulai, setMulai] = useState('');
   const [selesai, setSelesai] = useState('');
 
-  const load = (tab) => api.get(`/perpustakaan-peminjaman/${tab}`).then((res) => setData(res.data));
+  const load = (tab) => {
+    const endpoint = tab === 'kunjungan' ? '/perpustakaan-kunjungan/riwayat' : `/perpustakaan-peminjaman/${tab}`;
+    return api.get(endpoint).then((res) => setData(res.data));
+  };
   useEffect(() => { load(subTab); }, [subTab]);
 
   const handleCariNama = async (q) => {
@@ -84,19 +124,21 @@ export default function PeminjamanTab() {
     setRekapPeminjam(res.data);
   };
 
-  const handleExportRiwayat = async () => {
+  const handleExport = async (endpoint, namaFile) => {
     const params = {};
     if (mulai && selesai) { params.start = mulai; params.end = selesai; }
-    const res = await api.get('/perpustakaan-peminjaman/export-riwayat', { params, responseType: 'blob' });
+    const res = await api.get(endpoint, { params, responseType: 'blob' });
     const url = window.URL.createObjectURL(new Blob([res.data]));
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', 'laporan-riwayat-peminjaman.xlsx');
+    link.setAttribute('download', namaFile);
     document.body.appendChild(link);
     link.click();
     link.remove();
     window.URL.revokeObjectURL(url);
   };
+  const handleExportRiwayat = () => handleExport('/perpustakaan-peminjaman/export-riwayat', 'laporan-riwayat-peminjaman.xlsx');
+  const handleExportKunjungan = () => handleExport('/perpustakaan-kunjungan/export-riwayat', 'laporan-kunjungan-perpustakaan.xlsx');
 
   return (
     <div className="space-y-4">
@@ -155,20 +197,23 @@ export default function PeminjamanTab() {
             );
           })}
         </div>
-        {subTab === 'riwayat' && (
+        {(subTab === 'riwayat' || subTab === 'kunjungan') && (
           <div className="flex items-center gap-2 flex-wrap">
             <DateInput value={mulai} onChange={(e) => setMulai(e.target.value)} className="field-input text-sm w-36" placeholder="Dari tanggal" max={selesai || undefined} />
             <span className="text-ink-400 text-sm">—</span>
             <DateInput value={selesai} onChange={(e) => setSelesai(e.target.value)} className="field-input text-sm w-36" placeholder="Sampai tanggal" min={mulai || undefined} />
-            <button onClick={handleExportRiwayat} className="flex items-center gap-1.5 text-sm font-medium text-ink-700 bg-mist-50 hover:bg-mist-100 border border-line-200 rounded-xl px-4 py-2 transition shrink-0">
-              <Download className="w-4 h-4" /> Export Riwayat (Excel)
+            <button
+              onClick={subTab === 'riwayat' ? handleExportRiwayat : handleExportKunjungan}
+              className="flex items-center gap-1.5 text-sm font-medium text-ink-700 bg-mist-50 hover:bg-mist-100 border border-line-200 rounded-xl px-4 py-2 transition shrink-0"
+            >
+              <Download className="w-4 h-4" /> {subTab === 'riwayat' ? 'Export Riwayat (Excel)' : 'Export Kunjungan (Excel)'}
             </button>
           </div>
         )}
       </div>
 
       <div className="surface-card p-5">
-        <DaftarPeminjaman data={data} />
+        {subTab === 'kunjungan' ? <DaftarKunjungan data={data} /> : <DaftarPeminjaman data={data} />}
       </div>
     </div>
   );

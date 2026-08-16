@@ -140,13 +140,13 @@ export default function SirkulasiTab() {
           onClick={() => resetSemua('pinjam')}
           className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-semibold transition ${mode === 'pinjam' ? 'bg-brand-600 text-white' : 'bg-white border border-line-200 text-ink-500'}`}
         >
-          <BookOpen className="w-4 h-4" /> Pinjam
+          <BookOpen className="w-4 h-4" /> Peminjaman
         </button>
         <button
           onClick={() => resetSemua('kembali')}
           className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-semibold transition ${mode === 'kembali' ? 'bg-brand-600 text-white' : 'bg-white border border-line-200 text-ink-500'}`}
         >
-          <Undo2 className="w-4 h-4" /> Kembali
+          <Undo2 className="w-4 h-4" /> Pengembalian
         </button>
       </div>
 

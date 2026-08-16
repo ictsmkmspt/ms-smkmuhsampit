@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Exports\RiwayatKunjunganPerpustakaanExport;
 use App\Http\Controllers\Api\Concerns\LooksUpSiswaGuru;
 use App\Http\Controllers\Controller;
 use App\Models\PerpustakaanKunjungan;
 use App\Models\Student;
 use App\Models\Teacher;
 use Illuminate\Http\Request;
+use Maatwebsite\Excel\Facades\Excel;
 
 /**
  * Kunjungan Perpustakaan — dicatat pengurus (pustakawan), berdiri sendiri
@@ -73,5 +75,35 @@ class PerpustakaanKunjunganController extends Controller
             ->where('tanggal', now()->toDateString())
             ->orderByDesc('created_at')
             ->get();
+    }
+
+    /**
+     * Riwayat kunjungan LENGKAP (semua tanggal, bukan cuma hari ini) —
+     * dipakai sub-tab "Kunjungan" di tab Peminjaman, sejajar dengan
+     * Aktif/Terlambat/Riwayat peminjaman buku. Dibatasi 200 baris terbaru
+     * sama seperti PerpustakaanPeminjamanController::riwayat() — rentang
+     * tanggal lebih lengkap ada di export Excel-nya.
+     */
+    public function riwayat()
+    {
+        return PerpustakaanKunjungan::with(['pengunjung.user', 'dicatatOleh'])
+            ->orderByDesc('tanggal')
+            ->orderByDesc('created_at')
+            ->limit(200)
+            ->get();
+    }
+
+    public function exportRiwayat(Request $request)
+    {
+        $data = $request->validate([
+            'start' => 'nullable|date',
+            'end' => 'nullable|date|after_or_equal:start',
+        ]);
+
+        $namaFile = isset($data['start'], $data['end'])
+            ? "laporan-kunjungan-perpustakaan-{$data['start']}-sd-{$data['end']}.xlsx"
+            : 'laporan-kunjungan-perpustakaan.xlsx';
+
+        return Excel::download(new RiwayatKunjunganPerpustakaanExport($data['start'] ?? null, $data['end'] ?? null), $namaFile);
     }
 }

@@ -9,13 +9,13 @@ import { PeminjamanSayaView, KatalogView } from '../../../components/Perpustakaa
 // Sub-menu di atas konten, gaya sama dengan sub-menu Ortu (pill putih rata
 // tengah, label pendek di HP) — Beranda (pengumuman + leaderboard jadi 1
 // tab, bukan dipisah lagi), Jadwal Pelajaran, Kalender Akademik, lalu
-// Peminjaman Saya & Katalog perpus (guru bisa jadi peminjam buku juga,
+// Peminjaman Buku & Katalog Buku perpus (guru bisa jadi peminjam buku juga,
 // sama seperti siswa).
 const SUB_TABS = [
   { key: 'beranda', label: 'Beranda', labelShort: 'Beranda' },
   { key: 'jadwal', label: 'Jadwal Pelajaran', labelShort: 'Jadwal' },
   { key: 'kalender', label: 'Kalender Akademik', labelShort: 'Kalender' },
-  { key: 'peminjaman', label: 'Peminjaman Saya', labelShort: 'Pinjaman' },
+  { key: 'peminjaman', label: 'Peminjaman Buku', labelShort: 'Pinjaman' },
   { key: 'katalog', label: 'Katalog Buku', labelShort: 'Katalog' },
 ];
 

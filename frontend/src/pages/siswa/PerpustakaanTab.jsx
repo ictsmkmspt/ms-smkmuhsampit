@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { PeminjamanSayaView, KatalogView } from '../../components/PerpustakaanSelfServiceViews';
 
 const PERPUS_SUB_TABS = [
-  { key: 'peminjaman', label: 'Peminjaman Saya' },
-  { key: 'katalog', label: 'Katalog' },
+  { key: 'peminjaman', label: 'Peminjaman Buku' },
+  { key: 'katalog', label: 'Katalog Buku' },
 ];
 
 export default function PerpustakaanTab() {

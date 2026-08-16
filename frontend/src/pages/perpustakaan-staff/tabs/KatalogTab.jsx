@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Plus, Search, X, Download, Upload, Printer, BookOpen, ImagePlus, Trash2, PackagePlus } from 'lucide-react';
+import { Plus, Search, X, Download, Upload, Printer, BookOpen, ImagePlus, Trash2, PackagePlus, Pencil } from 'lucide-react';
 import api from '../../../api/axios';
 import TruncateText from '../../../components/TruncateText';
 import Pagination from '../../../components/Pagination';
@@ -21,6 +21,7 @@ export default function KatalogTab() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState(null);
   const [detail, setDetail] = useState(null);
   const [tambahJumlah, setTambahJumlah] = useState(1);
   const [importing, setImporting] = useState(false);
@@ -81,23 +82,26 @@ export default function KatalogTab() {
     }
   };
 
-  const handleAdd = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError(''); setLoading(true);
     try {
-      const res = await api.post('/perpustakaan-buku', form);
+      const bukuId = editingId
+        ? (await api.put(`/perpustakaan-buku/${editingId}`, form)).data.id
+        : (await api.post('/perpustakaan-buku', form)).data.id;
       if (coverFile) {
         const fd = new FormData();
         fd.append('cover', coverFile);
-        await api.post(`/perpustakaan-buku/${res.data.id}/cover`, fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+        await api.post(`/perpustakaan-buku/${bukuId}/cover`, fd, { headers: { 'Content-Type': 'multipart/form-data' } });
       }
       setForm(FORM_KOSONG);
       setCoverFile(null);
       setShowForm(false);
+      setEditingId(null);
       load();
     } catch (err) {
       const msgs = err.response?.data?.errors;
-      setError(msgs ? Object.values(msgs).flat().join(', ') : err.response?.data?.message || 'Gagal menambah buku.');
+      setError(msgs ? Object.values(msgs).flat().join(', ') : err.response?.data?.message || (editingId ? 'Gagal menyimpan perubahan buku.' : 'Gagal menambah buku.'));
     } finally {
       setLoading(false);
     }
@@ -107,6 +111,33 @@ export default function KatalogTab() {
     const res = await api.get(`/perpustakaan-buku/${b.id}`);
     setDetail(res.data);
     setTambahJumlah(1);
+  };
+
+  const bukaEdit = (b) => {
+    setForm({
+      judul: b.judul || '',
+      kode_buku: b.kode_buku || '',
+      penulis: b.penulis || '',
+      penerbit: b.penerbit || '',
+      tahun_terbit: b.tahun_terbit || '',
+      isbn: b.isbn || '',
+      kategori_id: b.kategori_id || '',
+      sinopsis: b.sinopsis || '',
+      rak_id: b.rak_id || '',
+      jumlah_eksemplar: 1,
+    });
+    setCoverFile(null);
+    setEditingId(b.id);
+    setError('');
+    setDetail(null);
+    setShowForm(true);
+  };
+
+  const batalForm = () => {
+    setShowForm(false);
+    setEditingId(null);
+    setForm(FORM_KOSONG);
+    setCoverFile(null);
   };
 
   const refreshDetail = async () => {
@@ -182,8 +213,8 @@ export default function KatalogTab() {
       )}
 
       {showForm && (
-        <form onSubmit={handleAdd} className="surface-card p-5 space-y-3">
-          <h2 className="font-display font-semibold text-ink-900">Tambah Buku</h2>
+        <form onSubmit={handleSubmit} className="surface-card p-5 space-y-3">
+          <h2 className="font-display font-semibold text-ink-900">{editingId ? 'Edit Buku' : 'Tambah Buku'}</h2>
           {error && <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2">{error}</p>}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
@@ -203,19 +234,23 @@ export default function KatalogTab() {
               <option value="">— Pilih Rak —</option>
               {rakList.map((r) => <option key={r.id} value={r.id}>{r.nama}</option>)}
             </select>
-            <div>
-              <label className="block text-[11px] text-ink-500 mb-1">Jumlah Eksemplar Awal (akan dibuatkan QR otomatis)</label>
-              <input type="number" min="0" value={form.jumlah_eksemplar} onChange={(e) => setForm({ ...form, jumlah_eksemplar: e.target.value })} className="field-input" />
-            </div>
+            {!editingId && (
+              <div>
+                <label className="block text-[11px] text-ink-500 mb-1">Jumlah Eksemplar Awal (akan dibuatkan QR otomatis)</label>
+                <input type="number" min="0" value={form.jumlah_eksemplar} onChange={(e) => setForm({ ...form, jumlah_eksemplar: e.target.value })} className="field-input" />
+              </div>
+            )}
           </div>
           <textarea placeholder="Sinopsis" value={form.sinopsis} onChange={(e) => setForm({ ...form, sinopsis: e.target.value })} className="field-input" rows={2} />
           <div>
-            <label className="flex items-center gap-1.5 text-xs font-medium text-ink-500 mb-1.5"><ImagePlus className="w-3.5 h-3.5" /> Cover (opsional)</label>
+            <label className="flex items-center gap-1.5 text-xs font-medium text-ink-500 mb-1.5"><ImagePlus className="w-3.5 h-3.5" /> Cover {editingId ? '(kosongkan kalau tidak ingin mengganti)' : '(opsional)'}</label>
             <input type="file" accept="image/*" onChange={(e) => setCoverFile(e.target.files[0] || null)} className="text-sm" />
           </div>
           <div className="flex gap-2">
-            <button disabled={loading} className="btn-primary"><Plus className="w-4 h-4" /> {loading ? 'Menyimpan...' : 'Simpan Buku'}</button>
-            <button type="button" onClick={() => { setShowForm(false); setForm(FORM_KOSONG); setCoverFile(null); }} className="text-sm text-ink-500 hover:text-ink-700 px-3">Batal</button>
+            <button disabled={loading} className="btn-primary">
+              {editingId ? <Pencil className="w-4 h-4" /> : <Plus className="w-4 h-4" />} {loading ? 'Menyimpan...' : (editingId ? 'Simpan Perubahan' : 'Simpan Buku')}
+            </button>
+            <button type="button" onClick={batalForm} className="text-sm text-ink-500 hover:text-ink-700 px-3">Batal</button>
           </div>
         </form>
       )}
@@ -232,7 +267,7 @@ export default function KatalogTab() {
               <Printer className="w-4 h-4" /> Cetak Label QR
             </button>
             {!showForm && (
-              <button onClick={() => setShowForm(true)} className="btn-primary shrink-0"><Plus className="w-4 h-4" /> Tambah Buku</button>
+              <button onClick={() => { setEditingId(null); setForm(FORM_KOSONG); setCoverFile(null); setShowForm(true); }} className="btn-primary shrink-0"><Plus className="w-4 h-4" /> Tambah Buku</button>
             )}
           </div>
         </div>
@@ -262,7 +297,10 @@ export default function KatalogTab() {
           <div className="surface-card p-5 max-w-lg w-full max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-3">
               <h3 className="font-display font-semibold text-ink-900">{detail.judul}</h3>
-              <button onClick={() => setDetail(null)} className="text-ink-300 hover:text-honey-700"><X className="w-5 h-5" /></button>
+              <div className="flex items-center gap-3 shrink-0">
+                <button onClick={() => bukaEdit(detail)} title="Edit Buku" className="text-ink-300 hover:text-brand-700"><Pencil className="w-4 h-4" /></button>
+                <button onClick={() => setDetail(null)} className="text-ink-300 hover:text-honey-700"><X className="w-5 h-5" /></button>
+              </div>
             </div>
             {detail.kode_buku && <p className="text-xs font-mono text-ink-500 mb-1">{detail.kode_buku}</p>}
             <p className="text-xs text-ink-500 mb-4">{detail.penulis} · {detail.penerbit} · {detail.kategori?.nama || 'Tanpa kategori'} {detail.rak ? `· Rak ${detail.rak.nama}` : ''}</p>

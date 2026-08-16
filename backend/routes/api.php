@@ -654,6 +654,10 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::middleware('role:admin,pustakawan,siswa,guru')->group(function () {
         Route::get('/perpustakaan-buku', [BukuController::class, 'index']);
+        // Baca-saja dibuka ke siswa/guru juga — dipakai dropdown filter
+        // kategori di Katalog Buku (kelola/tulis tetap admin,pustakawan
+        // saja, lihat grup di bawah).
+        Route::get('/perpustakaan-kategori', [PerpustakaanKategoriController::class, 'index']);
     });
 
     Route::middleware('role:admin,pustakawan')->group(function () {
@@ -661,7 +665,6 @@ Route::middleware('auth:sanctum')->group(function () {
         // dengan konvensi yang sudah dipakai di seluruh file ini.
         Route::get('/perpustakaan-pengaturan', [PerpustakaanPengaturanController::class, 'index']);
         Route::put('/perpustakaan-pengaturan', [PerpustakaanPengaturanController::class, 'update']);
-        Route::get('/perpustakaan-kategori', [PerpustakaanKategoriController::class, 'index']);
         Route::post('/perpustakaan-kategori', [PerpustakaanKategoriController::class, 'store']);
         Route::put('/perpustakaan-kategori/{kategori}', [PerpustakaanKategoriController::class, 'update']);
         Route::delete('/perpustakaan-kategori/{kategori}', [PerpustakaanKategoriController::class, 'destroy']);
@@ -691,6 +694,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/perpustakaan-kunjungan/cari', [PerpustakaanKunjunganController::class, 'cariNama']);
         Route::get('/perpustakaan-kunjungan/cari/{kode}', [PerpustakaanKunjunganController::class, 'cariKode']);
         Route::get('/perpustakaan-kunjungan/hari-ini', [PerpustakaanKunjunganController::class, 'riwayatHariIni']);
+        Route::get('/perpustakaan-kunjungan/riwayat', [PerpustakaanKunjunganController::class, 'riwayat']);
+        Route::get('/perpustakaan-kunjungan/export-riwayat', [PerpustakaanKunjunganController::class, 'exportRiwayat']);
         Route::post('/perpustakaan-kunjungan', [PerpustakaanKunjunganController::class, 'store']);
 
         Route::get('/perpustakaan-peminjaman/aktif', [PerpustakaanPeminjamanController::class, 'aktif']);

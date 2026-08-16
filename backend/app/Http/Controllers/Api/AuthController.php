@@ -84,7 +84,10 @@ class AuthController extends Controller
     {
         $data = $request->validate([
             'current_password' => 'required',
-            'new_password'     => 'required|min:6|confirmed',
+            'new_password'     => ['required', 'min:8', 'confirmed', 'regex:/[A-Z]/', 'regex:/[^A-Za-z0-9]/'],
+        ], [
+            'new_password.min' => 'Password baru minimal 8 karakter.',
+            'new_password.regex' => 'Password baru wajib mengandung minimal 1 huruf besar dan 1 simbol.',
         ]);
 
         $user = $request->user();

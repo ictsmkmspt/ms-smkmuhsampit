@@ -9,7 +9,7 @@ import { fmtDMY } from '../utils/date';
 // Dipakai bersama oleh siswa (pages/siswa/PerpustakaanTab.jsx) & guru
 // (pages/guru/tabs/BerandaTab.jsx) — keduanya bisa jadi peminjam buku
 // (relasi polimorfik peminjam_type/peminjam_id di backend), tampilan
-// "Peminjaman Saya"+"Katalog"-nya identik jadi 1 komponen saja.
+// "Peminjaman Buku"+"Katalog Buku"-nya identik jadi 1 komponen saja.
 
 function hariMenujuJatuhTempo(tgl) {
   const now = new Date(); now.setHours(0, 0, 0, 0);
@@ -61,29 +61,40 @@ export function PeminjamanSayaView() {
 
 export function KatalogView() {
   const [buku, setBuku] = useState([]);
+  const [kategoriList, setKategoriList] = useState([]);
   const [query, setQuery] = useState('');
+  const [kategoriFilter, setKategoriFilter] = useState('');
 
   useEffect(() => { api.get('/perpustakaan-buku').then((res) => setBuku(res.data)); }, []);
+  useEffect(() => { api.get('/perpustakaan-kategori').then((res) => setKategoriList(res.data)); }, []);
 
   const bukuTersaring = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return buku;
-    return buku.filter((b) =>
-      b.judul.toLowerCase().includes(q)
-      || (b.penulis || '').toLowerCase().includes(q)
-      || (b.kode_buku || '').toLowerCase().includes(q)
-      || (b.kategori?.nama || '').toLowerCase().includes(q)
-      || (b.rak?.nama || '').toLowerCase().includes(q)
-    );
-  }, [buku, query]);
+    return buku.filter((b) => {
+      const cocokKategori = !kategoriFilter || String(b.kategori?.id) === kategoriFilter;
+      const cocokCari = !q
+        || b.judul.toLowerCase().includes(q)
+        || (b.penulis || '').toLowerCase().includes(q)
+        || (b.kode_buku || '').toLowerCase().includes(q)
+        || (b.kategori?.nama || '').toLowerCase().includes(q)
+        || (b.rak?.nama || '').toLowerCase().includes(q);
+      return cocokKategori && cocokCari;
+    });
+  }, [buku, query, kategoriFilter]);
 
   const { page, setPage, totalPages, paginated: bukuHalaman } = usePagination(bukuTersaring, 16);
 
   return (
     <div>
-      <div className="relative mb-4">
-        <Search className="w-4 h-4 text-ink-300 absolute left-3 top-1/2 -translate-y-1/2" />
-        <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Cari judul / penulis / kode buku / kategori / rak..." className="field-input pl-9" />
+      <div className="flex flex-col sm:flex-row gap-2 mb-4">
+        <div className="relative flex-1">
+          <Search className="w-4 h-4 text-ink-300 absolute left-3 top-1/2 -translate-y-1/2" />
+          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Cari judul / penulis / kode buku / kategori / rak..." className="field-input pl-9 w-full" />
+        </div>
+        <select value={kategoriFilter} onChange={(e) => setKategoriFilter(e.target.value)} className="field-input text-ink-700 sm:w-48">
+          <option value="">Semua Kategori</option>
+          {kategoriList.map((k) => <option key={k.id} value={String(k.id)}>{k.nama}</option>)}
+        </select>
       </div>
       <div className="grid grid-cols-2 gap-3">
         {bukuHalaman.map((b) => (
