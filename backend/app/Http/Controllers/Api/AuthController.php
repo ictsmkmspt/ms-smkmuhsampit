@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Setting;
 use App\Models\TahunAjaran;
 use App\Models\Teacher;
 use App\Models\User;
@@ -54,6 +55,17 @@ class AuthController extends Controller
             throw ValidationException::withMessages([
                 'login' => ['Email/No. HP atau password salah.'],
             ]);
+        }
+
+        // Baru bisa dicek SETELAH kredensial benar (role-nya belum tahu
+        // sebelum ini) — non-admin ditolak TOTAL selama maintenance nyala,
+        // bukan cuma login-lalu-diblokir endpoint lain (lihat juga
+        // CheckMaintenanceMode yang menegakkan ini utk seluruh endpoint lain).
+        if ($user->role !== 'admin' && Setting::get('maintenance_mode', '0') === '1') {
+            return response()->json([
+                'message' => 'Sistem sedang dalam pemeliharaan. Silakan coba lagi nanti.',
+                'maintenance' => true,
+            ], 503);
         }
 
         $token = $user->createToken('auth_token')->plainTextToken;

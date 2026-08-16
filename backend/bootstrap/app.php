@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\CheckMaintenanceMode;
 use App\Http\Middleware\CheckRole;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -23,6 +24,10 @@ return Application::configure(basePath: dirname(__DIR__))
         // basi CRASH 500 "Route [login] not defined" alih-alih 401 JSON yang
         // bersih (dan ditangkap interceptor axios di frontend buat auto-logout).
         $middleware->redirectGuestsTo(fn () => null);
+        // Global (bukan cuma grup auth:sanctum) — supaya mode maintenance
+        // tidak bisa dilewati lewat endpoint publik mana pun. Lihat
+        // CheckMaintenanceMode untuk pengecualian /login & /maintenance-status.
+        $middleware->api(append: [CheckMaintenanceMode::class]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

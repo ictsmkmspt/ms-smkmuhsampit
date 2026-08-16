@@ -1,9 +1,12 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext';
+import { useEffect, useState } from 'react';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { SchoolProfileProvider } from './context/SchoolProfileContext';
 import ProtectedRoute from './components/ProtectedRoute';
+import api from './api/axios';
 
 import Login from './pages/Login';
+import MaintenancePage from './pages/MaintenancePage';
 import PpdbPublic from './pages/PpdbPublic';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import GuruDashboard from './pages/guru/GuruDashboard';
@@ -24,11 +27,53 @@ import PrintKalenderAkademik from './pages/print/PrintKalenderAkademik';
 import PrintAssetLabels from './pages/print/PrintAssetLabels';
 import PrintBukuLabels from './pages/print/PrintBukuLabels';
 
+/**
+ * Gerbang mode maintenance — dicek SEKALI di sini, membungkus seluruh
+ * <Routes>, supaya konsisten di semua rute sekaligus (bukan diulang per
+ * halaman). /login SENGAJA selalu tembus (biar admin bisa login &
+ * mematikan mode ini lagi dari MaintenancePage), begitu juga kalau yang
+ * login memang admin. Dicek ulang tiap 60 detik supaya pengunjung yang
+ * sudah terlanjur buka halaman maintenance otomatis lihat web normal lagi
+ * begitu admin mematikannya, tanpa perlu refresh manual.
+ */
+function MaintenanceGate({ children }) {
+  const { user, loading: authLoading } = useAuth();
+  const location = useLocation();
+  const [status, setStatus] = useState({ loading: true, enabled: false });
+
+  useEffect(() => {
+    const check = () => api.get('/maintenance-status')
+      .then((res) => setStatus({ loading: false, enabled: res.data.enabled }))
+      .catch(() => setStatus({ loading: false, enabled: false }));
+    check();
+    const interval = setInterval(check, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  if (status.loading || authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-mist-50">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 rounded-full border-2 border-brand-200 border-t-brand-600 animate-spin" />
+          <p className="text-sm text-ink-500">Memuat...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!status.enabled || user?.role === 'admin' || location.pathname === '/login') {
+    return children;
+  }
+
+  return <MaintenancePage />;
+}
+
 export default function App() {
   return (
     <SchoolProfileProvider>
       <AuthProvider>
         <BrowserRouter>
+          <MaintenanceGate>
           <Routes>
             <Route path="/" element={<Login />} />
             <Route path="/login" element={<Login />} />
@@ -124,6 +169,7 @@ export default function App() {
 
             <Route path="*" element={<Login />} />
           </Routes>
+          </MaintenanceGate>
         </BrowserRouter>
       </AuthProvider>
     </SchoolProfileProvider>

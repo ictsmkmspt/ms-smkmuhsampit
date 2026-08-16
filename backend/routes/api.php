@@ -19,6 +19,7 @@ use App\Http\Controllers\Api\DashboardChartController;
 use App\Http\Controllers\Api\DudiController;
 use App\Http\Controllers\Api\HolidayController;
 use App\Http\Controllers\Api\LaporanController;
+use App\Http\Controllers\Api\MaintenanceModeController;
 use App\Http\Controllers\Api\MaintenanceRequestController;
 use App\Http\Controllers\Api\ParentController;
 use App\Http\Controllers\Api\PklAttendanceController;
@@ -67,6 +68,14 @@ Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:lo
 // Publik (tanpa login) — dipakai halaman Login, favicon, dan judul tab
 // browser, yang semuanya perlu tampil sebelum user berhasil login.
 Route::get('/school-profile', [SchoolProfileController::class, 'show']);
+
+// Publik juga — dicek SPA sebelum apa pun lain ditampilkan (termasuk
+// sebelum halaman Login), supaya pengunjung langsung lihat halaman
+// maintenance tanpa perlu tahu/coba login dulu. Lihat juga middleware
+// global CheckMaintenanceMode (bootstrap/app.php) yang menegakkan ini di
+// sisi API, dan AuthController::login() yang menolak login non-admin
+// selama maintenance nyala.
+Route::get('/maintenance-status', [MaintenanceModeController::class, 'status']);
 
 // PPDB (Penerimaan Peserta Didik Baru) — calon siswa belum punya akun sama
 // sekali, jadi formulir daftar & cek status WAJIB publik (tanpa auth:sanctum).
@@ -299,6 +308,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/ppdb/{ppdbPendaftar}', [PpdbController::class, 'destroy']);
 
         Route::apiResource('procurements', ProcurementController::class)->except(['show']);
+
+        // Mode maintenance — SENGAJA cuma Super Admin (bukan waka mana pun)
+        // yang boleh nyala/matikan, karena efeknya mengunci akses SELURUH
+        // role lain (lihat CheckMaintenanceMode middleware).
+        Route::put('/maintenance-status', [MaintenanceModeController::class, 'update']);
     });
 
     // Pemeliharaan — bagian tetap menu Sarana & Prasarana milik Waka Sarpras.
