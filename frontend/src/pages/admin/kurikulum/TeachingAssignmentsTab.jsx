@@ -10,7 +10,14 @@ export default function TeachingAssignmentsTab() {
   const [teachers, setTeachers] = useState([]);
   const [subjects, setSubjects] = useState([]);
   const [classes, setClasses] = useState([]);
-  const [form, setForm] = useState({ teacher_id: '', subject_id: '', class_room_id: '', target_jam: '' });
+  // Guru + mapel + target jam diisi SEKALI, lalu kelasnya boleh dicentang
+  // banyak sekaligus (bukan lagi 1 kelas per submit) — pola sama seperti
+  // roster "Buat Penempatan PKL".
+  const [bulkTeacherId, setBulkTeacherId] = useState('');
+  const [bulkSubjectId, setBulkSubjectId] = useState('');
+  const [bulkTargetJam, setBulkTargetJam] = useState('');
+  const [selectedClassIds, setSelectedClassIds] = useState(new Set());
+  const [bulkResult, setBulkResult] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
@@ -33,12 +40,45 @@ export default function TeachingAssignmentsTab() {
   }, []);
   useEffect(() => { load(); }, [tahunAjaranIdTerpilih]); // eslint-disable-line
 
-  const handleAdd = async (e) => {
+  // Kelas yang mapel terpilih SUDAH punya penugasan (guru siapa pun) di
+  // tahun ajaran ini — dihitung dari data `assignments` yang sudah
+  // dimuat, tanpa perlu request tambahan. Sesuai constraint database (1
+  // kelas cuma boleh 1 penugasan per mapel, lepas dari guru), jadi
+  // kotaknya dikunci supaya tidak mencoba bikin baris yang bakal ditolak.
+  const classIdsSudahAda = bulkSubjectId
+    ? new Set(assignments.filter((a) => String(a.subject_id) === bulkSubjectId).map((a) => a.class_room_id))
+    : new Set();
+  const classesBisaDipilih = classes.filter((c) => !classIdsSudahAda.has(c.id));
+  const semuaKelasTerpilih = classesBisaDipilih.length > 0 && classesBisaDipilih.every((c) => selectedClassIds.has(c.id));
+
+  const toggleClassSelected = (id) => {
+    setSelectedClassIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+  const toggleSelectAllClasses = () => {
+    setSelectedClassIds(semuaKelasTerpilih ? new Set() : new Set(classesBisaDipilih.map((c) => c.id)));
+  };
+
+  const handleBulkSubmit = async (e) => {
     e.preventDefault();
-    setError(''); setLoading(true);
+    setError(''); setBulkResult(null);
+    if (selectedClassIds.size === 0) {
+      setError('Pilih minimal 1 kelas dulu.');
+      return;
+    }
+    setLoading(true);
     try {
-      await api.post('/teaching-assignments', { ...form, target_jam: form.target_jam || null });
-      setForm({ teacher_id: '', subject_id: '', class_room_id: '', target_jam: '' });
+      const res = await api.post('/teaching-assignments/bulk', {
+        teacher_id: bulkTeacherId,
+        subject_id: bulkSubjectId,
+        class_room_ids: [...selectedClassIds],
+        target_jam: bulkTargetJam || null,
+      });
+      setBulkResult(res.data);
+      setSelectedClassIds(new Set());
       load();
     } catch (err) {
       const msgs = err.response?.data?.errors;
@@ -123,29 +163,80 @@ export default function TeachingAssignmentsTab() {
       </div>
 
       {tahunAktif && (
-        <form onSubmit={handleAdd} className="surface-card p-5 space-y-3">
-          <h2 className="font-display font-semibold text-ink-900">Tambah Penugasan</h2>
-          {error && <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2">{error}</p>}
-          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-            <select value={form.class_room_id} onChange={(e) => setForm({ ...form, class_room_id: e.target.value })} className="field-input text-ink-700" required>
-              <option value="">Pilih Kelas</option>
-              {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
-            <select value={form.subject_id} onChange={(e) => setForm({ ...form, subject_id: e.target.value })} className="field-input text-ink-700" required>
+        <form onSubmit={handleBulkSubmit} className="surface-card p-5">
+          <h2 className="font-display font-semibold text-ink-900 mb-1">Tambah Penugasan</h2>
+          <p className="text-xs text-ink-500 mb-4">
+            Pilih mata pelajaran &amp; guru, centang kelas yang mau ditugaskan (boleh 1 atau banyak sekaligus), lalu isi target jam sekali untuk semua kelas yang dicentang.
+          </p>
+          {error && <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2 mb-3">{error}</p>}
+          {bulkResult && (
+            <div className="text-sm bg-brand-50 border border-brand-200 rounded-lg px-3 py-2 mb-3">
+              <p className="text-brand-700 font-medium">{bulkResult.message}</p>
+              {bulkResult.dilewati?.length > 0 && (
+                <p className="text-ink-500 text-xs mt-1">Dilewati (sudah ada penugasan mapel ini): {bulkResult.dilewati.join(', ')}</p>
+              )}
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+            <select
+              value={bulkSubjectId}
+              onChange={(e) => { setBulkSubjectId(e.target.value); setSelectedClassIds(new Set()); }}
+              className="field-input text-ink-700" required
+            >
               <option value="">Pilih Mata Pelajaran</option>
               {subjects.map((s) => <option key={s.id} value={s.id}>{s.nama}</option>)}
             </select>
-            <select value={form.teacher_id} onChange={(e) => setForm({ ...form, teacher_id: e.target.value })} className="field-input text-ink-700" required>
+            <select value={bulkTeacherId} onChange={(e) => setBulkTeacherId(e.target.value)} className="field-input text-ink-700" required>
               <option value="">Pilih Guru</option>
               {teachers.map((t) => <option key={t.id} value={t.id}>{t.user?.name}</option>)}
             </select>
             <input
               type="number" min="1" placeholder="Target jam (opsional)"
-              value={form.target_jam} onChange={(e) => setForm({ ...form, target_jam: e.target.value })}
+              value={bulkTargetJam} onChange={(e) => setBulkTargetJam(e.target.value)}
               className="field-input"
             />
           </div>
-          <button disabled={loading} className="btn-primary"><Plus className="w-4 h-4" /> {loading ? 'Menyimpan...' : 'Tambah Penugasan'}</button>
+
+          {bulkSubjectId && (
+            <div className="mb-4 border border-line-200 rounded-xl max-h-80 overflow-y-auto table-scroll">
+              <table className="w-full text-sm">
+                <thead className="sticky top-0 bg-white">
+                  <tr className="text-left text-ink-500 border-b border-line-200">
+                    <th className="pb-2 pt-2 pl-3 w-10">
+                      <input type="checkbox" checked={semuaKelasTerpilih} onChange={toggleSelectAllClasses} disabled={classesBisaDipilih.length === 0} />
+                    </th>
+                    <th className="font-medium whitespace-nowrap px-2 pt-2">Kelas</th>
+                    <th className="font-medium whitespace-nowrap px-2 pt-2">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {classes.length === 0 ? (
+                    <tr><td colSpan="3" className="py-4 text-center text-ink-300">Belum ada data kelas.</td></tr>
+                  ) : classes.map((c) => {
+                    const sudahAda = classIdsSudahAda.has(c.id);
+                    return (
+                      <tr key={c.id} className="border-t border-line-200">
+                        <td className="pl-3 py-2">
+                          <input type="checkbox" checked={selectedClassIds.has(c.id)} disabled={sudahAda} onChange={() => toggleClassSelected(c.id)} />
+                        </td>
+                        <td className="py-2 px-2 text-ink-900 whitespace-nowrap">{c.name}</td>
+                        <td className="px-2 whitespace-nowrap">
+                          {sudahAda
+                            ? <span className="badge-soft badge-brand">Sudah ada</span>
+                            : <span className="text-xs text-ink-300">Belum</span>}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          <button disabled={loading || selectedClassIds.size === 0} className="btn-primary">
+            <Plus className="w-4 h-4" /> {loading ? 'Menyimpan...' : `Tambah Penugasan (${selectedClassIds.size} kelas)`}
+          </button>
         </form>
       )}
 

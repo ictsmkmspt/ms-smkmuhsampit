@@ -282,6 +282,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::apiResource('subjects', SubjectController::class)->except(['show', 'index']);
         Route::post('/teaching-assignments/generate-kode-guru', [TeachingAssignmentController::class, 'generateKodeGuru']);
         Route::put('/teaching-assignments/reorder', [TeachingAssignmentController::class, 'reorder']);
+        Route::post('/teaching-assignments/bulk', [TeachingAssignmentController::class, 'storeBulk']);
         Route::apiResource('teaching-assignments', TeachingAssignmentController::class)->except(['show']);
         Route::apiResource('period-templates', PeriodTemplateController::class)->except(['show']);
         Route::get('/schedules/grid', [ScheduleController::class, 'grid']);

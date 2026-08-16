@@ -3,11 +3,13 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\ClassRoom;
 use App\Models\Schedule;
 use App\Models\TahunAjaran;
 use App\Models\Teacher;
 use App\Models\TeachingAssignment;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class TeachingAssignmentController extends Controller
@@ -60,6 +62,71 @@ class TeachingAssignmentController extends Controller
         $assignment = TeachingAssignment::create($data);
 
         return response()->json($assignment->load(['teacher.user', 'subject', 'classRoom'])->loadCount('schedules'), 201);
+    }
+
+    /**
+     * Buat penugasan 1 guru + 1 mapel ke BANYAK kelas sekaligus — dipakai
+     * roster "Tambah Penugasan" di layar admin: pilih guru & mapel sekali,
+     * centang kelas mana saja yang mau ditugaskan, submit sekali jadi
+     * banyak penugasan sekaligus (pola sama seperti
+     * PklPlacementController::storeBulk()).
+     *
+     * Kelas yang SUDAH punya penugasan untuk mapel ini DILEWATI (bukan
+     * menggagalkan seluruh batch) — dan ini dicek per mapel+kelas+tahun
+     * ajaran SAJA (bukan ikut menyaring guru), karena constraint unik di
+     * level database (`teaching_assignments_unique`) memang tidak
+     * membedakan guru: 1 kelas cuma boleh punya 1 baris penugasan untuk
+     * 1 mapel yang sama, siapa pun gurunya. Kalau ini dilewatkan begitu
+     * saja, baris ke-2 untuk kelas yang sama bakal gagal dengan
+     * QueryException duplicate-key, bukan pesan yang ramah.
+     */
+    public function storeBulk(Request $request)
+    {
+        $tahunAjaranId = TahunAjaran::aktifId();
+
+        $data = $request->validate([
+            'teacher_id' => 'required|exists:teachers,id',
+            'subject_id' => 'required|exists:subjects,id',
+            'class_room_ids' => 'required|array|min:1',
+            'class_room_ids.*' => 'exists:class_rooms,id',
+            'target_jam' => 'nullable|integer|min:1',
+        ]);
+
+        [$classIdsBaru, $classIdsSudahAda] = DB::transaction(function () use ($data, $tahunAjaranId) {
+            $classIdsSudahAda = TeachingAssignment::where('subject_id', $data['subject_id'])
+                ->where('tahun_ajaran_id', $tahunAjaranId)
+                ->whereIn('class_room_id', $data['class_room_ids'])
+                ->pluck('class_room_id');
+
+            $classIdsBaru = collect($data['class_room_ids'])->diff($classIdsSudahAda)->values();
+
+            $urutan = (TeachingAssignment::where('tahun_ajaran_id', $tahunAjaranId)->max('urutan') ?? -1) + 1;
+            foreach ($classIdsBaru as $classRoomId) {
+                TeachingAssignment::create([
+                    'teacher_id' => $data['teacher_id'],
+                    'subject_id' => $data['subject_id'],
+                    'class_room_id' => $classRoomId,
+                    'tahun_ajaran_id' => $tahunAjaranId,
+                    'target_jam' => $data['target_jam'] ?? null,
+                    'urutan' => $urutan++,
+                ]);
+            }
+
+            return [$classIdsBaru, $classIdsSudahAda];
+        });
+
+        $namaDilewati = $classIdsSudahAda->isEmpty() ? [] : ClassRoom::whereIn('id', $classIdsSudahAda)
+            ->pluck('name')
+            ->values();
+
+        $dibuat = $classIdsBaru->count();
+        $dilewati = count($namaDilewati);
+
+        return response()->json([
+            'message' => "{$dibuat} penugasan berhasil dibuat" . ($dilewati ? ", {$dilewati} kelas dilewati (sudah punya penugasan untuk mata pelajaran ini)." : '.'),
+            'dibuat' => $dibuat,
+            'dilewati' => $namaDilewati,
+        ], 201);
     }
 
     public function update(Request $request, TeachingAssignment $teachingAssignment)
