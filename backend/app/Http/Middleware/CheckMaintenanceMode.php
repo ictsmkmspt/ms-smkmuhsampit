@@ -21,12 +21,18 @@ use Symfony\Component\HttpFoundation\Response;
  * AuthController::login()) — penolakan login non-admin ditangani DI SANA,
  * bukan di sini, karena baru ketahuan role-nya SETELAH kredensial
  * diverifikasi (middleware generik ini tidak tahu siapa yang mau login).
+ *
+ * /school-profile juga dikecualikan — publik & TIDAK berisi data sensitif
+ * (cuma nama/logo/visi-misi sekolah), dipakai halaman Login & halaman
+ * MaintenancePage sendiri untuk tampilkan logo+nama sekolah, jadi wajib
+ * tetap jalan biar kedua halaman itu tidak balik ke fallback generik.
  */
 class CheckMaintenanceMode
 {
     private const RUTE_DIKECUALIKAN = [
         'api/maintenance-status',
         'api/login',
+        'api/school-profile',
     ];
 
     public function handle(Request $request, Closure $next): Response

@@ -1,75 +1,64 @@
-import { Link } from 'react-router-dom';
-import { Wrench, Cog, Sparkles } from 'lucide-react';
+import { Radar } from 'lucide-react';
 import { useSchoolProfile } from '../context/SchoolProfileContext';
 
 /**
  * Halaman ditampilkan ke SEMUA pengunjung (siapa pun yang belum login
  * sebagai admin) selama mode maintenance nyala — lihat MaintenanceGate di
- * App.jsx. Link "Masuk sebagai Staf" tetap ada supaya admin bisa login dan
- * mematikan mode ini lagi (endpoint /login TIDAK diblokir untuk admin,
- * lihat AuthController::login() & CheckMaintenanceMode).
+ * App.jsx. Tidak ada tautan login di halaman ini (sengaja disembunyikan) —
+ * admin tetap bisa masuk lewat /login langsung (rute itu tidak diblokir
+ * untuk admin, lihat AuthController::login() & CheckMaintenanceMode).
  */
 export default function MaintenancePage() {
   const { profile } = useSchoolProfile();
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#0B1B3A] px-4 py-10 relative overflow-hidden">
-      <div
-        className="absolute top-10 left-6 w-40 h-40 opacity-30 pointer-events-none"
-        style={{ backgroundImage: 'radial-gradient(circle, #F2B705 1.5px, transparent 1.5px)', backgroundSize: '14px 14px' }}
-      />
-      <div
-        className="absolute bottom-10 right-6 w-40 h-40 opacity-20 pointer-events-none"
-        style={{ backgroundImage: 'radial-gradient(circle, #3FB27F 1.5px, transparent 1.5px)', backgroundSize: '14px 14px' }}
-      />
-      <div
-        className="absolute -top-24 -right-24 w-96 h-96 rounded-full opacity-[0.15] pointer-events-none blur-3xl"
-        style={{ background: 'radial-gradient(circle, #F2B705, transparent 70%)' }}
-      />
-      <div
-        className="absolute -bottom-24 -left-24 w-96 h-96 rounded-full opacity-[0.15] pointer-events-none blur-3xl"
-        style={{ background: 'radial-gradient(circle, #3FB27F, transparent 70%)' }}
-      />
+    <div
+      className="min-h-screen flex items-center justify-center px-4 py-10 relative overflow-hidden"
+      style={{ background: 'linear-gradient(160deg, #0B1B3A 0%, #0B1B3A 55%, #061024 100%)' }}
+    >
+      {/* Garis radar melingkar, cuma dekorasi — tidak menutupi konten */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+        <span className="w-[420px] h-[420px] rounded-full border border-white/[0.05]" />
+        <span className="absolute w-[300px] h-[300px] rounded-full border border-white/[0.06]" />
+        <span className="absolute w-[180px] h-[180px] rounded-full border border-white/[0.07]" />
+        <span className="absolute w-[420px] h-[420px] rounded-full border border-[#F2B705]/20 motion-safe:animate-[ping_3s_cubic-bezier(0,0,0.2,1)_infinite]" />
+      </div>
 
-      <div className="w-full max-w-md relative z-10 text-center">
-        {profile?.logo_url && (
-          <img src={profile.logo_url} alt="Logo Sekolah" className="w-14 h-14 object-contain mx-auto mb-4 opacity-90" />
-        )}
-
-        <div className="relative w-24 h-24 mx-auto mb-6">
-          <Cog
-            className="w-24 h-24 text-white/10 absolute inset-0 motion-safe:animate-[spin_12s_linear_infinite]"
-            strokeWidth={1.5}
-          />
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#F2B705] to-[#c99700] flex items-center justify-center shadow-[0_8px_30px_rgba(242,183,5,0.35)] motion-safe:animate-[pulse_2.5s_ease-in-out_infinite]">
-              <Wrench className="w-7 h-7 text-[#0B1B3A]" strokeWidth={2.25} />
-            </div>
-          </div>
+      <div className="w-full max-w-sm relative z-10 text-center">
+        <div className="relative w-16 h-16 mx-auto mb-8 flex items-center justify-center">
+          <span className="absolute inset-0 rounded-full bg-[#F2B705]/10 motion-safe:animate-[ping_2s_ease-in-out_infinite]" />
+          <span className="relative w-16 h-16 rounded-full border border-[#F2B705]/40 bg-[#0B1B3A] flex items-center justify-center overflow-hidden">
+            {profile?.logo_url ? (
+              <img src={profile.logo_url} alt="Logo Sekolah" className="w-9 h-9 object-contain" />
+            ) : (
+              <Radar className="w-7 h-7 text-[#F2B705]" strokeWidth={1.75} />
+            )}
+          </span>
         </div>
 
-        <div className="inline-flex items-center gap-1.5 text-[11px] font-semibold tracking-widest uppercase text-[#F2B705] mb-3">
-          <Sparkles className="w-3.5 h-3.5" />
-          Sedang Ditingkatkan
-        </div>
-
-        <h1 className="font-display text-2xl sm:text-3xl font-bold text-white mb-3 text-balance">
-          Sistem Sedang Dalam Pemeliharaan
-        </h1>
-        <p className="text-sm text-white/60 leading-relaxed max-w-sm mx-auto">
-          Kami sedang melakukan pemeliharaan terjadwal untuk meningkatkan layanan{profile?.nama_sekolah ? ` ${profile.nama_sekolah}` : ''}.
-          Mohon coba akses kembali beberapa saat lagi. Terima kasih atas kesabarannya.
+        <p className="font-mono text-[11px] tracking-[0.25em] uppercase text-[#3FB27F] mb-4">
+          Pemberitahuan Sistem
         </p>
 
-        <span className="block mt-6 mx-auto h-1 w-12 rounded-full bg-gradient-to-r from-[#F2B705] to-[#3FB27F]" />
+        <h1 className="font-display text-2xl sm:text-[28px] font-bold text-white mb-3 text-balance leading-snug">
+          Mohon Maaf, Kami Sedang<br />Membenahi Sistem
+        </h1>
+        <p className="text-sm text-white/50 leading-relaxed max-w-xs mx-auto">
+          Tim kami sedang melakukan pemeliharaan untuk meningkatkan kualitas layanan{profile?.nama_sekolah ? ` ${profile.nama_sekolah}` : ''}.
+          Mohon coba akses kembali beberapa saat lagi.
+        </p>
 
-        <Link
-          to="/login"
-          className="inline-block mt-8 text-xs text-white/30 hover:text-white/60 transition"
-        >
-          Masuk sebagai Staf
-        </Link>
+        <div className="mt-9 h-[3px] w-full max-w-[200px] mx-auto rounded-full bg-white/10 overflow-hidden">
+          <div className="h-full w-1/3 rounded-full bg-gradient-to-r from-[#F2B705] to-[#3FB27F] motion-safe:animate-[maintenance-sweep_1.8s_ease-in-out_infinite]" />
+        </div>
       </div>
+
+      <style>{`
+        @keyframes maintenance-sweep {
+          0% { transform: translateX(-100%); }
+          100% { transform: translateX(300%); }
+        }
+      `}</style>
     </div>
   );
 }
