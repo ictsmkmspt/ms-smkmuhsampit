@@ -1,9 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Plus, ScanBarcode, X } from 'lucide-react';
 import api from '../../../api/axios';
 import AssetSearchSelect from '../../../components/AssetSearchSelect';
 import BarcodeScanner from '../../../components/BarcodeScanner';
 import DateInput from '../../../components/DateInput';
+import Pagination from '../../../components/Pagination';
+import usePagination from '../../../hooks/usePagination';
 import { fmtDMY } from '../../../utils/date';
 import { useAuth } from '../../../context/AuthContext';
 
@@ -35,8 +37,12 @@ export default function PemeliharaanTab() {
     if (isTeknisi) api.get('/rooms').then((res) => setRooms(res.data));
   }, [isTeknisi]);
 
-  const requestTersaring = roomFilter ? requests.filter((r) => String(r.room_id) === roomFilter) : requests;
+  const requestTersaring = useMemo(
+    () => (roomFilter ? requests.filter((r) => String(r.room_id) === roomFilter) : requests),
+    [requests, roomFilter]
+  );
   const assetDiRuangTerpilih = formRoomFilter ? assets.filter((a) => String(a.room_id) === formRoomFilter) : assets;
+  const { page, setPage, totalPages, paginated: requestHalaman } = usePagination(requestTersaring, 30);
 
   // Ruang dipakai sebagai filter aset di form (bukan target laporan) — pilih
   // ruang dulu untuk mempersempit daftar barang yang dicari.
@@ -148,7 +154,7 @@ export default function PemeliharaanTab() {
             </tr>
           </thead>
           <tbody>
-            {requestTersaring.map((r) => (
+            {requestHalaman.map((r) => (
               <tr key={r.id} className="border-t border-line-200">
                 <td className="py-2.5 font-mono text-ink-700 whitespace-nowrap px-2">{fmtDMY(r.tanggal_lapor)}</td>
                 <td className="text-ink-700 whitespace-nowrap px-2">{r.asset?.nama || '-'}</td>
@@ -171,6 +177,7 @@ export default function PemeliharaanTab() {
           </tbody>
         </table>
         </div>
+        <Pagination page={page} totalPages={totalPages} onChange={setPage} />
       </div>
 
       {scanning && (

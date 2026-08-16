@@ -10,6 +10,7 @@ use App\Models\Teacher;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Maatwebsite\Excel\Facades\Excel;
 
 class TeacherController extends Controller
@@ -42,6 +43,7 @@ class TeacherController extends Controller
             return Teacher::create([
                 'user_id' => $user->id,
                 'nip' => $data['nip'],
+                'barcode_code' => 'GRU-' . strtoupper(Str::random(8)),
                 'jenis_kelamin' => $data['jenis_kelamin'] ?? null,
             ])->load('user');
         });
@@ -66,6 +68,14 @@ class TeacherController extends Controller
 
     public function destroy(Teacher $teacher)
     {
+        // Sama seperti StudentController::destroy — peminjam_id di
+        // perpustakaan_peminjaman tidak punya FK, jadi guru yang masih
+        // pinjam buku dicegah dihapus supaya eksemplarnya tidak terkunci
+        // "dipinjam" selamanya tanpa ada yang bisa memprosesnya.
+        if ($teacher->peminjamanPerpustakaan()->where('status', 'dipinjam')->exists()) {
+            return response()->json(['message' => 'Guru ini masih meminjam buku perpustakaan — proses pengembaliannya dulu sebelum menghapus akun.'], 422);
+        }
+
         $teacher->user->delete();
         return response()->json(['message' => 'Guru dihapus.']);
     }

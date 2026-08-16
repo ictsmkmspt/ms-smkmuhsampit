@@ -8,6 +8,7 @@ use App\Models\Student;
 use App\Models\Teacher;
 use App\Models\TahunAjaran;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class PklPlacementController extends Controller
 {
@@ -100,21 +101,28 @@ class PklPlacementController extends Controller
             'tanggal_selesai'      => 'required|date|after_or_equal:tanggal_mulai',
         ]);
 
-        $sudahAktif = PklPlacement::where('student_id', $data['student_id'])
-            ->where('status', 'aktif')->exists();
+        return DB::transaction(function () use ($data) {
+            // lockForUpdate baris siswanya sendiri supaya 2 permintaan buat
+            // penempatan hampir bersamaan untuk siswa yang sama diserialisasi
+            // (menutup celah TOCTOU antara exists() dan create() di bawah).
+            Student::whereKey($data['student_id'])->lockForUpdate()->first();
 
-        if ($sudahAktif) {
-            return response()->json([
-                'message' => 'Siswa ini sudah punya penempatan PKL yang masih aktif. Selesaikan dulu penempatan lamanya sebelum membuat yang baru.',
-            ], 422);
-        }
+            $sudahAktif = PklPlacement::where('student_id', $data['student_id'])
+                ->where('status', 'aktif')->exists();
 
-        $placement = PklPlacement::create($data + ['status' => 'aktif']);
+            if ($sudahAktif) {
+                return response()->json([
+                    'message' => 'Siswa ini sudah punya penempatan PKL yang masih aktif. Selesaikan dulu penempatan lamanya sebelum membuat yang baru.',
+                ], 422);
+            }
 
-        return response()->json(
-            $placement->load(['student.user', 'dudi', 'guruPembimbing.user']),
-            201
-        );
+            $placement = PklPlacement::create($data + ['status' => 'aktif']);
+
+            return response()->json(
+                $placement->load(['student.user', 'dudi', 'guruPembimbing.user']),
+                201
+            );
+        });
     }
 
     /**
@@ -137,22 +145,30 @@ class PklPlacementController extends Controller
             'tanggal_selesai'      => 'required|date|after_or_equal:tanggal_mulai',
         ]);
 
-        $studentIdsSudahAktif = PklPlacement::whereIn('student_id', $data['student_ids'])
-            ->where('status', 'aktif')
-            ->pluck('student_id');
+        [$studentIdsBaru, $studentIdsSudahAktif] = DB::transaction(function () use ($data) {
+            // lockForUpdate seluruh siswa dalam batch dulu, baru cek status
+            // aktifnya — menutup celah TOCTOU yang sama seperti store().
+            Student::whereIn('id', $data['student_ids'])->lockForUpdate()->get();
 
-        $studentIdsBaru = collect($data['student_ids'])->diff($studentIdsSudahAktif)->values();
+            $studentIdsSudahAktif = PklPlacement::whereIn('student_id', $data['student_ids'])
+                ->where('status', 'aktif')
+                ->pluck('student_id');
 
-        foreach ($studentIdsBaru as $studentId) {
-            PklPlacement::create([
-                'student_id'         => $studentId,
-                'dudi_id'            => $data['dudi_id'],
-                'guru_pembimbing_id' => $data['guru_pembimbing_id'] ?? null,
-                'tanggal_mulai'      => $data['tanggal_mulai'],
-                'tanggal_selesai'    => $data['tanggal_selesai'],
-                'status'             => 'aktif',
-            ]);
-        }
+            $studentIdsBaru = collect($data['student_ids'])->diff($studentIdsSudahAktif)->values();
+
+            foreach ($studentIdsBaru as $studentId) {
+                PklPlacement::create([
+                    'student_id'         => $studentId,
+                    'dudi_id'            => $data['dudi_id'],
+                    'guru_pembimbing_id' => $data['guru_pembimbing_id'] ?? null,
+                    'tanggal_mulai'      => $data['tanggal_mulai'],
+                    'tanggal_selesai'    => $data['tanggal_selesai'],
+                    'status'             => 'aktif',
+                ]);
+            }
+
+            return [$studentIdsBaru, $studentIdsSudahAktif];
+        });
 
         $namaDilewati = $studentIdsSudahAktif->isEmpty() ? [] : Student::with('user')
             ->whereIn('id', $studentIdsSudahAktif)
@@ -180,9 +196,30 @@ class PklPlacementController extends Controller
             'status'             => 'sometimes|in:aktif,selesai',
         ]);
 
-        $pklPlacement->update($data);
+        return DB::transaction(function () use ($data, $pklPlacement) {
+            $pklPlacement = PklPlacement::lockForUpdate()->findOrFail($pklPlacement->id);
 
-        return $pklPlacement->fresh(['student.user', 'dudi', 'guruPembimbing.user']);
+            // Reaktivasi (selesai -> aktif) HARUS dicek juga, sama seperti
+            // store() — kalau tidak, admin bisa tanpa sadar bikin 2
+            // penempatan aktif sekaligus untuk siswa yang sama lewat
+            // endpoint ini (bukan cuma lewat store()).
+            if (($data['status'] ?? null) === 'aktif' && $pklPlacement->status !== 'aktif') {
+                $adaAktifLain = PklPlacement::where('student_id', $pklPlacement->student_id)
+                    ->where('id', '!=', $pklPlacement->id)
+                    ->where('status', 'aktif')
+                    ->exists();
+
+                if ($adaAktifLain) {
+                    return response()->json([
+                        'message' => 'Siswa ini sudah punya penempatan PKL lain yang masih aktif.',
+                    ], 422);
+                }
+            }
+
+            $pklPlacement->update($data);
+
+            return $pklPlacement->fresh(['student.user', 'dudi', 'guruPembimbing.user']);
+        });
     }
 
     public function destroy(PklPlacement $pklPlacement)
@@ -215,15 +252,31 @@ class PklPlacementController extends Controller
     }
 
     /**
-     * Kebalikan dari tutupSemuaAktif() — mengaktifkan kembali SEMUA
-     * penempatan yang statusnya "selesai" jadi "aktif" lagi sekaligus.
+     * Kebalikan dari tutupSemuaAktif() — mengaktifkan kembali penempatan
+     * yang statusnya "selesai" jadi "aktif" lagi sekaligus. SENGAJA tidak
+     * asal aktifkan SEMUA baris "selesai" tanpa pandang bulu — 2 guard
+     * dipasang supaya tidak menghasilkan >1 penempatan aktif untuk 1 siswa
+     * yang sama: (1) siswa yang kadung sudah punya penempatan aktif di
+     * tahun ajaran manapun dilewati, (2) siswa yang punya beberapa baris
+     * "selesai" di tahun ajaran ini (mis. sempat pindah DUDI) cuma
+     * diaktifkan yang PALING BARU.
      */
     public function aktifkanSemuaSelesai()
     {
-        $query = PklPlacement::where('status', 'selesai')->where('tahun_ajaran_id', TahunAjaran::aktifId());
-        $jumlah = $query->count();
+        $tahunAjaranId = TahunAjaran::aktifId();
 
-        $query->update(['status' => 'aktif']);
+        $sudahAktifStudentIds = PklPlacement::where('status', 'aktif')->pluck('student_id');
+
+        $idsTerpilih = PklPlacement::where('status', 'selesai')
+            ->where('tahun_ajaran_id', $tahunAjaranId)
+            ->whereNotIn('student_id', $sudahAktifStudentIds)
+            ->get()
+            ->groupBy('student_id')
+            ->map(fn ($rows) => $rows->sortByDesc('tanggal_mulai')->first()->id);
+
+        $jumlah = $idsTerpilih->count();
+
+        PklPlacement::whereIn('id', $idsTerpilih)->update(['status' => 'aktif']);
 
         return response()->json([
             'message' => "$jumlah penempatan PKL berhasil diaktifkan kembali.",
@@ -268,10 +321,6 @@ class PklPlacementController extends Controller
     }
 
     /**
-     * Penempatan PKL siswa yang sedang login, kalau ada yang aktif. Dipakai dashboard
-     * siswa untuk menentukan apakah menu PKL perlu ditampilkan (menggantikan QR barcode).
-     */
-    /**
      * Penempatan PKL siswa yang sedang login — diutamakan yang masih AKTIF,
      * tapi kalau tidak ada (semua sudah "selesai"), tetap kembalikan yang
      * PALING BARU biar siswa masih bisa buka riwayat absensi & jurnal
@@ -284,12 +333,7 @@ class PklPlacementController extends Controller
             return response()->json(null);
         }
 
-        $placement = $student->pklPlacements()
-            ->with(['dudi', 'guruPembimbing.user'])
-            ->orderByRaw("status = 'aktif' desc")
-            ->orderByDesc('tanggal_mulai')
-            ->first();
-
+        $placement = $student->pklPlacementTerkini()?->load(['dudi', 'guruPembimbing.user']);
 
         return response()->json($placement);
     }

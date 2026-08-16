@@ -3,11 +3,12 @@ import QRCode from 'qrcode';
 import {
   LogOut, Clock, ChevronDown, UserCog, ChevronLeft, ChevronRight,
   Award, AlertTriangle, ClipboardCheck, NotebookPen, ClipboardList,
-  QrCode, BookOpen, CalendarRange, Briefcase, Megaphone,
+  QrCode, BookOpen, CalendarRange, Briefcase, Megaphone, Library, Home,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api/axios';
 import PklSiswaView from './PklSiswaView';
+import PerpustakaanTab from './PerpustakaanTab';
 import EditProfileModal from '../../components/EditProfileModal';
 import LeaderboardPrestasi from '../../components/LeaderboardPrestasi';
 import JadwalPelajaranView from '../../components/JadwalPelajaranView';
@@ -20,17 +21,15 @@ const PENILAIAN_ENDPOINTS = { akademik: '/my-academic-scores', tahsin: '/my-tahs
 
 const PAGE_SIZE = 5;
 
-// Sub-menu di dalam tombol QR (tengah) — gaya sama dengan sub-menu Ortu/Guru
-// (pill putih rata tengah + ikon).
-const QR_SUB_TABS = [
-  { key: 'qr', label: 'QR', icon: QrCode },
+// Sub-menu di dalam tab Beranda (kiri) — Pengumuman jadi default (leaderboard
+// prestasi ikut ditampilkan di bawahnya), lalu Jadwal & Kalender Akademik.
+const BERANDA_SUB_TABS = [
+  { key: 'pengumuman', label: 'Pengumuman', icon: Megaphone },
   { key: 'jadwal', label: 'Jadwal', icon: BookOpen },
   { key: 'kalender', label: 'Kalender', icon: CalendarRange },
-  { key: 'pengumuman', label: 'Pengumuman', icon: Megaphone },
 ];
 
-// Sub-menu di dalam tab PKL — "Beranda" tidak perlu lagi di sini karena
-// kartu QR/leaderboard sudah pindah ke tombol QR di navbar bawah.
+// Sub-menu di dalam tab PKL.
 const PKL_SUB_TABS = [
   { key: 'absensi', label: 'Absensi', icon: ClipboardCheck },
   { key: 'jurnal', label: 'Jurnal Kegiatan', icon: NotebookPen },
@@ -50,9 +49,9 @@ export default function SiswaDashboard() {
   const [showEditProfil, setShowEditProfil] = useState(false);
   const menuRef = useRef(null);
 
-  // Navigasi utama (navbar bawah): 'qr' (tengah, melayang) | 'nilai' (kiri) | 'pkl' (kanan, cuma kalau siswa pernah PKL)
-  const [activeTab, setActiveTab] = useState('qr');
-  const [qrSub, setQrSub] = useState('qr');
+  // Navigasi utama (navbar bawah): 'qr' (tengah, melayang) | 'beranda'/'perpus' (kiri) | 'nilai'/'pkl' (kanan, PKL cuma kalau siswa pernah PKL)
+  const [activeTab, setActiveTab] = useState('beranda');
+  const [berandaSub, setBerandaSub] = useState('pengumuman');
   const [pklSub, setPklSub] = useState('absensi');
 
   useEffect(() => {
@@ -305,24 +304,63 @@ export default function SiswaDashboard() {
           </div>
         )}
       </div>
+    </>
+  );
 
-      <div className="max-w-md mx-auto mt-6">
-        <LeaderboardPrestasi />
+  const berandaContent = (
+    <>
+      <div className="flex gap-1 bg-white border border-line-200 rounded-xl p-1 mb-4 w-fit mx-auto">
+        {BERANDA_SUB_TABS.map((t) => {
+          const isActive = berandaSub === t.key;
+          return (
+            <button
+              key={t.key}
+              onClick={() => setBerandaSub(t.key)}
+              className={`flex items-center gap-1.5 px-3 sm:px-4 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-medium whitespace-nowrap transition ${
+                isActive ? 'bg-brand-600 text-white shadow-sm' : 'text-ink-700 hover:bg-mist-50 hover:text-ink-900'
+              }`}
+            >
+              <t.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              {t.label}
+            </button>
+          );
+        })}
       </div>
+
+      {berandaSub === 'pengumuman' && (
+        <div className="max-w-md mx-auto space-y-4">
+          <AnnouncementBoard />
+          <LeaderboardPrestasi />
+        </div>
+      )}
+      {berandaSub === 'jadwal' && (
+        <div className="surface-card max-w-md mx-auto p-4">
+          <h2 className="font-display font-semibold text-sm text-ink-900 mb-3">Jadwal Pelajaran</h2>
+          <JadwalPelajaranView endpoint="/my-schedule" />
+        </div>
+      )}
+      {berandaSub === 'kalender' && (
+        <div className="max-w-md mx-auto">
+          <KalenderAkademikView />
+        </div>
+      )}
     </>
   );
 
   const nilaiContent = (
     <div className="max-w-md mx-auto">
-      <h2 className="font-display font-semibold text-ink-900 flex items-center gap-2 mb-4">
-        <ClipboardList className="w-4 h-4 text-ink-500" /> Penilaian
-      </h2>
-      <PenilaianQuranTabs endpoints={PENILAIAN_ENDPOINTS} />
+      <PenilaianQuranTabs endpoints={PENILAIAN_ENDPOINTS} showIcons={false} title="Penilaian" />
     </div>
   );
 
-  const BOTTOM_TABS_LEFT = [{ key: 'nilai', label: 'Penilaian', icon: ClipboardList }];
-  const BOTTOM_TABS_RIGHT = isPkl ? [{ key: 'pkl', label: 'PKL', icon: Briefcase }] : [];
+  const BOTTOM_TABS_LEFT = [
+    { key: 'beranda', label: 'Beranda', icon: Home },
+    { key: 'perpus', label: 'Perpus', icon: Library },
+  ];
+  const BOTTOM_TABS_RIGHT = [
+    { key: 'nilai', label: 'Penilaian', icon: ClipboardList },
+    ...(isPkl ? [{ key: 'pkl', label: 'PKL', icon: Briefcase }] : []),
+  ];
 
   return (
     <div className="min-h-screen bg-mist-50 p-6 pb-24">
@@ -360,47 +398,13 @@ export default function SiswaDashboard() {
         </div>
       </div>
 
-      {activeTab === 'qr' && (
-        <>
-          <div className="flex gap-1 bg-white border border-line-200 rounded-xl p-1 mb-4 w-fit mx-auto">
-            {QR_SUB_TABS.map((t) => {
-              const isActive = qrSub === t.key;
-              return (
-                <button
-                  key={t.key}
-                  onClick={() => setQrSub(t.key)}
-                  className={`flex items-center gap-1.5 px-3 sm:px-4 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-medium whitespace-nowrap transition ${
-                    isActive ? 'bg-brand-600 text-white shadow-sm' : 'text-ink-700 hover:bg-mist-50 hover:text-ink-900'
-                  }`}
-                >
-                  <t.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                  {t.label}
-                </button>
-              );
-            })}
-          </div>
+      {activeTab === 'qr' && qrCardContent}
 
-          {qrSub === 'qr' && qrCardContent}
-          {qrSub === 'jadwal' && (
-            <div className="surface-card max-w-md mx-auto p-4">
-              <h2 className="font-display font-semibold text-sm text-ink-900 mb-3">Jadwal Pelajaran</h2>
-              <JadwalPelajaranView endpoint="/my-schedule" />
-            </div>
-          )}
-          {qrSub === 'kalender' && (
-            <div className="max-w-md mx-auto">
-              <KalenderAkademikView />
-            </div>
-          )}
-          {qrSub === 'pengumuman' && (
-            <div className="max-w-md mx-auto">
-              <AnnouncementBoard />
-            </div>
-          )}
-        </>
-      )}
+      {activeTab === 'beranda' && berandaContent}
 
       {activeTab === 'nilai' && nilaiContent}
+
+      {activeTab === 'perpus' && <PerpustakaanTab />}
 
       {activeTab === 'pkl' && isPkl && (
         <>
@@ -425,7 +429,7 @@ export default function SiswaDashboard() {
         </>
       )}
 
-      {/* Navbar bawah — Nilai kiri, QR melayang tengah, PKL kanan (kalau relevan) */}
+      {/* Navbar bawah — Beranda & Perpus kiri, QR melayang tengah, Penilaian & PKL kanan (PKL kalau relevan) */}
       <div className="fixed bottom-0 left-0 right-0 z-50">
         <div className="relative bg-white border-t border-line-200">
           <div className="max-w-md mx-auto flex items-stretch">

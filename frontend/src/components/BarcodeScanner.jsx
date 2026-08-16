@@ -56,7 +56,11 @@ export default function BarcodeScanner({ onDecode }) {
       // Perilaku default: catat absensi langsung (dipakai di halaman Absensi).
       try {
         const res = await api.post('/attendance/scan', { code: decodedText });
-        setIsError(res.data.already_scanned);
+        // Backend menolak beberapa kasus (di luar jam absen, dst) dengan
+        // HTTP 200 + flag `ditolak`, bukan status error — cuma cek
+        // `already_scanned` di sini bikin penolakan waktu tampil seolah
+        // sukses (ikon centang hijau) padahal absensinya TIDAK tercatat.
+        setIsError(res.data.already_scanned || res.data.ditolak);
         setMessage(res.data.message);
       } catch (err) {
         setIsError(true);

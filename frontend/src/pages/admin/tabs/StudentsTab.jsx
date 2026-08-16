@@ -1,7 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Plus, Trash2, Download, Upload, KeyRound, Save } from 'lucide-react';
 import api from '../../../api/axios';
 import TruncateText from '../../../components/TruncateText';
+import Pagination from '../../../components/Pagination';
+import usePagination from '../../../hooks/usePagination';
 
 import QRCode from "qrcode";
 import JSZip from "jszip";
@@ -23,6 +25,14 @@ export default function StudentsTab() {
   const [editId, setEditId] = useState(null);
   const [editData, setEditData] = useState({});
   const [saving, setSaving] = useState(false);
+
+  const sorted = useMemo(() => [...students].sort((a, b) => {
+    const kelasA = a.class_room?.name || 'ZZZZZ';
+    const kelasB = b.class_room?.name || 'ZZZZZ';
+    if (kelasA !== kelasB) return kelasA.localeCompare(kelasB);
+    return (a.user?.name || '').localeCompare(b.user?.name || '');
+  }), [students]);
+  const { page, setPage, totalPages, paginated: sortedHalaman } = usePagination(sorted, 40);
 
   const loadStudents = () => api.get('/students').then((res) => setStudents(res.data));
   const loadClasses = () => api.get('/classes').then((res) => setClasses(res.data));
@@ -264,16 +274,9 @@ export default function StudentsTab() {
           </thead>
           <tbody>
             {(() => {
-              const sorted = [...students].sort((a, b) => {
-                const kelasA = a.class_room?.name || 'ZZZZZ';
-                const kelasB = b.class_room?.name || 'ZZZZZ';
-                if (kelasA !== kelasB) return kelasA.localeCompare(kelasB);
-                return (a.user?.name || '').localeCompare(b.user?.name || '');
-              });
-
               const rows = [];
               let lastKelas = null;
-              sorted.forEach((s) => {
+              sortedHalaman.forEach((s) => {
                 const kelasName = s.class_room?.name || null;
                 if (kelasName !== lastKelas) {
                   rows.push(
@@ -348,6 +351,7 @@ export default function StudentsTab() {
           </tbody>
         </table>
         </div>
+        <Pagination page={page} totalPages={totalPages} onChange={setPage} />
       </div>
     </div>
   );

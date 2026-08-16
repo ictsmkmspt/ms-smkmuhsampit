@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Teacher extends Model
 {
-    protected $fillable = ['user_id', 'nip', 'jenis_kelamin'];
+    protected $fillable = ['user_id', 'nip', 'barcode_code', 'jenis_kelamin'];
 
     public function user()
     {
@@ -23,5 +23,10 @@ class Teacher extends Model
     public function pklPlacements()
     {
         return $this->hasMany(PklPlacement::class, 'guru_pembimbing_id');
+    }
+
+    public function peminjamanPerpustakaan()
+    {
+        return $this->morphMany(PerpustakaanPeminjaman::class, 'peminjam');
     }
 }

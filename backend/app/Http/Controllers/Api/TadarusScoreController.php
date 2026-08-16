@@ -89,6 +89,10 @@ class TadarusScoreController extends Controller
 
     public function update(Request $request, TadarusScore $tadarusScore)
     {
+        if ($tadarusScore->recorded_by !== $request->user()->id) {
+            return response()->json(['message' => 'Anda cuma boleh mengubah catatan Tadarus yang Anda catat sendiri.'], 403);
+        }
+
         $data = $request->validate([
             'surah' => 'required|integer|min:1|max:114',
             'ayat_mulai' => 'required|integer|min:1',
@@ -104,8 +108,12 @@ class TadarusScoreController extends Controller
         return $tadarusScore->fresh('student.user');
     }
 
-    public function destroy(TadarusScore $tadarusScore)
+    public function destroy(Request $request, TadarusScore $tadarusScore)
     {
+        if ($tadarusScore->recorded_by !== $request->user()->id) {
+            return response()->json(['message' => 'Anda cuma boleh menghapus catatan Tadarus yang Anda catat sendiri.'], 403);
+        }
+
         $tadarusScore->delete();
 
         return response()->json(['message' => 'Catatan Tadarus dihapus.']);

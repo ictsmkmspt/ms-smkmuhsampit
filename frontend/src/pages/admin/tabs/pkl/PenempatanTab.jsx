@@ -3,6 +3,8 @@ import { Plus, Trash2, ClipboardList, PowerOff } from 'lucide-react';
 import api from '../../../../api/axios';
 import TruncateText from '../../../../components/TruncateText';
 import DateInput from '../../../../components/DateInput';
+import Pagination from '../../../../components/Pagination';
+import usePagination from '../../../../hooks/usePagination';
 import { fmtDMY } from '../../../../utils/date';
 import { useAuth } from '../../../../context/AuthContext';
 import { useTahunAjaran, useTahunAjaranParam } from '../../../../context/TahunAjaranContext';
@@ -145,6 +147,8 @@ export default function PenempatanTab() {
       return next;
     });
   };
+
+  const { page, setPage, totalPages, paginated: listHalaman } = usePagination(list, 30);
 
   const siswaBisaDipilih = rosterStudents.filter((s) => !aktifStudentIds.has(s.id));
   const semuaTerpilih = siswaBisaDipilih.length > 0 && siswaBisaDipilih.every((s) => selectedIds.has(s.id));
@@ -365,7 +369,7 @@ export default function PenempatanTab() {
             </tr>
           </thead>
           <tbody>
-            {list.map((p) => (
+            {listHalaman.map((p) => (
               <tr key={p.id} className="border-t border-line-200">
                 <td className="py-2.5 whitespace-nowrap px-2">
                   <p className="text-ink-900 font-medium"><TruncateText text={p.student?.user?.name} /></p>
@@ -402,6 +406,7 @@ export default function PenempatanTab() {
           </tbody>
         </table>
         </div>
+        <Pagination page={page} totalPages={totalPages} onChange={setPage} />
       </div>
 
     </div>

@@ -3,6 +3,8 @@ import { Megaphone, Plus, Pencil, Trash2, Image as ImageIcon } from 'lucide-reac
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
 import { fmtDMY } from '../utils/date';
+import Pagination from './Pagination';
+import usePagination from '../hooks/usePagination';
 
 const KOSONG = { judul: '', isi: '' };
 
@@ -31,6 +33,8 @@ export default function AnnouncementBoard({ canManage = false }) {
   const [editForm, setEditForm] = useState(KOSONG);
   const [editFotoFile, setEditFotoFile] = useState(null);
   const [editSaving, setEditSaving] = useState(false);
+
+  const { page, setPage, totalPages, paginated: itemsHalaman } = usePagination(items, 1);
 
   const load = () => {
     setLoading(true);
@@ -159,7 +163,7 @@ export default function AnnouncementBoard({ canManage = false }) {
         <p className="text-center text-ink-300 py-6 text-sm">Belum ada pengumuman.</p>
       ) : (
         <div className="space-y-3">
-          {items.map((a) => {
+          {itemsHalaman.map((a) => {
             const milikSendiri = canManage && a.dibuat_oleh?.id === user.id;
             return editingId === a.id ? (
               <div key={a.id} className="border border-brand-200 bg-brand-50/40 rounded-xl p-3 space-y-2">
@@ -219,6 +223,7 @@ export default function AnnouncementBoard({ canManage = false }) {
           })}
         </div>
       )}
+      <Pagination page={page} totalPages={totalPages} onChange={setPage} />
     </div>
   );
 }

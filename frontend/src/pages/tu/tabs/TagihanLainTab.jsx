@@ -3,6 +3,8 @@ import { Search, Pencil, Check, X, Trash2, Receipt, Info, CheckCircle, Printer, 
 import api from '../../../api/axios';
 import { formatRupiah, Avatar } from '../shared';
 import TruncateText from '../../../components/TruncateText';
+import Pagination from '../../../components/Pagination';
+import usePagination from '../../../hooks/usePagination';
 
 const emptyForm = { nama_tagihan: '', nominal: '', keterangan: '' };
 
@@ -247,10 +249,17 @@ export default function TagihanLainTab() {
 
   const handleDeleteByNama = async () => {
     if (!namaFilter) return;
-    if (!confirm(`Hapus SEMUA tagihan "${namaFilter}" (${list.length} data)? Aksi ini tidak bisa dibatalkan.`)) return;
+    const belumBayarCount = list.filter((t) => t.status === 'belum_bayar').length;
+    if (!confirm(`Hapus ${belumBayarCount} tagihan "${namaFilter}" yang belum dibayar${classRoomId ? ' (kelas terpilih)' : ''}? Tagihan yang sudah lunas/dicicil tidak akan ikut terhapus. Aksi ini tidak bisa dibatalkan.`)) return;
     setDeletingNama(true);
     try {
-      const res = await api.delete('/tagihan-lain/nama', { params: { nama_tagihan: namaFilter, tahun_ajaran_id: tahunAjaranId || undefined } });
+      const res = await api.delete('/tagihan-lain/nama', {
+        params: {
+          nama_tagihan: namaFilter,
+          tahun_ajaran_id: tahunAjaranId || undefined,
+          class_room_id: classRoomId || undefined,
+        },
+      });
       notify('success', res.data.message);
       loadList();
     } catch (err) {
@@ -270,6 +279,8 @@ export default function TagihanLainTab() {
   const cocokJenisKelamin = (s) => !bulkJenisKelamin || s.jenis_kelamin === bulkJenisKelamin;
   const jumlahSiswaKelasTerpilih = students.filter((s) => bulkClassRoomIds.includes(s.class_room_id) && cocokJenisKelamin(s)).length;
   const jumlahSiswaSemua = students.filter(cocokJenisKelamin).length;
+
+  const { page, setPage, totalPages, paginated: listHalaman } = usePagination(list, 40);
 
   const totalLunas = list.filter((t) => t.status === 'lunas').length;
   const totalSebagian = list.filter((t) => t.status === 'sebagian').length;
@@ -517,7 +528,7 @@ export default function TagihanLainTab() {
               </tr>
             </thead>
             <tbody>
-              {list.map((t) => (
+              {listHalaman.map((t) => (
                 <Fragment key={t.id}>
                 <tr className="border-t border-line-200">
                   <td className="py-2.5 whitespace-nowrap px-2">
@@ -632,6 +643,7 @@ export default function TagihanLainTab() {
           </table>
           </div>
         )}
+        {!loading && list.length > 0 && <Pagination page={page} totalPages={totalPages} onChange={setPage} />}
       </div>
     </div>
   );

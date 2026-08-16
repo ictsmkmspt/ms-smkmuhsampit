@@ -1,7 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Plus, Trash2, UserPlus, Link2, Download, Upload, KeyRound, Check, X } from 'lucide-react';
 import api from '../../../api/axios';
 import TruncateText from '../../../components/TruncateText';
+import Pagination from '../../../components/Pagination';
+import usePagination from '../../../hooks/usePagination';
 
 // Wali yang semua anaknya sudah lulus tidak ditampilkan di sini lagi —
 // datanya pindah tampil di menu Alumni > Wali Siswa Alumni (tetap tidak
@@ -155,7 +157,8 @@ export default function WaliTab() {
     }
   };
 
-  const parentsAktif = parents.filter((p) => !isWaliAlumni(p));
+  const parentsAktif = useMemo(() => parents.filter((p) => !isWaliAlumni(p)), [parents]);
+  const { page, setPage, totalPages, paginated: parentsHalaman } = usePagination(parentsAktif, 20);
 
   return (
     <div className="space-y-6">
@@ -228,7 +231,7 @@ export default function WaliTab() {
         </h2>
 
         <div className="space-y-4">
-          {parentsAktif.map((p) => (
+          {parentsHalaman.map((p) => (
             <div key={p.id} className="border border-line-200 rounded-xl p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -340,6 +343,7 @@ export default function WaliTab() {
             <p className="py-6 text-center text-ink-300 text-sm">Belum ada akun wali.</p>
           )}
         </div>
+        <Pagination page={page} totalPages={totalPages} onChange={setPage} />
       </div>
     </div>
   );

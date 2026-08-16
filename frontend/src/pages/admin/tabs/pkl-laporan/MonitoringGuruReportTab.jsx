@@ -4,6 +4,8 @@ import api from '../../../../api/axios';
 import TruncateText from '../../../../components/TruncateText';
 import { fmtDMY } from '../../../../utils/date';
 import { useTahunAjaran, useTahunAjaranParam } from '../../../../context/TahunAjaranContext';
+import Pagination from '../../../../components/Pagination';
+import usePagination from '../../../../hooks/usePagination';
 
 /**
  * Laporan PKL > Monitoring Guru — rekap jurnal kunjungan/bimbingan PKL,
@@ -43,6 +45,8 @@ export default function MonitoringGuruReportTab() {
 
   // eslint-disable-next-line react-hooks/exhaustive-deps -- hanya load sekali saat mount, perubahan filter dipicu manual lewat tombol Tampilkan
   useEffect(() => { load(); }, []);
+
+  const { page, setPage, totalPages, paginated: listHalaman } = usePagination(list, 30);
 
   const totalKunjungan = list.length;
   const totalVerified = list.filter((j) => j.verified_at).length;
@@ -89,7 +93,7 @@ export default function MonitoringGuruReportTab() {
                 </tr>
               </thead>
               <tbody>
-                {list.map((j) => (
+                {listHalaman.map((j) => (
                   <tr key={j.id} className="border-t border-line-200">
                     <td className="py-2.5 text-ink-700 text-xs whitespace-nowrap px-2">{fmtDMY(j.date)}</td>
                     <td className="text-ink-900 font-medium whitespace-nowrap px-2"><TruncateText text={j.teacher?.user?.name} /></td>
@@ -110,6 +114,7 @@ export default function MonitoringGuruReportTab() {
             </table>
           </div>
         )}
+        {loaded && <Pagination page={page} totalPages={totalPages} onChange={setPage} />}
       </div>
     </div>
   );

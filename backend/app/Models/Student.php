@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class Student extends Model
 {
@@ -63,6 +64,11 @@ class Student extends Model
         return $this->hasMany(TagihanLain::class);
     }
 
+    public function peminjamanPerpustakaan()
+    {
+        return $this->morphMany(PerpustakaanPeminjaman::class, 'peminjam');
+    }
+
     /**
      * Penempatan PKL yang sedang berjalan sekarang (kalau ada). Dipakai untuk
      * menentukan apakah menu PKL perlu muncul di dashboard siswa, dan sebagai
@@ -71,6 +77,23 @@ class Student extends Model
     public function pklPlacementAktif()
     {
         return $this->hasOne(PklPlacement::class)->where('status', 'aktif');
+    }
+
+    /**
+     * Penempatan PKL siswa ini yang "relevan sekarang" — diutamakan yang
+     * masih AKTIF, tapi kalau tidak ada (semua sudah "selesai"), tetap
+     * kembalikan yang PALING BARU. Dipakai untuk absensi/jurnal/riwayat
+     * siswa supaya tidak mendadak kosong begitu status PKL-nya berubah
+     * jadi "selesai" — beda dari pklPlacementAktif() yang SENGAJA
+     * aktif-only (dipakai buat cek "apakah sedang PKL sekarang", mis.
+     * radius absensi & tampil/tidaknya menu PKL di dashboard).
+     */
+    public function pklPlacementTerkini(): ?PklPlacement
+    {
+        return $this->pklPlacements()
+            ->orderByRaw("status = 'aktif' desc")
+            ->orderByDesc('tanggal_mulai')
+            ->first();
     }
 
     public function parents()
@@ -91,11 +114,20 @@ class Student extends Model
      */
     public function tambahPoin(int $poin): void
     {
-        $this->increment('total_poin', $poin);
+        // lockForUpdate + transaksi supaya 2 pelanggaran nyaris bersamaan
+        // (mis. guru & BK sama-sama input di waktu yang mepet) tidak
+        // sama-sama lolos cek "sudah ada kejadian diproses?" sebelum
+        // salah satunya sempat insert — yang tadinya bisa menghasilkan 2
+        // baris SanksiKejadian dobel untuk kenaikan poin yang sama.
+        DB::transaction(function () use ($poin) {
+            $locked = static::whereKey($this->id)->lockForUpdate()->first();
+            $locked->increment('total_poin', $poin);
+            $this->total_poin = $locked->total_poin;
 
-        if ($poin > 0) {
-            $this->deteksiSanksiKejadian();
-        }
+            if ($poin > 0) {
+                $this->deteksiSanksiKejadian();
+            }
+        });
     }
 
     public function deteksiSanksiKejadian(): void
@@ -105,8 +137,16 @@ class Student extends Model
             return;
         }
 
+        // Dibatasi ke tahun ajaran AKTIF — total_poin dihitung ulang per
+        // tahun ajaran (lihat TahunAjaranController::aktifkan()), jadi
+        // kejadian "diproses" dari tahun ajaran lama yang belum sempat
+        // ditutup BK tidak boleh ikut dianggap "sudah pernah" untuk
+        // kenaikan poin di tahun ajaran yang sedang berjalan — kalau
+        // dibiarkan global, siswa yang kena ambang batas yang sama lagi
+        // di tahun ajaran baru diam-diam TIDAK tercatat sama sekali.
         $sudahDiproses = SanksiKejadian::where('student_id', $this->id)
             ->where('sanksi_rule_id', $rule->id)
+            ->where('tahun_ajaran_id', TahunAjaran::aktifId())
             ->where('status', 'diproses')
             ->exists();
 

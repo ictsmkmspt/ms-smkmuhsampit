@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { Plus, Trash2, Download, Upload, Save, KeyRound } from 'lucide-react';
 import api from '../../../api/axios';
 import TruncateText from '../../../components/TruncateText';
+import Pagination from '../../../components/Pagination';
+import usePagination from '../../../hooks/usePagination';
 import { useAuth } from '../../../context/AuthContext';
 
 const JK_LABEL = { L: 'Laki-laki', P: 'Perempuan' };
@@ -21,6 +23,8 @@ export default function TeachersTab() {
   const [editId, setEditId] = useState(null);
   const [editData, setEditData] = useState({});
   const [saving, setSaving] = useState(false);
+
+  const { page, setPage, totalPages, paginated: teachersHalaman } = usePagination(teachers, 40);
 
   const loadTeachers = () => api.get('/teachers').then((res) => setTeachers(res.data));
   useEffect(() => { loadTeachers(); }, []);
@@ -212,7 +216,7 @@ export default function TeachersTab() {
             </tr>
           </thead>
           <tbody>
-            {teachers.map((t) => (
+            {teachersHalaman.map((t) => (
               editId === t.id ? (
                 <tr key={t.id} className="border-t border-line-200 bg-mist-50">
                   <td colSpan="5" className="py-3 whitespace-nowrap px-2">
@@ -264,6 +268,7 @@ export default function TeachersTab() {
           </tbody>
         </table>
         </div>
+        <Pagination page={page} totalPages={totalPages} onChange={setPage} />
       </div>
     </div>
   );

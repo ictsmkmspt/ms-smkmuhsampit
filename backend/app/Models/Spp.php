@@ -24,6 +24,11 @@ class Spp extends Model
         return $this->belongsTo(User::class, 'dicatat_oleh');
     }
 
+    public function pembayaran()
+    {
+        return $this->hasMany(SppPembayaran::class);
+    }
+
     /**
      * Buat tagihan SPP 1 bulan untuk semua siswa yang belum punya catatan di
      * bulan itu, pakai nominal default dari pengaturan. Dipakai bareng oleh
@@ -37,16 +42,28 @@ class Spp extends Model
         $existingStudentIds = static::where('bulan', $bulan)->where('tahun', $tahun)->pluck('student_id');
         $students = Student::where('status', 'aktif')->whereNotIn('id', $existingStudentIds)->get();
 
+        $dibuat = 0;
         foreach ($students as $student) {
-            static::create([
-                'student_id' => $student->id,
-                'bulan' => $bulan,
-                'tahun' => $tahun,
-                'nominal' => $nominalDefault,
-                'status' => 'belum_bayar',
-            ]);
+            try {
+                static::create([
+                    'student_id' => $student->id,
+                    'bulan' => $bulan,
+                    'tahun' => $tahun,
+                    'nominal' => $nominalDefault,
+                    'status' => 'belum_bayar',
+                ]);
+                $dibuat++;
+            } catch (\Illuminate\Database\QueryException $e) {
+                // Duplikat (unique student_id+bulan+tahun) — bisa terjadi
+                // kalau generate dipicu 2x hampir bersamaan (2 TU, atau
+                // scheduler tanggal 1 barengan dgn klik manual). Lewati
+                // baris ini diam-diam alih-alih 500 di tengah loop.
+                if (!str_contains($e->getMessage(), '1062')) {
+                    throw $e;
+                }
+            }
         }
 
-        return $students->count();
+        return $dibuat;
     }
 }

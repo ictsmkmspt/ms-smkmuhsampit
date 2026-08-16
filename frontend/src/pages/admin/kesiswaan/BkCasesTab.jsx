@@ -3,6 +3,8 @@ import { Plus, Trash2, HeartHandshake } from 'lucide-react';
 import api from '../../../api/axios';
 import TruncateText from '../../../components/TruncateText';
 import DateInput from '../../../components/DateInput';
+import Pagination from '../../../components/Pagination';
+import usePagination from '../../../hooks/usePagination';
 import { fmtDMY } from '../../../utils/date';
 
 const KATEGORI_LABEL = { akademik: 'Akademik', perilaku: 'Perilaku', sosial: 'Sosial', keluarga: 'Keluarga', lainnya: 'Lainnya' };
@@ -15,6 +17,8 @@ export default function BkCasesTab() {
   const [loading, setLoading] = useState(false);
   const [editId, setEditId] = useState(null);
   const [editForm, setEditForm] = useState({});
+
+  const { page, setPage, totalPages, paginated: casesHalaman } = usePagination(cases, 30);
 
   const loadCases = () => api.get('/bk-cases').then((res) => setCases(res.data));
   useEffect(() => {
@@ -104,7 +108,7 @@ export default function BkCasesTab() {
             </tr>
           </thead>
           <tbody>
-            {cases.map((c) => (
+            {casesHalaman.map((c) => (
               <tr key={c.id} className="border-t border-line-200 align-top">
                 <td className="py-2.5 text-ink-900 whitespace-nowrap px-2">{c.student?.user?.name}<div className="text-xs text-ink-400">{c.student?.class_room?.name}</div></td>
                 <td className="text-ink-700 font-mono whitespace-nowrap px-2">{fmtDMY(c.tanggal)}</td>
@@ -148,6 +152,7 @@ export default function BkCasesTab() {
           </tbody>
         </table>
         </div>
+        <Pagination page={page} totalPages={totalPages} onChange={setPage} />
       </div>
     </div>
   );

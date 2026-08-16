@@ -42,4 +42,9 @@ class TagihanLain extends Model
     {
         return $this->belongsTo(User::class, 'dicatat_oleh');
     }
+
+    public function pembayaran()
+    {
+        return $this->hasMany(TagihanLainPembayaran::class);
+    }
 }

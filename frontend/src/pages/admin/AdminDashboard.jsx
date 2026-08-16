@@ -16,6 +16,7 @@ import PpdbTab, { PPDB_SUBMENU } from './tabs/PpdbTab';
 import KurikulumTab, { KURIKULUM_SUBMENU } from './tabs/KurikulumTab';
 import SarprasTab, { SARPRAS_SUBMENU } from './tabs/SarprasTab';
 import RoomStaffTab from './sarpras/RoomStaffTab';
+import PustakawanTab from './perpustakaan/PustakawanTab';
 import DashboardHomeTab from './tabs/DashboardHomeTab';
 import LaporanTab, { LAPORAN_SUBMENU } from './tabs/LaporanTab';
 import EditProfileModal from '../../components/EditProfileModal';
@@ -75,6 +76,7 @@ function AdminDashboardContent() {
     { key: 'kurikulum',  label: 'Pembelajaran', icon: BookOpen,        hasDropdown: true, submenu: KURIKULUM_SUBMENU, subIcons: KURIKULUM_ICONS, roles: ['waka_kurikulum'] },
     { key: 'ppdb',       label: 'PPDB',        icon: UserPlus,        hasDropdown: true, submenu: PPDB_SUBMENU, subIcons: PPDB_ICONS, roles: [] },
     { key: 'sarpras-staf', label: 'Teknisi & Kepala Bengkel', icon: HardHat, component: RoomStaffTab, roles: ['waka_sarpras'] },
+    { key: 'pustakawan', label: 'Pengurus Perpustakaan', icon: BookMarked, component: PustakawanTab, roles: [] },
     { key: 'sarpras',    label: 'Sarana dan Prasarana', icon: Wrench, hasDropdown: true, submenu: SARPRAS_SUBMENU, subIcons: SARPRAS_ICONS, roles: ['waka_sarpras'] },
     { key: 'laporan',    label: 'Laporan',     icon: FileBarChart,   hasDropdown: true, submenu: laporanSubmenu, subIcons: LAPORAN_ICONS, roles: ['waka_kesiswaan', 'waka_kurikulum'] },
     { key: 'pengaturan', label: 'Pengaturan',  icon: Settings,        hasDropdown: true, submenu: settingsSubmenu, subIcons: SETTINGS_ICONS, roles: [] },

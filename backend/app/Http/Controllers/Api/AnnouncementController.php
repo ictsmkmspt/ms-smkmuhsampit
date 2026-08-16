@@ -45,6 +45,7 @@ class AnnouncementController extends Controller
 
         if ($request->hasFile('foto')) {
             $data['foto'] = $request->file('foto')->store('pengumuman', 'public');
+            $data['foto_uploaded_at'] = now();
         }
 
         return response()->json(Announcement::create($data)->load('dibuatOleh'), 201);
@@ -86,7 +87,10 @@ class AnnouncementController extends Controller
             Storage::disk('public')->delete($announcement->foto);
         }
 
-        $announcement->update(['foto' => $request->file('foto')->store('pengumuman', 'public')]);
+        $announcement->update([
+            'foto' => $request->file('foto')->store('pengumuman', 'public'),
+            'foto_uploaded_at' => now(),
+        ]);
 
         return $announcement->fresh('dibuatOleh');
     }

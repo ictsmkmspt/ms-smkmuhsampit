@@ -12,6 +12,10 @@ class PklPlacement extends Model
         'nilai_akhir', 'catatan_pembimbing', 'tahun_ajaran_id',
     ];
 
+    protected $casts = [
+        'nilai_akhir' => 'decimal:2',
+    ];
+
     /**
      * Otomatis tandai tahun ajaran yang sedang aktif kalau tidak diisi
      * manual — supaya penempatan PKL bisa dikelompokkan per angkatan.

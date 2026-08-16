@@ -56,6 +56,21 @@ class PklJournalController extends Controller
     }
 
     /**
+     * Ambil penempatan PKL "relevan sekarang" siswa yang login — aktif kalau
+     * ada, atau yang paling baru kalau sudah "selesai". Dipakai buat
+     * riwayatSaya() supaya jurnalnya tidak mendadak kosong begitu PKL-nya
+     * berakhir.
+     */
+    private function placementSiswaTerkini(Request $request): ?PklPlacement
+    {
+        $student = $request->user()->student;
+        if (!$student) {
+            return null;
+        }
+        return $student->pklPlacementTerkini();
+    }
+
+    /**
      * Siswa menambah 1 catatan "Kegiatan" baru untuk 1 tanggal (default hari ini).
      * Boleh lebih dari 1 kegiatan dalam tanggal yang sama (misal beda jam/tugas).
      * Kolom "Catatan" tidak bisa diisi lewat sini — itu wewenang DUDI.
@@ -140,7 +155,7 @@ class PklJournalController extends Controller
      */
     public function riwayatSaya(Request $request)
     {
-        $placement = $this->placementSiswa($request);
+        $placement = $this->placementSiswaTerkini($request);
         if (!$placement) {
             return response()->json([]);
         }

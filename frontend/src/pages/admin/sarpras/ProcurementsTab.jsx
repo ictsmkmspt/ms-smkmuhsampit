@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 import api from '../../../api/axios';
 import DateInput from '../../../components/DateInput';
+import Pagination from '../../../components/Pagination';
+import usePagination from '../../../hooks/usePagination';
 import { fmtDMY } from '../../../utils/date';
 
 const STATUS_LABEL = { diajukan: 'Diajukan', disetujui: 'Disetujui', ditolak: 'Ditolak', dibeli: 'Dibeli' };
@@ -13,6 +15,8 @@ export default function ProcurementsTab() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [savingId, setSavingId] = useState(null);
+
+  const { page, setPage, totalPages, paginated: itemsHalaman } = usePagination(items, 30);
 
   const load = () => api.get('/procurements').then((res) => setItems(res.data));
   useEffect(() => { load(); }, []);
@@ -81,7 +85,7 @@ export default function ProcurementsTab() {
             </tr>
           </thead>
           <tbody>
-            {items.map((p) => (
+            {itemsHalaman.map((p) => (
               <tr key={p.id} className="border-t border-line-200">
                 <td className="py-2.5 font-mono text-ink-700 whitespace-nowrap px-2">{fmtDMY(p.tanggal_pengajuan)}</td>
                 <td className="text-ink-900 whitespace-nowrap px-2">{p.nama_barang}</td>
@@ -104,6 +108,7 @@ export default function ProcurementsTab() {
           </tbody>
         </table>
         </div>
+        <Pagination page={page} totalPages={totalPages} onChange={setPage} />
       </div>
     </div>
   );

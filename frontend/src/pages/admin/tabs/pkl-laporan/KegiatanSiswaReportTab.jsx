@@ -4,6 +4,8 @@ import api from '../../../../api/axios';
 import TruncateText from '../../../../components/TruncateText';
 import { fmtDMY } from '../../../../utils/date';
 import { useTahunAjaran, useTahunAjaranParam } from '../../../../context/TahunAjaranContext';
+import Pagination from '../../../../components/Pagination';
+import usePagination from '../../../../hooks/usePagination';
 
 const INNER_TABS = [
   { key: 'absensi', label: 'Absensi', icon: ClipboardCheck },
@@ -60,6 +62,10 @@ export default function KegiatanSiswaReportTab() {
 
   // eslint-disable-next-line react-hooks/exhaustive-deps -- hanya load sekali saat mount, perubahan filter dipicu manual lewat tombol Tampilkan
   useEffect(() => { loadAll(); }, []);
+
+  const absensiPage = usePagination(absensi, 30);
+  const jurnalPage = usePagination(jurnal, 30);
+  const nilaiPage = usePagination(nilai, 30);
 
   const jumlahDinilai = nilai.filter((p) => p.penilaian).length;
   const rataRataNilai = jumlahDinilai
@@ -133,7 +139,7 @@ export default function KegiatanSiswaReportTab() {
                 </tr>
               </thead>
               <tbody>
-                {absensi.map((p) => (
+                {absensiPage.paginated.map((p) => (
                   <tr key={p.id} className="border-t border-line-200">
                     <td className="py-2.5 whitespace-nowrap px-2">
                       <p className="text-ink-900 font-medium"><TruncateText text={p.student?.user?.name} /></p>
@@ -153,6 +159,7 @@ export default function KegiatanSiswaReportTab() {
               </tbody>
             </table>
           </div>
+          <Pagination page={absensiPage.page} totalPages={absensiPage.totalPages} onChange={absensiPage.setPage} />
         </div>
       ) : innerTab === 'jurnal' ? (
         <div className="surface-card p-5">
@@ -171,7 +178,7 @@ export default function KegiatanSiswaReportTab() {
                 </tr>
               </thead>
               <tbody>
-                {jurnal.map((j) => (
+                {jurnalPage.paginated.map((j) => (
                   <tr key={j.id} className="border-t border-line-200">
                     <td className="py-2.5 text-ink-700 text-xs whitespace-nowrap px-2">{fmtDMY(j.date)}</td>
                     <td className="whitespace-nowrap px-2">
@@ -189,6 +196,7 @@ export default function KegiatanSiswaReportTab() {
               </tbody>
             </table>
           </div>
+          <Pagination page={jurnalPage.page} totalPages={jurnalPage.totalPages} onChange={jurnalPage.setPage} />
         </div>
       ) : (
         <div className="surface-card p-5">
@@ -211,7 +219,7 @@ export default function KegiatanSiswaReportTab() {
                 </tr>
               </thead>
               <tbody>
-                {nilai.map((p) => (
+                {nilaiPage.paginated.map((p) => (
                   <tr key={p.id} className="border-t border-line-200">
                     <td className="py-2.5 whitespace-nowrap px-2">
                       <p className="text-ink-900 font-medium"><TruncateText text={p.student?.user?.name} /></p>
@@ -231,6 +239,7 @@ export default function KegiatanSiswaReportTab() {
               </tbody>
             </table>
           </div>
+          <Pagination page={nilaiPage.page} totalPages={nilaiPage.totalPages} onChange={nilaiPage.setPage} />
         </div>
       )}
     </div>

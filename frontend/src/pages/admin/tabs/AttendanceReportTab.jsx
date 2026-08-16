@@ -6,6 +6,8 @@ import TruncateText from '../../../components/TruncateText';
 import DateInput from '../../../components/DateInput';
 import { fmtDMY } from '../../../utils/date';
 import { useAuth } from '../../../context/AuthContext';
+import Pagination from '../../../components/Pagination';
+import usePagination from '../../../hooks/usePagination';
 
 const BULAN = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
 
@@ -64,6 +66,8 @@ export default function AttendanceReportTab() {
       setDeletingId(null);
     }
   };
+
+  const { page, setPage, totalPages, paginated: reportHalaman } = usePagination(report, 40);
 
   const totalHadir = report.filter((r) => r.status === 'hadir').length;
   const totalIzin = report.filter((r) => r.status === 'izin').length;
@@ -163,7 +167,7 @@ export default function AttendanceReportTab() {
               </tr>
             </thead>
             <tbody>
-              {report.map((r) => (
+              {reportHalaman.map((r) => (
                 <tr key={r.id} className="border-t border-line-200">
                   <td className="py-2.5 text-ink-900 whitespace-nowrap px-2"><TruncateText text={r.student?.user?.name} /></td>
                   <td className="text-ink-700 whitespace-nowrap px-2">{r.student?.class_room?.name || '-'}</td>
@@ -209,6 +213,7 @@ export default function AttendanceReportTab() {
           </table>
           </div>
         )}
+        {!loading && <Pagination page={page} totalPages={totalPages} onChange={setPage} />}
       </div>
 
       {editingRecord && (

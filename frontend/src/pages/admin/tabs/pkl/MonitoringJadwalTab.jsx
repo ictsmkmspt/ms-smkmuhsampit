@@ -3,6 +3,8 @@ import { Plus, Trash2, Save, CalendarClock } from 'lucide-react';
 import api from '../../../../api/axios';
 import TruncateText from '../../../../components/TruncateText';
 import DateInput from '../../../../components/DateInput';
+import Pagination from '../../../../components/Pagination';
+import usePagination from '../../../../hooks/usePagination';
 import { fmtDMY } from '../../../../utils/date';
 
 const hariIniIso = () => {
@@ -28,6 +30,8 @@ export default function MonitoringJadwalTab() {
   const [editId, setEditId] = useState(null);
   const [editData, setEditData] = useState({});
   const [editSaving, setEditSaving] = useState(false);
+
+  const { page, setPage, totalPages, paginated: listHalaman } = usePagination(list, 30);
 
   const load = () => api.get('/pkl-monitoring-jadwal').then((res) => setList(res.data)).finally(() => setLoading(false));
   useEffect(() => { load(); }, []);
@@ -120,7 +124,7 @@ export default function MonitoringJadwalTab() {
                 </tr>
               </thead>
               <tbody>
-                {list.map((j) => (
+                {listHalaman.map((j) => (
                   editId === j.id ? (
                     <tr key={j.id} className="border-t border-line-200 bg-mist-50">
                       <td colSpan="5" className="py-3 whitespace-nowrap px-2">
@@ -166,6 +170,7 @@ export default function MonitoringJadwalTab() {
             </table>
           </div>
         )}
+        {!loading && <Pagination page={page} totalPages={totalPages} onChange={setPage} />}
       </div>
     </div>
   );

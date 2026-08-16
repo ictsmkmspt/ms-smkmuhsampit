@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { Plus, Trash2, Save, Building2, MapPin, KeyRound, Download, Upload } from 'lucide-react';
 import api from '../../../../api/axios';
 import TruncateText from '../../../../components/TruncateText';
+import Pagination from '../../../../components/Pagination';
+import usePagination from '../../../../hooks/usePagination';
 import { useAuth } from '../../../../context/AuthContext';
 
 const emptyForm = {
@@ -31,6 +33,8 @@ export default function DudiTab() {
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState(null);
   const fileInputRef = useRef(null);
+
+  const { page, setPage, totalPages, paginated: listHalaman } = usePagination(list, 30);
 
   const load = () => api.get('/dudi').then((res) => setList(res.data));
   useEffect(() => { load(); }, []);
@@ -279,7 +283,7 @@ export default function DudiTab() {
             </tr>
           </thead>
           <tbody>
-            {list.map((d) => (
+            {listHalaman.map((d) => (
               editId === d.id ? (
                 <tr key={d.id} className="border-t border-line-200 bg-mist-50">
                   <td colSpan="4" className="py-3 whitespace-nowrap px-2">
@@ -355,6 +359,7 @@ export default function DudiTab() {
           </tbody>
         </table>
         </div>
+        <Pagination page={page} totalPages={totalPages} onChange={setPage} />
       </div>
     </div>
   );

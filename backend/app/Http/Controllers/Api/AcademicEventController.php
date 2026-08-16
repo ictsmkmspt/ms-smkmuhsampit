@@ -35,6 +35,13 @@ class AcademicEventController extends Controller
 
     public function update(Request $request, AcademicEvent $academicEvent)
     {
+        // Sama seperti ScheduleController/AttendanceController — data milik
+        // tahun ajaran yang sudah tidak aktif dikunci dari perubahan supaya
+        // riwayat kalender tahun lalu tidak diam-diam berubah.
+        if ($academicEvent->tahun_ajaran_id !== TahunAjaran::aktifId()) {
+            return response()->json(['message' => 'Agenda ini milik tahun ajaran yang tidak aktif dan tidak bisa diubah.'], 422);
+        }
+
         $data = $request->validate([
             'nama' => 'required|string|max:150',
             'jenis' => 'required|in:semester_ganjil,semester_genap,asts,asas,lainnya',
@@ -50,6 +57,10 @@ class AcademicEventController extends Controller
 
     public function destroy(AcademicEvent $academicEvent)
     {
+        if ($academicEvent->tahun_ajaran_id !== TahunAjaran::aktifId()) {
+            return response()->json(['message' => 'Agenda ini milik tahun ajaran yang tidak aktif dan tidak bisa dihapus.'], 422);
+        }
+
         $academicEvent->delete();
 
         return response()->json(['message' => 'Agenda kalender akademik dihapus.']);

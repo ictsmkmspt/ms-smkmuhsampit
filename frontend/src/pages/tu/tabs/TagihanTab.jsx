@@ -3,6 +3,8 @@ import { Search, Pencil, Check, X, RefreshCw, Trash2, Receipt, Info, CheckCircle
 import api from '../../../api/axios';
 import { BULAN, formatRupiah, Avatar } from '../shared';
 import TruncateText from '../../../components/TruncateText';
+import Pagination from '../../../components/Pagination';
+import usePagination from '../../../hooks/usePagination';
 import { fmtDMY } from '../../../utils/date';
 
 export default function TagihanTab() {
@@ -18,6 +20,7 @@ export default function TagihanTab() {
   const [totalSiswa, setTotalSiswa] = useState(0);
   const [loadedBulan, setLoadedBulan] = useState(bulan);
   const [loadedTahun, setLoadedTahun] = useState(tahun);
+  const [loadedClassRoomId, setLoadedClassRoomId] = useState(classRoomId);
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [deletingBulan, setDeletingBulan] = useState(false);
@@ -53,6 +56,7 @@ export default function TagihanTab() {
         setTotalSiswa(res.data.total_siswa);
         setLoadedBulan(bulan);
         setLoadedTahun(tahun);
+        setLoadedClassRoomId(classRoomId);
       })
       .finally(() => setLoading(false));
   };
@@ -75,10 +79,13 @@ export default function TagihanTab() {
 
   const handleDeleteBulan = async () => {
     if (spps.length === 0) return;
-    if (!confirm(`Hapus SEMUA ${spps.length} tagihan SPP bulan ${BULAN[loadedBulan - 1]} ${loadedTahun}? Aksi ini tidak bisa dibatalkan.`)) return;
+    const belumBayarCount = spps.filter((s) => s.status === 'belum_bayar').length;
+    if (!confirm(`Hapus ${belumBayarCount} tagihan SPP yang belum dibayar untuk bulan ${BULAN[loadedBulan - 1]} ${loadedTahun}${loadedClassRoomId ? ' (kelas terpilih)' : ''}? Tagihan yang sudah lunas/dicicil tidak akan ikut terhapus. Aksi ini tidak bisa dibatalkan.`)) return;
     setDeletingBulan(true);
     try {
-      const res = await api.delete('/spp/bulan', { params: { bulan: loadedBulan, tahun: loadedTahun } });
+      const params = { bulan: loadedBulan, tahun: loadedTahun };
+      if (loadedClassRoomId) params.class_room_id = loadedClassRoomId;
+      const res = await api.delete('/spp/bulan', { params });
       notify('success', res.data.message);
       loadSpp();
     } catch (err) {
@@ -155,6 +162,8 @@ export default function TagihanTab() {
       setSavingId(null);
     }
   };
+
+  const { page, setPage, totalPages, paginated: sppsHalaman } = usePagination(spps, 40);
 
   const totalLunas = spps.filter((s) => s.status === 'lunas').length;
   const totalSebagian = spps.filter((s) => s.status === 'sebagian').length;
@@ -287,7 +296,7 @@ export default function TagihanTab() {
               </tr>
             </thead>
             <tbody>
-              {spps.map((s) => (
+              {sppsHalaman.map((s) => (
                 <Fragment key={s.id}>
                 <tr className="border-t border-line-200">
                   <td className="py-2.5 whitespace-nowrap px-2">
@@ -402,6 +411,7 @@ export default function TagihanTab() {
           </table>
           </div>
         )}
+        {!loading && spps.length > 0 && <Pagination page={page} totalPages={totalPages} onChange={setPage} />}
       </div>
     </div>
   );

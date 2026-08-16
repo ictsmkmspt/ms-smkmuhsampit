@@ -97,6 +97,15 @@ class StudentController extends Controller
 
     public function destroy(Student $student)
     {
+        // peminjam_id di perpustakaan_peminjaman TIDAK punya FK (relasi
+        // polimorfik, bisa Student ATAU Teacher) — kalau siswa yang masih
+        // pinjam buku dihapus, baris peminjamannya jadi yatim & eksemplar
+        // terkunci "dipinjam" selamanya karena tidak ada yang bisa
+        // memprosesnya lewat menu Kembali. Dicegah di sini.
+        if ($student->peminjamanPerpustakaan()->where('status', 'dipinjam')->exists()) {
+            return response()->json(['message' => 'Siswa ini masih meminjam buku perpustakaan — proses pengembaliannya dulu sebelum menghapus akun.'], 422);
+        }
+
         $student->user->delete();
         return response()->json(['message' => 'Siswa dihapus.']);
     }

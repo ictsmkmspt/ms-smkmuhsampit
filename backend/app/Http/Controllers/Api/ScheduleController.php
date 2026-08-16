@@ -72,11 +72,15 @@ class ScheduleController extends Controller
             return response()->json(['message' => 'Penugasan ini milik tahun ajaran yang tidak aktif, tidak bisa dipakai menambah isian jadwal baru.'], 422);
         }
 
-        if (Schedule::where('period_id', $data['period_id'])->where('class_room_id', $assignment->class_room_id)->exists()) {
+        // period_id kini global (tidak per tahun ajaran, lihat komentar di
+        // atas), jadi cek bentrok WAJIB dibatasi tahun_ajaran_id — tanpa
+        // ini, jadwal tahun ajaran lama yang kebetulan pakai period_id
+        // yang sama ikut dianggap bentrok padahal sudah tidak relevan.
+        if (Schedule::where('period_id', $data['period_id'])->where('class_room_id', $assignment->class_room_id)->where('tahun_ajaran_id', $assignment->tahun_ajaran_id)->exists()) {
             return response()->json(['message' => 'Kelas ini sudah punya jadwal di jam tersebut.'], 422);
         }
 
-        if ($assignment->teacher_id && Schedule::where('period_id', $data['period_id'])->where('teacher_id', $assignment->teacher_id)->exists()) {
+        if ($assignment->teacher_id && Schedule::where('period_id', $data['period_id'])->where('teacher_id', $assignment->teacher_id)->where('tahun_ajaran_id', $assignment->tahun_ajaran_id)->exists()) {
             return response()->json(['message' => 'Guru ini sudah mengajar kelas lain di jam yang sama.'], 422);
         }
 
@@ -126,10 +130,10 @@ class ScheduleController extends Controller
             if ($period->tipe !== 'pelajaran') {
                 return response()->json(['message' => 'Baris ini bertipe kegiatan khusus, tidak bisa diisi mata pelajaran per kelas.'], 422);
             }
-            if (Schedule::where('period_id', $data['period_id'])->where('class_room_id', $schedule->class_room_id)->where('id', '!=', $schedule->id)->exists()) {
+            if (Schedule::where('period_id', $data['period_id'])->where('class_room_id', $schedule->class_room_id)->where('tahun_ajaran_id', $schedule->tahun_ajaran_id)->where('id', '!=', $schedule->id)->exists()) {
                 return response()->json(['message' => 'Kelas ini sudah punya jadwal di jam tersebut.'], 422);
             }
-            if ($schedule->teacher_id && Schedule::where('period_id', $data['period_id'])->where('teacher_id', $schedule->teacher_id)->where('id', '!=', $schedule->id)->exists()) {
+            if ($schedule->teacher_id && Schedule::where('period_id', $data['period_id'])->where('teacher_id', $schedule->teacher_id)->where('tahun_ajaran_id', $schedule->tahun_ajaran_id)->where('id', '!=', $schedule->id)->exists()) {
                 return response()->json(['message' => 'Guru ini sudah mengajar kelas lain di jam yang sama.'], 422);
             }
             $schedule->period_id = $data['period_id'];

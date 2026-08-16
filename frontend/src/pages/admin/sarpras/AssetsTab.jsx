@@ -8,6 +8,8 @@ import { filterAssets } from '../../../components/AssetSearchSelect';
 import ExportKirModal from '../../../components/ExportKirModal';
 import TruncateText from '../../../components/TruncateText';
 import DateInput from '../../../components/DateInput';
+import Pagination from '../../../components/Pagination';
+import usePagination from '../../../hooks/usePagination';
 
 const FORM_KOSONG = {
   nama: '', merk_model: '', no_seri_pabrik: '', ukuran: '', bahan: '', tanggal_perolehan: '', kode_aset: '',
@@ -74,6 +76,7 @@ export default function AssetsTab() {
   };
 
   const assetTersaring = useMemo(() => filterAssets(assets, query), [assets, query]);
+  const { page, setPage, totalPages, paginated: assetHalaman } = usePagination(assetTersaring, 40);
 
   const showBarcode = async (a) => {
     setBarcodeAsset(a);
@@ -264,7 +267,7 @@ export default function AssetsTab() {
             </tr>
           </thead>
           <tbody>
-            {assetTersaring.map((a) => (
+            {assetHalaman.map((a) => (
               <tr key={a.id} className="border-t border-line-200">
                 <td className="py-2.5 font-mono text-xs text-ink-500 whitespace-nowrap px-2">{a.kode_aset}</td>
                 <td className="text-ink-900 whitespace-nowrap px-2">{a.nama}</td>
@@ -292,6 +295,7 @@ export default function AssetsTab() {
           </tbody>
         </table>
         </div>
+        <Pagination page={page} totalPages={totalPages} onChange={setPage} />
       </div>
 
       {barcodeAsset && (

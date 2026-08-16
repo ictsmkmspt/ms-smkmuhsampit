@@ -125,14 +125,28 @@ class AcademicScoreController extends Controller
 
         $jumlah = DB::transaction(function () use ($data, $request) {
             foreach ($data['skor'] as $item) {
-                AcademicScore::create([
-                    'student_id' => $item['student_id'],
-                    'subject_id' => $data['subject_id'],
-                    'nama_kegiatan' => $data['nama_kegiatan'],
-                    'skor' => $item['nilai'],
-                    'tanggal' => $data['tanggal'],
-                    'recorded_by' => $request->user()->id,
-                ]);
+                // updateOrCreate, bukan create polos — kalau kegiatan dengan
+                // nama+tanggal yang sama pernah disimpan sebelumnya untuk
+                // siswa ini (mis. guru input ulang buat koreksi, atau
+                // nambah sisa siswa yang belum sempat diisi), skornya
+                // ditimpa di baris yang SAMA, bukan bikin baris baru yang
+                // duplikat. Ini juga yang menutup celah exportExcel() cuma
+                // bisa nyimpan 1 skor per (tanggal||nama) di memori —
+                // dengan constraint unik di tabel, duplikat itu memang
+                // tidak akan pernah ada.
+                AcademicScore::updateOrCreate(
+                    [
+                        'student_id' => $item['student_id'],
+                        'subject_id' => $data['subject_id'],
+                        'tahun_ajaran_id' => TahunAjaran::aktifId(),
+                        'nama_kegiatan' => $data['nama_kegiatan'],
+                        'tanggal' => $data['tanggal'],
+                    ],
+                    [
+                        'skor' => $item['nilai'],
+                        'recorded_by' => $request->user()->id,
+                    ]
+                );
             }
             return count($data['skor']);
         });

@@ -48,7 +48,9 @@ class PklAttendanceController extends Controller
     }
 
     /**
-     * Ambil penempatan aktif siswa yang login, atau null kalau tidak sedang PKL.
+     * Ambil penempatan AKTIF siswa yang login, atau null kalau tidak sedang
+     * PKL — dipakai aksi yang memang cuma boleh selama PKL masih berjalan
+     * (absen masuk/pulang, ajukan izin/sakit baru).
      */
     private function placementSiswa(Request $request): ?PklPlacement
     {
@@ -57,6 +59,21 @@ class PklAttendanceController extends Controller
             return null;
         }
         return $student->pklPlacementAktif()->first();
+    }
+
+    /**
+     * Ambil penempatan PKL "relevan sekarang" siswa yang login — aktif kalau
+     * ada, atau yang paling baru kalau sudah "selesai". Dipakai buat
+     * riwayatSaya() supaya riwayat absensinya tidak mendadak kosong begitu
+     * PKL-nya berakhir.
+     */
+    private function placementSiswaTerkini(Request $request): ?PklPlacement
+    {
+        $student = $request->user()->student;
+        if (!$student) {
+            return null;
+        }
+        return $student->pklPlacementTerkini();
     }
 
     /**
@@ -196,6 +213,63 @@ class PklAttendanceController extends Controller
     }
 
     /**
+     * Siswa mengubah pengajuan izin/sakit miliknya sendiri (salah tanggal/status/
+     * alasan) — cuma boleh selama belum diverifikasi IDUKA dan belum ada absen
+     * masuk beneran di baris itu (kalau sudah, itu bukan izin/sakit lagi).
+     */
+    public function updateIzinSakit(Request $request, PklAttendance $pklAttendance)
+    {
+        $data = $request->validate([
+            'date'   => 'required|date|before_or_equal:' . now()->addDays(7)->format('Y-m-d'),
+            'status' => 'required|in:izin,sakit',
+            'alasan' => 'required|string|max:500',
+        ], [
+            'date.before_or_equal' => 'Tanggal izin/sakit maksimal 7 hari ke depan.',
+        ]);
+
+        $placement = $this->placementSiswa($request);
+        if (!$placement || $pklAttendance->pkl_placement_id !== $placement->id) {
+            return response()->json(['message' => 'Anda tidak berwenang mengubah pengajuan ini.'], 403);
+        }
+        if ($pklAttendance->verified_at) {
+            return response()->json(['message' => 'Pengajuan ini sudah diverifikasi IDUKA, tidak bisa diubah lagi.'], 422);
+        }
+        if ($pklAttendance->time_in) {
+            return response()->json(['message' => 'Baris ini sudah tercatat absen masuk, bukan izin/sakit.'], 422);
+        }
+
+        $pklAttendance->date             = $data['date'];
+        $pklAttendance->status           = $data['status'];
+        $pklAttendance->catatan_koreksi  = $data['alasan'];
+        $pklAttendance->save();
+
+        return response()->json(['message' => 'Pengajuan berhasil diubah.', 'absensi' => $pklAttendance->fresh()]);
+    }
+
+    /**
+     * Siswa membatalkan (hapus) pengajuan izin/sakit miliknya sendiri — sama
+     * batasannya seperti updateIzinSakit(): belum diverifikasi & bukan absen
+     * masuk beneran.
+     */
+    public function hapusIzinSakit(Request $request, PklAttendance $pklAttendance)
+    {
+        $placement = $this->placementSiswa($request);
+        if (!$placement || $pklAttendance->pkl_placement_id !== $placement->id) {
+            return response()->json(['message' => 'Anda tidak berwenang menghapus pengajuan ini.'], 403);
+        }
+        if ($pklAttendance->verified_at) {
+            return response()->json(['message' => 'Pengajuan ini sudah diverifikasi IDUKA, tidak bisa dihapus lagi.'], 422);
+        }
+        if ($pklAttendance->time_in) {
+            return response()->json(['message' => 'Baris ini sudah tercatat absen masuk, bukan izin/sakit.'], 422);
+        }
+
+        $pklAttendance->delete();
+
+        return response()->json(['message' => 'Pengajuan izin/sakit berhasil dibatalkan.']);
+    }
+
+    /**
      * Rekap jumlah hadir/izin/sakit/alpa per penempatan PKL — dipakai
      * Laporan PKL > Kegiatan Siswa > Absensi Kegiatan (admin/waka
      * kurikulum). Bisa disaring per IDUKA (dudi_id) & status penempatan,
@@ -246,7 +320,7 @@ class PklAttendanceController extends Controller
      */
     public function riwayatSaya(Request $request)
     {
-        $placement = $this->placementSiswa($request);
+        $placement = $this->placementSiswaTerkini($request);
         if (!$placement) {
             return response()->json([]);
         }

@@ -11,6 +11,7 @@ const STATUS_BADGE = { mendaftar: 'badge-soft', verifikasi: 'badge-honey', diter
 const FORM_KOSONG = {
   nama_lengkap: '', nisn: '', jenis_kelamin: 'L', tempat_lahir: '', tanggal_lahir: '',
   alamat: '', asal_sekolah: '', nama_orang_tua: '', no_hp_orang_tua: '', jurusan_pilihan: '',
+  website: '', // honeypot — disembunyikan dari manusia lewat CSS, bot pengisi-otomatis biasanya ikut isi semua field yang ada
 };
 
 export default function PpdbPublic() {
@@ -120,6 +121,16 @@ export default function PpdbPublic() {
               ) : (
                 <form onSubmit={handleDaftar} className="space-y-3">
                   {error && <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2">{error}</p>}
+                  <input
+                    type="text"
+                    name="website"
+                    value={form.website}
+                    onChange={(e) => setForm({ ...form, website: e.target.value })}
+                    className="absolute -left-[9999px] w-px h-px opacity-0"
+                    tabIndex={-1}
+                    autoComplete="off"
+                    aria-hidden="true"
+                  />
                   <input placeholder="Nama Lengkap" value={form.nama_lengkap} onChange={(e) => setForm({ ...form, nama_lengkap: e.target.value })} className="field-input w-full" required />
                   <div className="grid grid-cols-2 gap-3">
                     <input placeholder="NISN (opsional)" value={form.nisn} onChange={(e) => setForm({ ...form, nisn: e.target.value })} className="field-input" />

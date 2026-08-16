@@ -2,7 +2,10 @@
 
 namespace App\Providers;
 
+use App\Models\Student;
+use App\Models\Teacher;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
@@ -23,6 +26,15 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Peminjam buku perpustakaan bisa Siswa ATAU Guru (relasi
+        // polimorfik) — alias pendek dipakai (bukan nama kelas lengkap)
+        // supaya kolom peminjam_type di DB tetap ringkas & tidak terikat
+        // ke namespace kalau model dipindah nanti.
+        Relation::morphMap([
+            'siswa' => Student::class,
+            'guru' => Teacher::class,
+        ]);
+
         // Batas umum semua endpoint /api — per user login kalau sudah
         // autentikasi, per IP kalau masih tamu (mis. sebelum login).
         RateLimiter::for('api', function (Request $request) {
@@ -39,6 +51,19 @@ class AppServiceProvider extends ServiceProvider
             return [
                 Limit::perMinute(5)->by($identitas.'|'.$request->ip()),
                 Limit::perMinute(20)->by($request->ip()),
+            ];
+        });
+
+        // Formulir PPDB publik tidak pakai auth sama sekali (calon siswa
+        // belum punya akun) — batas umum 120x/menit punya /api global
+        // terlalu longgar untuk formulir pendaftaran, jadi dibatasi lebih
+        // ketat lagi khusus endpoint ini: per menit (mencegah bot ngebut)
+        // dan per hari (mencegah spam pelan-pelan yang menghindari batas
+        // per menit).
+        RateLimiter::for('ppdb-daftar', function (Request $request) {
+            return [
+                Limit::perMinute(3)->by($request->ip()),
+                Limit::perDay(15)->by($request->ip()),
             ];
         });
     }

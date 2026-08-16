@@ -37,8 +37,6 @@ export default function PoinReportSection() {
 
   useEffect(() => { loadAll(); }, []); // eslint-disable-line
 
-  const totalAlpa = summary.reduce((sum, s) => sum + (s.alpa_count || 0), 0);
-
   const sortedSummary = [...summary].sort((a, b) => b.total_poin - a.total_poin);
   const summaryTotalPages = Math.max(1, Math.ceil(sortedSummary.length / SUMMARY_PAGE_SIZE));
   const paginatedSummary = sortedSummary.slice((summaryPage - 1) * SUMMARY_PAGE_SIZE, summaryPage * SUMMARY_PAGE_SIZE);
@@ -53,9 +51,6 @@ export default function PoinReportSection() {
           <button onClick={loadAll} className="btn-primary">
             <Search className="w-4 h-4" /> Tampilkan
           </button>
-          <div className="ml-auto flex gap-2">
-            <span className="badge-soft badge-rose">Total Alpa: {totalAlpa}</span>
-          </div>
         </div>
 
         <div className="surface-card p-5">

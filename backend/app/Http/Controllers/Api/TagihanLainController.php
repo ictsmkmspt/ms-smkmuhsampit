@@ -7,9 +7,36 @@ use App\Models\Student;
 use App\Models\TagihanLain;
 use App\Models\TahunAjaran;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class TagihanLainController extends Controller
 {
+    /**
+     * Satu-satunya jalan mengubah jumlah_dibayar — selalu lewat baris
+     * riwayat pembayaran dulu (supaya laporan kas per-bulan akurat &
+     * cicilan lintas bulan tidak saling menimpa), baru jumlah_dibayar /
+     * status / tanggal_bayar di induk di-cache ulang dari total riwayatnya.
+     */
+    private function catatPembayaranTagihanLain(TagihanLain $tagihanLain, int $jumlah, string $tanggal, ?int $dicatatOleh, ?string $keterangan = null): TagihanLain
+    {
+        $tagihanLain->pembayaran()->create([
+            'jumlah' => $jumlah,
+            'tanggal_bayar' => $tanggal,
+            'dicatat_oleh' => $dicatatOleh,
+            'keterangan' => $keterangan,
+        ]);
+
+        $totalDibayar = (int) $tagihanLain->pembayaran()->sum('jumlah');
+        $tagihanLain->update([
+            'jumlah_dibayar' => $totalDibayar,
+            'status' => $totalDibayar >= $tagihanLain->nominal ? 'lunas' : 'sebagian',
+            'tanggal_bayar' => $tanggal,
+            'dicatat_oleh' => $dicatatOleh,
+        ]);
+
+        return $tagihanLain;
+    }
+
     /**
      * Daftar tagihan lain, dengan filter opsional nama tagihan (misal cuma
      * lihat "Study Tour 2026"), kelas, status, dan cari nama/NIS siswa.
@@ -191,7 +218,18 @@ class TagihanLainController extends Controller
 
         $tagihanLain->update($data);
 
-        return $tagihanLain->load(['student.user', 'student.classRoom']);
+        // Status HARUS dihitung ulang terhadap jumlah_dibayar yang sudah
+        // ada kalau nominal ikut berubah — supaya tidak ada tagihan yang
+        // nominalnya dinaikkan di atas status "lunas" lama tapi sisanya
+        // diam-diam hilang dari laporan, atau diturunkan di bawah
+        // jumlah_dibayar bikin "sisa" tampil negatif di UI.
+        if (isset($data['nominal'])) {
+            $tagihanLain->update(['status' => $tagihanLain->jumlah_dibayar >= $tagihanLain->nominal
+                ? 'lunas'
+                : ($tagihanLain->jumlah_dibayar > 0 ? 'sebagian' : 'belum_bayar')]);
+        }
+
+        return $tagihanLain->fresh(['student.user', 'student.classRoom']);
     }
 
     public function updateStatus(Request $request, TagihanLain $tagihanLain)
@@ -200,45 +238,57 @@ class TagihanLainController extends Controller
             'status' => 'required|in:belum_bayar,lunas',
         ]);
 
-        $tagihanLain->update([
-            'status' => $data['status'],
-            'jumlah_dibayar' => $data['status'] === 'lunas' ? $tagihanLain->nominal : 0,
-            'tanggal_bayar' => $data['status'] === 'lunas' ? now()->toDateString() : null,
-            'dicatat_oleh' => $request->user()->id,
-        ]);
+        return DB::transaction(function () use ($data, $tagihanLain, $request) {
+            $tagihanLain = TagihanLain::lockForUpdate()->findOrFail($tagihanLain->id);
 
-        return $tagihanLain->load(['student.user', 'student.classRoom']);
+            if ($data['status'] === 'lunas') {
+                $sisa = $tagihanLain->nominal - $tagihanLain->jumlah_dibayar;
+                if ($sisa > 0) {
+                    $this->catatPembayaranTagihanLain($tagihanLain, $sisa, now()->toDateString(), $request->user()->id, 'Ditandai lunas manual');
+                }
+            } else {
+                // "Batalkan" — tidak menghapus riwayat pembayaran yang
+                // sudah tercatat. Statusnya cuma dilepas dari "lunas":
+                // balik ke "sebagian" kalau ternyata masih ada cicilan
+                // asli yang sudah masuk, atau "belum_bayar" kalau memang
+                // belum ada setoran sama sekali.
+                $tagihanLain->refresh();
+                $tagihanLain->update([
+                    'status' => $tagihanLain->jumlah_dibayar > 0 ? 'sebagian' : 'belum_bayar',
+                    'dicatat_oleh' => $request->user()->id,
+                ]);
+            }
+
+            return $tagihanLain->fresh(['student.user', 'student.classRoom']);
+        });
     }
 
     /**
      * Catat pembayaran SEBAGIAN (cicilan) — jumlah yang dibayar ditambahkan
-     * ke akumulasi jumlah_dibayar. Status otomatis jadi "lunas" begitu
-     * akumulasinya mencapai nominal penuh, atau "sebagian" kalau masih kurang.
+     * ke akumulasi jumlah_dibayar (lewat riwayat pembayaran, bukan
+     * menimpa). Status otomatis jadi "lunas" begitu akumulasinya mencapai
+     * nominal penuh, atau "sebagian" kalau masih kurang.
      */
     public function bayarSebagian(Request $request, TagihanLain $tagihanLain)
     {
-        $sisa = $tagihanLain->nominal - $tagihanLain->jumlah_dibayar;
+        return DB::transaction(function () use ($request, $tagihanLain) {
+            $tagihanLain = TagihanLain::lockForUpdate()->findOrFail($tagihanLain->id);
+            $sisa = $tagihanLain->nominal - $tagihanLain->jumlah_dibayar;
 
-        if ($sisa <= 0) {
-            return response()->json(['message' => 'Tagihan ini sudah lunas.'], 422);
-        }
+            if ($sisa <= 0) {
+                return response()->json(['message' => 'Tagihan ini sudah lunas.'], 422);
+            }
 
-        $data = $request->validate([
-            'jumlah' => "required|integer|min:1|max:{$sisa}",
-        ], [
-            'jumlah.max' => "Jumlah bayar melebihi sisa tagihan (Rp" . number_format($sisa, 0, ',', '.') . ").",
-        ]);
+            $data = $request->validate([
+                'jumlah' => "required|integer|min:1|max:{$sisa}",
+            ], [
+                'jumlah.max' => "Jumlah bayar melebihi sisa tagihan (Rp" . number_format($sisa, 0, ',', '.') . ").",
+            ]);
 
-        $jumlahBaru = $tagihanLain->jumlah_dibayar + $data['jumlah'];
+            $this->catatPembayaranTagihanLain($tagihanLain, $data['jumlah'], now()->toDateString(), $request->user()->id);
 
-        $tagihanLain->update([
-            'jumlah_dibayar' => $jumlahBaru,
-            'status' => $jumlahBaru >= $tagihanLain->nominal ? 'lunas' : 'sebagian',
-            'tanggal_bayar' => now()->toDateString(),
-            'dicatat_oleh' => $request->user()->id,
-        ]);
-
-        return $tagihanLain->load(['student.user', 'student.classRoom']);
+            return $tagihanLain->fresh(['student.user', 'student.classRoom']);
+        });
     }
 
     public function destroy(TagihanLain $tagihanLain)
@@ -254,23 +304,33 @@ class TagihanLainController extends Controller
      * Dibatasi ke 1 tahun ajaran (default aktif, atau tahun yang sedang
      * ditampilkan lewat tombol pemilih tahun ajaran) — supaya tidak
      * kebablasan menghapus tagihan tahun lain yang kebetulan nama-nya sama
-     * (mis. "Seragam" dipakai ulang tiap tahun).
+     * (mis. "Seragam" dipakai ulang tiap tahun). Sengaja HANYA menghapus
+     * yang masih 'belum_bayar' — sebelumnya menghapus SEMUA tanpa pandang
+     * status, jadi ikut menghapus tagihan yang sudah lunas/dicicil
+     * beserta bukti pembayarannya.
      */
     public function destroyByNama(Request $request)
     {
         $data = $request->validate([
             'nama_tagihan' => 'required|string|max:150',
             'tahun_ajaran_id' => 'nullable|exists:tahun_ajarans,id',
+            'class_room_id' => 'nullable|exists:class_rooms,id',
         ]);
 
         $tahunAjaranId = $data['tahun_ajaran_id'] ?? TahunAjaran::aktifId();
 
-        $dihapus = TagihanLain::where('nama_tagihan', $data['nama_tagihan'])
+        $query = TagihanLain::where('nama_tagihan', $data['nama_tagihan'])
             ->where('tahun_ajaran_id', $tahunAjaranId)
-            ->delete();
+            ->where('status', 'belum_bayar');
+
+        if (!empty($data['class_room_id'])) {
+            $query->whereHas('student', fn ($q) => $q->where('class_room_id', $data['class_room_id']));
+        }
+
+        $dihapus = $query->delete();
 
         return response()->json([
-            'message' => "Berhasil menghapus {$dihapus} tagihan \"{$data['nama_tagihan']}\".",
+            'message' => "Berhasil menghapus {$dihapus} tagihan \"{$data['nama_tagihan']}\" yang belum dibayar (tagihan yang sudah lunas/dicicil TIDAK ikut terhapus).",
             'dihapus' => $dihapus,
         ]);
     }

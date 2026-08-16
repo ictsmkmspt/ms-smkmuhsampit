@@ -3,6 +3,8 @@ import { Plus, Pencil, Trash2, X, ClipboardList, FileSpreadsheet } from 'lucide-
 import api from '../../../api/axios';
 import TruncateText from '../../../components/TruncateText';
 import DateInput from '../../../components/DateInput';
+import Pagination from '../../../components/Pagination';
+import usePagination from '../../../hooks/usePagination';
 import { fmtDMY } from '../../../utils/date';
 
 const hariIniIso = () => {
@@ -151,6 +153,14 @@ export default function NilaiTab() {
   const handleDelete = async (row) => {
     if (!confirm(`Hapus nilai "${row.nama_kegiatan}" milik ${row.student?.user?.name}?`)) return;
     await api.delete(`/academic-scores/${row.id}`);
+    // Kalau ini baris TERAKHIR di kegiatan yang lagi dibuka, tutup modal-nya
+    // dulu — kalau tidak, viewingKegiatan jadi null (kegiatannya lenyap
+    // dari kegiatanList begitu baris terakhirnya hilang) padahal modal
+    // masih terbuka, dan tombol Edit/Hapus Kegiatan di headernya crash
+    // begitu diklik karena viewingKegiatan.nama_kegiatan dibaca dari null.
+    if (viewingKegiatan?.items.length === 1) {
+      setViewingKey(null);
+    }
     loadScores();
   };
 
@@ -187,9 +197,12 @@ export default function NilaiTab() {
       .sort((a, b) => b.tanggal.localeCompare(a.tanggal));
   }, [scores]);
 
+  const { page, setPage, totalPages, paginated: kegiatanHalaman } = usePagination(kegiatanList, 20);
+
   const viewingKegiatan = kegiatanList.find((g) => g.key === viewingKey) || null;
 
   const bukaEditKegiatan = () => {
+    if (!viewingKegiatan) return;
     setEditKegiatanForm({ nama_kegiatan: viewingKegiatan.nama_kegiatan, tanggal: viewingKegiatan.tanggal });
     setEditingKegiatan(true);
   };
@@ -214,6 +227,7 @@ export default function NilaiTab() {
   };
 
   const handleDeleteKegiatan = async () => {
+    if (!viewingKegiatan) return;
     if (!confirm(`Hapus kegiatan "${viewingKegiatan.nama_kegiatan}"? Semua nilai ${viewingKegiatan.items.length} siswa di kegiatan ini akan ikut terhapus.`)) return;
     try {
       await api.delete('/academic-scores/kegiatan', { data: { ids: viewingKegiatan.items.map((row) => row.id) } });
@@ -307,7 +321,7 @@ export default function NilaiTab() {
                   </tr>
                 </thead>
                 <tbody>
-                  {kegiatanList.map((g) => (
+                  {kegiatanHalaman.map((g) => (
                     <tr
                       key={g.key}
                       onClick={() => { setViewingKey(g.key); setEditingKegiatan(false); }}
@@ -331,6 +345,7 @@ export default function NilaiTab() {
                 </tbody>
               </table>
             </div>
+            <Pagination page={page} totalPages={totalPages} onChange={setPage} className="px-4" />
           </div>
         </>
       )}

@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { Trash2 } from 'lucide-react';
 import api from '../../../api/axios';
 import TruncateText from '../../../components/TruncateText';
+import Pagination from '../../../components/Pagination';
+import usePagination from '../../../hooks/usePagination';
 
 const STATUS_LABEL = { mendaftar: 'Mendaftar', verifikasi: 'Verifikasi', diterima: 'Diterima', ditolak: 'Ditolak' };
 const STATUS_BADGE = { mendaftar: 'badge-soft', verifikasi: 'badge-honey', diterima: 'badge-brand', ditolak: 'badge-soft' };
@@ -10,6 +12,8 @@ export default function FormulirPpdbTab() {
   const [pendaftar, setPendaftar] = useState([]);
   const [statusFilter, setStatusFilter] = useState('');
   const [savingId, setSavingId] = useState(null);
+
+  const { page, setPage, totalPages, paginated: pendaftarHalaman } = usePagination(pendaftar, 40);
 
   const load = (status) => api.get('/ppdb', { params: { status: status || undefined } }).then((res) => setPendaftar(res.data));
   useEffect(() => { load(statusFilter); }, [statusFilter]);
@@ -62,7 +66,7 @@ export default function FormulirPpdbTab() {
             </tr>
           </thead>
           <tbody>
-            {pendaftar.map((p) => (
+            {pendaftarHalaman.map((p) => (
               <tr key={p.id} className="border-t border-line-200">
                 <td className="py-2.5 font-mono text-xs text-ink-500 whitespace-nowrap px-2">{p.kode_pendaftaran}</td>
                 <td className="text-ink-900 whitespace-nowrap px-2"><TruncateText text={p.nama_lengkap} /></td>
@@ -86,6 +90,7 @@ export default function FormulirPpdbTab() {
           </tbody>
         </table>
         </div>
+        <Pagination page={page} totalPages={totalPages} onChange={setPage} />
       </div>
     </div>
   );

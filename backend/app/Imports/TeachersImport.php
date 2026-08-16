@@ -5,6 +5,7 @@ namespace App\Imports;
 use App\Models\Teacher;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Maatwebsite\Excel\Concerns\SkipsFailures;
 use Maatwebsite\Excel\Concerns\SkipsOnFailure;
 use Maatwebsite\Excel\Concerns\ToModel;
@@ -55,6 +56,7 @@ class TeachersImport implements ToModel, WithHeadingRow, WithValidation, SkipsOn
             return Teacher::create([
                 'user_id' => $user->id,
                 'nip'     => $row['nip'],
+                'barcode_code' => 'GRU-' . strtoupper(Str::random(8)),
                 'jenis_kelamin' => !empty($row['jenis_kelamin']) ? strtoupper(trim($row['jenis_kelamin'])) : null,
             ]);
         });

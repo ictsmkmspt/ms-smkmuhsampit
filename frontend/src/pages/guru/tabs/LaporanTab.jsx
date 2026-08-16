@@ -2,18 +2,13 @@ import { useState } from 'react';
 import AbsensiReportSection from './laporan/AbsensiReportSection';
 import PoinReportSection from './laporan/PoinReportSection';
 import PrestasiReportSection from './laporan/PrestasiReportSection';
-import BkReportSection from './laporan/BkReportSection';
 
 // Gaya sub-menu sama seperti sub-menu Ortu (pill putih rata tengah) —
-// label dipersingkat: Absensi, Pelanggaran, Prestasi, BK.
-// Section BK cuma bermakna buat wali kelas (dibatasi backend), tapi
-// ditampilkan ke semua guru sama seperti section lain — bukan disembunyikan
-// per role, konsisten dengan pola tab ini.
+// label dipersingkat: Absensi, Pelanggaran, Prestasi.
 const SECTIONS = [
   { key: 'absensi', label: 'Absensi', component: AbsensiReportSection },
   { key: 'poin', label: 'Pelanggaran', component: PoinReportSection },
   { key: 'prestasi', label: 'Prestasi', component: PrestasiReportSection },
-  { key: 'bk', label: 'BK', component: BkReportSection },
 ];
 
 export default function LaporanTab() {

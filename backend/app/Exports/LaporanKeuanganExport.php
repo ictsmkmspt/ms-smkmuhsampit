@@ -2,8 +2,8 @@
 
 namespace App\Exports;
 
-use App\Models\Spp;
-use App\Models\TagihanLain;
+use App\Models\SppPembayaran;
+use App\Models\TagihanLainPembayaran;
 use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
@@ -20,32 +20,34 @@ class LaporanKeuanganExport implements FromCollection, WithHeadings, WithMapping
     /**
      * Gabungan rincian pembayaran SPP + Tagihan Lain dalam 1 rentang tanggal,
      * diurutkan berdasarkan tanggal bayar — supaya jadi 1 daftar transaksi
-     * kronologis di file Excel-nya.
+     * kronologis di file Excel-nya. Sumbernya riwayat pembayaran (ledger),
+     * BUKAN baris tagihan induk — nominal jumlah_dibayar/tanggal_bayar di
+     * induk cuma cache akumulasi TERBARU, jadi query langsung ke induk
+     * salah mengelompokkan cicilan lintas bulan ke bulan pembayaran
+     * TERAKHIR saja.
      */
     public function collection(): Collection
     {
-        $spp = Spp::with(['student.user', 'student.classRoom'])
+        $spp = SppPembayaran::with(['spp.student.user', 'spp.student.classRoom'])
             ->whereBetween('tanggal_bayar', [$this->start, $this->end])
-            ->where('jumlah_dibayar', '>', 0)
             ->get()
-            ->map(fn ($s) => [
-                'tanggal' => $s->tanggal_bayar,
+            ->map(fn ($p) => [
+                'tanggal' => $p->tanggal_bayar,
                 'jenis' => 'SPP',
-                'keterangan' => 'SPP ' . $this->namaBulan($s->bulan) . ' ' . $s->tahun,
-                'model' => $s,
-                'jumlah_dibayar' => $s->jumlah_dibayar,
+                'keterangan' => 'SPP ' . $this->namaBulan($p->spp->bulan) . ' ' . $p->spp->tahun,
+                'student' => $p->spp->student,
+                'jumlah_dibayar' => $p->jumlah,
             ]);
 
-        $lain = TagihanLain::with(['student.user', 'student.classRoom'])
+        $lain = TagihanLainPembayaran::with(['tagihanLain.student.user', 'tagihanLain.student.classRoom'])
             ->whereBetween('tanggal_bayar', [$this->start, $this->end])
-            ->where('jumlah_dibayar', '>', 0)
             ->get()
-            ->map(fn ($t) => [
-                'tanggal' => $t->tanggal_bayar,
+            ->map(fn ($p) => [
+                'tanggal' => $p->tanggal_bayar,
                 'jenis' => 'Tagihan Lain',
-                'keterangan' => $t->nama_tagihan,
-                'model' => $t,
-                'jumlah_dibayar' => $t->jumlah_dibayar,
+                'keterangan' => $p->tagihanLain->nama_tagihan,
+                'student' => $p->tagihanLain->student,
+                'jumlah_dibayar' => $p->jumlah,
             ]);
 
         return $spp->concat($lain)->sortBy('tanggal')->values();
@@ -66,8 +68,8 @@ class LaporanKeuanganExport implements FromCollection, WithHeadings, WithMapping
     {
         return [
             $row['tanggal'],
-            $row['model']->student->user->name ?? '-',
-            $row['model']->student->classRoom->name ?? '-',
+            $row['student']->user->name ?? '-',
+            $row['student']->classRoom->name ?? '-',
             $row['jenis'],
             $row['keterangan'],
             (int) $row['jumlah_dibayar'],

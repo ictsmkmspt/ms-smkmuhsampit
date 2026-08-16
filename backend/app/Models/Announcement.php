@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Announcement extends Model
 {
-    protected $fillable = ['judul', 'isi', 'foto', 'dibuat_oleh'];
+    protected $fillable = ['judul', 'isi', 'foto', 'foto_uploaded_at', 'dibuat_oleh'];
 
     protected $appends = ['foto_url'];
 

@@ -6,8 +6,10 @@ use App\Exports\LaporanKeuanganExport;
 use App\Exports\LaporanTunggakanExport;
 use App\Http\Controllers\Controller;
 use App\Models\Spp;
+use App\Models\SppPembayaran;
 use App\Models\Student;
 use App\Models\TagihanLain;
+use App\Models\TagihanLainPembayaran;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -24,17 +26,39 @@ class LaporanController extends Controller
     {
         [$start, $end] = $this->rentangBulan($request);
 
-        $rincianSpp = Spp::with(['student.user', 'student.classRoom'])
+        // Sumbernya HARUS riwayat pembayaran (ledger), bukan baris tagihan
+        // induk — jumlah_dibayar/tanggal_bayar di induk cuma cache
+        // akumulasi TERBARU. Query langsung ke induk salah mengelompokkan
+        // cicilan lintas bulan: seluruh akumulasinya (termasuk yang masuk
+        // bulan lalu) ikut tercatat ke bulan pembayaran TERAKHIR saja.
+        $rincianSpp = SppPembayaran::with(['spp.student.user', 'spp.student.classRoom'])
             ->whereBetween('tanggal_bayar', [$start, $end])
-            ->where('jumlah_dibayar', '>', 0)
             ->orderBy('tanggal_bayar')
-            ->get();
+            ->get()
+            ->map(fn ($p) => [
+                'id' => $p->id,
+                'tanggal_bayar' => $p->tanggal_bayar,
+                'jumlah_dibayar' => $p->jumlah,
+                'keterangan' => $p->keterangan,
+                'student' => $p->spp->student,
+                'bulan' => $p->spp->bulan,
+                'tahun' => $p->spp->tahun,
+            ])
+            ->values();
 
-        $rincianLain = TagihanLain::with(['student.user', 'student.classRoom'])
+        $rincianLain = TagihanLainPembayaran::with(['tagihanLain.student.user', 'tagihanLain.student.classRoom'])
             ->whereBetween('tanggal_bayar', [$start, $end])
-            ->where('jumlah_dibayar', '>', 0)
             ->orderBy('tanggal_bayar')
-            ->get();
+            ->get()
+            ->map(fn ($p) => [
+                'id' => $p->id,
+                'tanggal_bayar' => $p->tanggal_bayar,
+                'jumlah_dibayar' => $p->jumlah,
+                'keterangan' => $p->keterangan,
+                'student' => $p->tagihanLain->student,
+                'nama_tagihan' => $p->tagihanLain->nama_tagihan,
+            ])
+            ->values();
 
         $totalSpp = $rincianSpp->sum('jumlah_dibayar');
         $totalLain = $rincianLain->sum('jumlah_dibayar');

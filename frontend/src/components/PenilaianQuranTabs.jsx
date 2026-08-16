@@ -17,7 +17,7 @@ const SUB_TABS = [
  * Nilai Akademik tetap punya skor (dari fitur lama); Tahsin/Tahfidz/Tadarus
  * murni catatan progres + keterangan, tanpa skor.
  */
-export default function PenilaianQuranTabs({ endpoints, title }) {
+export default function PenilaianQuranTabs({ endpoints, title, showIcons = true }) {
   const [sub, setSub] = useState('akademik');
   const [academicScores, setAcademicScores] = useState([]);
   const [tahsinScores, setTahsinScores] = useState([]);
@@ -82,7 +82,7 @@ export default function PenilaianQuranTabs({ endpoints, title }) {
                 isActive ? 'bg-brand-600 text-white shadow-sm' : 'text-ink-700 hover:bg-mist-50 hover:text-ink-900'
               }`}
             >
-              <t.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              {showIcons && <t.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
               <span className="sm:hidden">{t.labelShort}</span>
               <span className="hidden sm:inline">{t.label}</span>
             </button>

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\PklPembimbinganJournal;
+use App\Models\PklPlacement;
 use Illuminate\Http\Request;
 
 class PklPembimbinganJournalController extends Controller
@@ -64,6 +65,19 @@ class PklPembimbinganJournalController extends Controller
         $teacher = $user->teacher;
         if ($user->role !== 'guru' || !$teacher) {
             return response()->json(['message' => 'Hanya guru pembimbing yang bisa mengisi jurnal ini.'], 403);
+        }
+
+        // dudi_id cuma divalidasi exists:dudis,id di atas — itu tidak
+        // membuktikan guru ini benar pembimbing di DUDI itu. Tanpa cek
+        // ini, guru mana pun bisa kirim dudi_id sembarangan langsung ke
+        // API (dropdown di frontend cuma menyaring pilihan di UI, bukan
+        // proteksi sungguhan) dan bikin catatan kunjungan ke IDUKA yang
+        // bukan bimbingannya.
+        $adalahPembimbing = PklPlacement::where('dudi_id', $data['dudi_id'])
+            ->where('guru_pembimbing_id', $teacher->id)
+            ->exists();
+        if (!$adalahPembimbing) {
+            return response()->json(['message' => 'Anda bukan guru pembimbing untuk siswa manapun di IDUKA ini.'], 403);
         }
 
         $jurnal = PklPembimbinganJournal::create([

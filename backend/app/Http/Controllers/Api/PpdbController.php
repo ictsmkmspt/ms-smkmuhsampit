@@ -47,16 +47,28 @@ class PpdbController extends Controller
             return response()->json(['message' => 'Pendaftaran online sedang ditutup.'], 422);
         }
 
+        // Honeypot: field tersembunyi di formulir yang bot pengisi-otomatis
+        // biasanya ikut isi tapi manusia tidak pernah lihat (disembunyikan
+        // lewat CSS di frontend). Kalau terisi, diam-diam anggap sukses
+        // (supaya bot tidak tahu ditolak & terus mencoba pola lain) tanpa
+        // benar-benar menyimpan apa pun.
+        if ($request->filled('website')) {
+            return response()->json([
+                'message' => 'Pendaftaran berhasil. Simpan kode pendaftaran untuk mengecek status.',
+                'kode_pendaftaran' => PpdbPendaftar::buatKodePendaftaran(),
+            ], 201);
+        }
+
         $data = $request->validate([
             'nama_lengkap' => 'required|string|max:150',
-            'nisn' => 'nullable|string|max:20',
+            'nisn' => 'nullable|regex:/^[0-9]{5,20}$/',
             'jenis_kelamin' => 'required|in:L,P',
             'tempat_lahir' => 'nullable|string|max:100',
-            'tanggal_lahir' => 'nullable|date',
-            'alamat' => 'nullable|string',
+            'tanggal_lahir' => 'nullable|date|before:today',
+            'alamat' => 'nullable|string|max:500',
             'asal_sekolah' => 'nullable|string|max:150',
             'nama_orang_tua' => 'nullable|string|max:150',
-            'no_hp_orang_tua' => 'required|string|max:20',
+            'no_hp_orang_tua' => ['required', 'string', 'regex:/^[0-9+\-\s]{8,20}$/'],
             'jurusan_pilihan' => 'nullable|string|max:100',
         ]);
 

@@ -4,6 +4,8 @@ import api from '../../../api/axios';
 import TruncateText from '../../../components/TruncateText';
 import CetakSuratPeringatanModal from '../../../components/CetakSuratPeringatanModal';
 import { fmtDMY, fmtDMYHM } from '../../../utils/date';
+import Pagination from '../../../components/Pagination';
+import usePagination from '../../../hooks/usePagination';
 
 const STATUS_LABEL = { diproses: 'Diproses', selesai: 'Selesai' };
 const STATUS_BADGE = { diproses: 'badge-honey', selesai: 'badge-brand' };
@@ -33,6 +35,7 @@ export default function SanksiSiswaTab({ onCatatTindakLanjut }) {
   useEffect(load, [statusFilter]); // eslint-disable-line
 
   const jumlahDiproses = useMemo(() => kejadian.filter((k) => k.status === 'diproses').length, [kejadian]);
+  const { page, setPage, totalPages, paginated: kejadianHalaman } = usePagination(kejadian, 30);
 
   const bukaDetail = (k) => {
     setViewing(k);
@@ -88,7 +91,7 @@ export default function SanksiSiswaTab({ onCatatTindakLanjut }) {
               </tr>
             </thead>
             <tbody>
-              {kejadian.map((k) => (
+              {kejadianHalaman.map((k) => (
                 <tr key={k.id} onClick={() => bukaDetail(k)} className="border-t border-line-200 cursor-pointer hover:bg-mist-50 transition">
                   <td className="py-2.5 pl-4 whitespace-nowrap px-2">
                     <p className="text-ink-900 font-medium"><TruncateText text={k.student?.user?.name} /></p>
@@ -110,6 +113,7 @@ export default function SanksiSiswaTab({ onCatatTindakLanjut }) {
             </tbody>
           </table>
         </div>
+        <Pagination page={page} totalPages={totalPages} onChange={setPage} className="px-4" />
       </div>
 
       {viewing && (

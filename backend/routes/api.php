@@ -28,6 +28,13 @@ use App\Http\Controllers\Api\PklPembimbinganJournalController;
 use App\Http\Controllers\Api\PklMonitoringJadwalController;
 use App\Http\Controllers\Api\PklPlacementController;
 use App\Http\Controllers\Api\PeriodTemplateController;
+use App\Http\Controllers\Api\BukuController;
+use App\Http\Controllers\Api\PerpustakaanKategoriController;
+use App\Http\Controllers\Api\PerpustakaanPeminjamanController;
+use App\Http\Controllers\Api\PerpustakaanPengaturanController;
+use App\Http\Controllers\Api\PerpustakaanRakController;
+use App\Http\Controllers\Api\PerpustakaanSirkulasiController;
+use App\Http\Controllers\Api\PustakawanController;
 use App\Http\Controllers\Api\PpdbController;
 use App\Http\Controllers\Api\PrayerAttendanceController;
 use App\Http\Controllers\Api\ProcurementController;
@@ -61,13 +68,16 @@ Route::get('/school-profile', [SchoolProfileController::class, 'show']);
 
 // PPDB (Penerimaan Peserta Didik Baru) — calon siswa belum punya akun sama
 // sekali, jadi formulir daftar & cek status WAJIB publik (tanpa auth:sanctum).
-Route::post('/ppdb/daftar', [PpdbController::class, 'daftar']);
+Route::post('/ppdb/daftar', [PpdbController::class, 'daftar'])->middleware('throttle:ppdb-daftar');
 Route::get('/ppdb/status/{kode}', [PpdbController::class, 'status']);
 Route::get('/ppdb/pengaturan', [PpdbController::class, 'pengaturan']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
     Route::put('/me/password', [AuthController::class, 'changePassword']);
+    // Kartu leaderboard dipakai bersama di beranda Guru, Siswa, dan Wali
+    // (lihat LeaderboardPrestasi.jsx) — sengaja tidak dikunci ke satu role
+    // tertentu, sama seperti /quran-surah di bawah ini.
     Route::get('/leaderboard/prestasi', [AchievementController::class, 'leaderboard']);
     Route::post('/logout', [AuthController::class, 'logout']);
     // Data referensi 114 surah — dipakai guru (input Tadarus) maupun
@@ -617,5 +627,65 @@ Route::middleware('auth:sanctum')->group(function () {
     // atas yang tidak relevan buat BK.
     Route::middleware('role:admin,guru,tu,waka_kesiswaan,waka_kurikulum,waka_humas,bk')->group(function () {
         Route::get('/classes', [ClassRoomController::class, 'index']);
+    });
+
+    // ===== Perpustakaan — halaman terpisah, dikelola Pengurus Perpustakaan =====
+    // Admin: kelola akun pengurus + durasi pinjam default. Pengurus: katalog
+    // buku+eksemplar, sirkulasi pinjam/kembali via scan, daftar
+    // aktif/terlambat/riwayat. Siswa: baca katalog + peminjaman sendiri saja.
+    Route::middleware('role:admin')->group(function () {
+        Route::get('/pustakawan', [PustakawanController::class, 'index']);
+        Route::post('/pustakawan', [PustakawanController::class, 'store']);
+        Route::put('/pustakawan/{id}', [PustakawanController::class, 'update']);
+        Route::delete('/pustakawan/{id}', [PustakawanController::class, 'destroy']);
+        Route::put('/pustakawan/{id}/reset-password', [PustakawanController::class, 'resetPassword']);
+    });
+
+    Route::middleware('role:admin,pustakawan,siswa,guru')->group(function () {
+        Route::get('/perpustakaan-buku', [BukuController::class, 'index']);
+    });
+
+    Route::middleware('role:admin,pustakawan')->group(function () {
+        // Rute statis DULU sebelum {buku}/{eksemplar} wildcard, konsisten
+        // dengan konvensi yang sudah dipakai di seluruh file ini.
+        Route::get('/perpustakaan-pengaturan', [PerpustakaanPengaturanController::class, 'index']);
+        Route::put('/perpustakaan-pengaturan', [PerpustakaanPengaturanController::class, 'update']);
+        Route::get('/perpustakaan-kategori', [PerpustakaanKategoriController::class, 'index']);
+        Route::post('/perpustakaan-kategori', [PerpustakaanKategoriController::class, 'store']);
+        Route::put('/perpustakaan-kategori/{kategori}', [PerpustakaanKategoriController::class, 'update']);
+        Route::delete('/perpustakaan-kategori/{kategori}', [PerpustakaanKategoriController::class, 'destroy']);
+        Route::get('/perpustakaan-rak', [PerpustakaanRakController::class, 'index']);
+        Route::post('/perpustakaan-rak', [PerpustakaanRakController::class, 'store']);
+        Route::put('/perpustakaan-rak/{rak}', [PerpustakaanRakController::class, 'update']);
+        Route::delete('/perpustakaan-rak/{rak}', [PerpustakaanRakController::class, 'destroy']);
+        Route::get('/perpustakaan-ringkasan', [BukuController::class, 'ringkasan']);
+        Route::get('/perpustakaan-buku/template', [BukuController::class, 'downloadTemplate']);
+        Route::post('/perpustakaan-buku/import', [BukuController::class, 'importExcel']);
+        Route::get('/perpustakaan-eksemplar', [BukuController::class, 'semuaEksemplarUntukCetak']);
+        Route::get('/perpustakaan-buku/{buku}', [BukuController::class, 'show']);
+        Route::post('/perpustakaan-buku', [BukuController::class, 'store']);
+        Route::put('/perpustakaan-buku/{buku}', [BukuController::class, 'update']);
+        Route::post('/perpustakaan-buku/{buku}/cover', [BukuController::class, 'uploadCover']);
+        Route::delete('/perpustakaan-buku/{buku}', [BukuController::class, 'destroy']);
+        Route::post('/perpustakaan-buku/{buku}/eksemplar', [BukuController::class, 'tambahEksemplar']);
+        Route::put('/perpustakaan-eksemplar/{eksemplar}', [BukuController::class, 'ubahStatusEksemplar']);
+        Route::delete('/perpustakaan-eksemplar/{eksemplar}', [BukuController::class, 'hapusEksemplar']);
+
+        Route::get('/perpustakaan-sirkulasi/peminjam/cari', [PerpustakaanSirkulasiController::class, 'cariPeminjamNama']);
+        Route::get('/perpustakaan-sirkulasi/peminjam/kode/{kode}', [PerpustakaanSirkulasiController::class, 'cariPeminjamKode']);
+        Route::get('/perpustakaan-sirkulasi/buku/{kode}', [PerpustakaanSirkulasiController::class, 'cariBuku']);
+        Route::post('/perpustakaan-sirkulasi/pinjam', [PerpustakaanSirkulasiController::class, 'pinjam']);
+        Route::post('/perpustakaan-sirkulasi/{peminjaman}/kembalikan', [PerpustakaanSirkulasiController::class, 'kembalikan']);
+
+        Route::get('/perpustakaan-peminjaman/aktif', [PerpustakaanPeminjamanController::class, 'aktif']);
+        Route::get('/perpustakaan-peminjaman/terlambat', [PerpustakaanPeminjamanController::class, 'terlambat']);
+        Route::get('/perpustakaan-peminjaman/riwayat', [PerpustakaanPeminjamanController::class, 'riwayat']);
+        Route::get('/perpustakaan-peminjaman/export-riwayat', [PerpustakaanPeminjamanController::class, 'exportRiwayat']);
+        Route::get('/perpustakaan-peminjaman/{tipe}/{id}', [PerpustakaanPeminjamanController::class, 'perPeminjam'])
+            ->whereIn('tipe', ['siswa', 'guru'])->whereNumber('id');
+    });
+
+    Route::middleware('role:siswa,guru')->group(function () {
+        Route::get('/perpustakaan-peminjaman-saya', [PerpustakaanPeminjamanController::class, 'punyaSaya']);
     });
 });

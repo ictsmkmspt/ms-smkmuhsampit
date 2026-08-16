@@ -4,6 +4,8 @@ import api from '../../../api/axios';
 import AssetSearchSelect from '../../../components/AssetSearchSelect';
 import BarcodeScanner from '../../../components/BarcodeScanner';
 import DateInput from '../../../components/DateInput';
+import Pagination from '../../../components/Pagination';
+import usePagination from '../../../hooks/usePagination';
 import { fmtDMY } from '../../../utils/date';
 
 const STATUS_LABEL = { dilaporkan: 'Dilaporkan', diproses: 'Diproses', selesai: 'Selesai' };
@@ -84,6 +86,7 @@ export default function MaintenanceTab() {
   };
 
   const assetDiRuangTerpilih = form.room_id ? assets.filter((a) => String(a.room_id) === form.room_id) : assets;
+  const { page, setPage, totalPages, paginated: requestsHalaman } = usePagination(requests, 30);
 
   return (
     <div className="space-y-6">
@@ -132,7 +135,7 @@ export default function MaintenanceTab() {
             </tr>
           </thead>
           <tbody>
-            {requests.map((r) => (
+            {requestsHalaman.map((r) => (
               <tr key={r.id} className="border-t border-line-200">
                 <td className="py-2.5 font-mono text-ink-700 whitespace-nowrap px-2">{fmtDMY(r.tanggal_lapor)}</td>
                 <td className="text-ink-700 whitespace-nowrap px-2">{r.asset?.nama || r.room?.nama || '-'}</td>
@@ -155,6 +158,7 @@ export default function MaintenanceTab() {
           </tbody>
         </table>
         </div>
+        <Pagination page={page} totalPages={totalPages} onChange={setPage} />
       </div>
 
       {scanning && (

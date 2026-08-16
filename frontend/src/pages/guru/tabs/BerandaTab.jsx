@@ -4,16 +4,19 @@ import LeaderboardPrestasi from '../../../components/LeaderboardPrestasi';
 import KalenderAkademikView from '../../../components/KalenderAkademikView';
 import JadwalPelajaranView from '../../../components/JadwalPelajaranView';
 import AnnouncementBoard from '../../../components/AnnouncementBoard';
+import { PeminjamanSayaView, KatalogView } from '../../../components/PerpustakaanSelfServiceViews';
 
 // Sub-menu di atas konten, gaya sama dengan sub-menu Ortu (pill putih rata
-// tengah, label pendek di HP) — 4 tab sejajar: Beranda (leaderboard),
-// Jadwal Pelajaran, Kalender Akademik, dan Pengumuman, bukan digabung 1
-// scroll panjang.
+// tengah, label pendek di HP) — Beranda (pengumuman + leaderboard jadi 1
+// tab, bukan dipisah lagi), Jadwal Pelajaran, Kalender Akademik, lalu
+// Peminjaman Saya & Katalog perpus (guru bisa jadi peminjam buku juga,
+// sama seperti siswa).
 const SUB_TABS = [
   { key: 'beranda', label: 'Beranda', labelShort: 'Beranda' },
   { key: 'jadwal', label: 'Jadwal Pelajaran', labelShort: 'Jadwal' },
   { key: 'kalender', label: 'Kalender Akademik', labelShort: 'Kalender' },
-  { key: 'pengumuman', label: 'Pengumuman', labelShort: 'Pengumuman' },
+  { key: 'peminjaman', label: 'Peminjaman Saya', labelShort: 'Pinjaman' },
+  { key: 'katalog', label: 'Katalog Buku', labelShort: 'Katalog' },
 ];
 
 export default function BerandaTab() {
@@ -39,7 +42,12 @@ export default function BerandaTab() {
         })}
       </div>
 
-      {activeTab === 'beranda' && <LeaderboardPrestasi />}
+      {activeTab === 'beranda' && (
+        <div className="space-y-4">
+          <AnnouncementBoard canManage />
+          <LeaderboardPrestasi />
+        </div>
+      )}
 
       {activeTab === 'jadwal' && (
         <div className="surface-card p-4">
@@ -52,7 +60,9 @@ export default function BerandaTab() {
 
       {activeTab === 'kalender' && <KalenderAkademikView />}
 
-      {activeTab === 'pengumuman' && <AnnouncementBoard canManage />}
+      {activeTab === 'peminjaman' && <PeminjamanSayaView />}
+
+      {activeTab === 'katalog' && <KatalogView />}
     </div>
   );
 }

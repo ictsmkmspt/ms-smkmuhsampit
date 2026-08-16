@@ -13,6 +13,7 @@ import DudiDashboard from './pages/dudi/DudiDashboard';
 import TuDashboard from './pages/tu/TuDashboard';
 import RoomStaffDashboard from './pages/sarpras-staff/RoomStaffDashboard';
 import BkDashboard from './pages/bk/BkDashboard';
+import PerpustakaanStaffDashboard from './pages/perpustakaan-staff/PerpustakaanStaffDashboard';
 import PrintMonthlyAttendance from './pages/print/PrintMonthlyAttendance';
 import PrintPklJurnal from './pages/print/PrintPklJurnal';
 import PrintPklJurnalKegiatan from './pages/print/PrintPklJurnalKegiatan';
@@ -21,6 +22,7 @@ import PrintSppNota from './pages/print/PrintSppNota';
 import PrintTagihanLainNota from './pages/print/PrintTagihanLainNota';
 import PrintKalenderAkademik from './pages/print/PrintKalenderAkademik';
 import PrintAssetLabels from './pages/print/PrintAssetLabels';
+import PrintBukuLabels from './pages/print/PrintBukuLabels';
 
 export default function App() {
   return (
@@ -62,6 +64,10 @@ export default function App() {
 
             <Route path="/print/aset-label" element={
               <ProtectedRoute allowedRoles={['admin', 'waka_sarpras', 'teknisi', 'kepala_bengkel']}><PrintAssetLabels /></ProtectedRoute>
+            } />
+
+            <Route path="/print/buku-label" element={
+              <ProtectedRoute allowedRoles={['admin', 'pustakawan']}><PrintBukuLabels /></ProtectedRoute>
             } />
 
             <Route path="/admin/*" element={
@@ -110,6 +116,10 @@ export default function App() {
 
             <Route path="/bk/*" element={
               <ProtectedRoute allowedRoles={['bk']}><BkDashboard /></ProtectedRoute>
+            } />
+
+            <Route path="/perpustakaan-staff/*" element={
+              <ProtectedRoute allowedRoles={['pustakawan']}><PerpustakaanStaffDashboard /></ProtectedRoute>
             } />
 
             <Route path="*" element={<Login />} />

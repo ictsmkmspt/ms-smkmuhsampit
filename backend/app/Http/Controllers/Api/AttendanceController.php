@@ -333,6 +333,20 @@ class AttendanceController extends Controller
         $newStatus = $data['status'];
         $timeIn    = $data['time_in'] ?? null;
 
+        // Sama seperti violationUpdate()/violationDestroy() — koreksi cuma
+        // boleh untuk tanggal yang masuk rentang tahun ajaran yang SEDANG
+        // aktif. Tanpa guard ini, tanggal dari tahun ajaran lama bisa
+        // dikoreksi lewat sini dan poin pelanggarannya (tambah/kurang)
+        // salah tertimpa ke total_poin tahun ajaran yang BERBEDA (tahun
+        // berjalan), bukan ke tahun ajaran asal datanya.
+        $tahunAktif = TahunAjaran::where('status', 'aktif')->first();
+        if (!$tahunAktif) {
+            return response()->json(['message' => 'Tidak ada tahun ajaran yang sedang aktif. Aktifkan dulu tahun ajaran di menu Pengaturan sebelum mengoreksi absensi.'], 422);
+        }
+        if ($date < $tahunAktif->tanggal_mulai || $date > $tahunAktif->tanggal_selesai) {
+            return response()->json(['message' => 'Tanggal ini berada di luar rentang tahun ajaran yang sedang aktif, tidak bisa dikoreksi lewat sini. Aktifkan dulu tahun ajaran yang sesuai kalau perlu mengoreksi data tanggal ini.'], 422);
+        }
+
         return DB::transaction(function () use ($student, $date, $newStatus, $timeIn, $request) {
             $attendance = Attendance::where('student_id', $student->id)->where('date', $date)->first();
             $oldStatus  = $attendance ? $attendance->status : 'alpa';
@@ -479,13 +493,23 @@ class AttendanceController extends Controller
         $query = Student::with(['user', 'classRoom'])->where('status', 'aktif');
         if ($classRoomId) $query->where('class_room_id', $classRoomId);
 
+        // alpa_count DIHITUNG dari Violation type='alpa' — alpa SENGAJA
+        // tidak bikin baris Attendance sama sekali (lihat processAlpa()/
+        // attendanceManual()/updateStatus()), jadi hitungannya tidak bisa
+        // dari tabel attendances.
         if ($tahunAjaranId === TahunAjaran::aktifId()) {
-            return $query->orderByDesc('total_poin')->get();
+            return $query->withCount(['violations as alpa_count' => function ($q) use ($tahunAjaranId) {
+                    $q->where('type', 'alpa')->where('tahun_ajaran_id', $tahunAjaranId);
+                }])
+                ->orderByDesc('total_poin')->get();
         }
 
         return $query->withSum(['violations as riwayat_poin' => function ($q) use ($tahunAjaranId) {
                 $q->where('tahun_ajaran_id', $tahunAjaranId);
             }], 'poin')
+            ->withCount(['violations as alpa_count' => function ($q) use ($tahunAjaranId) {
+                $q->where('type', 'alpa')->where('tahun_ajaran_id', $tahunAjaranId);
+            }])
             ->get()
             ->each(function ($s) {
                 $s->total_poin = (int) ($s->riwayat_poin ?? 0);
@@ -736,14 +760,30 @@ class AttendanceController extends Controller
             ]);
         }
 
-        Attendance::create([
-            'student_id'    => $student->id,
-            'class_room_id' => $student->class_room_id,
-            'date'          => $today,
-            'time_in'       => now()->format('H:i:s'),
-            'status'        => $data['status'],
-            'scanned_by'    => $request->user()->id,
-        ]);
+        DB::transaction(function () use ($student, $today, $data, $request) {
+            // Alpa TIDAK bikin baris attendances (lihat komentar di atas),
+            // jadi cek $existing tadi tidak akan pernah menangkap alpa hari
+            // ini. Kalau siswa ternyata sudah kadung ditandai alpa hari ini
+            // (lewat tombol "Proses Alpa" atau form ini sebelumnya) dan
+            // sekarang dikoreksi jadi hadir/izin/sakit, poin alpa yang
+            // sudah kadung masuk HARUS dibatalkan dulu — sama seperti
+            // updateStatus() menangani transisi alpa -> non-alpa.
+            $oldAlpa = Violation::where('student_id', $student->id)
+                ->where('date', $today)->where('type', 'alpa')->first();
+            if ($oldAlpa) {
+                $student->tambahPoin(-$oldAlpa->poin);
+                $oldAlpa->delete();
+            }
+
+            Attendance::create([
+                'student_id'    => $student->id,
+                'class_room_id' => $student->class_room_id,
+                'date'          => $today,
+                'time_in'       => now()->format('H:i:s'),
+                'status'        => $data['status'],
+                'scanned_by'    => $request->user()->id,
+            ]);
+        });
 
         return response()->json([
             'message' => 'Absensi manual berhasil: ' . $student->user->name . ' (' . $data['status'] . ')',
