@@ -64,7 +64,7 @@ export default function SirkulasiTab() {
       setStep('konfirmasi');
       return { error: false, message: `${res.data.tipe === 'guru' ? 'Guru' : 'Siswa'} ditemukan: ${res.data.user.name}` };
     } catch (err) {
-      return { error: true, message: err.response?.data?.message || 'Barcode/NIS/NIP tidak dikenali.' };
+      return { error: true, message: err.response?.data?.message || 'QR Code/NIS/NIP tidak dikenali.' };
     }
   };
 
@@ -179,7 +179,7 @@ export default function SirkulasiTab() {
             <input
               value={kodeManual} onChange={(e) => setKodeManual(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleManual()}
-              placeholder={step === 'scan-buku' ? 'Atau ketik kode QR...' : 'Atau ketik barcode/NIS/NIP...'}
+              placeholder={step === 'scan-buku' ? 'Atau ketik kode QR...' : 'Atau ketik kode QR/NIS/NIP...'}
               className="field-input text-sm flex-1"
             />
             <button onClick={handleManual} className="btn-primary px-4">Cari</button>

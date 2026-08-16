@@ -43,7 +43,7 @@ export default function BarcodeScanner({ onDecode }) {
 
     if (onDecode) {
       // Dipakai oleh halaman lain (misal Poin Pelanggaran) yang butuh
-      // penanganan berbeda saat barcode berhasil dibaca.
+      // penanganan berbeda saat QR Code berhasil dibaca.
       try {
         const result = await onDecode(decodedText);
         setIsError(!!result?.error);
@@ -64,7 +64,7 @@ export default function BarcodeScanner({ onDecode }) {
         setMessage(res.data.message);
       } catch (err) {
         setIsError(true);
-        setMessage(err.response?.data?.message || 'Barcode tidak dikenali.');
+        setMessage(err.response?.data?.message || 'QR Code tidak dikenali.');
       }
     }
 
@@ -77,12 +77,6 @@ export default function BarcodeScanner({ onDecode }) {
     <div className="max-w-md mx-auto">
       <div className="relative rounded-2xl overflow-hidden bg-ink-900 aspect-square">
         <div id="reader" className="w-full h-full" />
-        <div className="pointer-events-none absolute inset-5">
-          <span className="absolute top-0 left-0 w-7 h-7 border-t-2 border-l-2 border-honey-400 rounded-tl-lg" />
-          <span className="absolute top-0 right-0 w-7 h-7 border-t-2 border-r-2 border-honey-400 rounded-tr-lg" />
-          <span className="absolute bottom-0 left-0 w-7 h-7 border-b-2 border-l-2 border-honey-400 rounded-bl-lg" />
-          <span className="absolute bottom-0 right-0 w-7 h-7 border-b-2 border-r-2 border-honey-400 rounded-br-lg" />
-        </div>
       </div>
 
       {message && (

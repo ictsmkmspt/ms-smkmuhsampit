@@ -48,7 +48,7 @@ export default function PoinPelanggaranSection() {
       return { message: `Siswa ditemukan: ${res.data.user.name}`, error: false };
     } catch (err) {
       setScannedStudent(null);
-      return { message: err.response?.data?.message || 'Barcode tidak dikenali.', error: true };
+      return { message: err.response?.data?.message || 'QR Code tidak dikenali.', error: true };
     }
   };
 
@@ -98,7 +98,7 @@ export default function PoinPelanggaranSection() {
 
   return (
     <div>
-      <p className="text-center text-sm text-ink-500 mb-4">Arahkan kamera ke QR/barcode siswa</p>
+      <p className="text-center text-sm text-ink-500 mb-4">Arahkan kamera ke QR Code siswa</p>
       <div className="max-w-md mx-auto">
         <BarcodeScanner onDecode={handleDecode} />
       </div>

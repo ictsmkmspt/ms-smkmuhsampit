@@ -34,8 +34,8 @@ export default function JamMasukTab() {
   };
 
   const jamFields = [
-    { key: 'jam_masuk_mulai', label: 'Jam Mulai Absen', desc: 'Sebelum jam ini, barcode tidak bisa di-scan (absen belum dibuka)' },
-    { key: 'jam_masuk_tutup', label: 'Jam Tutup Absen', desc: 'Setelah jam ini, barcode tidak bisa di-scan lagi (absen ditutup)' },
+    { key: 'jam_masuk_mulai', label: 'Jam Mulai Absen', desc: 'Sebelum jam ini, QR Code tidak bisa di-scan (absen belum dibuka)' },
+    { key: 'jam_masuk_tutup', label: 'Jam Tutup Absen', desc: 'Setelah jam ini, QR Code tidak bisa di-scan lagi (absen ditutup)' },
   ];
 
   const { jam_masuk_mulai, jam_masuk_tutup } = form;

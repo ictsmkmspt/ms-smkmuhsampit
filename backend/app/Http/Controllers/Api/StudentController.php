@@ -159,7 +159,7 @@ class StudentController extends Controller
 
         if (!$student) {
             return response()->json([
-                'message' => 'Barcode tidak dikenali / siswa tidak ditemukan.',
+                'message' => 'QR Code tidak dikenali / siswa tidak ditemukan.',
             ], 404);
         }
 

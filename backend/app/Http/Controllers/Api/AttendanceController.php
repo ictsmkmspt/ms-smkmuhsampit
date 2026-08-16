@@ -48,7 +48,7 @@ class AttendanceController extends Controller
 
         if (!$student) {
             throw ValidationException::withMessages([
-                'code' => ['Barcode tidak dikenali / siswa tidak ditemukan.'],
+                'code' => ['QR Code tidak dikenali / siswa tidak ditemukan.'],
             ]);
         }
 

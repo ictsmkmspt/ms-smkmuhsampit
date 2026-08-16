@@ -1,14 +1,16 @@
 import { useState } from 'react';
-import { LogOut, BookMarked, Home, ScanLine, Library, Settings } from 'lucide-react';
+import { LogOut, BookMarked, Home, ScanLine, UserCheck, Library, Settings } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import BerandaTab from './tabs/BerandaTab';
 import SirkulasiTab from './tabs/SirkulasiTab';
+import KunjunganTab from './tabs/KunjunganTab';
 import KatalogTab from './tabs/KatalogTab';
 import PengaturanTab from './tabs/PengaturanTab';
 
 const TABS = [
   { key: 'beranda', label: 'Beranda', icon: Home, component: BerandaTab },
   { key: 'sirkulasi', label: 'Sirkulasi', icon: ScanLine, component: SirkulasiTab },
+  { key: 'kunjungan', label: 'Kunjungan', icon: UserCheck, component: KunjunganTab },
   { key: 'katalog', label: 'Katalog', icon: Library, component: KatalogTab },
   { key: 'pengaturan', label: 'Pengaturan', icon: Settings, component: PengaturanTab },
 ];

@@ -59,7 +59,7 @@ export default function SholatZuhurSection() {
       }
       return { message: res.data.message, error: !!res.data.already_scanned };
     } catch (err) {
-      return { message: err.response?.data?.message || 'Barcode tidak dikenali.', error: true };
+      return { message: err.response?.data?.message || 'QR Code tidak dikenali.', error: true };
     }
   };
 

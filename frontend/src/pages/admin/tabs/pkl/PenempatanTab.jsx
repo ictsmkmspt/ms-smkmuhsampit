@@ -217,7 +217,7 @@ export default function PenempatanTab() {
       <div className="surface-card p-4 border-l-4 border-l-brand-400 flex gap-2">
         <ClipboardList className="w-4 h-4 text-brand-500 shrink-0 mt-0.5" />
         <p className="text-sm text-ink-700">
-          Setiap siswa hanya boleh punya 1 penempatan berstatus <b>aktif</b> di satu waktu. Begitu penempatan aktif dibuat, menu PKL otomatis muncul di dashboard siswa (menggantikan QR barcode), guru pembimbing, dan IDUKA terkait.
+          Setiap siswa hanya boleh punya 1 penempatan berstatus <b>aktif</b> di satu waktu. Begitu penempatan aktif dibuat, menu PKL otomatis muncul di dashboard siswa (menggantikan QR Code), guru pembimbing, dan IDUKA terkait.
         </p>
       </div>
 

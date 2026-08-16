@@ -86,7 +86,7 @@ class PerpustakaanSirkulasiController extends Controller
     {
         $hasil = $this->cariPeminjamByKode($kode);
         if (!$hasil) {
-            return response()->json(['message' => 'Barcode/NIS/NIP tidak dikenali.'], 404);
+            return response()->json(['message' => 'QR Code/NIS/NIP tidak dikenali.'], 404);
         }
 
         return response()->json($hasil['model']->toArray() + [

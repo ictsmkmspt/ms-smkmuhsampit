@@ -185,7 +185,7 @@ class PrayerAttendanceController extends Controller
         $student = Student::with('user')->where('barcode_code', $request->code)->first();
 
         if (!$student) {
-            return response()->json(['message' => 'Barcode tidak dikenali / siswa tidak ditemukan.'], 404);
+            return response()->json(['message' => 'QR Code tidak dikenali / siswa tidak ditemukan.'], 404);
         }
 
         $date     = now()->format('Y-m-d');

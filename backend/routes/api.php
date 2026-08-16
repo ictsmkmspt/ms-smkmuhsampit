@@ -29,7 +29,9 @@ use App\Http\Controllers\Api\PklMonitoringJadwalController;
 use App\Http\Controllers\Api\PklPlacementController;
 use App\Http\Controllers\Api\PeriodTemplateController;
 use App\Http\Controllers\Api\BukuController;
+use App\Http\Controllers\Api\LaboratoriumKunjunganController;
 use App\Http\Controllers\Api\PerpustakaanKategoriController;
+use App\Http\Controllers\Api\PerpustakaanKunjunganController;
 use App\Http\Controllers\Api\PerpustakaanPeminjamanController;
 use App\Http\Controllers\Api\PerpustakaanPengaturanController;
 use App\Http\Controllers\Api\PerpustakaanRakController;
@@ -252,6 +254,15 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/assets/{asset}', [AssetController::class, 'update']);
         Route::get('/assets/import/template', [AssetController::class, 'downloadTemplate']);
         Route::post('/assets/import', [AssetController::class, 'import']);
+
+        // Kunjungan Laboratorium — dicatat Kepala Bengkel yang ditugaskan
+        // ke ruang berjenis Laboratorium (tidak ada peran baru, lihat
+        // LaboratoriumKunjunganController). Selalu dibatasi ke ruang milik
+        // akun yang login lewat RestrictsToOwnRoom.
+        Route::get('/laboratorium-kunjungan/cari', [LaboratoriumKunjunganController::class, 'cariNama']);
+        Route::get('/laboratorium-kunjungan/cari/{kode}', [LaboratoriumKunjunganController::class, 'cariKode']);
+        Route::get('/laboratorium-kunjungan/hari-ini', [LaboratoriumKunjunganController::class, 'riwayatHariIni']);
+        Route::post('/laboratorium-kunjungan', [LaboratoriumKunjunganController::class, 'store']);
     });
 
     // Mata Pelajaran, Tugas Mengajar, Template Jadwal, dan Jadwal Pelajaran
@@ -676,6 +687,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/perpustakaan-sirkulasi/buku/{kode}', [PerpustakaanSirkulasiController::class, 'cariBuku']);
         Route::post('/perpustakaan-sirkulasi/pinjam', [PerpustakaanSirkulasiController::class, 'pinjam']);
         Route::post('/perpustakaan-sirkulasi/{peminjaman}/kembalikan', [PerpustakaanSirkulasiController::class, 'kembalikan']);
+
+        Route::get('/perpustakaan-kunjungan/cari', [PerpustakaanKunjunganController::class, 'cariNama']);
+        Route::get('/perpustakaan-kunjungan/cari/{kode}', [PerpustakaanKunjunganController::class, 'cariKode']);
+        Route::get('/perpustakaan-kunjungan/hari-ini', [PerpustakaanKunjunganController::class, 'riwayatHariIni']);
+        Route::post('/perpustakaan-kunjungan', [PerpustakaanKunjunganController::class, 'store']);
 
         Route::get('/perpustakaan-peminjaman/aktif', [PerpustakaanPeminjamanController::class, 'aktif']);
         Route::get('/perpustakaan-peminjaman/terlambat', [PerpustakaanPeminjamanController::class, 'terlambat']);

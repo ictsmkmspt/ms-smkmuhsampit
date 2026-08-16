@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
-import { LogOut, HardHat, Boxes, Wrench } from 'lucide-react';
+import { LogOut, HardHat, Boxes, Wrench, UserCheck } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api/axios';
 import InventarisTab from './tabs/InventarisTab';
 import PemeliharaanTab from './tabs/PemeliharaanTab';
+import KunjunganLabTab from './tabs/KunjunganLabTab';
 
-const TABS = [
+const BASE_TABS = [
   { key: 'inventaris', label: 'Inventaris', icon: Boxes, component: InventarisTab },
   { key: 'pemeliharaan', label: 'Pemeliharaan', icon: Wrench, component: PemeliharaanTab },
 ];
@@ -27,6 +28,20 @@ export default function RoomStaffDashboard() {
       api.get('/rooms').then((res) => { setRoom(res.data[0] || null); setRoomLoaded(true); });
     }
   }, [isKepalaBengkel]);
+
+  // Tab "Kunjungan" cuma muncul buat Kepala Bengkel yang ditugaskan ke ruang
+  // berjenis Laboratorium — tidak ada peran baru "Kepala Lab", cukup ruang
+  // yang jenisnya lab (lihat LaboratoriumKunjunganController). Kepala Bengkel
+  // ruang biasa (bengkel) & Teknisi tidak melihat tab ini sama sekali.
+  const TABS = room?.jenis === 'lab'
+    ? [...BASE_TABS, { key: 'kunjungan', label: 'Kunjungan', icon: UserCheck, component: KunjunganLabTab }]
+    : BASE_TABS;
+
+  useEffect(() => {
+    if (!TABS.find((t) => t.key === activeTab)) {
+      setActiveTab('inventaris');
+    }
+  }, [TABS, activeTab]); // eslint-disable-line
 
   const active = TABS.find((t) => t.key === activeTab);
   const ActiveComponent = active?.component;

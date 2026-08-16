@@ -269,7 +269,7 @@ export default function StudentsTab() {
         <table className="w-full text-sm min-w-[640px]">
           <thead>
             <tr className="text-left text-ink-500 border-b border-line-200">
-              <th className="pb-2 font-medium whitespace-nowrap px-2">Nama</th><th className="font-medium whitespace-nowrap px-2">Email</th><th className="font-medium whitespace-nowrap px-2">NIS</th><th className="font-medium whitespace-nowrap px-2">Jenis Kelamin</th><th className="font-medium whitespace-nowrap px-2">Kelas</th><th className="font-medium whitespace-nowrap px-2">Barcode</th><th className="whitespace-nowrap px-2"></th>
+              <th className="pb-2 font-medium whitespace-nowrap px-2">Nama</th><th className="font-medium whitespace-nowrap px-2">Email</th><th className="font-medium whitespace-nowrap px-2">NIS</th><th className="font-medium whitespace-nowrap px-2">Jenis Kelamin</th><th className="font-medium whitespace-nowrap px-2">Kelas</th><th className="font-medium whitespace-nowrap px-2">QR Code</th><th className="whitespace-nowrap px-2"></th>
             </tr>
           </thead>
           <tbody>
