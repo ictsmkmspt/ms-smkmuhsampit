@@ -19,6 +19,7 @@ export default function AdminAccountsTab() {
   const [form, setForm] = useState({ name: '', email: '', role: 'waka_kesiswaan' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showForm, setShowForm] = useState(false);
 
   const [editId, setEditId] = useState(null);
   const [editData, setEditData] = useState({});
@@ -34,6 +35,7 @@ export default function AdminAccountsTab() {
     try {
       await api.post('/admin-accounts', form);
       setForm({ name: '', email: '', role: 'waka_kesiswaan' });
+      setShowForm(false);
       loadAccounts();
     } catch (err) {
       const msgs = err.response?.data?.errors;
@@ -63,6 +65,12 @@ export default function AdminAccountsTab() {
     }
   };
 
+  const batalForm = () => {
+    setShowForm(false);
+    setForm({ name: '', email: '', role: 'waka_kesiswaan' });
+    setError('');
+  };
+
   const startEdit = (a) => {
     setEditId(a.id);
     setEditData({ name: a.name || '', email: a.email || '', role: a.role });
@@ -84,32 +92,44 @@ export default function AdminAccountsTab() {
 
   return (
     <div className="space-y-6">
-      <form onSubmit={handleAdd} className="surface-card p-5">
-        <h2 className="font-display font-semibold text-ink-900 mb-1">Tambah Akun Admin</h2>
-        <p className="text-xs text-ink-500 mb-4">
-          <b>Super Admin</b> punya akses penuh ke semua menu. Tiap <b>Waka</b> hanya melihat & mengelola menu sesuai bidangnya sendiri — Kesiswaan (Kelas/Siswa/Wali/Poin/BK/Sanksi), Kurikulum (Guru/Mapel/Jadwal/Kalender Akademik), Humas (IDUKA/PKL/PPDB), atau Sarpras (Ruang/Aset/Pemeliharaan/Pengadaan). Password akun otomatis dibuat "123456" — wajib diganti saat login pertama.
-        </p>
-        {error && <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2 mb-3">{error}</p>}
-        <div className="grid grid-cols-2 gap-3">
-          <input placeholder="Nama" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="field-input" required />
-          <select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })} className="field-input text-ink-700">
-            <option value="waka_kesiswaan">Waka Kesiswaan</option>
-            <option value="waka_kurikulum">Waka Kurikulum</option>
-            <option value="waka_humas">Waka Humas</option>
-            <option value="waka_sarpras">Waka Sarpras</option>
-            <option value="admin">Super Admin</option>
-          </select>
-          <input placeholder="Email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="field-input col-span-2" required autoComplete="off" />
-        </div>
-        <button disabled={loading} className="btn-primary mt-4">
-          <Plus className="w-4 h-4" /> {loading ? 'Menyimpan...' : 'Tambah Akun'}
-        </button>
-      </form>
+      {showForm && (
+        <form onSubmit={handleAdd} className="surface-card p-5">
+          <h2 className="font-display font-semibold text-ink-900 mb-1">Tambah Akun Admin</h2>
+          <p className="text-xs text-ink-500 mb-4">
+            <b>Super Admin</b> punya akses penuh ke semua menu. Tiap <b>Waka</b> hanya melihat & mengelola menu sesuai bidangnya sendiri — Kesiswaan (Kelas/Siswa/Wali/Poin/BK/Sanksi), Kurikulum (Guru/Mapel/Jadwal/Kalender Akademik), Humas (IDUKA/PKL/PPDB), atau Sarpras (Ruang/Aset/Pemeliharaan/Pengadaan). Password akun otomatis dibuat "123456" — wajib diganti saat login pertama.
+          </p>
+          {error && <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2 mb-3">{error}</p>}
+          <div className="grid grid-cols-2 gap-3">
+            <input placeholder="Nama" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="field-input" required />
+            <select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })} className="field-input text-ink-700">
+              <option value="waka_kesiswaan">Waka Kesiswaan</option>
+              <option value="waka_kurikulum">Waka Kurikulum</option>
+              <option value="waka_humas">Waka Humas</option>
+              <option value="waka_sarpras">Waka Sarpras</option>
+              <option value="admin">Super Admin</option>
+            </select>
+            <input placeholder="Email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="field-input col-span-2" required autoComplete="off" />
+          </div>
+          <div className="flex gap-2 mt-4">
+            <button disabled={loading} className="btn-primary">
+              <Plus className="w-4 h-4" /> {loading ? 'Menyimpan...' : 'Tambah Akun'}
+            </button>
+            <button type="button" onClick={batalForm} className="text-sm text-ink-500 hover:text-ink-700 px-3">Batal</button>
+          </div>
+        </form>
+      )}
 
       <div className="surface-card p-5">
-        <h2 className="font-display font-semibold text-ink-900 mb-4">
-          Daftar Akun Admin <span className="text-ink-500 font-sans font-normal text-sm">({accounts.length})</span>
-        </h2>
+        <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
+          <h2 className="font-display font-semibold text-ink-900">
+            Daftar Akun Admin <span className="text-ink-500 font-sans font-normal text-sm">({accounts.length})</span>
+          </h2>
+          {!showForm && (
+            <button onClick={() => { setForm({ name: '', email: '', role: 'waka_kesiswaan' }); setError(''); setShowForm(true); }} className="btn-primary shrink-0">
+              <Plus className="w-4 h-4" /> Tambah Akun Admin
+            </button>
+          )}
+        </div>
         <div className="table-scroll">
         <table className="w-full text-sm">
           <thead>

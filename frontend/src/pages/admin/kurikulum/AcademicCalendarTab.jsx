@@ -16,6 +16,7 @@ export default function AcademicCalendarTab() {
   const [form, setForm] = useState({ nama: '', jenis: 'semester_ganjil', tanggal_mulai: '', tanggal_selesai: '', keterangan: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showForm, setShowForm] = useState(false);
   const [halamanLibur, setHalamanLibur] = useState(1);
 
   const aktif = tahunAjaranList.find((t) => t.status === 'aktif');
@@ -60,6 +61,7 @@ export default function AcademicCalendarTab() {
     try {
       await api.post('/academic-events', form);
       setForm({ nama: '', jenis: 'semester_ganjil', tanggal_mulai: '', tanggal_selesai: '', keterangan: '' });
+      setShowForm(false);
       loadEvents();
     } catch (err) {
       const msgs = err.response?.data?.errors;
@@ -67,6 +69,12 @@ export default function AcademicCalendarTab() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const batalForm = () => {
+    setShowForm(false);
+    setForm({ nama: '', jenis: 'semester_ganjil', tanggal_mulai: '', tanggal_selesai: '', keterangan: '' });
+    setError('');
   };
 
   const handleDeleteEvent = async (ev) => {
@@ -103,7 +111,7 @@ export default function AcademicCalendarTab() {
 
       <AgendaCalendar events={events} holidays={holidays} />
 
-      {tahunAktif ? (
+      {tahunAktif && showForm && (
         <form onSubmit={handleAddEvent} className="surface-card p-5 space-y-3">
           <h2 className="font-display font-semibold text-ink-900">Tambah Agenda Kalender Akademik</h2>
           {error && <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2">{error}</p>}
@@ -122,14 +130,23 @@ export default function AcademicCalendarTab() {
             </div>
             <input placeholder="Keterangan (opsional)" value={form.keterangan} onChange={(e) => setForm({ ...form, keterangan: e.target.value })} className="field-input" />
           </div>
-          <button disabled={loading} className="btn-primary"><Plus className="w-4 h-4" /> {loading ? 'Menyimpan...' : 'Tambah Agenda'}</button>
+          <div className="flex gap-2">
+            <button disabled={loading} className="btn-primary"><Plus className="w-4 h-4" /> {loading ? 'Menyimpan...' : 'Tambah Agenda'}</button>
+            <button type="button" onClick={batalForm} className="text-sm text-ink-500 hover:text-ink-700 px-3">Batal</button>
+          </div>
         </form>
-      ) : (
+      )}
+      {!tahunAktif && (
         <p className="text-xs text-ink-400 -mt-2">Anda sedang melihat tahun ajaran lain (bukan yang aktif) — tambah agenda baru dinonaktifkan di sini. Kembali ke tahun ajaran aktif di sidebar untuk menambah agenda.</p>
       )}
 
       <div className="surface-card p-5">
-        <h2 className="font-display font-semibold text-ink-900 mb-4">Daftar Agenda <span className="text-ink-500 font-sans font-normal text-sm">({events.length})</span></h2>
+        <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
+          <h2 className="font-display font-semibold text-ink-900">Daftar Agenda <span className="text-ink-500 font-sans font-normal text-sm">({events.length})</span></h2>
+          {tahunAktif && !showForm && (
+            <button onClick={() => { setForm({ nama: '', jenis: 'semester_ganjil', tanggal_mulai: '', tanggal_selesai: '', keterangan: '' }); setError(''); setShowForm(true); }} className="btn-primary shrink-0"><Plus className="w-4 h-4" /> Tambah Agenda</button>
+          )}
+        </div>
         <div className="table-scroll">
         <table className="w-full text-sm">
           <thead>

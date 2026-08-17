@@ -18,6 +18,7 @@ export default function RoomStaffTab() {
   const [editId, setEditId] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showForm, setShowForm] = useState(false);
 
   const load = () => api.get('/room-staff').then((res) => setStaff(res.data));
   useEffect(() => {
@@ -36,6 +37,7 @@ export default function RoomStaffTab() {
       }
       setForm(FORM_KOSONG);
       setEditId(null);
+      setShowForm(false);
       load();
     } catch (err) {
       const msgs = err.response?.data?.errors;
@@ -49,12 +51,14 @@ export default function RoomStaffTab() {
     setEditId(s.id);
     setForm({ name: s.name, email: s.email, role: s.role, room_id: String(s.room_id || '') });
     setError('');
+    setShowForm(true);
   };
 
   const cancelEdit = () => {
     setEditId(null);
     setForm(FORM_KOSONG);
     setError('');
+    setShowForm(false);
   };
 
   const handleDelete = async (id, name) => {
@@ -81,7 +85,7 @@ export default function RoomStaffTab() {
         </div>
       )}
 
-      {canManage && (
+      {canManage && showForm && (
         <form onSubmit={handleSubmit} className="surface-card p-5">
           <h2 className="font-display font-semibold text-ink-900 mb-1">{editId ? 'Ubah Akun' : 'Tambah Akun Teknisi / Kepala Bengkel'}</h2>
           <p className="text-xs text-ink-500 mb-4">
@@ -109,19 +113,22 @@ export default function RoomStaffTab() {
             <button disabled={loading} className="btn-primary">
               <Plus className="w-4 h-4" /> {loading ? 'Menyimpan...' : editId ? 'Simpan Perubahan' : 'Tambah Akun'}
             </button>
-            {editId && (
-              <button type="button" onClick={cancelEdit} className="flex items-center gap-1.5 text-sm font-medium text-ink-700 bg-mist-50 hover:bg-mist-100 border border-line-200 rounded-xl px-4 py-2 transition">
-                <X className="w-4 h-4" /> Batal
-              </button>
-            )}
+            <button type="button" onClick={cancelEdit} className="flex items-center gap-1.5 text-sm font-medium text-ink-700 bg-mist-50 hover:bg-mist-100 border border-line-200 rounded-xl px-4 py-2 transition">
+              <X className="w-4 h-4" /> Batal
+            </button>
           </div>
         </form>
       )}
 
       <div className="surface-card p-5">
-        <h2 className="font-display font-semibold text-ink-900 mb-4">
-          Daftar Akun <span className="text-ink-500 font-sans font-normal text-sm">({staff.length})</span>
-        </h2>
+        <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
+          <h2 className="font-display font-semibold text-ink-900">
+            Daftar Akun <span className="text-ink-500 font-sans font-normal text-sm">({staff.length})</span>
+          </h2>
+          {canManage && !showForm && (
+            <button onClick={() => { setEditId(null); setForm(FORM_KOSONG); setError(''); setShowForm(true); }} className="btn-primary shrink-0"><Plus className="w-4 h-4" /> Tambah Akun</button>
+          )}
+        </div>
         <div className="table-scroll">
         <table className="w-full text-sm">
           <thead>

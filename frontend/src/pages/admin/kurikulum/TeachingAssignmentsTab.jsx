@@ -21,10 +21,16 @@ export default function TeachingAssignmentsTab() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [showForm, setShowForm] = useState(false);
 
   const [editingId, setEditingId] = useState(null);
   const [editJam, setEditJam] = useState('');
   const [editSaving, setEditSaving] = useState(false);
+
+  const [editingKodeId, setEditingKodeId] = useState(null);
+  const [editKode, setEditKode] = useState('');
+  const [editKodeSaving, setEditKodeSaving] = useState(false);
+  const [errorKode, setErrorKode] = useState('');
 
   // Drag-and-drop urutan baris — server jadi acuan urutan (kolom `urutan`,
   // dikembalikan sudah terurut dari index()), jadi cukup pakai state
@@ -79,6 +85,7 @@ export default function TeachingAssignmentsTab() {
       });
       setBulkResult(res.data);
       setSelectedClassIds(new Set());
+      setShowForm(false);
       load();
     } catch (err) {
       const msgs = err.response?.data?.errors;
@@ -86,6 +93,16 @@ export default function TeachingAssignmentsTab() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const batalBulkForm = () => {
+    setShowForm(false);
+    setBulkSubjectId('');
+    setBulkTeacherId('');
+    setBulkTargetJam('');
+    setSelectedClassIds(new Set());
+    setError('');
+    setBulkResult(null);
   };
 
   const handleDelete = async (a) => {
@@ -99,6 +116,28 @@ export default function TeachingAssignmentsTab() {
     setEditJam(a.target_jam ?? '');
   };
   const cancelEditJam = () => setEditingId(null);
+
+  const startEditKode = (a) => {
+    setEditingKodeId(a.id);
+    setEditKode(a.kode_guru ?? '');
+    setErrorKode('');
+  };
+  const cancelEditKode = () => { setEditingKodeId(null); setErrorKode(''); };
+  const saveEditKode = async (a) => {
+    setEditKodeSaving(true);
+    setErrorKode('');
+    try {
+      await api.put(`/teaching-assignments/${a.id}`, { teacher_id: a.teacher_id, target_jam: a.target_jam, kode_guru: editKode || null });
+      setEditingKodeId(null);
+      load();
+    } catch (err) {
+      const msgs = err.response?.data?.errors;
+      setErrorKode(msgs ? Object.values(msgs).flat().join(', ') : err.response?.data?.message || 'Gagal menyimpan kode guru.');
+    } finally {
+      setEditKodeSaving(false);
+    }
+  };
+
   const handleGenerateKodeGuru = async () => {
     if (!confirm('Buat ulang Kode Guru untuk semua penugasan? Kode lama akan ditimpa, termasuk yang sudah tampil di Jadwal Pelajaran.')) return;
     setGenerating(true);
@@ -162,7 +201,7 @@ export default function TeachingAssignmentsTab() {
         </p>
       </div>
 
-      {tahunAktif && (
+      {tahunAktif && showForm && (
         <form onSubmit={handleBulkSubmit} className="surface-card p-5">
           <h2 className="font-display font-semibold text-ink-900 mb-1">Tambah Penugasan</h2>
           <p className="text-xs text-ink-500 mb-4">
@@ -234,28 +273,36 @@ export default function TeachingAssignmentsTab() {
             </div>
           )}
 
-          <button disabled={loading || selectedClassIds.size === 0} className="btn-primary">
-            <Plus className="w-4 h-4" /> {loading ? 'Menyimpan...' : `Tambah Penugasan (${selectedClassIds.size} kelas)`}
-          </button>
+          <div className="flex gap-2">
+            <button disabled={loading || selectedClassIds.size === 0} className="btn-primary">
+              <Plus className="w-4 h-4" /> {loading ? 'Menyimpan...' : `Tambah Penugasan (${selectedClassIds.size} kelas)`}
+            </button>
+            <button type="button" onClick={batalBulkForm} className="text-sm text-ink-500 hover:text-ink-700 px-3">Batal</button>
+          </div>
         </form>
       )}
 
       <div className="surface-card p-5">
         <div className="flex items-center justify-between gap-3 mb-1 flex-wrap">
           <h2 className="font-display font-semibold text-ink-900">Daftar Penugasan <span className="text-ink-500 font-sans font-normal text-sm">({assignments.length})</span></h2>
-          {tahunAktif && (
-            <button
-              onClick={handleGenerateKodeGuru}
-              disabled={generating || assignments.length === 0}
-              className="flex items-center gap-1.5 text-sm font-medium text-ink-700 bg-mist-50 hover:bg-mist-100 disabled:opacity-50 disabled:cursor-not-allowed border border-line-200 rounded-xl px-4 py-2 transition shrink-0"
-            >
-              <Wand2 className="w-4 h-4" /> {generating ? 'Membuat...' : 'Generate Kode Guru A-Z'}
-            </button>
-          )}
+          <div className="flex items-center gap-2 flex-wrap">
+            {tahunAktif && (
+              <button
+                onClick={handleGenerateKodeGuru}
+                disabled={generating || assignments.length === 0}
+                className="flex items-center gap-1.5 text-sm font-medium text-ink-700 bg-mist-50 hover:bg-mist-100 disabled:opacity-50 disabled:cursor-not-allowed border border-line-200 rounded-xl px-4 py-2 transition shrink-0"
+              >
+                <Wand2 className="w-4 h-4" /> {generating ? 'Membuat...' : 'Generate Kode Guru A-Z'}
+              </button>
+            )}
+            {tahunAktif && !showForm && (
+              <button onClick={() => setShowForm(true)} className="btn-primary shrink-0"><Plus className="w-4 h-4" /> Tambah Penugasan</button>
+            )}
+          </div>
         </div>
         <p className="text-xs text-ink-500 mb-4">
           Kolom "Terjadwal" menghitung otomatis dari isian di menu Jadwal Pelajaran. Target jam boleh dikosongkan kalau memang tidak dipatok rata per minggu (mis. mapel blok/kejuruan).
-          {tahunAktif && ' Seret baris pakai ikon di kiri untuk mengatur urutan tabel.'} Kode Guru dibuat lewat tombol di atas mengikuti urutan baris ini — tidak perlu diisi manual — dan kode inilah yang tampil di Jadwal Pelajaran.
+          {tahunAktif && ' Seret baris pakai ikon di kiri untuk mengatur urutan tabel.'} Kode Guru bisa dibuat otomatis lewat tombol di atas, atau diklik langsung per baris untuk diubah manual — kode inilah yang tampil di Jadwal Pelajaran.
           {savingOrder && <span className="text-brand-600"> Menyimpan urutan...</span>}
         </p>
         <div className="table-scroll">
@@ -287,7 +334,30 @@ export default function TeachingAssignmentsTab() {
                     <GripVertical className="w-4 h-4" />
                   </td>
                 )}
-                <td className="py-2.5 whitespace-nowrap px-2"><span className="badge-soft badge-brand font-mono">{a.kode_guru || '-'}</span></td>
+                <td className="py-2.5 whitespace-nowrap px-2">
+                  {editingKodeId === a.id ? (
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-1.5">
+                        <input
+                          type="text" maxLength="10" autoFocus
+                          value={editKode} onChange={(e) => setEditKode(e.target.value)}
+                          className="field-input py-1 px-2 text-sm w-20 font-mono"
+                          placeholder="-"
+                        />
+                        <button onClick={() => saveEditKode(a)} disabled={editKodeSaving} className="text-brand-600 hover:text-brand-800"><Check className="w-4 h-4" /></button>
+                        <button onClick={cancelEditKode} className="text-ink-400 hover:text-ink-600"><X className="w-4 h-4" /></button>
+                      </div>
+                      {errorKode && <p className="text-xs text-honey-700">{errorKode}</p>}
+                    </div>
+                  ) : tahunAktif ? (
+                    <button onClick={() => startEditKode(a)} className="flex items-center gap-1.5 hover:text-brand-700">
+                      <span className="badge-soft badge-brand font-mono">{a.kode_guru || '-'}</span>
+                      <Pencil className="w-3 h-3 text-ink-300" />
+                    </button>
+                  ) : (
+                    <span className="badge-soft badge-brand font-mono">{a.kode_guru || '-'}</span>
+                  )}
+                </td>
                 <td className="text-ink-900 whitespace-nowrap px-2">{a.class_room?.name}</td>
                 <td className="text-ink-700 whitespace-nowrap px-2">
                   {a.subject?.nama}

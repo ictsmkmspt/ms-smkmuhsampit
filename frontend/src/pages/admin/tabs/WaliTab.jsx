@@ -16,6 +16,7 @@ export default function WaliTab() {
   const [form, setForm] = useState({ name: '', phone: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showForm, setShowForm] = useState(false);
 
   const [linkingId, setLinkingId] = useState(null);
   const [linkForm, setLinkForm] = useState({ student_id: '', hubungan: '' });
@@ -45,6 +46,7 @@ export default function WaliTab() {
     try {
       await api.post('/parents', form);
       setForm({ name: '', phone: '' });
+      setShowForm(false);
       loadParents();
     } catch (err) {
       const msgs = err.response?.data?.errors;
@@ -68,6 +70,12 @@ export default function WaliTab() {
     } catch (err) {
       alert(err.response?.data?.message || 'Gagal mereset password.');
     }
+  };
+
+  const batalForm = () => {
+    setShowForm(false);
+    setForm({ name: '', phone: '' });
+    setError('');
   };
 
   const openLinkForm = (parentId) => {
@@ -210,25 +218,37 @@ export default function WaliTab() {
         </div>
       )}
 
-      <form onSubmit={handleAdd} className="surface-card p-5">
-        <h2 className="font-display font-semibold text-ink-900 mb-1 flex items-center gap-2">
-          <UserPlus className="w-4 h-4 text-brand-600" /> Tambah Akun Wali Baru
-        </h2>
-        <p className="text-xs text-ink-500 mb-4">Password akun otomatis dibuat "123456" — wajib diganti saat login pertama.</p>
-        {error && <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2 mb-3">{error}</p>}
-        <div className="grid grid-cols-2 gap-3">
-          <input placeholder="Nama" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="field-input" required />
-          <input placeholder="No. HP" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="field-input" required autoComplete="off" />
-        </div>
-        <button disabled={loading} className="btn-primary mt-4">
-          <Plus className="w-4 h-4" /> {loading ? 'Menyimpan...' : 'Tambah Akun Wali'}
-        </button>
-      </form>
+      {showForm && (
+        <form onSubmit={handleAdd} className="surface-card p-5">
+          <h2 className="font-display font-semibold text-ink-900 mb-1 flex items-center gap-2">
+            <UserPlus className="w-4 h-4 text-brand-600" /> Tambah Akun Wali Baru
+          </h2>
+          <p className="text-xs text-ink-500 mb-4">Password akun otomatis dibuat "123456" — wajib diganti saat login pertama.</p>
+          {error && <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2 mb-3">{error}</p>}
+          <div className="grid grid-cols-2 gap-3">
+            <input placeholder="Nama" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="field-input" required />
+            <input placeholder="No. HP" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="field-input" required autoComplete="off" />
+          </div>
+          <div className="flex gap-2 mt-4">
+            <button disabled={loading} className="btn-primary">
+              <Plus className="w-4 h-4" /> {loading ? 'Menyimpan...' : 'Tambah Akun Wali'}
+            </button>
+            <button type="button" onClick={batalForm} className="text-sm text-ink-500 hover:text-ink-700 px-3">Batal</button>
+          </div>
+        </form>
+      )}
 
       <div className="surface-card p-5">
-        <h2 className="font-display font-semibold text-ink-900 mb-4">
-          Daftar Wali <span className="text-ink-500 font-sans font-normal text-sm">({parentsAktif.length})</span>
-        </h2>
+        <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
+          <h2 className="font-display font-semibold text-ink-900">
+            Daftar Wali <span className="text-ink-500 font-sans font-normal text-sm">({parentsAktif.length})</span>
+          </h2>
+          {!showForm && (
+            <button onClick={() => { setForm({ name: '', phone: '' }); setError(''); setShowForm(true); }} className="btn-primary shrink-0">
+              <Plus className="w-4 h-4" /> Tambah Akun Wali
+            </button>
+          )}
+        </div>
 
         <div className="space-y-4">
           {parentsHalaman.map((p) => (

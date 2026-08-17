@@ -138,9 +138,21 @@ class TeachingAssignmentController extends Controller
         $data = $request->validate([
             'teacher_id' => 'required|exists:teachers,id',
             'target_jam' => 'nullable|integer|min:1',
+            // Biasanya dibuat lewat tombol "Generate Kode Guru A-Z", tapi boleh
+            // ditimpa manual per baris juga — sengaja TIDAK divalidasi unik,
+            // karena kode yang sama boleh dipakai lebih dari 1 penugasan
+            // (mis. team teaching / guru yang sama tapi baris terpisah).
+            'kode_guru' => 'nullable|string|max:10',
         ]);
 
         $teachingAssignment->update($data);
+
+        // Samakan dengan Schedule.kode yang sudah ditempatkan dari penugasan
+        // ini — sama seperti yang dilakukan generateKodeGuru(), supaya Jadwal
+        // Pelajaran tidak diam-diam beda dari kode yang baru diubah di sini.
+        if (array_key_exists('kode_guru', $data)) {
+            Schedule::where('teaching_assignment_id', $teachingAssignment->id)->update(['kode' => $data['kode_guru']]);
+        }
 
         return $teachingAssignment->fresh(['teacher.user', 'subject', 'classRoom'])->loadCount('schedules');
     }

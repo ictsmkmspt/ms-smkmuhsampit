@@ -26,6 +26,7 @@ import PrintTagihanLainNota from './pages/print/PrintTagihanLainNota';
 import PrintKalenderAkademik from './pages/print/PrintKalenderAkademik';
 import PrintAssetLabels from './pages/print/PrintAssetLabels';
 import PrintBukuLabels from './pages/print/PrintBukuLabels';
+import PrintKartuPelajar from './pages/print/PrintKartuPelajar';
 
 /**
  * Gerbang mode maintenance — dicek SEKALI di sini, membungkus seluruh
@@ -113,6 +114,10 @@ export default function App() {
 
             <Route path="/print/buku-label" element={
               <ProtectedRoute allowedRoles={['admin', 'pustakawan']}><PrintBukuLabels /></ProtectedRoute>
+            } />
+
+            <Route path="/print/kartu-pelajar" element={
+              <ProtectedRoute allowedRoles={['admin', 'waka_kesiswaan']}><PrintKartuPelajar /></ProtectedRoute>
             } />
 
             <Route path="/admin/*" element={

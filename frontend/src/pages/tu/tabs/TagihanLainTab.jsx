@@ -90,6 +90,7 @@ export default function TagihanLainTab() {
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState('');
+  const [showForm, setShowForm] = useState(false);
 
   const [editingId, setEditingId] = useState(null);
   const [editNominal, setEditNominal] = useState('');
@@ -170,6 +171,7 @@ export default function TagihanLainTab() {
       setBulkClassRoomIds([]);
       setBulkJenisKelamin('');
       setPickedIds([]);
+      setShowForm(false);
       loadList();
     } catch (err) {
       const msgs = err.response?.data?.errors;
@@ -177,6 +179,17 @@ export default function TagihanLainTab() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const batalForm = () => {
+    setShowForm(false);
+    setForm(emptyForm);
+    setTarget('satu');
+    setStudentId('');
+    setBulkClassRoomIds([]);
+    setBulkJenisKelamin('');
+    setPickedIds([]);
+    setFormError('');
   };
 
   const startEdit = (t) => {
@@ -316,6 +329,7 @@ export default function TagihanLainTab() {
         </div>
       )}
 
+      {showForm && (
       <div className="surface-card p-5">
         <h3 className="font-display font-semibold text-ink-900 mb-1">Buat Tagihan Baru</h3>
         <p className="text-xs text-ink-500 mb-4">
@@ -436,11 +450,15 @@ export default function TagihanLainTab() {
             />
           </div>
 
-          <button disabled={saving} className="btn-primary">
-            <Plus className="w-4 h-4" /> {saving ? 'Menyimpan...' : 'Buat Tagihan'}
-          </button>
+          <div className="flex gap-2">
+            <button disabled={saving} className="btn-primary">
+              <Plus className="w-4 h-4" /> {saving ? 'Menyimpan...' : 'Buat Tagihan'}
+            </button>
+            <button type="button" onClick={batalForm} className="text-sm text-ink-500 hover:text-ink-700 px-3">Batal</button>
+          </div>
         </form>
       </div>
+      )}
 
       <div className="surface-card p-5 flex flex-wrap gap-3 items-end">
         <div>
@@ -493,16 +511,26 @@ export default function TagihanLainTab() {
           <h3 className="font-display font-semibold text-ink-900">
             Daftar Tagihan <span className="text-ink-500 font-sans font-normal text-sm">({list.length})</span>
           </h3>
-          {namaFilter && list.length > 0 && (
-            <button
-              onClick={handleDeleteByNama}
-              disabled={deletingNama}
-              className="flex items-center gap-1.5 text-sm font-medium text-honey-700 bg-honey-50 hover:bg-honey-100 border border-honey-200 disabled:opacity-60 rounded-xl px-4 py-2 transition"
-            >
-              <Trash2 className="w-4 h-4" />
-              {deletingNama ? 'Menghapus...' : `Hapus Semua "${namaFilter}"`}
-            </button>
-          )}
+          <div className="flex items-center gap-2 flex-wrap">
+            {!showForm && (
+              <button
+                onClick={() => { setForm(emptyForm); setTarget('satu'); setStudentId(''); setBulkClassRoomIds([]); setBulkJenisKelamin(''); setPickedIds([]); setFormError(''); setShowForm(true); }}
+                className="btn-primary shrink-0"
+              >
+                <Plus className="w-4 h-4" /> Tambah Tagihan
+              </button>
+            )}
+            {namaFilter && list.length > 0 && (
+              <button
+                onClick={handleDeleteByNama}
+                disabled={deletingNama}
+                className="flex items-center gap-1.5 text-sm font-medium text-honey-700 bg-honey-50 hover:bg-honey-100 border border-honey-200 disabled:opacity-60 rounded-xl px-4 py-2 transition"
+              >
+                <Trash2 className="w-4 h-4" />
+                {deletingNama ? 'Menghapus...' : `Hapus Semua "${namaFilter}"`}
+              </button>
+            )}
+          </div>
         </div>
 
         {loading ? (

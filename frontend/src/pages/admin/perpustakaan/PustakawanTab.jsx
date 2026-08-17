@@ -11,6 +11,7 @@ export default function PustakawanTab() {
   const [editId, setEditId] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showForm, setShowForm] = useState(false);
 
   const load = () => api.get('/pustakawan').then((res) => setStaff(res.data));
   useEffect(() => { load(); }, []);
@@ -26,6 +27,7 @@ export default function PustakawanTab() {
       }
       setForm(FORM_KOSONG);
       setEditId(null);
+      setShowForm(false);
       load();
     } catch (err) {
       const msgs = err.response?.data?.errors;
@@ -39,12 +41,14 @@ export default function PustakawanTab() {
     setEditId(s.id);
     setForm({ name: s.name, email: s.email });
     setError('');
+    setShowForm(true);
   };
 
   const cancelEdit = () => {
     setEditId(null);
     setForm(FORM_KOSONG);
     setError('');
+    setShowForm(false);
   };
 
   const handleDelete = async (id, name) => {
@@ -69,30 +73,37 @@ export default function PustakawanTab() {
         <p className="text-sm text-ink-700">Pengaturan durasi pinjam & kategori buku sekarang dikelola langsung oleh Pengurus Perpustakaan lewat tab "Pengaturan" di dashboard mereka sendiri.</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="surface-card p-5">
-        <h2 className="font-display font-semibold text-ink-900 mb-1">{editId ? 'Ubah Akun' : 'Tambah Akun Pengurus Perpustakaan'}</h2>
-        <p className="text-xs text-ink-500 mb-4">Password otomatis "123456", wajib diganti saat login pertama.</p>
-        {error && <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2 mb-3">{error}</p>}
-        <div className="grid grid-cols-2 gap-3">
-          <input placeholder="Nama" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="field-input" required />
-          <input placeholder="Email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="field-input" required autoComplete="off" />
-        </div>
-        <div className="flex items-center gap-2 mt-4">
-          <button disabled={loading} className="btn-primary">
-            <Plus className="w-4 h-4" /> {loading ? 'Menyimpan...' : editId ? 'Simpan Perubahan' : 'Tambah Akun'}
-          </button>
-          {editId && (
+      {showForm && (
+        <form onSubmit={handleSubmit} className="surface-card p-5">
+          <h2 className="font-display font-semibold text-ink-900 mb-1">{editId ? 'Ubah Akun' : 'Tambah Akun Pengurus Perpustakaan'}</h2>
+          <p className="text-xs text-ink-500 mb-4">Password otomatis "123456", wajib diganti saat login pertama.</p>
+          {error && <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2 mb-3">{error}</p>}
+          <div className="grid grid-cols-2 gap-3">
+            <input placeholder="Nama" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="field-input" required />
+            <input placeholder="Email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="field-input" required autoComplete="off" />
+          </div>
+          <div className="flex items-center gap-2 mt-4">
+            <button disabled={loading} className="btn-primary">
+              <Plus className="w-4 h-4" /> {loading ? 'Menyimpan...' : editId ? 'Simpan Perubahan' : 'Tambah Akun'}
+            </button>
             <button type="button" onClick={cancelEdit} className="flex items-center gap-1.5 text-sm font-medium text-ink-700 bg-mist-50 hover:bg-mist-100 border border-line-200 rounded-xl px-4 py-2 transition">
               <X className="w-4 h-4" /> Batal
             </button>
-          )}
-        </div>
-      </form>
+          </div>
+        </form>
+      )}
 
       <div className="surface-card p-5">
-        <h2 className="font-display font-semibold text-ink-900 mb-4">
-          Daftar Akun <span className="text-ink-500 font-sans font-normal text-sm">({staff.length})</span>
-        </h2>
+        <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
+          <h2 className="font-display font-semibold text-ink-900">
+            Daftar Akun <span className="text-ink-500 font-sans font-normal text-sm">({staff.length})</span>
+          </h2>
+          {!showForm && (
+            <button onClick={() => { setEditId(null); setForm(FORM_KOSONG); setError(''); setShowForm(true); }} className="btn-primary shrink-0">
+              <Plus className="w-4 h-4" /> Tambah Akun
+            </button>
+          )}
+        </div>
         <div className="table-scroll">
           <table className="w-full text-sm">
             <thead>

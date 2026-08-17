@@ -3,7 +3,7 @@ import {
   LogOut, Database, ClipboardList, ClipboardCheck, Settings, ChevronDown, ChevronLeft, ChevronRight, Menu, X,
   Users, GraduationCap, School, UserCog, Briefcase, LayoutDashboard, Building2,
   Clock, AlertOctagon, Trophy, CalendarDays, Wallet, Pencil, Image, ShieldCheck,
-  AlertTriangle, BookOpen, BookMarked, ScrollText, CalendarClock, CalendarRange, Warehouse, Boxes, Wrench, UserPlus, Power, DatabaseBackup, Sparkles, HardHat, HeartHandshake, FileBarChart,
+  AlertTriangle, BookOpen, BookMarked, ScrollText, CalendarClock, CalendarRange, Warehouse, Boxes, Wrench, UserPlus, Power, DatabaseBackup, Sparkles, HardHat, HeartHandshake, FileBarChart, IdCard,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useSchoolProfile } from '../../context/SchoolProfileContext';
@@ -33,7 +33,7 @@ const ROLE_LABEL = {
 
 const MASTER_ICONS = { siswa: Users, guru: GraduationCap, kelas: School, wali: UserCog, tu: Wallet, bk: HeartHandshake, admin: ShieldCheck };
 const ALUMNI_ICONS = { siswa: GraduationCap, wali: UserCog };
-const SETTINGS_ICONS = { sekolah: Image, 'tahun-ajaran': CalendarRange, jam: Clock, backup: DatabaseBackup, maintenance: Wrench };
+const SETTINGS_ICONS = { sekolah: Image, jam: Clock, jurusan: GraduationCap, 'kartu-pelajar': IdCard, backup: DatabaseBackup, maintenance: Wrench };
 const PKL_ICONS = { dudi: Building2, penempatan: ClipboardList, monitoring: CalendarClock };
 const LAPORAN_ICONS = { absensi: ClipboardCheck, pelanggaran: AlertOctagon, prestasi: Trophy, bk: HeartHandshake, 'nilai-akademik': ClipboardList, pkl: Briefcase, 'pkl-kegiatan': Users, 'pkl-monitoring': GraduationCap, tahsin: BookOpen, tahfidz: BookMarked, tadarus: ScrollText };
 const POIN_ICONS = { 'jenis-pelanggaran': AlertOctagon, 'jenis-prestasi': Trophy, sanksi: AlertTriangle };

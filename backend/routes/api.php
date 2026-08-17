@@ -51,6 +51,8 @@ use App\Http\Controllers\Api\SchoolProfileController;
 use App\Http\Controllers\Api\SettingController;
 use App\Http\Controllers\Api\SppController;
 use App\Http\Controllers\Api\StudentController;
+use App\Http\Controllers\Api\JurusanController;
+use App\Http\Controllers\Api\KartuPelajarController;
 use App\Http\Controllers\Api\StudentSelfController;
 use App\Http\Controllers\Api\SubjectController;
 use App\Http\Controllers\Api\SystemBackupController;
@@ -126,6 +128,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::apiResource('students', StudentController::class);
         Route::put('/students/{student}/kembalikan-aktif', [StudentController::class, 'kembalikanAktif']);
         Route::put('/students/{student}/reset-password', [StudentController::class, 'resetPassword']);
+        Route::post('/students/{student}/foto', [StudentController::class, 'uploadFoto']);
+        Route::post('/students/foto-massal', [StudentController::class, 'uploadFotoMassal']);
+        Route::get('/jurusan', [JurusanController::class, 'index']);
+        Route::get('/kartu-pelajar-pengaturan', [KartuPelajarController::class, 'show']);
         Route::get('/settings', [SettingController::class, 'index']);
         Route::put('/settings', [SettingController::class, 'update']);
         // "index" DIKECUALIKAN di sini dan didaftarkan terpisah di bawah
@@ -335,7 +341,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('role:admin')->group(function () {
         Route::put('/school-profile', [SchoolProfileController::class, 'update']);
         Route::post('/school-profile/logo', [SchoolProfileController::class, 'uploadLogo']);
+        Route::post('/school-profile/ttd-kepala-sekolah', [SchoolProfileController::class, 'uploadTtdKepalaSekolah']);
+        Route::post('/school-profile/cap-sekolah', [SchoolProfileController::class, 'uploadCapSekolah']);
         Route::post('/students/reset-poin', [StudentController::class, 'resetPoin']);
+        Route::post('/jurusan', [JurusanController::class, 'store']);
+        Route::put('/jurusan/{jurusan}', [JurusanController::class, 'update']);
+        Route::delete('/jurusan/{jurusan}', [JurusanController::class, 'destroy']);
+        Route::put('/kartu-pelajar-pengaturan', [KartuPelajarController::class, 'update']);
         Route::delete('/classes/{classRoom}', [ClassRoomController::class, 'destroy']);
         Route::delete('/tahun-ajaran/{id}', [TahunAjaranController::class, 'destroy']);
         Route::post('/tu', [TuController::class, 'store']);

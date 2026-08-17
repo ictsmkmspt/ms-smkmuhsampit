@@ -3,6 +3,7 @@
 namespace App\Imports;
 
 use App\Models\ClassRoom;
+use App\Models\Jurusan;
 use App\Models\Student;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -49,6 +50,13 @@ class StudentsImport implements ToModel, WithHeadingRow, WithValidation, SkipsOn
                 $classRoomId = $classRoom?->id;
             }
 
+            $jurusanId = null;
+            if (!empty($row['jurusan'])) {
+                $jurusanInput = trim($row['jurusan']);
+                $jurusan = Jurusan::where('kode', $jurusanInput)->orWhere('nama', $jurusanInput)->first();
+                $jurusanId = $jurusan?->id;
+            }
+
             $password = !empty($row['password']) ? trim((string) $row['password']) : '123456';
             $user = User::create([
                 'name'     => $row['nama'],
@@ -60,8 +68,12 @@ class StudentsImport implements ToModel, WithHeadingRow, WithValidation, SkipsOn
             return Student::create([
                 'user_id'       => $user->id,
                 'class_room_id' => $classRoomId,
+                'jurusan_id'    => $jurusanId,
                 'nis'           => $row['nis'],
                 'jenis_kelamin' => !empty($row['jenis_kelamin']) ? strtoupper(trim($row['jenis_kelamin'])) : null,
+                'tempat_lahir'  => !empty($row['tempat_lahir']) ? trim($row['tempat_lahir']) : null,
+                'tanggal_lahir' => !empty($row['tanggal_lahir']) ? trim($row['tanggal_lahir']) : null,
+                'alamat'        => !empty($row['alamat']) ? trim($row['alamat']) : null,
                 'qr_code'  => 'STD-' . strtoupper(Str::random(8)),
             ]);
         });
@@ -84,6 +96,15 @@ class StudentsImport implements ToModel, WithHeadingRow, WithValidation, SkipsOn
                     $fail("Kelas \"$value\" tidak ditemukan di Master Data. Cek ejaan atau tambahkan kelasnya dulu.");
                 }
             }],
+            'jurusan'  => ['nullable', function ($attribute, $value, $fail) {
+                $valueTrim = trim($value ?? '');
+                if ($valueTrim !== '' && !Jurusan::where('kode', $valueTrim)->orWhere('nama', $valueTrim)->exists()) {
+                    $fail("Jurusan \"$value\" tidak ditemukan di Pengaturan (dicocokkan lewat kode atau nama). Cek ejaan atau tambahkan jurusannya dulu.");
+                }
+            }],
+            'tempat_lahir'  => 'nullable|string|max:100',
+            'tanggal_lahir' => 'nullable|date',
+            'alamat'        => 'nullable|string|max:300',
         ];
     }
 
@@ -99,6 +120,7 @@ class StudentsImport implements ToModel, WithHeadingRow, WithValidation, SkipsOn
             'nis.required'      => 'NIS wajib diisi.',
             'nis.unique'        => 'NIS sudah terdaftar.',
             'jenis_kelamin.in'  => 'Jenis kelamin harus diisi "L" atau "P" saja.',
+            'tanggal_lahir.date' => 'Format tanggal lahir tidak valid — gunakan format YYYY-MM-DD.',
         ];
     }
 }

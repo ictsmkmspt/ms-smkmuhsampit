@@ -24,6 +24,7 @@ export default function DudiTab() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [locating, setLocating] = useState(false);
+  const [showForm, setShowForm] = useState(false);
 
   const [editId, setEditId] = useState(null);
   const [editData, setEditData] = useState({});
@@ -66,6 +67,7 @@ export default function DudiTab() {
       // Nama akun login dipakai dari "Nama Instruktur" — tidak perlu diketik terpisah lagi.
       await api.post('/dudi', { ...form, name: form.penanggung_jawab });
       setForm(emptyForm);
+      setShowForm(false);
       load();
     } catch (err) {
       const msgs = err.response?.data?.errors;
@@ -73,6 +75,12 @@ export default function DudiTab() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const batalForm = () => {
+    setShowForm(false);
+    setForm(emptyForm);
+    setError('');
   };
 
   const startEdit = (d) => {
@@ -227,7 +235,7 @@ export default function DudiTab() {
         </div>
       )}
 
-      {canEdit && (
+      {canEdit && showForm && (
         <form onSubmit={handleAdd} className="surface-card p-5">
           <h2 className="font-display font-semibold text-ink-900 mb-4">Tambah Akun IDUKA</h2>
           {error && <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2 mb-3">{error}</p>}
@@ -262,16 +270,26 @@ export default function DudiTab() {
             <input placeholder="Radius (meter)" type="number" value={form.radius_meter} onChange={(e) => setForm({ ...form, radius_meter: e.target.value })} className="field-input" required />
           </div>
 
-          <button disabled={loading} className="btn-primary mt-4">
-            <Plus className="w-4 h-4" /> {loading ? 'Menyimpan...' : 'Tambah IDUKA'}
-          </button>
+          <div className="flex gap-2 mt-4">
+            <button disabled={loading} className="btn-primary">
+              <Plus className="w-4 h-4" /> {loading ? 'Menyimpan...' : 'Tambah IDUKA'}
+            </button>
+            <button type="button" onClick={batalForm} className="text-sm text-ink-500 hover:text-ink-700 px-3">Batal</button>
+          </div>
         </form>
       )}
 
       <div className="surface-card p-5">
-        <h2 className="font-display font-semibold text-ink-900 mb-4">
-          Daftar IDUKA <span className="text-ink-500 font-sans font-normal text-sm">({list.length})</span>
-        </h2>
+        <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
+          <h2 className="font-display font-semibold text-ink-900">
+            Daftar IDUKA <span className="text-ink-500 font-sans font-normal text-sm">({list.length})</span>
+          </h2>
+          {canEdit && !showForm && (
+            <button onClick={() => { setForm(emptyForm); setError(''); setShowForm(true); }} className="btn-primary shrink-0">
+              <Plus className="w-4 h-4" /> Tambah IDUKA
+            </button>
+          )}
+        </div>
         <div className="table-scroll">
         <table className="w-full text-sm">
           <thead>

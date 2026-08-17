@@ -14,6 +14,7 @@ export default function ClassesTab() {
   const [name, setName]         = useState('');
   const [error, setError]       = useState('');
   const [loading, setLoading]   = useState(false);
+  const [showForm, setShowForm] = useState(false);
 
   const [editingId, setEditingId]   = useState(null);
   const [editName, setEditName]     = useState('');
@@ -33,12 +34,19 @@ export default function ClassesTab() {
     try {
       await api.post('/classes', { name });
       setName('');
+      setShowForm(false);
       loadClasses();
     } catch {
       setError('Gagal menambah kelas.');
     } finally {
       setLoading(false);
     }
+  };
+
+  const batalForm = () => {
+    setShowForm(false);
+    setName('');
+    setError('');
   };
 
   const handleDelete = async (id, className) => {
@@ -93,24 +101,34 @@ export default function ClassesTab() {
 
   return (
     <div className="space-y-6">
-      <form onSubmit={handleAdd} className="surface-card p-5">
-        {error && <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2 mb-3">{error}</p>}
-        <div className="flex gap-3">
-          <input
-            placeholder="Nama Kelas (contoh: X IPA 1)"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="field-input flex-1"
-            required
-          />
-          <button disabled={loading} className="btn-primary whitespace-nowrap">
-            <Plus className="w-4 h-4" /> {loading ? 'Menyimpan...' : 'Tambah Kelas'}
-          </button>
-        </div>
-      </form>
+      {showForm && (
+        <form onSubmit={handleAdd} className="surface-card p-5">
+          {error && <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2 mb-3">{error}</p>}
+          <div className="flex gap-3">
+            <input
+              placeholder="Nama Kelas (contoh: X IPA 1)"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="field-input flex-1"
+              required
+            />
+            <div className="flex gap-2">
+              <button disabled={loading} className="btn-primary whitespace-nowrap">
+                <Plus className="w-4 h-4" /> {loading ? 'Menyimpan...' : 'Tambah Kelas'}
+              </button>
+              <button type="button" onClick={batalForm} className="text-sm text-ink-500 hover:text-ink-700 px-3">Batal</button>
+            </div>
+          </div>
+        </form>
+      )}
 
       <div className="surface-card p-5">
-        <h2 className="font-display font-semibold text-ink-900 mb-4">Daftar Kelas <span className="text-ink-500 font-sans font-normal text-sm">({classes.length})</span></h2>
+        <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
+          <h2 className="font-display font-semibold text-ink-900">Daftar Kelas <span className="text-ink-500 font-sans font-normal text-sm">({classes.length})</span></h2>
+          {!showForm && (
+            <button onClick={() => { setName(''); setError(''); setShowForm(true); }} className="btn-primary shrink-0"><Plus className="w-4 h-4" /> Tambah Kelas</button>
+          )}
+        </div>
         <div className="table-scroll">
         <table className="w-full text-sm">
           <thead>

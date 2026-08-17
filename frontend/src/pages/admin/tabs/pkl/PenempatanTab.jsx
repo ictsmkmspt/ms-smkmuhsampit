@@ -47,6 +47,7 @@ export default function PenempatanTab() {
   const [bulkTanggalSelesai, setBulkTanggalSelesai] = useState('');
   const [bulkSaving, setBulkSaving] = useState(false);
   const [bulkResult, setBulkResult] = useState(null);
+  const [showForm, setShowForm] = useState(false);
 
   const load = () => {
     const params = { ...tahunParam };
@@ -178,6 +179,7 @@ export default function PenempatanTab() {
       localStorage.setItem(JADWAL_TERAKHIR_KEY, JSON.stringify({ tanggal_mulai: bulkTanggalMulai, tanggal_selesai: bulkTanggalSelesai }));
       setSelectedIds(new Set());
       setBulkDudiId('');
+      setShowForm(false);
       load();
       loadAktifCount();
       loadRoster(rosterClassId);
@@ -187,6 +189,19 @@ export default function PenempatanTab() {
     } finally {
       setBulkSaving(false);
     }
+  };
+
+  // Tanggal mulai/selesai SENGAJA tidak direset saat Batal — nilainya
+  // diingat lewat localStorage (lihat JADWAL_TERAKHIR_KEY di atas) supaya
+  // batch berikutnya tidak perlu ketik ulang.
+  const batalBulkForm = () => {
+    setShowForm(false);
+    setRosterClassId('');
+    setSelectedIds(new Set());
+    setBulkDudiId('');
+    setBulkGuruId('');
+    setError('');
+    setBulkResult(null);
   };
 
   const handleUbahStatus = async (p, status) => {
@@ -221,7 +236,7 @@ export default function PenempatanTab() {
         </p>
       </div>
 
-      {canEdit && (
+      {canEdit && showForm && (
         <form onSubmit={handleBulkSubmit} className="surface-card p-5">
           <h2 className="font-display font-semibold text-ink-900 mb-1">Buat Penempatan PKL</h2>
           <p className="text-xs text-ink-500 mb-4">
@@ -311,9 +326,12 @@ export default function PenempatanTab() {
               <DateInput value={bulkTanggalSelesai} onChange={(e) => setBulkTanggalSelesai(e.target.value)} className="field-input w-full" required />
             </div>
           </div>
-          <button disabled={bulkSaving || selectedIds.size === 0} className="btn-primary mt-4">
-            <Plus className="w-4 h-4" /> {bulkSaving ? 'Menyimpan...' : `Buat Penempatan (${selectedIds.size} siswa)`}
-          </button>
+          <div className="flex gap-2 mt-4">
+            <button disabled={bulkSaving || selectedIds.size === 0} className="btn-primary">
+              <Plus className="w-4 h-4" /> {bulkSaving ? 'Menyimpan...' : `Buat Penempatan (${selectedIds.size} siswa)`}
+            </button>
+            <button type="button" onClick={batalBulkForm} className="text-sm text-ink-500 hover:text-ink-700 px-3">Batal</button>
+          </div>
         </form>
       )}
 
@@ -328,6 +346,11 @@ export default function PenempatanTab() {
               <option value="aktif">Aktif</option>
               <option value="selesai">Selesai</option>
             </select>
+            {canEdit && !showForm && (
+              <button onClick={() => setShowForm(true)} className="flex items-center gap-1.5 text-sm font-medium text-white bg-brand-600 hover:bg-brand-700 rounded-xl px-4 py-2 transition shrink-0">
+                <Plus className="w-4 h-4" /> Buat Penempatan
+              </button>
+            )}
             {canEdit && (
               <button
                 onClick={handleTutupSemuaAktif}

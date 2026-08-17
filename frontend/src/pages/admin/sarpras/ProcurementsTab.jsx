@@ -8,12 +8,14 @@ import { fmtDMY } from '../../../utils/date';
 
 const STATUS_LABEL = { diajukan: 'Diajukan', disetujui: 'Disetujui', ditolak: 'Ditolak', dibeli: 'Dibeli' };
 const STATUS_BADGE = { diajukan: 'badge-soft', disetujui: 'badge-honey', ditolak: 'badge-soft', dibeli: 'badge-brand' };
+const FORM_KOSONG = { nama_barang: '', jumlah: 1, alasan: '', tanggal_pengajuan: new Date().toISOString().slice(0, 10) };
 
 export default function ProcurementsTab() {
   const [items, setItems] = useState([]);
-  const [form, setForm] = useState({ nama_barang: '', jumlah: 1, alasan: '', tanggal_pengajuan: new Date().toISOString().slice(0, 10) });
+  const [form, setForm] = useState(FORM_KOSONG);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showForm, setShowForm] = useState(false);
   const [savingId, setSavingId] = useState(null);
 
   const { page, setPage, totalPages, paginated: itemsHalaman } = usePagination(items, 30);
@@ -26,7 +28,8 @@ export default function ProcurementsTab() {
     setError(''); setLoading(true);
     try {
       await api.post('/procurements', form);
-      setForm({ nama_barang: '', jumlah: 1, alasan: '', tanggal_pengajuan: new Date().toISOString().slice(0, 10) });
+      setForm(FORM_KOSONG);
+      setShowForm(false);
       load();
     } catch (err) {
       const msgs = err.response?.data?.errors;
@@ -34,6 +37,12 @@ export default function ProcurementsTab() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const batalForm = () => {
+    setShowForm(false);
+    setForm(FORM_KOSONG);
+    setError('');
   };
 
   const handleUpdateStatus = async (p, status) => {
@@ -58,6 +67,7 @@ export default function ProcurementsTab() {
 
   return (
     <div className="space-y-6">
+      {showForm && (
       <form onSubmit={handleAdd} className="surface-card p-5 space-y-3">
         <h2 className="font-display font-semibold text-ink-900">Ajukan Pengadaan Barang</h2>
         {error && <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2">{error}</p>}
@@ -67,11 +77,20 @@ export default function ProcurementsTab() {
           <DateInput value={form.tanggal_pengajuan} onChange={(e) => setForm({ ...form, tanggal_pengajuan: e.target.value })} className="field-input" required />
           <textarea placeholder="Alasan pengajuan" value={form.alasan} onChange={(e) => setForm({ ...form, alasan: e.target.value })} className="field-input col-span-2" rows={2} required />
         </div>
-        <button disabled={loading} className="btn-primary"><Plus className="w-4 h-4" /> {loading ? 'Menyimpan...' : 'Ajukan'}</button>
+        <div className="flex gap-2">
+          <button disabled={loading} className="btn-primary"><Plus className="w-4 h-4" /> {loading ? 'Menyimpan...' : 'Ajukan'}</button>
+          <button type="button" onClick={batalForm} className="text-sm text-ink-500 hover:text-ink-700 px-3">Batal</button>
+        </div>
       </form>
+      )}
 
       <div className="surface-card p-5">
-        <h2 className="font-display font-semibold text-ink-900 mb-4">Daftar Pengajuan <span className="text-ink-500 font-sans font-normal text-sm">({items.length})</span></h2>
+        <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
+          <h2 className="font-display font-semibold text-ink-900">Daftar Pengajuan <span className="text-ink-500 font-sans font-normal text-sm">({items.length})</span></h2>
+          {!showForm && (
+            <button onClick={() => { setForm(FORM_KOSONG); setError(''); setShowForm(true); }} className="btn-primary shrink-0"><Plus className="w-4 h-4" /> Ajukan Pengadaan</button>
+          )}
+        </div>
         <div className="table-scroll">
         <table className="w-full text-sm">
           <thead>

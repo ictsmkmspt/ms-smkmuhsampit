@@ -11,6 +11,7 @@ export default function PoinPrestasiTab() {
   const [error, setError]           = useState('');
   const [addLoading, setAddLoading] = useState(false);
   const [saveLoading, setSaveLoading] = useState({});
+  const [showForm, setShowForm]     = useState(false);
 
   const load = () => api.get('/achievement-types').then((res) => setTypes(res.data));
   useEffect(() => { load(); }, []);
@@ -21,6 +22,7 @@ export default function PoinPrestasiTab() {
     try {
       await api.post('/achievement-types', form);
       setForm({ name: '', poin: '' });
+      setShowForm(false);
       load();
     } catch (err) {
       const msgs = err.response?.data?.errors;
@@ -28,6 +30,12 @@ export default function PoinPrestasiTab() {
     } finally {
       setAddLoading(false);
     }
+  };
+
+  const batalForm = () => {
+    setShowForm(false);
+    setForm({ name: '', poin: '' });
+    setError('');
   };
 
   const handleSave = async (type) => {
@@ -70,31 +78,41 @@ export default function PoinPrestasiTab() {
         </p>
       </div>
 
-      <form onSubmit={handleAdd} className="surface-card p-5 space-y-3">
-        <h2 className="font-display font-semibold text-ink-900">Tambah Jenis Prestasi</h2>
-        {error && <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2">{error}</p>}
-        <div className="flex flex-col sm:flex-row gap-3">
-          <input
-            placeholder="Nama jenis (contoh: Juara Lomba OSN)"
-            value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })}
-            className="field-input sm:flex-1" required
-          />
-          <input
-            type="number" min="0" max="100" placeholder="Poin"
-            value={form.poin} onChange={(e) => setForm({ ...form, poin: e.target.value })}
-            className="field-input sm:w-24" required
-          />
-          <button disabled={addLoading} className="btn-primary whitespace-nowrap justify-center">
-            <Plus className="w-4 h-4" />
-            {addLoading ? '...' : 'Tambah'}
-          </button>
-        </div>
-      </form>
+      {showForm && (
+        <form onSubmit={handleAdd} className="surface-card p-5 space-y-3">
+          <h2 className="font-display font-semibold text-ink-900">Tambah Jenis Prestasi</h2>
+          {error && <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2">{error}</p>}
+          <div className="flex flex-col sm:flex-row gap-3">
+            <input
+              placeholder="Nama jenis (contoh: Juara Lomba OSN)"
+              value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })}
+              className="field-input sm:flex-1" required
+            />
+            <input
+              type="number" min="0" max="100" placeholder="Poin"
+              value={form.poin} onChange={(e) => setForm({ ...form, poin: e.target.value })}
+              className="field-input sm:w-24" required
+            />
+            <div className="flex gap-2">
+              <button disabled={addLoading} className="btn-primary whitespace-nowrap justify-center">
+                <Plus className="w-4 h-4" />
+                {addLoading ? '...' : 'Tambah'}
+              </button>
+              <button type="button" onClick={batalForm} className="text-sm text-ink-500 hover:text-ink-700 px-3">Batal</button>
+            </div>
+          </div>
+        </form>
+      )}
 
       <div className="surface-card p-5">
-        <h2 className="font-display font-semibold text-ink-900 mb-4">
-          Daftar Jenis Prestasi <span className="text-ink-500 font-sans font-normal text-sm">({types.length})</span>
-        </h2>
+        <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
+          <h2 className="font-display font-semibold text-ink-900">
+            Daftar Jenis Prestasi <span className="text-ink-500 font-sans font-normal text-sm">({types.length})</span>
+          </h2>
+          {!showForm && (
+            <button onClick={() => { setForm({ name: '', poin: '' }); setError(''); setShowForm(true); }} className="btn-primary shrink-0"><Plus className="w-4 h-4" /> Tambah Jenis Prestasi</button>
+          )}
+        </div>
         <div className="table-scroll">
         <table className="w-full text-sm">
           <thead>

@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Models\Violation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -29,7 +30,7 @@ class StudentController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Student::with(['user', 'classRoom']);
+        $query = Student::with(['user', 'classRoom', 'jurusan']);
         $status = $request->query('status', 'aktif');
         if ($status !== 'semua') {
             $query->where('students.status', $status);
@@ -55,6 +56,10 @@ class StudentController extends Controller
             'nis' => 'required|string|unique:students,nis',
             'jenis_kelamin' => 'nullable|in:L,P',
             'class_room_id' => 'nullable|exists:class_rooms,id',
+            'jurusan_id' => 'nullable|exists:jurusans,id',
+            'tempat_lahir' => 'nullable|string|max:100',
+            'tanggal_lahir' => 'nullable|date',
+            'alamat' => 'nullable|string|max:300',
         ]);
 
         return DB::transaction(function () use ($data) {
@@ -68,12 +73,16 @@ class StudentController extends Controller
             $student = Student::create([
                 'user_id' => $user->id,
                 'class_room_id' => $data['class_room_id'] ?? null,
+                'jurusan_id' => $data['jurusan_id'] ?? null,
                 'nis' => $data['nis'],
                 'jenis_kelamin' => $data['jenis_kelamin'] ?? null,
+                'tempat_lahir' => $data['tempat_lahir'] ?? null,
+                'tanggal_lahir' => $data['tanggal_lahir'] ?? null,
+                'alamat' => $data['alamat'] ?? null,
                 'qr_code' => 'STD-' . strtoupper(Str::random(8)),
             ]);
 
-            return $student->load(['user', 'classRoom']);
+            return $student->load(['user', 'classRoom', 'jurusan']);
         });
     }
 
@@ -85,14 +94,84 @@ class StudentController extends Controller
             'nis' => 'sometimes|string|unique:students,nis,' . $student->id,
             'jenis_kelamin' => 'nullable|in:L,P',
             'class_room_id' => 'nullable|exists:class_rooms,id',
+            'jurusan_id' => 'nullable|exists:jurusans,id',
+            'tempat_lahir' => 'nullable|string|max:100',
+            'tanggal_lahir' => 'nullable|date',
+            'alamat' => 'nullable|string|max:300',
         ]);
 
         if (isset($data['name']) || isset($data['email'])) {
             $student->user->update(array_intersect_key($data, array_flip(['name', 'email'])));
         }
-        $student->update($request->only('nis', 'class_room_id', 'jenis_kelamin'));
+        $student->update($request->only('nis', 'class_room_id', 'jenis_kelamin', 'jurusan_id', 'tempat_lahir', 'tanggal_lahir', 'alamat'));
 
-        return $student->load(['user', 'classRoom']);
+        return $student->load(['user', 'classRoom', 'jurusan']);
+    }
+
+    /**
+     * Foto siswa diunggah terpisah dari store()/update() (butuh multipart,
+     * bukan JSON) — pola sama BukuController::uploadCover().
+     */
+    public function uploadFoto(Request $request, Student $student)
+    {
+        $request->validate(['foto' => 'required|image|max:2048']);
+
+        if ($student->foto) {
+            Storage::disk('public')->delete($student->foto);
+        }
+        $student->update(['foto' => $request->file('foto')->store('siswa-foto', 'public')]);
+
+        return $student->fresh(['user', 'classRoom', 'jurusan']);
+    }
+
+    /**
+     * Upload BANYAK foto sekaligus — nama file (tanpa ekstensi) dicocokkan
+     * ke NIS siswa, mis. "40263136.jpg" otomatis jadi foto siswa dengan
+     * NIS itu. Per file divalidasi manual (bukan lewat $request->validate)
+     * supaya 1 file bermasalah (bukan gambar, NIS tidak ketemu, dst) cuma
+     * masuk daftar "gagal" — tidak menggagalkan seluruh batch, pola sama
+     * seperti StudentsImport::failures().
+     */
+    public function uploadFotoMassal(Request $request)
+    {
+        $request->validate(['files' => 'required|array|min:1']);
+
+        $extensiDiizinkan = ['jpg', 'jpeg', 'png', 'webp'];
+        $berhasil = 0;
+        $gagal = [];
+
+        foreach ($request->file('files', []) as $file) {
+            $namaAsli = $file->getClientOriginalName();
+            $nis = trim(pathinfo($namaAsli, PATHINFO_FILENAME));
+            $ekstensi = strtolower($file->getClientOriginalExtension());
+
+            if (!in_array($ekstensi, $extensiDiizinkan)) {
+                $gagal[] = ['file' => $namaAsli, 'alasan' => 'Bukan file gambar (jpg/png/webp).'];
+                continue;
+            }
+            if ($file->getSize() > 2048 * 1024) {
+                $gagal[] = ['file' => $namaAsli, 'alasan' => 'Ukuran file lebih dari 2MB.'];
+                continue;
+            }
+
+            $student = Student::where('nis', $nis)->first();
+            if (!$student) {
+                $gagal[] = ['file' => $namaAsli, 'alasan' => "NIS \"{$nis}\" tidak ditemukan."];
+                continue;
+            }
+
+            if ($student->foto) {
+                Storage::disk('public')->delete($student->foto);
+            }
+            $student->update(['foto' => $file->store('siswa-foto', 'public')]);
+            $berhasil++;
+        }
+
+        return response()->json([
+            'message' => "{$berhasil} foto berhasil diunggah" . (count($gagal) ? ', ' . count($gagal) . ' gagal.' : '.'),
+            'berhasil' => $berhasil,
+            'gagal' => $gagal,
+        ]);
     }
 
     public function destroy(Student $student)

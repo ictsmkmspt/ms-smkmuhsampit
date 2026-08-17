@@ -7,7 +7,13 @@ const DEFAULT_PROFILE = {
   nama_sekolah: 'SMK Muhammadiyah Sampit',
   visi: '',
   misi: '',
+  alamat: '',
+  website: '',
+  nama_kepala_sekolah: '',
+  nip_kepala_sekolah: '',
   logo_url: null,
+  ttd_kepala_sekolah_url: null,
+  cap_sekolah_url: null,
   tahun_ajaran: null,
 };
 

@@ -15,6 +15,7 @@ export default function TeachersTab() {
   const [form, setForm] = useState({ name: '', email: '', nip: '', jenis_kelamin: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showForm, setShowForm] = useState(false);
 
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState(null);
@@ -36,6 +37,7 @@ export default function TeachersTab() {
     try {
       await api.post('/teachers', form);
       setForm({ name: '', email: '', nip: '', jenis_kelamin: '' });
+      setShowForm(false);
       loadTeachers();
     } catch (err) {
       const msgs = err.response?.data?.errors;
@@ -59,6 +61,12 @@ export default function TeachersTab() {
     } catch (err) {
       alert(err.response?.data?.message || 'Gagal mereset password.');
     }
+  };
+
+  const batalForm = () => {
+    setShowForm(false);
+    setForm({ name: '', email: '', nip: '', jenis_kelamin: '' });
+    setError('');
   };
 
   const startEdit = (t) => {
@@ -184,7 +192,7 @@ export default function TeachersTab() {
         </div>
       )}
 
-      {canEdit && (
+      {canEdit && showForm && (
       <form onSubmit={handleAdd} className="surface-card p-5">
         <h2 className="font-display font-semibold text-ink-900 mb-1">Tambah Guru Baru</h2>
         <p className="text-xs text-ink-500 mb-4">Password akun otomatis dibuat "123456" — wajib diganti guru saat login pertama.</p>
@@ -199,14 +207,24 @@ export default function TeachersTab() {
             <option value="P">Perempuan</option>
           </select>
         </div>
-        <button disabled={loading} className="btn-primary mt-4">
-          <Plus className="w-4 h-4" /> {loading ? 'Menyimpan...' : 'Tambah Guru'}
-        </button>
+        <div className="flex gap-2 mt-4">
+          <button disabled={loading} className="btn-primary">
+            <Plus className="w-4 h-4" /> {loading ? 'Menyimpan...' : 'Tambah Guru'}
+          </button>
+          <button type="button" onClick={batalForm} className="text-sm text-ink-500 hover:text-ink-700 px-3">Batal</button>
+        </div>
       </form>
       )}
 
       <div className="surface-card p-5">
-        <h2 className="font-display font-semibold text-ink-900 mb-4">Daftar Guru <span className="text-ink-500 font-sans font-normal text-sm">({teachers.length})</span></h2>
+        <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
+          <h2 className="font-display font-semibold text-ink-900">Daftar Guru <span className="text-ink-500 font-sans font-normal text-sm">({teachers.length})</span></h2>
+          {canEdit && !showForm && (
+            <button onClick={() => { setForm({ name: '', email: '', nip: '', jenis_kelamin: '' }); setError(''); setShowForm(true); }} className="btn-primary shrink-0">
+              <Plus className="w-4 h-4" /> Tambah Guru
+            </button>
+          )}
+        </div>
         <p className="md:hidden text-xs text-ink-400 mb-1.5">← Geser tabel untuk lihat kolom lainnya →</p>
         <div className="table-scroll">
         <table className="w-full text-sm min-w-[560px]">

@@ -7,7 +7,17 @@ use Illuminate\Support\Facades\DB;
 
 class Student extends Model
 {
-    protected $fillable = ['user_id', 'class_room_id', 'nis', 'jenis_kelamin', 'qr_code', 'total_poin', 'total_prestasi', 'status', 'tanggal_lulus'];
+    protected $fillable = [
+        'user_id', 'class_room_id', 'jurusan_id', 'nis', 'jenis_kelamin', 'qr_code', 'foto',
+        'tempat_lahir', 'tanggal_lahir', 'alamat', 'total_poin', 'total_prestasi', 'status', 'tanggal_lulus',
+    ];
+
+    protected $appends = ['foto_url'];
+
+    public function getFotoUrlAttribute(): ?string
+    {
+        return $this->foto ? '/storage/' . $this->foto : null;
+    }
 
     public function user()
     {
@@ -17,6 +27,11 @@ class Student extends Model
     public function classRoom()
     {
         return $this->belongsTo(ClassRoom::class);
+    }
+
+    public function jurusan()
+    {
+        return $this->belongsTo(Jurusan::class);
     }
 
     public function attendances()

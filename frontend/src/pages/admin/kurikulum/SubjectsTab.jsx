@@ -7,6 +7,7 @@ export default function SubjectsTab() {
   const [form, setForm] = useState({ kode: '', nama: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showForm, setShowForm] = useState(false);
   const [editId, setEditId] = useState(null);
   const [editForm, setEditForm] = useState({});
 
@@ -24,6 +25,7 @@ export default function SubjectsTab() {
     try {
       await api.post('/subjects', form);
       setForm({ kode: '', nama: '' });
+      setShowForm(false);
       load();
     } catch (err) {
       const msgs = err.response?.data?.errors;
@@ -31,6 +33,12 @@ export default function SubjectsTab() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const batalForm = () => {
+    setShowForm(false);
+    setForm({ kode: '', nama: '' });
+    setError('');
   };
 
   const startEdit = (s) => { setEditId(s.id); setEditForm({ kode: s.kode, nama: s.nama }); };
@@ -57,18 +65,28 @@ export default function SubjectsTab() {
 
   return (
     <div className="space-y-6">
-      <form onSubmit={handleAdd} className="surface-card p-5 space-y-3">
-        <h2 className="font-display font-semibold text-ink-900">Tambah Mata Pelajaran</h2>
-        {error && <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2">{error}</p>}
-        <div className="flex flex-col sm:flex-row gap-3">
-          <input placeholder="Kode (mis. MTK-10)" value={form.kode} onChange={(e) => setForm({ ...form, kode: e.target.value })} className="field-input sm:w-40" required />
-          <input placeholder="Nama mata pelajaran" value={form.nama} onChange={(e) => setForm({ ...form, nama: e.target.value })} className="field-input sm:flex-1" required />
-          <button disabled={loading} className="btn-primary whitespace-nowrap justify-center"><Plus className="w-4 h-4" /> {loading ? '...' : 'Tambah'}</button>
-        </div>
-      </form>
+      {showForm && (
+        <form onSubmit={handleAdd} className="surface-card p-5 space-y-3">
+          <h2 className="font-display font-semibold text-ink-900">Tambah Mata Pelajaran</h2>
+          {error && <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2">{error}</p>}
+          <div className="flex flex-col sm:flex-row gap-3">
+            <input placeholder="Kode (mis. MTK-10)" value={form.kode} onChange={(e) => setForm({ ...form, kode: e.target.value })} className="field-input sm:w-40" required />
+            <input placeholder="Nama mata pelajaran" value={form.nama} onChange={(e) => setForm({ ...form, nama: e.target.value })} className="field-input sm:flex-1" required />
+            <div className="flex gap-2">
+              <button disabled={loading} className="btn-primary whitespace-nowrap justify-center"><Plus className="w-4 h-4" /> {loading ? '...' : 'Tambah'}</button>
+              <button type="button" onClick={batalForm} className="text-sm text-ink-500 hover:text-ink-700 px-3">Batal</button>
+            </div>
+          </div>
+        </form>
+      )}
 
       <div className="surface-card p-5">
-        <h2 className="font-display font-semibold text-ink-900 mb-4">Daftar Mata Pelajaran <span className="text-ink-500 font-sans font-normal text-sm">({subjects.length})</span></h2>
+        <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
+          <h2 className="font-display font-semibold text-ink-900">Daftar Mata Pelajaran <span className="text-ink-500 font-sans font-normal text-sm">({subjects.length})</span></h2>
+          {!showForm && (
+            <button onClick={() => { setForm({ kode: '', nama: '' }); setError(''); setShowForm(true); }} className="btn-primary shrink-0"><Plus className="w-4 h-4" /> Tambah Mata Pelajaran</button>
+          )}
+        </div>
         <div className="table-scroll">
         <table className="w-full text-sm">
           <thead>

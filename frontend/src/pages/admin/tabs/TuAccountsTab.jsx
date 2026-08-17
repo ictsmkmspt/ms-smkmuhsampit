@@ -11,6 +11,7 @@ export default function TuAccountsTab() {
   const [form, setForm] = useState({ name: '', email: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showForm, setShowForm] = useState(false);
 
   const [editId, setEditId] = useState(null);
   const [editData, setEditData] = useState({});
@@ -26,6 +27,7 @@ export default function TuAccountsTab() {
     try {
       await api.post('/tu', form);
       setForm({ name: '', email: '' });
+      setShowForm(false);
       loadAccounts();
     } catch (err) {
       const msgs = err.response?.data?.errors;
@@ -49,6 +51,12 @@ export default function TuAccountsTab() {
     } catch (err) {
       alert(err.response?.data?.message || 'Gagal mereset password.');
     }
+  };
+
+  const batalForm = () => {
+    setShowForm(false);
+    setForm({ name: '', email: '' });
+    setError('');
   };
 
   const startEdit = (a) => {
@@ -78,7 +86,7 @@ export default function TuAccountsTab() {
         </div>
       )}
 
-      {isAdmin && (
+      {isAdmin && showForm && (
       <form onSubmit={handleAdd} className="surface-card p-5">
         <h2 className="font-display font-semibold text-ink-900 mb-1">Tambah Akun TU Baru</h2>
         <p className="text-xs text-ink-500 mb-4">
@@ -89,16 +97,26 @@ export default function TuAccountsTab() {
           <input placeholder="Nama" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="field-input" required />
           <input placeholder="Email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="field-input" required autoComplete="off" />
         </div>
-        <button disabled={loading} className="btn-primary mt-4">
-          <Plus className="w-4 h-4" /> {loading ? 'Menyimpan...' : 'Tambah Akun TU'}
-        </button>
+        <div className="flex gap-2 mt-4">
+          <button disabled={loading} className="btn-primary">
+            <Plus className="w-4 h-4" /> {loading ? 'Menyimpan...' : 'Tambah Akun TU'}
+          </button>
+          <button type="button" onClick={batalForm} className="text-sm text-ink-500 hover:text-ink-700 px-3">Batal</button>
+        </div>
       </form>
       )}
 
       <div className="surface-card p-5">
-        <h2 className="font-display font-semibold text-ink-900 mb-4">
-          Daftar Akun TU <span className="text-ink-500 font-sans font-normal text-sm">({accounts.length})</span>
-        </h2>
+        <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
+          <h2 className="font-display font-semibold text-ink-900">
+            Daftar Akun TU <span className="text-ink-500 font-sans font-normal text-sm">({accounts.length})</span>
+          </h2>
+          {isAdmin && !showForm && (
+            <button onClick={() => { setForm({ name: '', email: '' }); setError(''); setShowForm(true); }} className="btn-primary shrink-0">
+              <Plus className="w-4 h-4" /> Tambah Akun TU
+            </button>
+          )}
+        </div>
         <div className="table-scroll">
         <table className="w-full text-sm">
           <thead>

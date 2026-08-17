@@ -26,6 +26,7 @@ export default function MonitoringJadwalTab() {
   const [form, setForm] = useState(emptyForm);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+  const [showForm, setShowForm] = useState(false);
 
   const [editId, setEditId] = useState(null);
   const [editData, setEditData] = useState({});
@@ -43,6 +44,7 @@ export default function MonitoringJadwalTab() {
     try {
       await api.post('/pkl-monitoring-jadwal', { ...form, tanggal_selesai: form.tanggal_selesai || null });
       setForm(emptyForm);
+      setShowForm(false);
       load();
     } catch (err) {
       const msgs = err.response?.data?.errors;
@@ -50,6 +52,12 @@ export default function MonitoringJadwalTab() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const batalForm = () => {
+    setShowForm(false);
+    setForm(emptyForm);
+    setError('');
   };
 
   const startEdit = (j) => {
@@ -85,6 +93,7 @@ export default function MonitoringJadwalTab() {
         </p>
       </div>
 
+      {showForm && (
       <form onSubmit={handleAdd} className="surface-card p-5">
         <h2 className="font-display font-semibold text-ink-900 mb-4">Tambah Jadwal Monitoring</h2>
         {error && <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2 mb-3">{error}</p>}
@@ -100,15 +109,26 @@ export default function MonitoringJadwalTab() {
           </div>
           <input placeholder="Catatan (opsional)" value={form.catatan} onChange={(e) => setForm({ ...form, catatan: e.target.value })} className="field-input sm:col-span-2" />
         </div>
-        <button disabled={saving} className="btn-primary">
-          <Plus className="w-4 h-4" /> {saving ? 'Menyimpan...' : 'Tambah Jadwal'}
-        </button>
+        <div className="flex gap-2">
+          <button disabled={saving} className="btn-primary">
+            <Plus className="w-4 h-4" /> {saving ? 'Menyimpan...' : 'Tambah Jadwal'}
+          </button>
+          <button type="button" onClick={batalForm} className="text-sm text-ink-500 hover:text-ink-700 px-3">Batal</button>
+        </div>
       </form>
+      )}
 
       <div className="surface-card p-5">
-        <h2 className="font-display font-semibold text-ink-900 mb-4">
-          Daftar Jadwal Monitoring <span className="text-ink-500 font-sans font-normal text-sm">({list.length})</span>
-        </h2>
+        <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
+          <h2 className="font-display font-semibold text-ink-900">
+            Daftar Jadwal Monitoring <span className="text-ink-500 font-sans font-normal text-sm">({list.length})</span>
+          </h2>
+          {!showForm && (
+            <button onClick={() => { setForm(emptyForm); setError(''); setShowForm(true); }} className="btn-primary shrink-0">
+              <Plus className="w-4 h-4" /> Tambah Jadwal
+            </button>
+          )}
+        </div>
         {loading ? (
           <p className="text-center text-ink-300 py-6">Memuat...</p>
         ) : (

@@ -31,6 +31,7 @@ export default function InventarisTab() {
   const [form, setForm] = useState(FORM_KOSONG);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showForm, setShowForm] = useState(false);
   const [query, setQuery] = useState('');
   const [roomFilter, setRoomFilter] = useState('');
   const [qrAsset, setQrAsset] = useState(null);
@@ -124,6 +125,7 @@ export default function InventarisTab() {
     try {
       await api.post('/assets', form);
       setForm(FORM_KOSONG);
+      setShowForm(false);
       load();
     } catch (err) {
       const msgs = err.response?.data?.errors;
@@ -131,6 +133,12 @@ export default function InventarisTab() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const batalForm = () => {
+    setShowForm(false);
+    setForm(FORM_KOSONG);
+    setError('');
   };
 
   const handleScan = async (code) => {
@@ -202,7 +210,7 @@ export default function InventarisTab() {
         </div>
       )}
 
-      {!isTeknisi && (
+      {!isTeknisi && showForm && (
         <form onSubmit={handleAdd} className="surface-card p-5 space-y-3">
           <h2 className="font-display font-semibold text-ink-900">Tambah Aset</h2>
           {error && <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2">{error}</p>}
@@ -233,7 +241,10 @@ export default function InventarisTab() {
               </div>
             </div>
           </div>
-          <button disabled={loading} className="btn-primary"><Plus className="w-4 h-4" /> {loading ? 'Menyimpan...' : 'Tambah Aset'}</button>
+          <div className="flex gap-2">
+            <button disabled={loading} className="btn-primary"><Plus className="w-4 h-4" /> {loading ? 'Menyimpan...' : 'Tambah Aset'}</button>
+            <button type="button" onClick={batalForm} className="text-sm text-ink-500 hover:text-ink-700 px-3">Batal</button>
+          </div>
         </form>
       )}
 
@@ -241,6 +252,9 @@ export default function InventarisTab() {
         <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
           <h2 className="font-display font-semibold text-ink-900">Daftar Aset <span className="text-ink-500 font-sans font-normal text-sm">({assetTersaring.length}/{assets.length})</span></h2>
           <div className="flex items-center gap-2 flex-wrap">
+            {!isTeknisi && !showForm && (
+              <button onClick={() => { setForm(FORM_KOSONG); setError(''); setShowForm(true); }} className="btn-primary shrink-0"><Plus className="w-4 h-4" /> Tambah Aset</button>
+            )}
             {isTeknisi && (
               <select value={roomFilter} onChange={(e) => setRoomFilter(e.target.value)} className="field-input text-ink-700 w-full sm:w-44">
                 <option value="">Semua Ruang</option>

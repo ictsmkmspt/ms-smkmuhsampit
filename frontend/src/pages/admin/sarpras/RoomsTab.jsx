@@ -12,6 +12,7 @@ export default function RoomsTab() {
   const [editingId, setEditingId] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showForm, setShowForm] = useState(false);
 
   const load = () => api.get('/rooms').then((res) => setRooms(res.data));
   useEffect(() => {
@@ -29,12 +30,15 @@ export default function RoomsTab() {
       teacher_id: r.teacher_id || '',
       keterangan: r.keterangan || '',
     });
+    setError('');
+    setShowForm(true);
   };
 
   const batalEdit = () => {
     setEditingId(null);
     setForm(FORM_KOSONG);
     setError('');
+    setShowForm(false);
   };
 
   const handleSubmit = async (e) => {
@@ -49,6 +53,7 @@ export default function RoomsTab() {
       }
       setEditingId(null);
       setForm(FORM_KOSONG);
+      setShowForm(false);
       load();
     } catch (err) {
       const msgs = err.response?.data?.errors;
@@ -70,6 +75,7 @@ export default function RoomsTab() {
 
   return (
     <div className="space-y-6">
+      {showForm && (
       <form onSubmit={handleSubmit} className="surface-card p-5 space-y-3">
         <h2 className="font-display font-semibold text-ink-900">{editingId ? 'Edit Prasarana' : 'Tambah Ruang / Lab / Bengkel'}</h2>
         {error && <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2">{error}</p>}
@@ -91,16 +97,20 @@ export default function RoomsTab() {
             {editingId ? <Pencil className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
             {loading ? 'Menyimpan...' : editingId ? 'Simpan Perubahan' : 'Tambah Ruang'}
           </button>
-          {editingId && (
-            <button type="button" onClick={batalEdit} className="text-sm font-medium text-ink-500 hover:text-ink-700 border border-line-200 rounded-xl px-4 py-2 transition">
-              Batal
-            </button>
-          )}
+          <button type="button" onClick={batalEdit} className="text-sm font-medium text-ink-500 hover:text-ink-700 border border-line-200 rounded-xl px-4 py-2 transition">
+            Batal
+          </button>
         </div>
       </form>
+      )}
 
       <div className="surface-card p-5">
-        <h2 className="font-display font-semibold text-ink-900 mb-4">Daftar Ruang <span className="text-ink-500 font-sans font-normal text-sm">({rooms.length})</span></h2>
+        <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
+          <h2 className="font-display font-semibold text-ink-900">Daftar Ruang <span className="text-ink-500 font-sans font-normal text-sm">({rooms.length})</span></h2>
+          {!showForm && (
+            <button onClick={() => { setEditingId(null); setForm(FORM_KOSONG); setError(''); setShowForm(true); }} className="btn-primary shrink-0"><Plus className="w-4 h-4" /> Tambah Ruang</button>
+          )}
+        </div>
         <div className="table-scroll">
         <table className="w-full text-sm">
           <thead>

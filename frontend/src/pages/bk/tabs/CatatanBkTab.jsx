@@ -22,6 +22,7 @@ export default function CatatanBkTab({ prefill, onPrefillUsed }) {
   const [form, setForm] = useState(KOSONG);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showForm, setShowForm] = useState(false);
   const [editId, setEditId] = useState(null);
   const [editForm, setEditForm] = useState({});
 
@@ -43,6 +44,7 @@ export default function CatatanBkTab({ prefill, onPrefillUsed }) {
         catatan: '',
         tindak_lanjut: '',
       });
+      setShowForm(true);
       onPrefillUsed?.();
     }
   }, [prefill]); // eslint-disable-line
@@ -57,6 +59,7 @@ export default function CatatanBkTab({ prefill, onPrefillUsed }) {
     try {
       await api.post('/bk-cases', form);
       setForm(KOSONG);
+      setShowForm(false);
       loadCases();
     } catch (err) {
       const msgs = err.response?.data?.errors;
@@ -64,6 +67,12 @@ export default function CatatanBkTab({ prefill, onPrefillUsed }) {
     } finally {
       setLoading(false);
     }
+  };
+
+  const batalForm = () => {
+    setShowForm(false);
+    setForm(KOSONG);
+    setError('');
   };
 
   const startEdit = (c) => {
@@ -92,6 +101,7 @@ export default function CatatanBkTab({ prefill, onPrefillUsed }) {
         </p>
       </div>
 
+      {showForm && (
       <form onSubmit={handleAdd} className="surface-card p-5 space-y-3">
         <h2 className="font-display font-semibold text-ink-900">Tambah Catatan BK</h2>
         {form.sanksi_kejadian_id && (
@@ -119,16 +129,25 @@ export default function CatatanBkTab({ prefill, onPrefillUsed }) {
           <button disabled={loading} className="btn-primary">
             <Plus className="w-4 h-4" /> {loading ? 'Menyimpan...' : 'Simpan Catatan'}
           </button>
+          <button type="button" onClick={batalForm} className="text-sm text-ink-500 hover:text-ink-700 px-3">Batal</button>
           {form.sanksi_kejadian_id && (
             <button type="button" onClick={() => setForm(KOSONG)} className="text-sm px-4 py-2 text-ink-500 hover:text-ink-700">Batal tautkan</button>
           )}
         </div>
       </form>
+      )}
 
       <div className="surface-card p-5">
-        <h2 className="font-display font-semibold text-ink-900 mb-4">
-          Riwayat Catatan BK <span className="text-ink-500 font-sans font-normal text-sm">({cases.length})</span>
-        </h2>
+        <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
+          <h2 className="font-display font-semibold text-ink-900">
+            Riwayat Catatan BK <span className="text-ink-500 font-sans font-normal text-sm">({cases.length})</span>
+          </h2>
+          {!showForm && (
+            <button onClick={() => { setForm(KOSONG); setError(''); setShowForm(true); }} className="btn-primary shrink-0">
+              <Plus className="w-4 h-4" /> Tambah Catatan BK
+            </button>
+          )}
+        </div>
         <div className="table-scroll">
         <table className="w-full text-sm">
           <thead>

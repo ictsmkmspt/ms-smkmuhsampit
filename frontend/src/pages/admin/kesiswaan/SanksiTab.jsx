@@ -8,6 +8,7 @@ export default function SanksiTab() {
   const [form, setForm] = useState({ nama: '', min_poin: '', max_poin: '', tindakan: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showForm, setShowForm] = useState(false);
 
   const loadRules = () => api.get('/sanksi-rules').then((res) => setRules(res.data));
   const loadSiswa = () => api.get('/sanksi-rules/siswa').then((res) => setSiswa(res.data));
@@ -19,6 +20,7 @@ export default function SanksiTab() {
     try {
       await api.post('/sanksi-rules', form);
       setForm({ nama: '', min_poin: '', max_poin: '', tindakan: '' });
+      setShowForm(false);
       loadRules(); loadSiswa();
     } catch (err) {
       const msgs = err.response?.data?.errors;
@@ -26,6 +28,12 @@ export default function SanksiTab() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const batalForm = () => {
+    setShowForm(false);
+    setForm({ nama: '', min_poin: '', max_poin: '', tindakan: '' });
+    setError('');
   };
 
   const handleDelete = async (r) => {
@@ -43,22 +51,32 @@ export default function SanksiTab() {
         </p>
       </div>
 
-      <form onSubmit={handleAdd} className="surface-card p-5 space-y-3">
-        <h2 className="font-display font-semibold text-ink-900">Tambah Aturan Sanksi</h2>
-        {error && <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2">{error}</p>}
-        <div className="grid grid-cols-4 gap-3">
-          <input placeholder="Nama tahap (mis. Peringatan Lisan)" value={form.nama} onChange={(e) => setForm({ ...form, nama: e.target.value })} className="field-input col-span-2" required />
-          <input type="number" min="0" placeholder="Min poin" value={form.min_poin} onChange={(e) => setForm({ ...form, min_poin: e.target.value })} className="field-input" required />
-          <input type="number" min="0" placeholder="Maks poin (kosong = tak terbatas)" value={form.max_poin} onChange={(e) => setForm({ ...form, max_poin: e.target.value })} className="field-input" />
-          <textarea placeholder="Tindakan yang dilakukan" value={form.tindakan} onChange={(e) => setForm({ ...form, tindakan: e.target.value })} className="field-input col-span-4" rows={2} required />
-        </div>
-        <button disabled={loading} className="btn-primary">
-          <Plus className="w-4 h-4" /> {loading ? 'Menyimpan...' : 'Tambah Aturan'}
-        </button>
-      </form>
+      {showForm && (
+        <form onSubmit={handleAdd} className="surface-card p-5 space-y-3">
+          <h2 className="font-display font-semibold text-ink-900">Tambah Aturan Sanksi</h2>
+          {error && <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2">{error}</p>}
+          <div className="grid grid-cols-4 gap-3">
+            <input placeholder="Nama tahap (mis. Peringatan Lisan)" value={form.nama} onChange={(e) => setForm({ ...form, nama: e.target.value })} className="field-input col-span-2" required />
+            <input type="number" min="0" placeholder="Min poin" value={form.min_poin} onChange={(e) => setForm({ ...form, min_poin: e.target.value })} className="field-input" required />
+            <input type="number" min="0" placeholder="Maks poin (kosong = tak terbatas)" value={form.max_poin} onChange={(e) => setForm({ ...form, max_poin: e.target.value })} className="field-input" />
+            <textarea placeholder="Tindakan yang dilakukan" value={form.tindakan} onChange={(e) => setForm({ ...form, tindakan: e.target.value })} className="field-input col-span-4" rows={2} required />
+          </div>
+          <div className="flex gap-2">
+            <button disabled={loading} className="btn-primary">
+              <Plus className="w-4 h-4" /> {loading ? 'Menyimpan...' : 'Tambah Aturan'}
+            </button>
+            <button type="button" onClick={batalForm} className="text-sm text-ink-500 hover:text-ink-700 px-3">Batal</button>
+          </div>
+        </form>
+      )}
 
       <div className="surface-card p-5">
-        <h2 className="font-display font-semibold text-ink-900 mb-4">Daftar Aturan Sanksi <span className="text-ink-500 font-sans font-normal text-sm">({rules.length})</span></h2>
+        <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
+          <h2 className="font-display font-semibold text-ink-900">Daftar Aturan Sanksi <span className="text-ink-500 font-sans font-normal text-sm">({rules.length})</span></h2>
+          {!showForm && (
+            <button onClick={() => { setForm({ nama: '', min_poin: '', max_poin: '', tindakan: '' }); setError(''); setShowForm(true); }} className="btn-primary shrink-0"><Plus className="w-4 h-4" /> Tambah Aturan</button>
+          )}
+        </div>
         <div className="table-scroll">
         <table className="w-full text-sm">
           <thead>

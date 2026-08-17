@@ -15,6 +15,7 @@ export default function BkCasesTab() {
   const [form, setForm] = useState({ student_id: '', tanggal: '', kategori: 'perilaku', catatan: '', tindak_lanjut: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showForm, setShowForm] = useState(false);
   const [editId, setEditId] = useState(null);
   const [editForm, setEditForm] = useState({});
 
@@ -32,6 +33,7 @@ export default function BkCasesTab() {
     try {
       await api.post('/bk-cases', form);
       setForm({ student_id: '', tanggal: '', kategori: 'perilaku', catatan: '', tindak_lanjut: '' });
+      setShowForm(false);
       loadCases();
     } catch (err) {
       const msgs = err.response?.data?.errors;
@@ -39,6 +41,12 @@ export default function BkCasesTab() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const batalForm = () => {
+    setShowForm(false);
+    setForm({ student_id: '', tanggal: '', kategori: 'perilaku', catatan: '', tindak_lanjut: '' });
+    setError('');
   };
 
   const startEdit = (c) => {
@@ -67,33 +75,43 @@ export default function BkCasesTab() {
         </p>
       </div>
 
-      <form onSubmit={handleAdd} className="surface-card p-5 space-y-3">
-        <h2 className="font-display font-semibold text-ink-900">Tambah Catatan BK</h2>
-        {error && <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2">{error}</p>}
-        <div className="grid grid-cols-2 gap-3">
-          <select value={form.student_id} onChange={(e) => setForm({ ...form, student_id: e.target.value })} className="field-input text-ink-700" required>
-            <option value="">Pilih Siswa</option>
-            {students.map((s) => (
-              <option key={s.id} value={s.id}>{s.user?.name} — {s.class_room?.name || 'tanpa kelas'}</option>
-            ))}
-          </select>
-          <DateInput value={form.tanggal} onChange={(e) => setForm({ ...form, tanggal: e.target.value })} className="field-input" required />
-          <select value={form.kategori} onChange={(e) => setForm({ ...form, kategori: e.target.value })} className="field-input text-ink-700">
-            {Object.entries(KATEGORI_LABEL).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
-          </select>
-          <div />
-          <textarea placeholder="Catatan kasus" value={form.catatan} onChange={(e) => setForm({ ...form, catatan: e.target.value })} className="field-input col-span-2" rows={2} required />
-          <textarea placeholder="Tindak lanjut (opsional)" value={form.tindak_lanjut} onChange={(e) => setForm({ ...form, tindak_lanjut: e.target.value })} className="field-input col-span-2" rows={2} />
-        </div>
-        <button disabled={loading} className="btn-primary">
-          <Plus className="w-4 h-4" /> {loading ? 'Menyimpan...' : 'Simpan Catatan'}
-        </button>
-      </form>
+      {showForm && (
+        <form onSubmit={handleAdd} className="surface-card p-5 space-y-3">
+          <h2 className="font-display font-semibold text-ink-900">Tambah Catatan BK</h2>
+          {error && <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2">{error}</p>}
+          <div className="grid grid-cols-2 gap-3">
+            <select value={form.student_id} onChange={(e) => setForm({ ...form, student_id: e.target.value })} className="field-input text-ink-700" required>
+              <option value="">Pilih Siswa</option>
+              {students.map((s) => (
+                <option key={s.id} value={s.id}>{s.user?.name} — {s.class_room?.name || 'tanpa kelas'}</option>
+              ))}
+            </select>
+            <DateInput value={form.tanggal} onChange={(e) => setForm({ ...form, tanggal: e.target.value })} className="field-input" required />
+            <select value={form.kategori} onChange={(e) => setForm({ ...form, kategori: e.target.value })} className="field-input text-ink-700">
+              {Object.entries(KATEGORI_LABEL).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+            </select>
+            <div />
+            <textarea placeholder="Catatan kasus" value={form.catatan} onChange={(e) => setForm({ ...form, catatan: e.target.value })} className="field-input col-span-2" rows={2} required />
+            <textarea placeholder="Tindak lanjut (opsional)" value={form.tindak_lanjut} onChange={(e) => setForm({ ...form, tindak_lanjut: e.target.value })} className="field-input col-span-2" rows={2} />
+          </div>
+          <div className="flex gap-2">
+            <button disabled={loading} className="btn-primary">
+              <Plus className="w-4 h-4" /> {loading ? 'Menyimpan...' : 'Simpan Catatan'}
+            </button>
+            <button type="button" onClick={batalForm} className="text-sm text-ink-500 hover:text-ink-700 px-3">Batal</button>
+          </div>
+        </form>
+      )}
 
       <div className="surface-card p-5">
-        <h2 className="font-display font-semibold text-ink-900 mb-4">
-          Riwayat Catatan BK <span className="text-ink-500 font-sans font-normal text-sm">({cases.length})</span>
-        </h2>
+        <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
+          <h2 className="font-display font-semibold text-ink-900">
+            Riwayat Catatan BK <span className="text-ink-500 font-sans font-normal text-sm">({cases.length})</span>
+          </h2>
+          {!showForm && (
+            <button onClick={() => { setForm({ student_id: '', tanggal: '', kategori: 'perilaku', catatan: '', tindak_lanjut: '' }); setError(''); setShowForm(true); }} className="btn-primary shrink-0"><Plus className="w-4 h-4" /> Tambah Catatan</button>
+          )}
+        </div>
         <div className="table-scroll">
         <table className="w-full text-sm">
           <thead>

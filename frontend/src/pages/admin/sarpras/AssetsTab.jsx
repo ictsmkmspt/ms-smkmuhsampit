@@ -22,6 +22,7 @@ export default function AssetsTab() {
   const [form, setForm] = useState(FORM_KOSONG);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showForm, setShowForm] = useState(false);
   const [query, setQuery] = useState('');
   const [qrAsset, setQrAsset] = useState(null);
   const [qrImg, setQrImg] = useState('');
@@ -107,6 +108,7 @@ export default function AssetsTab() {
     try {
       await api.post('/assets', { ...form, room_id: form.room_id || null });
       setForm(FORM_KOSONG);
+      setShowForm(false);
       load();
     } catch (err) {
       const msgs = err.response?.data?.errors;
@@ -114,6 +116,12 @@ export default function AssetsTab() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const batalForm = () => {
+    setShowForm(false);
+    setForm(FORM_KOSONG);
+    setError('');
   };
 
   const handleDelete = async (a) => {
@@ -176,6 +184,7 @@ export default function AssetsTab() {
         </div>
       )}
 
+      {showForm && (
       <form onSubmit={handleAdd} className="surface-card p-5 space-y-3">
         <h2 className="font-display font-semibold text-ink-900">Tambah Aset</h2>
         {error && <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2">{error}</p>}
@@ -210,8 +219,12 @@ export default function AssetsTab() {
             </div>
           </div>
         </div>
-        <button disabled={loading} className="btn-primary"><Plus className="w-4 h-4" /> {loading ? 'Menyimpan...' : 'Tambah Aset'}</button>
+        <div className="flex gap-2">
+          <button disabled={loading} className="btn-primary"><Plus className="w-4 h-4" /> {loading ? 'Menyimpan...' : 'Tambah Aset'}</button>
+          <button type="button" onClick={batalForm} className="text-sm text-ink-500 hover:text-ink-700 px-3">Batal</button>
+        </div>
       </form>
+      )}
 
       <div className="surface-card p-5">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
@@ -222,6 +235,9 @@ export default function AssetsTab() {
               <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Cari kode / nama / ruang…" className="field-input pl-9 w-full sm:w-64" />
             </div>
             <div className="flex gap-2 flex-wrap">
+              {!showForm && (
+                <button onClick={() => { setForm(FORM_KOSONG); setError(''); setShowForm(true); }} className="btn-primary shrink-0"><Plus className="w-4 h-4" /> Tambah Aset</button>
+              )}
               <button
                 onClick={downloadAllQrCodes}
                 disabled={zipping || assets.length === 0}

@@ -10,14 +10,16 @@ import { fmtDMY } from '../../../utils/date';
 
 const STATUS_LABEL = { dilaporkan: 'Dilaporkan', diproses: 'Diproses', selesai: 'Selesai' };
 const STATUS_BADGE = { dilaporkan: 'badge-soft', diproses: 'badge-honey', selesai: 'badge-brand' };
+const FORM_KOSONG = { asset_id: '', room_id: '', deskripsi: '', pelapor: '', tanggal_lapor: new Date().toISOString().slice(0, 10) };
 
 export default function MaintenanceTab() {
   const [requests, setRequests] = useState([]);
   const [assets, setAssets] = useState([]);
   const [rooms, setRooms] = useState([]);
-  const [form, setForm] = useState({ asset_id: '', room_id: '', deskripsi: '', pelapor: '', tanggal_lapor: new Date().toISOString().slice(0, 10) });
+  const [form, setForm] = useState(FORM_KOSONG);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showForm, setShowForm] = useState(false);
   const [savingId, setSavingId] = useState(null);
   const [scanning, setScanning] = useState(false);
 
@@ -33,7 +35,8 @@ export default function MaintenanceTab() {
     setError(''); setLoading(true);
     try {
       await api.post('/maintenance-requests', { ...form, asset_id: form.asset_id || null, room_id: form.room_id || null });
-      setForm({ asset_id: '', room_id: '', deskripsi: '', pelapor: '', tanggal_lapor: new Date().toISOString().slice(0, 10) });
+      setForm(FORM_KOSONG);
+      setShowForm(false);
       load();
     } catch (err) {
       const msgs = err.response?.data?.errors;
@@ -41,6 +44,12 @@ export default function MaintenanceTab() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const batalForm = () => {
+    setShowForm(false);
+    setForm(FORM_KOSONG);
+    setError('');
   };
 
   const handleUpdateStatus = async (r, status) => {
@@ -90,6 +99,7 @@ export default function MaintenanceTab() {
 
   return (
     <div className="space-y-6">
+      {showForm && (
       <form onSubmit={handleAdd} className="surface-card p-5 space-y-3">
         <h2 className="font-display font-semibold text-ink-900">Lapor Kerusakan / Pemeliharaan</h2>
         {error && <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2">{error}</p>}
@@ -117,11 +127,20 @@ export default function MaintenanceTab() {
             <textarea placeholder="Deskripsi kerusakan" value={form.deskripsi} onChange={(e) => setForm({ ...form, deskripsi: e.target.value })} className="field-input" rows={2} required />
           </div>
         </div>
-        <button disabled={loading} className="btn-primary"><Plus className="w-4 h-4" /> {loading ? 'Menyimpan...' : 'Lapor'}</button>
+        <div className="flex gap-2">
+          <button disabled={loading} className="btn-primary"><Plus className="w-4 h-4" /> {loading ? 'Menyimpan...' : 'Lapor'}</button>
+          <button type="button" onClick={batalForm} className="text-sm text-ink-500 hover:text-ink-700 px-3">Batal</button>
+        </div>
       </form>
+      )}
 
       <div className="surface-card p-5">
-        <h2 className="font-display font-semibold text-ink-900 mb-4">Daftar Laporan <span className="text-ink-500 font-sans font-normal text-sm">({requests.length})</span></h2>
+        <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
+          <h2 className="font-display font-semibold text-ink-900">Daftar Laporan <span className="text-ink-500 font-sans font-normal text-sm">({requests.length})</span></h2>
+          {!showForm && (
+            <button onClick={() => { setForm(FORM_KOSONG); setError(''); setShowForm(true); }} className="btn-primary shrink-0"><Plus className="w-4 h-4" /> Lapor Kerusakan</button>
+          )}
+        </div>
         <div className="table-scroll">
         <table className="w-full text-sm">
           <thead>

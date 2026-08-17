@@ -11,6 +11,7 @@ function MasterDataSection({ title, description, icon: Icon, endpoint, placehold
   const [editNama, setEditNama] = useState('');
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+  const [showForm, setShowForm] = useState(false);
 
   const load = () => api.get(endpoint).then((res) => setList(res.data));
   useEffect(() => { load(); }, []);
@@ -23,6 +24,7 @@ function MasterDataSection({ title, description, icon: Icon, endpoint, placehold
     try {
       await api.post(endpoint, { nama: namaBaru.trim() });
       setNamaBaru('');
+      setShowForm(false);
       load();
     } catch (err) {
       const msgs = err.response?.data?.errors;
@@ -30,6 +32,12 @@ function MasterDataSection({ title, description, icon: Icon, endpoint, placehold
     } finally {
       setSaving(false);
     }
+  };
+
+  const batalForm = () => {
+    setShowForm(false);
+    setNamaBaru('');
+    setError('');
   };
 
   const startEdit = (item) => { setEditId(item.id); setEditNama(item.nama); setError(''); };
@@ -63,14 +71,24 @@ function MasterDataSection({ title, description, icon: Icon, endpoint, placehold
 
   return (
     <div className="surface-card p-5">
-      <h2 className="font-display font-semibold text-ink-900 flex items-center gap-1.5 mb-1"><Icon className="w-4 h-4" /> {title}</h2>
+      <div className="flex items-center justify-between gap-3 mb-1 flex-wrap">
+        <h2 className="font-display font-semibold text-ink-900 flex items-center gap-1.5"><Icon className="w-4 h-4" /> {title}</h2>
+        {!showForm && (
+          <button onClick={() => { setNamaBaru(''); setError(''); setShowForm(true); }} className="btn-primary shrink-0">
+            <Plus className="w-4 h-4" /> Tambah
+          </button>
+        )}
+      </div>
       <p className="text-xs text-ink-500 mb-4">{description}</p>
       {error && <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2 mb-3">{error}</p>}
 
-      <form onSubmit={handleTambah} className="flex gap-2 mb-4">
-        <input value={namaBaru} onChange={(e) => setNamaBaru(e.target.value)} placeholder={placeholder} className="field-input flex-1" />
-        <button disabled={saving} className="btn-primary shrink-0"><Plus className="w-4 h-4" /> Tambah</button>
-      </form>
+      {showForm && (
+        <form onSubmit={handleTambah} className="flex gap-2 mb-4">
+          <input value={namaBaru} onChange={(e) => setNamaBaru(e.target.value)} placeholder={placeholder} className="field-input flex-1" autoFocus />
+          <button disabled={saving} className="btn-primary shrink-0"><Plus className="w-4 h-4" /> Tambah</button>
+          <button type="button" onClick={batalForm} className="text-sm text-ink-500 hover:text-ink-700 px-3 shrink-0">Batal</button>
+        </form>
+      )}
 
       <ul className="divide-y divide-line-200 border border-line-200 rounded-lg overflow-hidden">
         {list.map((item) => (
