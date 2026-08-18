@@ -101,13 +101,11 @@ export default function PrintPenilaianPkl() {
     setSaving(true);
     try {
       const payload = { ...skor, catatan: catatan || null, kompetensi: kompetensiValid };
-      if (isEditing) {
-        await api.put(`/pkl-placements/${id}/penilaian`, payload);
-      } else {
-        await api.post(`/pkl-placements/${id}/penilaian`, payload);
-      }
+      const res = isEditing
+        ? await api.put(`/pkl-placements/${id}/penilaian`, payload)
+        : await api.post(`/pkl-placements/${id}/penilaian`, payload);
+      setPenilaian(res.data.penilaian);
       setIsEditing(false);
-      await muatData();
     } catch (err) {
       setFormError(err.response?.data?.message || 'Gagal menyimpan penilaian.');
     } finally {
@@ -120,8 +118,8 @@ export default function PrintPenilaianPkl() {
     setDeleting(true);
     try {
       await api.delete(`/pkl-placements/${id}/penilaian`);
+      setPenilaian(null);
       batalEdit();
-      await muatData();
     } catch (err) {
       alert(err.response?.data?.message || 'Gagal menghapus penilaian.');
     } finally {
