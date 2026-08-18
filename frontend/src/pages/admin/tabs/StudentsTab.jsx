@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Plus, Trash2, Download, Upload, KeyRound, Save, Printer, ImagePlus, UserRound } from 'lucide-react';
+import { Plus, Trash2, Download, Upload, KeyRound, Save, Printer, ImagePlus, UserRound, Search } from 'lucide-react';
 import api from '../../../api/axios';
 import TruncateText from '../../../components/TruncateText';
 import Pagination from '../../../components/Pagination';
@@ -10,10 +10,8 @@ import QRCode from "qrcode";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
 
-const JK_LABEL = { L: 'Laki-laki', P: 'Perempuan' };
-
 const FORM_KOSONG = {
-  name: '', email: '', nis: '', jenis_kelamin: '', class_room_id: '',
+  name: '', email: '', nis: '', nisn: '', jenis_kelamin: '', class_room_id: '',
   jurusan_id: '', tempat_lahir: '', tanggal_lahir: '', alamat: '',
 };
 
@@ -40,12 +38,24 @@ export default function StudentsTab() {
   const [editFotoFile, setEditFotoFile] = useState(null);
   const [saving, setSaving] = useState(false);
 
-  const sorted = useMemo(() => [...students].sort((a, b) => {
-    const kelasA = a.class_room?.name || 'ZZZZZ';
-    const kelasB = b.class_room?.name || 'ZZZZZ';
-    if (kelasA !== kelasB) return kelasA.localeCompare(kelasB);
-    return (a.user?.name || '').localeCompare(b.user?.name || '');
-  }), [students]);
+  const [query, setQuery] = useState('');
+  const [filterKelas, setFilterKelas] = useState('');
+
+  const sorted = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return students
+      .filter((s) => !filterKelas || String(s.class_room_id) === filterKelas)
+      .filter((s) => !q
+        || (s.user?.name || '').toLowerCase().includes(q)
+        || (s.nis || '').toLowerCase().includes(q)
+        || (s.nisn || '').toLowerCase().includes(q))
+      .sort((a, b) => {
+        const kelasA = a.class_room?.name || 'ZZZZZ';
+        const kelasB = b.class_room?.name || 'ZZZZZ';
+        if (kelasA !== kelasB) return kelasA.localeCompare(kelasB);
+        return (a.user?.name || '').localeCompare(b.user?.name || '');
+      });
+  }, [students, query, filterKelas]);
   const { page, setPage, totalPages, paginated: sortedHalaman } = usePagination(sorted, 40);
 
   const loadStudents = () => api.get('/students').then((res) => setStudents(res.data));
@@ -111,6 +121,7 @@ export default function StudentsTab() {
       name: s.user?.name || '',
       email: s.user?.email || '',
       nis: s.nis || '',
+      nisn: s.nisn || '',
       jenis_kelamin: s.jenis_kelamin || '',
       class_room_id: s.class_room_id || '',
       jurusan_id: s.jurusan_id || '',
@@ -353,6 +364,7 @@ export default function StudentsTab() {
             <input placeholder="Nama" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="field-input" required />
             <input placeholder="Email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="field-input" required autoComplete="off" />
             <input placeholder="NIS" value={form.nis} onChange={(e) => setForm({ ...form, nis: e.target.value })} className="field-input" required />
+            <input placeholder="NISN (opsional)" value={form.nisn} onChange={(e) => setForm({ ...form, nisn: e.target.value })} className="field-input" />
             <select value={form.jenis_kelamin} onChange={(e) => setForm({ ...form, jenis_kelamin: e.target.value })} className="field-input text-ink-700">
               <option value="">— Jenis Kelamin —</option>
               <option value="L">Laki-laki</option>
@@ -389,7 +401,7 @@ export default function StudentsTab() {
       <div className="surface-card p-5">
         <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
           <h2 className="font-display font-semibold text-ink-900">
-            Daftar Siswa <span className="text-ink-500 font-sans font-normal text-sm">({students.length})</span>
+            Daftar Siswa <span className="text-ink-500 font-sans font-normal text-sm">({sorted.length}/{students.length})</span>
           </h2>
           <div className="flex items-center gap-2 flex-wrap">
             <button
@@ -411,40 +423,41 @@ export default function StudentsTab() {
             )}
           </div>
         </div>
+        <div className="flex items-center gap-2 flex-wrap mb-4">
+          <div className="relative flex-1 min-w-[12rem]">
+            <Search className="w-4 h-4 text-ink-300 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              value={query} onChange={(e) => setQuery(e.target.value)}
+              placeholder="Cari nama / NIS / NISN..."
+              className="field-input pl-9 w-full"
+            />
+          </div>
+          <select value={filterKelas} onChange={(e) => setFilterKelas(e.target.value)} className="field-input text-ink-700 w-44">
+            <option value="">Semua Kelas</option>
+            {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+        </div>
         <p className="md:hidden text-xs text-ink-400 mb-1.5">← Geser tabel untuk lihat kolom lainnya →</p>
         <div className="table-scroll">
         <table className="w-full text-sm min-w-[640px]">
           <thead>
             <tr className="text-left text-ink-500 border-b border-line-200">
-              <th className="pb-2 font-medium whitespace-nowrap px-2">Nama</th><th className="font-medium whitespace-nowrap px-2">Email</th><th className="font-medium whitespace-nowrap px-2">NIS</th><th className="font-medium whitespace-nowrap px-2">Jenis Kelamin</th><th className="font-medium whitespace-nowrap px-2">Kelas</th><th className="font-medium whitespace-nowrap px-2">Jurusan</th><th className="font-medium whitespace-nowrap px-2">QR Code</th><th className="whitespace-nowrap px-2"></th>
+              <th className="pb-2 font-medium whitespace-nowrap px-2">Nama</th><th className="font-medium whitespace-nowrap px-2">NISN</th><th className="font-medium whitespace-nowrap px-2">NIS</th><th className="font-medium whitespace-nowrap px-2">Kelas</th><th className="text-right whitespace-nowrap px-2">Aksi</th>
             </tr>
           </thead>
           <tbody>
             {(() => {
               const rows = [];
-              let lastKelas = null;
               sortedHalaman.forEach((s) => {
-                const kelasName = s.class_room?.name || null;
-                if (kelasName !== lastKelas) {
-                  rows.push(
-                    <tr key={`header-${kelasName}`}>
-                      <td colSpan="8" className="pt-4 pb-1 whitespace-nowrap px-2">
-                        <span className="badge-soft badge-brand text-[11px]">
-                          {kelasName || 'Belum Ada Kelas'}
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                  lastKelas = kelasName;
-                }
                 if (editId === s.id) {
                   rows.push(
                     <tr key={s.id} className="border-t border-line-200 bg-mist-50">
-                      <td colSpan="8" className="py-3 whitespace-nowrap px-2">
+                      <td colSpan="5" className="py-3 whitespace-nowrap px-2">
                         <div className="grid grid-cols-2 gap-2 mb-2">
                           <input value={editData.name} onChange={(e) => setEditData({ ...editData, name: e.target.value })} className="field-input py-1.5 text-sm" placeholder="Nama" />
                           <input value={editData.email} onChange={(e) => setEditData({ ...editData, email: e.target.value })} className="field-input py-1.5 text-sm" placeholder="Email" type="email" />
                           <input value={editData.nis} onChange={(e) => setEditData({ ...editData, nis: e.target.value })} className="field-input py-1.5 text-sm" placeholder="NIS" />
+                          <input value={editData.nisn} onChange={(e) => setEditData({ ...editData, nisn: e.target.value })} className="field-input py-1.5 text-sm" placeholder="NISN (opsional)" />
                           <select value={editData.jenis_kelamin} onChange={(e) => setEditData({ ...editData, jenis_kelamin: e.target.value })} className="field-input py-1.5 text-sm text-ink-700">
                             <option value="">— Jenis Kelamin —</option>
                             <option value="L">Laki-laki</option>
@@ -489,14 +502,17 @@ export default function StudentsTab() {
                         <TruncateText text={s.user?.name} />
                       </div>
                     </td>
-                    <td className="text-ink-700 whitespace-nowrap px-2"><TruncateText text={s.user?.email} /></td>
+                    <td className="text-ink-700 whitespace-nowrap px-2">{s.nisn || '-'}</td>
                     <td className="text-ink-700 whitespace-nowrap px-2">{s.nis}</td>
-                    <td className="text-ink-700 whitespace-nowrap px-2">{JK_LABEL[s.jenis_kelamin] || '-'}</td>
                     <td className="text-ink-700 whitespace-nowrap px-2">{s.class_room?.name || '-'}</td>
-                    <td className="text-ink-700 whitespace-nowrap px-2">{s.jurusan?.nama || '-'}</td>
-                    <td className="font-mono text-xs text-brand-600 whitespace-nowrap px-2">{s.qr_code}</td>
                     <td className="text-right whitespace-nowrap px-2">
                       <div className="flex justify-end gap-2">
+                        <button onClick={() => window.open(`/print/buku-induk/${s.id}`, '_blank')} className="text-ink-400 hover:text-brand-600 text-xs border border-line-200 rounded-lg px-2 py-1" title="Detail (Buku Induk)">
+                          Detail
+                        </button>
+                        <button onClick={() => window.open(`/print/kartu-pelajar?student_id=${s.id}`, '_blank')} className="text-ink-400 hover:text-brand-600 text-xs border border-line-200 rounded-lg px-2 py-1" title="Cetak Kartu Pelajar siswa ini">
+                          Cetak Kartu
+                        </button>
                         <button onClick={() => startEdit(s)} className="text-ink-400 hover:text-brand-600 text-xs border border-line-200 rounded-lg px-2 py-1">
                           Edit
                         </button>
@@ -514,7 +530,7 @@ export default function StudentsTab() {
               return rows;
             })()}
             {students.length === 0 && (
-              <tr><td colSpan="8" className="py-6 text-center text-ink-300 whitespace-nowrap px-2">Belum ada siswa.</td></tr>
+              <tr><td colSpan="5" className="py-6 text-center text-ink-300 whitespace-nowrap px-2">Belum ada siswa.</td></tr>
             )}
           </tbody>
         </table>

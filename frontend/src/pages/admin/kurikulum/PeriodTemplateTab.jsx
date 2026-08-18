@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, Trash2, Pencil, X, Clock, Sparkles } from 'lucide-react';
+import { Plus, Trash2, X, Clock, Sparkles } from 'lucide-react';
 import api from '../../../api/axios';
 
 const HARI_LIST = ['senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu'];
@@ -114,7 +114,7 @@ export default function PeriodTemplateTab() {
                 </td>
                 <td className="text-right whitespace-nowrap px-2">
                   <div className="flex justify-end gap-1">
-                    <button onClick={() => openEdit(r)} className="text-ink-400 hover:text-brand-600"><Pencil className="w-3.5 h-3.5" /></button>
+                    <button onClick={() => openEdit(r)} className="text-xs text-ink-500 hover:text-brand-600 font-medium border border-line-200 rounded-lg px-2 py-1">Edit</button>
                     <button onClick={() => handleDelete(r)} className="text-ink-300 hover:text-honey-700"><Trash2 className="w-3.5 h-3.5" /></button>
                   </div>
                 </td>

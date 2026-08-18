@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Plus, Trash2, Save, Building2, MapPin, KeyRound, Download, Upload } from 'lucide-react';
+import { Plus, Trash2, Building2, MapPin, KeyRound, Download, Upload } from 'lucide-react';
 import api from '../../../../api/axios';
 import TruncateText from '../../../../components/TruncateText';
 import Pagination from '../../../../components/Pagination';
@@ -357,7 +357,7 @@ export default function DudiTab() {
                     <td className="text-right whitespace-nowrap px-2">
                       <div className="flex justify-end gap-2">
                         <button onClick={() => startEdit(d)} className="text-xs text-ink-500 hover:text-brand-600 font-medium border border-line-200 rounded-lg px-2 py-1">
-                          <Save className="w-3.5 h-3.5" />
+                          Edit
                         </button>
                         <button onClick={() => handleResetPassword(d)} className="text-ink-400 hover:text-brand-600" title="Reset Password ke default (123456)">
                           <KeyRound className="w-4 h-4" />

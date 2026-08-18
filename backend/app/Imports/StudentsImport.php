@@ -70,6 +70,7 @@ class StudentsImport implements ToModel, WithHeadingRow, WithValidation, SkipsOn
                 'class_room_id' => $classRoomId,
                 'jurusan_id'    => $jurusanId,
                 'nis'           => $row['nis'],
+                'nisn'          => !empty($row['nisn']) ? trim($row['nisn']) : null,
                 'jenis_kelamin' => !empty($row['jenis_kelamin']) ? strtoupper(trim($row['jenis_kelamin'])) : null,
                 'tempat_lahir'  => !empty($row['tempat_lahir']) ? trim($row['tempat_lahir']) : null,
                 'tanggal_lahir' => !empty($row['tanggal_lahir']) ? trim($row['tanggal_lahir']) : null,
@@ -90,6 +91,7 @@ class StudentsImport implements ToModel, WithHeadingRow, WithValidation, SkipsOn
             'email'    => 'required|email|unique:users,email',
             'password' => 'nullable|min:6',
             'nis'      => 'required|string|unique:students,nis',
+            'nisn'     => 'nullable|string|unique:students,nisn',
             'jenis_kelamin' => 'nullable|in:L,P,l,p',
             'kelas'    => ['nullable', function ($attribute, $value, $fail) {
                 if (!empty($value) && !ClassRoom::where('name', trim($value))->exists()) {
@@ -119,6 +121,7 @@ class StudentsImport implements ToModel, WithHeadingRow, WithValidation, SkipsOn
             'password.min'      => 'Password minimal 6 karakter.',
             'nis.required'      => 'NIS wajib diisi.',
             'nis.unique'        => 'NIS sudah terdaftar.',
+            'nisn.unique'       => 'NISN sudah terdaftar.',
             'jenis_kelamin.in'  => 'Jenis kelamin harus diisi "L" atau "P" saja.',
             'tanggal_lahir.date' => 'Format tanggal lahir tidak valid — gunakan format YYYY-MM-DD.',
         ];

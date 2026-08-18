@@ -25,13 +25,13 @@ class StudentTemplateExport implements FromArray, WithHeadings, WithStyles
     public function array(): array
     {
         return [
-            ['Contoh Nama Siswa', 'siswa1@sekolah.sch.id', '2025010001', 'L', 'X TKJ', 'TKJ', 'Sampit', '2009-05-17', 'Jl. Contoh No. 1, Sampit'],
+            ['Contoh Nama Siswa', 'siswa1@sekolah.sch.id', '2025010001', '0012345678', 'L', 'X TKJ', 'TKJ', 'Sampit', '2009-05-17', 'Jl. Contoh No. 1, Sampit'],
         ];
     }
 
     public function headings(): array
     {
-        return ['nama', 'email', 'nis', 'jenis_kelamin', 'kelas', 'jurusan', 'tempat_lahir', 'tanggal_lahir', 'alamat'];
+        return ['nama', 'email', 'nis', 'nisn', 'jenis_kelamin', 'kelas', 'jurusan', 'tempat_lahir', 'tanggal_lahir', 'alamat'];
     }
 
     public function styles(Worksheet $sheet)

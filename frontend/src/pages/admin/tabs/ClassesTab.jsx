@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, Trash2, Pencil, X, Check, GraduationCap } from 'lucide-react';
+import { Plus, Trash2, X, Check, GraduationCap } from 'lucide-react';
 import api from '../../../api/axios';
 import TruncateText from '../../../components/TruncateText';
 import { useAuth } from '../../../context/AuthContext';
@@ -200,8 +200,8 @@ export default function ClassesTab() {
                   <td className="text-ink-700 whitespace-nowrap px-2">{c.homeroom_teacher?.user?.name ? <TruncateText text={c.homeroom_teacher.user.name} /> : <span className="text-ink-300">— Belum ada —</span>}</td>
                   <td className="text-right whitespace-nowrap px-2">
                     <div className="flex justify-end gap-3">
-                      <button onClick={() => startEdit(c)} className="text-ink-300 hover:text-brand-600" title="Edit Kelas">
-                        <Pencil className="w-4 h-4" />
+                      <button onClick={() => startEdit(c)} className="text-xs text-ink-500 hover:text-brand-600 font-medium border border-line-200 rounded-lg px-2 py-1">
+                        Edit
                       </button>
                       <button onClick={() => handleLuluskan(c)} disabled={!c.students_count} className="text-ink-300 hover:text-brand-600 disabled:opacity-30 disabled:hover:text-ink-300" title="Luluskan Semua Siswa Aktif di Kelas Ini">
                         <GraduationCap className="w-4 h-4" />

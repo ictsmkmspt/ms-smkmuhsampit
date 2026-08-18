@@ -1,7 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Download, User } from 'lucide-react';
+import { Download, Printer, User } from 'lucide-react';
 import QRCode from 'qrcode';
+import html2canvas from 'html2canvas';
+import JSZip from 'jszip';
+import { saveAs } from 'file-saver';
 import api from '../../api/axios';
 import { useSchoolProfile } from '../../context/SchoolProfileContext';
 
@@ -38,6 +41,7 @@ export default function PrintKartuPelajar() {
   const { profile } = useSchoolProfile();
   const [params, setParams] = useSearchParams();
   const classRoomIdParam = params.get('class_room_id') || '';
+  const studentIdParam = params.get('student_id') || '';
 
   const [classes, setClasses] = useState([]);
   const [students, setStudents] = useState(null);
@@ -45,6 +49,8 @@ export default function PrintKartuPelajar() {
   const [error, setError] = useState('');
   const [sisi, setSisi] = useState('depan'); // 'depan' | 'belakang'
   const [warna, setWarna] = useState(PENGATURAN_DEFAULT);
+  const [downloading, setDownloading] = useState(false);
+  const gridRef = useRef(null);
 
   useEffect(() => {
     api.get('/classes').then((res) => setClasses(res.data));
@@ -53,10 +59,16 @@ export default function PrintKartuPelajar() {
 
   useEffect(() => {
     setStudents(null);
+    if (studentIdParam) {
+      api.get(`/students/${studentIdParam}`)
+        .then((res) => setStudents([res.data]))
+        .catch((err) => setError(err.response?.data?.message || 'Gagal memuat data siswa.'));
+      return;
+    }
     api.get('/students', { params: classRoomIdParam ? { class_room_id: classRoomIdParam } : {} })
       .then((res) => setStudents(res.data))
       .catch((err) => setError(err.response?.data?.message || 'Gagal memuat data siswa.'));
-  }, [classRoomIdParam]);
+  }, [classRoomIdParam, studentIdParam]);
 
   useEffect(() => {
     if (!students) return;
@@ -78,6 +90,43 @@ export default function PrintKartuPelajar() {
     if (v) setParams({ class_room_id: v }); else setParams({});
   };
 
+  // Render tiap elemen kartu (bukan seluruh halaman) jadi gambar PNG lewat
+  // html2canvas — scale 3x supaya tetap tajam kalau nanti dicetak fisik.
+  // Semua sumber gambar di kartu (logo/foto siswa lewat /storage yang
+  // di-proxy 1 origin, QR lewat data-URI) sama-origin/data-URI, jadi tidak
+  // kena masalah CORS/"tainted canvas". Kalau cuma 1 kartu, langsung unduh
+  // PNG-nya; kalau lebih dari 1, dikumpulkan jadi satu file .zip (pola
+  // sama seperti "Download Semua QR" di tab Siswa).
+  const handleDownload = async () => {
+    if (!gridRef.current) return;
+    setDownloading(true);
+    try {
+      const nodes = [...gridRef.current.querySelectorAll('.kartu')];
+      const hasil = [];
+      for (let i = 0; i < nodes.length; i++) {
+        const canvas = await html2canvas(nodes[i], { scale: 3, backgroundColor: '#ffffff' });
+        const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+        const s = students[i];
+        const namaBersih = (s.user?.name || 'siswa').replace(/[^a-z0-9]+/gi, '_');
+        hasil.push({ nama: `${s.nis || s.id}_${namaBersih}_${sisi}.png`, blob });
+      }
+
+      if (hasil.length === 1) {
+        saveAs(hasil[0].blob, hasil[0].nama);
+      } else {
+        const zip = new JSZip();
+        hasil.forEach((h) => zip.file(h.nama, h.blob));
+        const content = await zip.generateAsync({ type: 'blob' });
+        saveAs(content, `kartu-pelajar-${sisi}-${hasil.length}.zip`);
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Gagal membuat gambar kartu pelajar.');
+    } finally {
+      setDownloading(false);
+    }
+  };
+
   if (error) return <div className="p-8 text-center text-rose-600">{error}</div>;
   if (!students) return <div className="p-8 text-center text-ink-400">Memuat data...</div>;
 
@@ -87,32 +136,44 @@ export default function PrintKartuPelajar() {
   return (
     <div className="p-6 bg-mist-50 min-h-screen">
       <div className="no-print flex flex-wrap items-center gap-3 mb-6">
-        <h1 className="font-display text-lg font-semibold text-ink-900 mr-auto">Cetak Kartu Pelajar ({students.length})</h1>
+        <h1 className="font-display text-lg font-semibold text-ink-900 mr-auto">
+          {studentIdParam ? `Cetak Kartu Pelajar — ${students[0]?.user?.name || ''}` : `Cetak Kartu Pelajar (${students.length})`}
+        </h1>
 
         <div className="flex bg-white border border-line-200 rounded-lg p-1">
           <button onClick={() => setSisi('depan')} className={`text-sm font-medium px-3 py-1.5 rounded-md transition ${sisi === 'depan' ? 'bg-brand-600 text-white' : 'text-ink-600 hover:bg-mist-50'}`}>Sisi Depan</button>
           <button onClick={() => setSisi('belakang')} className={`text-sm font-medium px-3 py-1.5 rounded-md transition ${sisi === 'belakang' ? 'bg-brand-600 text-white' : 'text-ink-600 hover:bg-mist-50'}`}>Sisi Belakang</button>
         </div>
 
-        <select value={classRoomIdParam} onChange={ubahKelas} className="field-input text-ink-700 w-44">
-          <option value="">Semua Kelas</option>
-          {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-        </select>
+        {!studentIdParam && (
+          <select value={classRoomIdParam} onChange={ubahKelas} className="field-input text-ink-700 w-44">
+            <option value="">Semua Kelas</option>
+            {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+        )}
 
         <span className="text-xs text-ink-400">Warna diatur lewat menu Pengaturan &gt; Kartu Pelajar</span>
 
         <button
           onClick={() => window.print()}
           disabled={!semuaQrSiap}
+          className="flex items-center gap-2 bg-white text-ink-700 border border-line-200 px-4 py-2 rounded-lg text-sm font-medium hover:bg-mist-50 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <Printer className="w-4 h-4" /> Print Kartu Pelajar
+        </button>
+
+        <button
+          onClick={handleDownload}
+          disabled={!semuaQrSiap || downloading}
           className="flex items-center gap-2 bg-brand-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-brand-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <Download className="w-4 h-4" /> {semuaQrSiap ? 'Download Kartu Pelajar' : 'Menyiapkan QR...'}
+          <Download className="w-4 h-4" /> {!semuaQrSiap ? 'Menyiapkan QR...' : downloading ? 'Membuat gambar...' : 'Download Kartu Pelajar'}
         </button>
       </div>
 
       {students.length === 0 && <p className="text-center text-ink-400">Tidak ada siswa untuk dicetak.</p>}
 
-      <div className="kartu-grid">
+      <div className="kartu-grid" ref={gridRef}>
         {sisi === 'depan' ? students.map((s) => (
           <div key={s.id} className="kartu" style={cssVars}>
             <div className="kartu-header">
@@ -131,7 +192,12 @@ export default function PrintKartuPelajar() {
             <div className="kartu-body">
               <div className="kartu-foto-placeholder">
                 {s.foto_url ? (
-                  <img src={s.foto_url} alt="" className="kartu-foto-img" />
+                  // Dipakai sebagai background-image (bukan <img object-fit>)
+                  // supaya potongan/rasio fotonya SAMA persis antara yang
+                  // tampil di layar dan hasil download gambar — html2canvas
+                  // tidak selalu merender object-fit:cover dengan akurat,
+                  // tapi background-size:cover konsisten di keduanya.
+                  <div className="kartu-foto-img" style={{ backgroundImage: `url(${s.foto_url})` }} />
                 ) : (
                   <User className="kartu-foto-icon" />
                 )}
@@ -289,27 +355,28 @@ export default function PrintKartuPelajar() {
           padding: 2mm 4mm 1.2mm;
         }
         .kartu-foto-placeholder {
-          width: 21mm;
-          height: 21mm;
+          width: 18mm;
+          height: 24mm;
           border-radius: 2.5mm;
           background: #F1F5F9;
           border: 0.2mm solid #E2E8F0;
           display: flex;
           align-items: center;
           justify-content: center;
-          margin-bottom: 1.8mm;
+          margin-bottom: 1.5mm;
           overflow: hidden;
           flex-shrink: 0;
         }
         .kartu-foto-icon {
-          width: 11mm;
-          height: 11mm;
+          width: 10mm;
+          height: 10mm;
           color: var(--abu);
         }
         .kartu-foto-img {
           width: 100%;
           height: 100%;
-          object-fit: cover;
+          background-size: cover;
+          background-position: center;
           border-radius: 2.3mm;
         }
         .kartu-nama {
@@ -322,12 +389,12 @@ export default function PrintKartuPelajar() {
           font-size: 7.5px;
           font-weight: 700;
           color: var(--abu);
-          margin-top: 0.5mm;
+          margin-top: 0.3mm;
         }
         .kartu-divider {
           width: 80%;
           border-top: 0.2mm solid #E2E8F0;
-          margin: 1.5mm 0;
+          margin: 1mm 0;
           flex-shrink: 0;
         }
         .kartu-info-row {
@@ -354,16 +421,16 @@ export default function PrintKartuPelajar() {
           font-size: 6.5px;
           color: #334155;
           text-align: center;
-          margin-top: 0.6mm;
-          line-height: 1.2;
+          margin-top: 0.35mm;
+          line-height: 1.15;
           flex-shrink: 0;
         }
         .kartu-alamat {
           font-size: 6px;
           color: #334155;
           text-align: center;
-          margin-top: 0.6mm;
-          line-height: 1.25;
+          margin-top: 0.35mm;
+          line-height: 1.15;
           flex-shrink: 0;
         }
         .kartu-footer {
@@ -519,6 +586,11 @@ export default function PrintKartuPelajar() {
           body { margin: 0; background: #fff; }
           .kartu-grid { gap: 3mm; }
           .kartu { box-shadow: none; }
+          .kartu, .kartu * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+            color-adjust: exact !important;
+          }
         }
         @page { size: A4 portrait; margin: 8mm; }
       `}</style>

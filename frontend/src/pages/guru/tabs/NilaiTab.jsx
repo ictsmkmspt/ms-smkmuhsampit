@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Plus, Pencil, Trash2, X, ClipboardList, FileSpreadsheet } from 'lucide-react';
+import { Plus, Trash2, X, ClipboardList, FileSpreadsheet } from 'lucide-react';
 import api from '../../../api/axios';
 import TruncateText from '../../../components/TruncateText';
 import DateInput from '../../../components/DateInput';
@@ -415,7 +415,7 @@ export default function NilaiTab() {
                 {viewingKegiatan?.recordedByName && <p className="text-xs text-ink-400 mt-0.5">Dicatat oleh: {viewingKegiatan.recordedByName}</p>}
               </div>
               <div className="flex items-center gap-2 shrink-0">
-                <button onClick={bukaEditKegiatan} title="Edit Kegiatan" className="text-ink-300 hover:text-brand-700"><Pencil className="w-4 h-4" /></button>
+                <button onClick={bukaEditKegiatan} className="text-xs text-ink-500 hover:text-brand-600 font-medium border border-line-200 rounded-lg px-2 py-1">Edit</button>
                 <button onClick={handleDeleteKegiatan} title="Hapus Kegiatan" className="text-ink-300 hover:text-honey-700"><Trash2 className="w-4 h-4" /></button>
                 <button onClick={() => { setViewingKey(null); setEditingKegiatan(false); }} className="text-ink-300 hover:text-ink-600"><X className="w-5 h-5" /></button>
               </div>
@@ -439,7 +439,7 @@ export default function NilaiTab() {
                   <span className="text-sm text-ink-900 min-w-0 flex-1"><TruncateText text={row.student?.user?.name} /></span>
                   <span className="font-semibold text-ink-900 shrink-0">{row.skor}</span>
                   <div className="flex gap-2 shrink-0">
-                    <button onClick={() => bukaEdit(row)} className="text-ink-300 hover:text-brand-700"><Pencil className="w-4 h-4" /></button>
+                    <button onClick={() => bukaEdit(row)} className="text-xs text-ink-500 hover:text-brand-600 font-medium border border-line-200 rounded-lg px-2 py-1">Edit</button>
                     <button onClick={() => handleDelete(row)} className="text-ink-300 hover:text-honey-700"><Trash2 className="w-4 h-4" /></button>
                   </div>
                 </div>

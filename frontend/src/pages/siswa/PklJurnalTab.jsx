@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { NotebookPen, Printer, MessageSquare, Plus, Pencil, Trash2 } from 'lucide-react';
+import { NotebookPen, Printer, MessageSquare, Plus, Trash2 } from 'lucide-react';
 import api from '../../api/axios';
 import DateInput from '../../components/DateInput';
 
@@ -191,9 +191,7 @@ export default function PklJurnalTab({ placement }) {
                             <p className="text-ink-900">{h.kegiatan}</p>
                             {!h.catatan && (
                               <div className="flex items-center gap-2 shrink-0">
-                                <button onClick={() => mulaiEdit(h)} className="text-ink-400 hover:text-brand-600" title="Edit kegiatan">
-                                  <Pencil className="w-3.5 h-3.5" />
-                                </button>
+                                <button onClick={() => mulaiEdit(h)} className="text-xs text-ink-500 hover:text-brand-600 font-medium border border-line-200 rounded-lg px-2 py-1">Edit</button>
                                 <button onClick={() => hapusKegiatan(h.id)} className="text-ink-400 hover:text-honey-700" title="Hapus kegiatan">
                                   <Trash2 className="w-3.5 h-3.5" />
                                 </button>

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Pencil, Trash2 } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import api from '../../../../api/axios';
 import TruncateText from '../../../../components/TruncateText';
 import DateInput from '../../../../components/DateInput';
@@ -209,7 +209,7 @@ export default function TahsinSection() {
                     <p className="text-xs text-ink-500">{fmtDMY(row.tanggal)}{row.keterangan ? ` · ${row.keterangan}` : ''}</p>
                   </div>
                   <div className="flex gap-2 shrink-0">
-                    <button onClick={() => bukaEdit(row)} className="text-ink-300 hover:text-brand-700"><Pencil className="w-4 h-4" /></button>
+                    <button onClick={() => bukaEdit(row)} className="text-xs text-ink-500 hover:text-brand-600 font-medium border border-line-200 rounded-lg px-2 py-1">Edit</button>
                     <button onClick={() => handleDelete(row)} className="text-ink-300 hover:text-honey-700"><Trash2 className="w-4 h-4" /></button>
                   </div>
                 </li>

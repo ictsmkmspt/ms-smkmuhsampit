@@ -135,7 +135,7 @@ export default function RoomsTab() {
                 <td className="text-center text-ink-700 whitespace-nowrap px-2">{r.assets_count}</td>
                 <td className="text-right whitespace-nowrap px-2">
                   <div className="flex items-center justify-end gap-2">
-                    <button onClick={() => bukaEdit(r)} title="Edit" className="text-ink-300 hover:text-brand-700"><Pencil className="w-4 h-4" /></button>
+                    <button onClick={() => bukaEdit(r)} className="text-xs text-ink-500 hover:text-brand-600 font-medium border border-line-200 rounded-lg px-2 py-1">Edit</button>
                     <button onClick={() => handleDelete(r)} title="Hapus" className="text-ink-300 hover:text-honey-700"><Trash2 className="w-4 h-4" /></button>
                   </div>
                 </td>

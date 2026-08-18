@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\DB;
 class Student extends Model
 {
     protected $fillable = [
-        'user_id', 'class_room_id', 'jurusan_id', 'nis', 'jenis_kelamin', 'qr_code', 'foto',
+        'user_id', 'class_room_id', 'jurusan_id', 'nis', 'nisn', 'jenis_kelamin', 'qr_code', 'foto',
         'tempat_lahir', 'tanggal_lahir', 'alamat', 'total_poin', 'total_prestasi', 'status', 'tanggal_lulus',
     ];
 

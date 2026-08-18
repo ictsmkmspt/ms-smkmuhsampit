@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Save, Plus, Pencil, Trash2, X, Tag, Warehouse } from 'lucide-react';
+import { Save, Plus, Trash2, X, Tag, Warehouse } from 'lucide-react';
 import api from '../../../api/axios';
 
 // Kategori & Rak sama-sama master data "nama saja" dengan CRUD identik —
@@ -102,7 +102,7 @@ function MasterDataSection({ title, description, icon: Icon, endpoint, placehold
             ) : (
               <>
                 <span className="text-sm text-ink-900 flex-1">{item.nama}</span>
-                <button onClick={() => startEdit(item)} className="text-ink-400 hover:text-brand-600 shrink-0" title="Ubah nama"><Pencil className="w-3.5 h-3.5" /></button>
+                <button onClick={() => startEdit(item)} className="text-xs text-ink-500 hover:text-brand-600 font-medium border border-line-200 rounded-lg px-2 py-1 shrink-0">Edit</button>
                 <button onClick={() => handleHapus(item)} className="text-ink-300 hover:text-rose-700 shrink-0" title="Hapus"><Trash2 className="w-3.5 h-3.5" /></button>
               </>
             )}

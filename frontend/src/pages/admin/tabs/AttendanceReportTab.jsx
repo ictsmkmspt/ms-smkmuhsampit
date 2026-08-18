@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Search, Trash2, Pencil, Printer } from 'lucide-react';
+import { Search, Trash2, Printer } from 'lucide-react';
 import api from '../../../api/axios';
 import EditAttendanceModal from '../../../components/EditAttendanceModal';
 import TruncateText from '../../../components/TruncateText';
@@ -185,10 +185,9 @@ export default function AttendanceReportTab() {
                         <div className="flex justify-end gap-3">
                           <button
                             onClick={() => setEditingRecord(r)}
-                            className="text-ink-300 hover:text-brand-600"
-                            title="Edit data kehadiran"
+                            className="text-xs text-ink-500 hover:text-brand-600 font-medium border border-line-200 rounded-lg px-2 py-1"
                           >
-                            <Pencil className="w-4 h-4" />
+                            Edit
                           </button>
                           {r.status !== 'alpa' && (
                             <button

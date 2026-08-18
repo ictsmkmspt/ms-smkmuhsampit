@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { X, MessageSquare, Printer, Pencil, Trash2 } from 'lucide-react';
+import { X, MessageSquare, Printer, Trash2 } from 'lucide-react';
 import api from '../api/axios';
 import DateInput from './DateInput';
 import { fmtDMY } from '../utils/date';
@@ -138,8 +138,8 @@ export default function PklJournalModal({ placement, onClose, canIsiCatatan = fa
                       <p className="text-ink-500 text-xs font-medium">{fmtDMY(e.date)}</p>
                       {!e.catatan && (
                         <div className="flex items-center gap-2 shrink-0">
-                          <button onClick={() => mulaiEditKegiatan(e)} className="text-ink-400 hover:text-brand-600" title="Edit kegiatan">
-                            <Pencil className="w-3.5 h-3.5" />
+                          <button onClick={() => mulaiEditKegiatan(e)} title="Edit kegiatan" className="text-xs text-ink-500 hover:text-brand-600 font-medium border border-line-200 rounded-lg px-2 py-1">
+                            Edit
                           </button>
                           <button onClick={() => hapusKegiatan(e.id)} className="text-ink-400 hover:text-honey-700" title="Hapus kegiatan">
                             <Trash2 className="w-3.5 h-3.5" />

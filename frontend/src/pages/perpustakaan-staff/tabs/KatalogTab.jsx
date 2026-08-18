@@ -298,7 +298,7 @@ export default function KatalogTab() {
             <div className="flex items-center justify-between mb-3">
               <h3 className="font-display font-semibold text-ink-900">{detail.judul}</h3>
               <div className="flex items-center gap-3 shrink-0">
-                <button onClick={() => bukaEdit(detail)} title="Edit Buku" className="text-ink-300 hover:text-brand-700"><Pencil className="w-4 h-4" /></button>
+                <button onClick={() => bukaEdit(detail)} className="text-xs text-ink-500 hover:text-brand-600 font-medium border border-line-200 rounded-lg px-2 py-1">Edit</button>
                 <button onClick={() => setDetail(null)} className="text-ink-300 hover:text-honey-700"><X className="w-5 h-5" /></button>
               </div>
             </div>

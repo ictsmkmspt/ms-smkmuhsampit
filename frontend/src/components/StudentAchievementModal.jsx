@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { X, Pencil, Trash2 } from 'lucide-react';
+import { X, Trash2 } from 'lucide-react';
 import api from '../api/axios';
 import TruncateText from './TruncateText';
 import DateInput from './DateInput';
@@ -176,8 +176,8 @@ export default function StudentAchievementModal({ student, onClose, onChanged, r
                       {!readOnly && (
                         <td className="text-right align-top whitespace-nowrap px-2">
                           <div className="flex gap-2 justify-end">
-                            <button onClick={() => startEdit(a)} className="text-ink-400 hover:text-brand-600" title="Ubah">
-                              <Pencil className="w-3.5 h-3.5" />
+                            <button onClick={() => startEdit(a)} className="text-xs text-ink-500 hover:text-brand-600 font-medium border border-line-200 rounded-lg px-2 py-1">
+                              Edit
                             </button>
                             <button onClick={() => handleDelete(a)} className="text-ink-400 hover:text-rose-600" title="Hapus">
                               <Trash2 className="w-3.5 h-3.5" />

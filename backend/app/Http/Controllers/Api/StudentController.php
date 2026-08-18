@@ -54,6 +54,7 @@ class StudentController extends Controller
             'email' => 'required|email|unique:users,email',
             'password' => 'nullable|min:6',
             'nis' => 'required|string|unique:students,nis',
+            'nisn' => 'nullable|string|unique:students,nisn',
             'jenis_kelamin' => 'nullable|in:L,P',
             'class_room_id' => 'nullable|exists:class_rooms,id',
             'jurusan_id' => 'nullable|exists:jurusans,id',
@@ -75,6 +76,7 @@ class StudentController extends Controller
                 'class_room_id' => $data['class_room_id'] ?? null,
                 'jurusan_id' => $data['jurusan_id'] ?? null,
                 'nis' => $data['nis'],
+                'nisn' => $data['nisn'] ?? null,
                 'jenis_kelamin' => $data['jenis_kelamin'] ?? null,
                 'tempat_lahir' => $data['tempat_lahir'] ?? null,
                 'tanggal_lahir' => $data['tanggal_lahir'] ?? null,
@@ -86,12 +88,23 @@ class StudentController extends Controller
         });
     }
 
+    /**
+     * Detail lengkap 1 siswa — dipakai halaman "Buku Induk" (menu baru,
+     * bukan modal, lihat PrintBukuInduk.jsx) yang menampilkan biodata
+     * lengkap + wali/orang tua yang terhubung.
+     */
+    public function show(Student $student)
+    {
+        return $student->load(['user', 'classRoom', 'jurusan', 'parents']);
+    }
+
     public function update(Request $request, Student $student)
     {
         $data = $request->validate([
             'name' => 'sometimes|string|max:100',
             'email' => 'sometimes|email|unique:users,email,' . $student->user_id,
             'nis' => 'sometimes|string|unique:students,nis,' . $student->id,
+            'nisn' => 'nullable|string|unique:students,nisn,' . $student->id,
             'jenis_kelamin' => 'nullable|in:L,P',
             'class_room_id' => 'nullable|exists:class_rooms,id',
             'jurusan_id' => 'nullable|exists:jurusans,id',
@@ -103,7 +116,7 @@ class StudentController extends Controller
         if (isset($data['name']) || isset($data['email'])) {
             $student->user->update(array_intersect_key($data, array_flip(['name', 'email'])));
         }
-        $student->update($request->only('nis', 'class_room_id', 'jenis_kelamin', 'jurusan_id', 'tempat_lahir', 'tanggal_lahir', 'alamat'));
+        $student->update($request->only('nis', 'nisn', 'class_room_id', 'jenis_kelamin', 'jurusan_id', 'tempat_lahir', 'tanggal_lahir', 'alamat'));
 
         return $student->load(['user', 'classRoom', 'jurusan']);
     }

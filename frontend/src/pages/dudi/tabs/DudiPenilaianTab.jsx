@@ -1,12 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Star, CheckCircle2 } from 'lucide-react';
 import api from '../../../api/axios';
-import PenilaianPklModal from '../../../components/PenilaianPklModal';
 
 export default function DudiPenilaianTab() {
   const [list, setList] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [target, setTarget] = useState(null);
 
   const loadSiswa = () => {
     setLoading(true);
@@ -14,16 +12,6 @@ export default function DudiPenilaianTab() {
   };
 
   useEffect(() => { loadSiswa(); }, []);
-
-  const handleKlikSiswa = (p) => {
-    if (p.nilai_akhir == null) {
-      const lanjut = confirm(
-        'Anda akan mengisi Penilaian PKL untuk siswa ini. Pastikan data yang dimasukkan sudah benar (nilai bisa diedit lagi nanti kalau ada yang salah). Lanjutkan?'
-      );
-      if (!lanjut) return;
-    }
-    setTarget(p);
-  };
 
   return (
     <div className="surface-card p-5">
@@ -42,7 +30,7 @@ export default function DudiPenilaianTab() {
           {list.map((p) => (
             <button
               key={p.id}
-              onClick={() => handleKlikSiswa(p)}
+              onClick={() => window.open(`/print/penilaian-pkl/${p.id}`, '_blank')}
               className="w-full flex items-center justify-between border border-line-200 rounded-lg px-3 py-2.5 text-sm hover:border-brand-300 hover:bg-brand-50/40 transition text-left"
             >
               <div>
@@ -62,14 +50,6 @@ export default function DudiPenilaianTab() {
             <p className="text-center text-ink-300 py-6 text-sm">Belum ada siswa magang di tempat Anda.</p>
           )}
         </div>
-      )}
-
-      {target && (
-        <PenilaianPklModal
-          placement={target}
-          canIsi
-          onClose={() => { setTarget(null); loadSiswa(); }}
-        />
       )}
     </div>
   );

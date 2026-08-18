@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, Printer, CheckCircle2, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Printer, CheckCircle2, Trash2 } from 'lucide-react';
 import api from '../../../../api/axios';
 import DateInput from '../../../../components/DateInput';
 import { fmtDMY } from '../../../../utils/date';
@@ -181,8 +181,8 @@ export default function JurnalPembimbinganTab() {
                       <div className="flex items-center gap-2 shrink-0">
                         {!e.verified_at && (
                           <>
-                            <button onClick={() => bukaFormEdit(e)} className="text-ink-400 hover:text-brand-600" title="Edit catatan">
-                              <Pencil className="w-3.5 h-3.5" />
+                            <button onClick={() => bukaFormEdit(e)} className="text-xs text-ink-500 hover:text-brand-600 font-medium border border-line-200 rounded-lg px-2 py-1">
+                              Edit
                             </button>
                             <button onClick={() => handleHapus(e.id)} className="text-ink-400 hover:text-honey-700" title="Hapus catatan">
                               <Trash2 className="w-3.5 h-3.5" />

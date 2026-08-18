@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Search, Trash2, Pencil, Printer, School } from 'lucide-react';
+import { Search, Trash2, Printer, School } from 'lucide-react';
 import api from '../../../../api/axios';
 import EditAttendanceModal from '../../../../components/EditAttendanceModal';
 import TruncateText from '../../../../components/TruncateText';
@@ -154,8 +154,8 @@ export default function AbsensiReportSection() {
                         <span className="text-xs text-ink-300 italic">Sedang PKL</span>
                       ) : (
                         <div className="flex justify-end gap-3">
-                          <button onClick={() => setEditingRecord(r)} className="text-ink-300 hover:text-brand-600" title="Edit data kehadiran">
-                            <Pencil className="w-4 h-4" />
+                          <button onClick={() => setEditingRecord(r)} className="text-xs text-ink-500 hover:text-brand-600 font-medium border border-line-200 rounded-lg px-2 py-1" title="Edit data kehadiran">
+                            Edit
                           </button>
                           {r.status !== 'alpa' && (
                             <button onClick={() => handleDelete(r)} disabled={deletingId === r.id} className="text-ink-300 hover:text-honey-700 disabled:opacity-40" title="Hapus data kehadiran">

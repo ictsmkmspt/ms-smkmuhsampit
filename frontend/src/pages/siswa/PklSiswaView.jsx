@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import {
   LogIn, LogOut, Building2, User, Printer, CheckCircle2,
-  X, CalendarOff, Thermometer, Pencil, Trash2,
+  X, CalendarOff, Thermometer, Trash2,
 } from 'lucide-react';
 import api from '../../api/axios';
 import PklJurnalTab from './PklJurnalTab';
@@ -304,9 +304,7 @@ export default function PklSiswaView({ placement, tab }) {
                           <div className="flex items-center gap-2">
                             {bisaDiubah && (
                               <>
-                                <button onClick={() => mulaiEditRow(h)} className="text-ink-400 hover:text-brand-600" title="Edit pengajuan">
-                                  <Pencil className="w-3.5 h-3.5" />
-                                </button>
+                                <button onClick={() => mulaiEditRow(h)} className="text-xs text-ink-500 hover:text-brand-600 font-medium border border-line-200 rounded-lg px-2 py-1">Edit</button>
                                 <button onClick={() => hapusRow(h.id)} className="text-ink-400 hover:text-honey-700" title="Hapus pengajuan">
                                   <Trash2 className="w-3.5 h-3.5" />
                                 </button>

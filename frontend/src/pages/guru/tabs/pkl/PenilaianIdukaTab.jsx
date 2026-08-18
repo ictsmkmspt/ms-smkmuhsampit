@@ -1,12 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Star, CheckCircle2 } from 'lucide-react';
 import api from '../../../../api/axios';
-import PenilaianPklModal from '../../../../components/PenilaianPklModal';
 
 export default function PenilaianIdukaTab() {
   const [list, setList] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [target, setTarget] = useState(null);
 
   useEffect(() => {
     setLoading(true);
@@ -30,7 +28,7 @@ export default function PenilaianIdukaTab() {
           {list.map((p) => (
             <button
               key={p.id}
-              onClick={() => setTarget(p)}
+              onClick={() => window.open(`/print/penilaian-pkl/${p.id}`, '_blank')}
               className="w-full flex items-center justify-between border border-line-200 rounded-lg px-3 py-2.5 text-sm hover:border-brand-300 hover:bg-brand-50/40 transition text-left"
             >
               <div>
@@ -50,15 +48,6 @@ export default function PenilaianIdukaTab() {
             <p className="text-center text-ink-300 py-6 text-sm">Belum ada siswa bimbingan PKL.</p>
           )}
         </div>
-      )}
-
-      {target && (
-        <PenilaianPklModal
-          placement={target}
-          canIsi={false}
-          showActions={false}
-          onClose={() => setTarget(null)}
-        />
       )}
     </div>
   );

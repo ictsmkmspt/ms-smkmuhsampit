@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Megaphone, Plus, Pencil, Trash2, Image as ImageIcon } from 'lucide-react';
+import { Megaphone, Plus, Trash2, Image as ImageIcon } from 'lucide-react';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
 import { fmtDMY } from '../utils/date';
@@ -206,7 +206,7 @@ export default function AnnouncementBoard({ canManage = false }) {
                   <h3 className="font-display font-semibold text-ink-900">{a.judul}</h3>
                   {milikSendiri && (
                     <div className="flex items-center gap-2 shrink-0">
-                      <button onClick={() => bukaEdit(a)} title="Edit" className="text-ink-300 hover:text-brand-700"><Pencil className="w-4 h-4" /></button>
+                      <button onClick={() => bukaEdit(a)} className="text-xs text-ink-500 hover:text-brand-600 font-medium border border-line-200 rounded-lg px-2 py-1">Edit</button>
                       <button onClick={() => hapus(a)} title="Hapus" className="text-ink-300 hover:text-honey-700"><Trash2 className="w-4 h-4" /></button>
                     </div>
                   )}
