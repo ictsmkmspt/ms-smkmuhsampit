@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ChevronLeft, ChevronRight, Wallet, Receipt, TrendingUp, Download, Search, AlertCircle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Wallet, Receipt, TrendingUp, Download, Search, AlertCircle, Printer } from 'lucide-react';
 import api from '../../../../api/axios';
 import { BULAN, formatRupiah, StatTile, Avatar } from '../../shared';
 import TruncateText from '../../../../components/TruncateText';
@@ -123,6 +123,17 @@ export default function RingkasanSection() {
 
   const totalTunggakanKeseluruhan = tunggakanList.reduce((sum, t) => sum + Number(t.total_tunggakan || 0), 0);
 
+  const cetakTunggakan = () => {
+    const params = new URLSearchParams();
+    if (classRoomId) {
+      params.set('class_room_id', classRoomId);
+      const kelas = classes.find((c) => String(c.id) === String(classRoomId));
+      if (kelas) params.set('nama_kelas', kelas.name);
+    }
+    if (searchTunggakan) params.set('search', searchTunggakan);
+    window.open(`/print/laporan-tunggakan?${params.toString()}`, '_blank');
+  };
+
   const keuanganTotalPages = Math.max(1, Math.ceil(rincianGabungan.length / PAGE_SIZE));
   const paginatedRincian = rincianGabungan.slice((keuanganPage - 1) * PAGE_SIZE, keuanganPage * PAGE_SIZE);
 
@@ -212,13 +223,23 @@ export default function RingkasanSection() {
           <h3 className="font-display font-semibold text-ink-900 flex items-center gap-2">
             <AlertCircle className="w-4 h-4 text-ink-500" /> Laporan Tunggakan
           </h3>
-          <button
-            onClick={exportTunggakan}
-            disabled={exportingTunggakan || loadingTunggakan}
-            className="flex items-center gap-1.5 text-sm font-medium text-ink-700 bg-mist-50 hover:bg-mist-100 border border-line-200 disabled:opacity-50 rounded-xl px-3 py-2 transition"
-          >
-            <Download className="w-4 h-4" /> {exportingTunggakan ? 'Mengunduh...' : 'Export Excel'}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={cetakTunggakan}
+              disabled={loadingTunggakan}
+              title={classRoomId ? 'Cetak tunggakan kelas ini saja' : 'Cetak semua kelas, dikelompokkan per kelas'}
+              className="flex items-center gap-1.5 text-sm font-medium text-ink-700 bg-mist-50 hover:bg-mist-100 border border-line-200 disabled:opacity-50 rounded-xl px-3 py-2 transition"
+            >
+              <Printer className="w-4 h-4" /> {classRoomId ? 'Cetak Kelas Ini' : 'Cetak Semua Kelas'}
+            </button>
+            <button
+              onClick={exportTunggakan}
+              disabled={exportingTunggakan || loadingTunggakan}
+              className="flex items-center gap-1.5 text-sm font-medium text-ink-700 bg-mist-50 hover:bg-mist-100 border border-line-200 disabled:opacity-50 rounded-xl px-3 py-2 transition"
+            >
+              <Download className="w-4 h-4" /> {exportingTunggakan ? 'Mengunduh...' : 'Export Excel'}
+            </button>
+          </div>
         </div>
 
         <div className="flex flex-wrap gap-3 items-end mb-4">

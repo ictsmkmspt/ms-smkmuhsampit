@@ -77,7 +77,7 @@ class Student extends Model
     /**
      * Penempatan PKL yang sedang berjalan sekarang (kalau ada). Dipakai untuk
      * menentukan apakah menu PKL perlu muncul di dashboard siswa, dan sebagai
-     * sumber lokasi DUDI + guru pembimbing untuk absensi radius.
+     * sumber lokasi IDUKA + guru pembimbing untuk absensi radius.
      */
     public function pklPlacementAktif()
     {

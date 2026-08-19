@@ -14,7 +14,7 @@ class PklPlacementController extends Controller
 {
     /**
      * Semua penempatan PKL (admin), dengan filter opsional by status &
-     * IDUKA (dudi_id) — dudi_id dipakai Laporan PKL > Kegiatan Siswa untuk
+     * IDUKA (iduka_id) — iduka_id dipakai Laporan PKL > Kegiatan Siswa untuk
      * menyortir per penempatan IDUKA. `penilaian` diikutkan biar Laporan
      * bisa langsung tampilkan nilai_akhir tanpa request tambahan.
      * Diurutkan nama IDUKA dulu (abjad), baru nama siswa (abjad) — supaya
@@ -25,22 +25,22 @@ class PklPlacementController extends Controller
      */
     public function index(Request $request)
     {
-        $query = PklPlacement::with(['student.user', 'student.classRoom', 'dudi', 'guruPembimbing.user', 'penilaian']);
+        $query = PklPlacement::with(['student.user', 'student.classRoom', 'iduka', 'guruPembimbing.user', 'penilaian']);
         if ($request->status) {
             $query->where('pkl_placements.status', $request->status);
         }
-        if ($request->dudi_id) {
-            $query->where('pkl_placements.dudi_id', $request->dudi_id);
+        if ($request->iduka_id) {
+            $query->where('pkl_placements.iduka_id', $request->iduka_id);
         }
         if (!$request->boolean('semua_tahun')) {
             $tahunAjaranId = $request->filled('tahun_ajaran_id') ? $request->tahun_ajaran_id : TahunAjaran::aktifId();
             $query->where('pkl_placements.tahun_ajaran_id', $tahunAjaranId);
         }
         return $query
-            ->join('dudis', 'dudis.id', '=', 'pkl_placements.dudi_id')
+            ->join('idukas', 'idukas.id', '=', 'pkl_placements.iduka_id')
             ->join('students', 'students.id', '=', 'pkl_placements.student_id')
             ->join('users', 'users.id', '=', 'students.user_id')
-            ->orderBy('dudis.nama_perusahaan')
+            ->orderBy('idukas.nama_perusahaan')
             ->orderBy('users.name')
             ->select('pkl_placements.*')
             ->get();
@@ -69,21 +69,21 @@ class PklPlacementController extends Controller
 
     /**
      * Detail 1 penempatan PKL — dipakai halaman Cetak Jurnal PKL. Bisa diakses
-     * admin, guru pembimbingnya, DUDI pemiliknya, atau siswa yang bersangkutan.
+     * admin, guru pembimbingnya, IDUKA pemiliknya, atau siswa yang bersangkutan.
      */
     public function show(Request $request, PklPlacement $pklPlacement)
     {
         $user = $request->user();
         $boleh = $user->role === 'admin'
             || ($user->role === 'guru' && $user->teacher && $pklPlacement->guru_pembimbing_id === $user->teacher->id)
-            || ($user->role === 'dudi' && $user->dudi && $pklPlacement->dudi_id === $user->dudi->id)
+            || ($user->role === 'iduka' && $user->iduka && $pklPlacement->iduka_id === $user->iduka->id)
             || ($user->role === 'siswa' && $user->student && $pklPlacement->student_id === $user->student->id);
 
         if (!$boleh) {
             return response()->json(['message' => 'Anda tidak berwenang melihat penempatan ini.'], 403);
         }
 
-        return $pklPlacement->load(['student.user', 'student.classRoom', 'dudi', 'guruPembimbing.user']);
+        return $pklPlacement->load(['student.user', 'student.classRoom', 'iduka', 'guruPembimbing.user']);
     }
 
     /**
@@ -95,7 +95,7 @@ class PklPlacementController extends Controller
     {
         $data = $request->validate([
             'student_id'          => 'required|exists:students,id',
-            'dudi_id'              => 'required|exists:dudis,id',
+            'iduka_id'             => 'required|exists:idukas,id',
             'guru_pembimbing_id'   => 'nullable|exists:teachers,id',
             'tanggal_mulai'        => 'required|date',
             'tanggal_selesai'      => 'required|date|after_or_equal:tanggal_mulai',
@@ -119,7 +119,7 @@ class PklPlacementController extends Controller
             $placement = PklPlacement::create($data + ['status' => 'aktif']);
 
             return response()->json(
-                $placement->load(['student.user', 'dudi', 'guruPembimbing.user']),
+                $placement->load(['student.user', 'iduka', 'guruPembimbing.user']),
                 201
             );
         });
@@ -139,7 +139,7 @@ class PklPlacementController extends Controller
         $data = $request->validate([
             'student_ids'          => 'required|array|min:1',
             'student_ids.*'        => 'exists:students,id',
-            'dudi_id'              => 'required|exists:dudis,id',
+            'iduka_id'             => 'required|exists:idukas,id',
             'guru_pembimbing_id'   => 'nullable|exists:teachers,id',
             'tanggal_mulai'        => 'required|date',
             'tanggal_selesai'      => 'required|date|after_or_equal:tanggal_mulai',
@@ -159,7 +159,7 @@ class PklPlacementController extends Controller
             foreach ($studentIdsBaru as $studentId) {
                 PklPlacement::create([
                     'student_id'         => $studentId,
-                    'dudi_id'            => $data['dudi_id'],
+                    'iduka_id'           => $data['iduka_id'],
                     'guru_pembimbing_id' => $data['guru_pembimbing_id'] ?? null,
                     'tanggal_mulai'      => $data['tanggal_mulai'],
                     'tanggal_selesai'    => $data['tanggal_selesai'],
@@ -189,7 +189,7 @@ class PklPlacementController extends Controller
     public function update(Request $request, PklPlacement $pklPlacement)
     {
         $data = $request->validate([
-            'dudi_id'            => 'sometimes|exists:dudis,id',
+            'iduka_id'           => 'sometimes|exists:idukas,id',
             'guru_pembimbing_id' => 'nullable|exists:teachers,id',
             'tanggal_mulai'      => 'sometimes|date',
             'tanggal_selesai'    => 'sometimes|date|after_or_equal:tanggal_mulai',
@@ -218,7 +218,7 @@ class PklPlacementController extends Controller
 
             $pklPlacement->update($data);
 
-            return $pklPlacement->fresh(['student.user', 'dudi', 'guruPembimbing.user']);
+            return $pklPlacement->fresh(['student.user', 'iduka', 'guruPembimbing.user']);
         });
     }
 
@@ -258,7 +258,7 @@ class PklPlacementController extends Controller
      * dipasang supaya tidak menghasilkan >1 penempatan aktif untuk 1 siswa
      * yang sama: (1) siswa yang kadung sudah punya penempatan aktif di
      * tahun ajaran manapun dilewati, (2) siswa yang punya beberapa baris
-     * "selesai" di tahun ajaran ini (mis. sempat pindah DUDI) cuma
+     * "selesai" di tahun ajaran ini (mis. sempat pindah IDUKA) cuma
      * diaktifkan yang PALING BARU.
      */
     public function aktifkanSemuaSelesai()
@@ -294,7 +294,7 @@ class PklPlacementController extends Controller
             return response()->json([]);
         }
 
-        return PklPlacement::with(['student.user', 'student.classRoom', 'dudi'])
+        return PklPlacement::with(['student.user', 'student.classRoom', 'iduka'])
             ->where('guru_pembimbing_id', $teacher->id)
             ->where('tahun_ajaran_id', TahunAjaran::aktifId())
             ->orderByDesc('status')
@@ -303,17 +303,17 @@ class PklPlacementController extends Controller
     }
 
     /**
-     * Daftar siswa yang ditempatkan di DUDI yang sedang login (dipakai dashboard DUDI).
+     * Daftar siswa yang ditempatkan di IDUKA yang sedang login (dipakai dashboard IDUKA).
      */
     public function siswaSaya(Request $request)
     {
-        $dudi = $request->user()->dudi;
-        if (!$dudi) {
-            return response()->json(['message' => 'Akun ini belum terhubung ke profil DUDI.'], 404);
+        $iduka = $request->user()->iduka;
+        if (!$iduka) {
+            return response()->json(['message' => 'Akun ini belum terhubung ke profil IDUKA.'], 404);
         }
 
         return PklPlacement::with(['student.user', 'student.classRoom', 'guruPembimbing.user'])
-            ->where('dudi_id', $dudi->id)
+            ->where('iduka_id', $iduka->id)
             ->where('tahun_ajaran_id', TahunAjaran::aktifId())
             ->orderByDesc('status')
             ->orderByDesc('tanggal_mulai')
@@ -333,7 +333,7 @@ class PklPlacementController extends Controller
             return response()->json(null);
         }
 
-        $placement = $student->pklPlacementTerkini()?->load(['dudi', 'guruPembimbing.user']);
+        $placement = $student->pklPlacementTerkini()?->load(['iduka', 'guruPembimbing.user']);
 
         return response()->json($placement);
     }

@@ -73,7 +73,7 @@ function PanduanAwal({ judul, deskripsi, langkah, onNavigate }) {
 // sekarang read-only buat Humas (yang mengisi Waka Kurikulum) dan menu
 // Alumni cuma untuk tracking, bukan pengaturan awal.
 const PANDUAN_HUMAS = [
-  { no: 1, judul: 'Input Data IDUKA', keterangan: 'Daftarkan perusahaan/instansi tempat siswa PKL beserta akun login, instruktur, dan lokasi absensinya.', tab: 'pkl', sub: 'dudi' },
+  { no: 1, judul: 'Input Data IDUKA', keterangan: 'Daftarkan perusahaan/instansi tempat siswa PKL beserta akun login, instruktur, dan lokasi absensinya.', tab: 'pkl', sub: 'iduka' },
 ];
 
 // Dashboard Waka Humas cuma menampilkan statistik PKL/IDUKA — bidangnya
@@ -81,17 +81,17 @@ const PANDUAN_HUMAS = [
 // Humas, dan backend-nya juga sudah tidak lagi mengizinkan Humas baca
 // /dashboard/grafik).
 function HumasDashboard({ onNavigate }) {
-  const [stats, setStats] = useState({ dudi: null, aktif: null, selesai: null });
+  const [stats, setStats] = useState({ iduka: null, aktif: null, selesai: null });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     Promise.allSettled([
-      api.get('/dudi').then((r) => r.data.length),
+      api.get('/iduka').then((r) => r.data.length),
       api.get('/pkl-placements', { params: { status: 'aktif' } }).then((r) => r.data.length),
       api.get('/pkl-placements', { params: { status: 'selesai' } }).then((r) => r.data.length),
-    ]).then(([dudi, aktif, selesai]) => {
+    ]).then(([iduka, aktif, selesai]) => {
       setStats({
-        dudi: dudi.status === 'fulfilled' ? dudi.value : '!',
+        iduka: iduka.status === 'fulfilled' ? iduka.value : '!',
         aktif: aktif.status === 'fulfilled' ? aktif.value : '!',
         selesai: selesai.status === 'fulfilled' ? selesai.value : '!',
       });
@@ -100,7 +100,7 @@ function HumasDashboard({ onNavigate }) {
   }, []);
 
   const KARTU = [
-    { key: 'dudi', label: 'Total IDUKA', icon: Building2, color: '#3FB27F' },
+    { key: 'iduka', label: 'Total IDUKA', icon: Building2, color: '#3FB27F' },
     { key: 'aktif', label: 'PKL Aktif', icon: Briefcase, color: '#2a78d6' },
     { key: 'selesai', label: 'PKL Selesai', icon: ClipboardCheck, color: '#0B1B3A' },
   ];
@@ -327,7 +327,7 @@ const STAT_DEFS = [
   { key: 'siswa', label: 'Total Siswa', icon: Users, color: '#0B1B3A' },
   { key: 'guru', label: 'Total Guru', icon: GraduationCap, color: '#15803D' },
   { key: 'kelas', label: 'Total Kelas', icon: School, color: '#F2B705' },
-  { key: 'dudi', label: 'Total IDUKA', icon: Building2, color: '#3FB27F' },
+  { key: 'iduka', label: 'Total IDUKA', icon: Building2, color: '#3FB27F' },
 ];
 
 // "Pembelajaran" punya 1 grup bertingkat ("Kalender" -> Akademik/Libur) di
@@ -432,11 +432,11 @@ function MenuUtama({ onNavigate }) {
 export default function DashboardHomeTab({ onNavigate }) {
   const { user } = useAuth();
   // "Total IDUKA" cuma relevan (dan cuma bisa diakses) buat admin/Waka Humas
-  // — role Waka lain tidak punya izin baca /dudi, jadi statistik ini
+  // — role Waka lain tidak punya izin baca /iduka, jadi statistik ini
   // disaring di sini supaya tidak muncul error gagal-ambil-data tiap kali
   // mereka buka Dashboard.
   const statDefs = STAT_DEFS
-    .filter((s) => s.key !== 'dudi' || user.role === 'admin' || user.role === 'waka_humas')
+    .filter((s) => s.key !== 'iduka' || user.role === 'admin' || user.role === 'waka_humas')
     .filter((s) => s.key !== 'guru' || user.role !== 'waka_kesiswaan');
 
   const [stats, setStats] = useState({});
@@ -506,7 +506,7 @@ export default function DashboardHomeTab({ onNavigate }) {
       siswa: () => api.get('/students').then((r) => r.data.length),
       guru:  () => api.get('/teachers').then((r) => r.data.length),
       kelas: () => api.get('/classes').then((r) => r.data.length),
-      ...(statDefs.some((s) => s.key === 'dudi') ? { dudi: () => api.get('/dudi').then((r) => r.data.length) } : {}),
+      ...(statDefs.some((s) => s.key === 'iduka') ? { iduka: () => api.get('/iduka').then((r) => r.data.length) } : {}),
     };
 
     const entries = Object.entries(sumber);

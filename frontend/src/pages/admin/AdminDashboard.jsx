@@ -34,7 +34,7 @@ const ROLE_LABEL = {
 const MASTER_ICONS = { siswa: Users, guru: GraduationCap, kelas: School, wali: UserCog, tu: Wallet, bk: HeartHandshake, admin: ShieldCheck };
 const ALUMNI_ICONS = { siswa: GraduationCap, wali: UserCog };
 const SETTINGS_ICONS = { sekolah: Image, jam: Clock, jurusan: GraduationCap, 'kartu-pelajar': IdCard, backup: DatabaseBackup, maintenance: Wrench };
-const PKL_ICONS = { dudi: Building2, penempatan: ClipboardList, monitoring: CalendarClock };
+const PKL_ICONS = { iduka: Building2, penempatan: ClipboardList, monitoring: CalendarClock };
 const LAPORAN_ICONS = { absensi: ClipboardCheck, pelanggaran: AlertOctagon, prestasi: Trophy, bk: HeartHandshake, 'nilai-akademik': ClipboardList, pkl: Briefcase, 'pkl-kegiatan': Users, 'pkl-monitoring': GraduationCap, tahsin: BookOpen, tahfidz: BookMarked, tadarus: ScrollText };
 const POIN_ICONS = { 'jenis-pelanggaran': AlertOctagon, 'jenis-prestasi': Trophy, sanksi: AlertTriangle };
 const KURIKULUM_ICONS = { kalender: CalendarRange, akademik: CalendarRange, libur: CalendarDays, mapel: BookOpen, tugas: UserCog, jadwal: CalendarClock, template: Sparkles };
@@ -88,7 +88,7 @@ function AdminDashboardContent() {
   const [activeMasterSub, setActiveMasterSub] = useState(user.role === 'waka_kesiswaan' ? 'kelas' : 'guru');
   const [activeAlumniSub, setActiveAlumniSub] = useState('siswa');
   const [activeSettingsSub, setActiveSettingsSub] = useState('jam');
-  const [activePklSub, setActivePklSub] = useState('dudi');
+  const [activePklSub, setActivePklSub] = useState('iduka');
   const [activePpdbSub, setActivePpdbSub] = useState('formulir');
   const [activePoinSub, setActivePoinSub] = useState('jenis-pelanggaran');
   // Default beda per peran — Waka Kurikulum cuma punya akses ke

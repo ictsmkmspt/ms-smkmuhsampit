@@ -1,10 +1,11 @@
 import { Fragment, useEffect, useRef, useState } from 'react';
-import { Search, Pencil, Check, X, Trash2, Receipt, Info, CheckCircle, Printer, Plus, Users, User, UsersRound } from 'lucide-react';
+import { Search, Pencil, Check, X, Trash2, Receipt, Info, CheckCircle, Printer, Plus, Users, User, UsersRound, History } from 'lucide-react';
 import api from '../../../api/axios';
 import { formatRupiah, Avatar } from '../shared';
 import TruncateText from '../../../components/TruncateText';
 import Pagination from '../../../components/Pagination';
 import usePagination from '../../../hooks/usePagination';
+import { fmtDMY } from '../../../utils/date';
 
 const emptyForm = { nama_tagihan: '', nominal: '', keterangan: '' };
 
@@ -99,6 +100,11 @@ export default function TagihanLainTab() {
   const [partialId, setPartialId] = useState(null);
   const [partialAmount, setPartialAmount] = useState('');
   const [payingPartial, setPayingPartial] = useState(false);
+
+  const [riwayatId, setRiwayatId] = useState(null);
+  const [riwayatData, setRiwayatData] = useState([]);
+  const [loadingRiwayat, setLoadingRiwayat] = useState(false);
+  const [deletingPembayaranId, setDeletingPembayaranId] = useState(null);
 
   const [feedback, setFeedback] = useState(null);
 
@@ -232,6 +238,40 @@ export default function TagihanLainTab() {
     }
   };
 
+  // Riwayat cicilan 1 tagihan — dipakai TU untuk koreksi kalau ada baris
+  // "Bayar Sebagian" yang salah input jumlahnya.
+  const toggleRiwayat = async (t) => {
+    if (riwayatId === t.id) {
+      setRiwayatId(null);
+      return;
+    }
+    setRiwayatId(t.id);
+    setLoadingRiwayat(true);
+    try {
+      const res = await api.get(`/tagihan-lain/${t.id}/pembayaran`);
+      setRiwayatData(res.data);
+    } catch (err) {
+      notify('error', err.response?.data?.message || 'Gagal memuat riwayat pembayaran.');
+      setRiwayatId(null);
+    } finally {
+      setLoadingRiwayat(false);
+    }
+  };
+
+  const hapusPembayaran = async (t, pembayaranId) => {
+    if (!confirm('Hapus baris cicilan ini? Nominal terbayar & status tagihan akan dihitung ulang otomatis.')) return;
+    setDeletingPembayaranId(pembayaranId);
+    try {
+      const res = await api.delete(`/tagihan-lain/${t.id}/pembayaran/${pembayaranId}`);
+      setList((prev) => prev.map((x) => (x.id === t.id ? res.data : x)));
+      setRiwayatData((prev) => prev.filter((p) => p.id !== pembayaranId));
+    } catch (err) {
+      notify('error', err.response?.data?.message || 'Gagal menghapus baris cicilan.');
+    } finally {
+      setDeletingPembayaranId(null);
+    }
+  };
+
   const toggleStatus = async (t) => {
     const next = t.status === 'lunas' ? 'belum_bayar' : 'lunas';
     if (next === 'belum_bayar' && !confirm(`Tandai tagihan "${t.nama_tagihan}" atas nama ${t.student?.user?.name} jadi "Belum Bayar" lagi?`)) return;
@@ -239,7 +279,11 @@ export default function TagihanLainTab() {
     try {
       const res = await api.put(`/tagihan-lain/${t.id}/status`, { status: next });
       setList((prev) => prev.map((x) => (x.id === t.id ? res.data : x)));
-      if (next === 'lunas') notify('success', `Pembayaran "${t.nama_tagihan}" atas nama ${t.student?.user?.name} tercatat lunas.`);
+      if (next === 'lunas') {
+        notify('success', `Pembayaran "${t.nama_tagihan}" atas nama ${t.student?.user?.name} tercatat lunas.`);
+      } else {
+        notify('success', `Status lunas "${t.nama_tagihan}" atas nama ${t.student?.user?.name} dibatalkan — sekarang "${res.data.status === 'sebagian' ? 'Sebagian' : 'Belum Bayar'}".`);
+      }
     } catch (err) {
       notify('error', err.response?.data?.message || 'Gagal mengubah status pembayaran.');
     } finally {
@@ -605,7 +649,7 @@ export default function TagihanLainTab() {
                           disabled={savingId === t.id}
                           className="text-xs font-medium text-brand-700 bg-brand-50 hover:bg-brand-100 disabled:opacity-40 rounded-lg px-3 py-1.5 transition"
                         >
-                          Bayar Sebagian
+                          Cicil
                         </button>
                       )}
                       <button
@@ -617,7 +661,7 @@ export default function TagihanLainTab() {
                             : 'text-white bg-[#15803D] border-transparent hover:bg-[#116530]'
                         }`}
                       >
-                        {t.status === 'lunas' ? 'Batalkan' : 'Tandai Lunas'}
+                        {t.status === 'lunas' ? 'Batalkan' : 'Lunas'}
                       </button>
                       {t.status === 'lunas' && (
                         <button
@@ -629,6 +673,15 @@ export default function TagihanLainTab() {
                         </button>
                       )}
                       <button
+                        onClick={() => toggleRiwayat(t)}
+                        title="Riwayat cicilan (buat koreksi salah input)"
+                        className={`shrink-0 p-1.5 rounded-lg border transition ${
+                          riwayatId === t.id ? 'text-brand-600 border-brand-200 bg-brand-50' : 'text-ink-400 border-line-200 hover:text-brand-600'
+                        }`}
+                      >
+                        <History className="w-4 h-4" />
+                      </button>
+                      <button
                         onClick={() => handleDelete(t)}
                         disabled={savingId === t.id}
                         title="Hapus tagihan ini"
@@ -639,6 +692,39 @@ export default function TagihanLainTab() {
                     </div>
                   </td>
                 </tr>
+                {riwayatId === t.id && (
+                  <tr className="bg-mist-50">
+                    <td colSpan="6" className="py-3 px-2">
+                      <p className="text-xs font-medium text-ink-500 mb-2">Riwayat Cicilan — {t.nama_tagihan} · {t.student?.user?.name}</p>
+                      {loadingRiwayat ? (
+                        <p className="text-xs text-ink-400 text-center py-3">Memuat...</p>
+                      ) : riwayatData.length === 0 ? (
+                        <p className="text-xs text-ink-400 text-center py-3">Belum ada baris cicilan tercatat.</p>
+                      ) : (
+                        <ul className="divide-y divide-line-200">
+                          {riwayatData.map((p) => (
+                            <li key={p.id} className="flex items-center justify-between gap-3 py-2">
+                              <div className="min-w-0 text-xs">
+                                <span className="font-medium text-ink-900">{formatRupiah(p.jumlah)}</span>
+                                <span className="text-ink-400"> · {fmtDMY(p.tanggal_bayar)}</span>
+                                {p.keterangan && <span className="text-ink-400"> · {p.keterangan}</span>}
+                                {p.dicatat_oleh?.name && <span className="text-ink-300"> · dicatat {p.dicatat_oleh.name}</span>}
+                              </div>
+                              <button
+                                onClick={() => hapusPembayaran(t, p.id)}
+                                disabled={deletingPembayaranId === p.id}
+                                title="Hapus baris ini (salah input)"
+                                className="shrink-0 text-ink-300 hover:text-honey-700 disabled:opacity-40"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </td>
+                  </tr>
+                )}
                 {partialId === t.id && (
                   <tr className="bg-mist-50">
                     <td colSpan="6" className="py-2 px-2 whitespace-nowrap">

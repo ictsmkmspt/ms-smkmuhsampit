@@ -3,7 +3,7 @@ import { NotebookPen, CheckCircle2, BellRing } from 'lucide-react';
 import api from '../../../api/axios';
 import { fmtDMY } from '../../../utils/date';
 
-export default function DudiJurnalPembimbinganTab() {
+export default function IdukaJurnalPembimbinganTab() {
   const [pending, setPending] = useState([]);
   const [loadingPending, setLoadingPending] = useState(false);
   const [verifyingId, setVerifyingId] = useState(null);

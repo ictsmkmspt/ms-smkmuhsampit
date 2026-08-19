@@ -67,7 +67,7 @@ export default function BimbinganSiswaTab() {
                     <p className="text-ink-900 font-medium"><TruncateText text={p.student?.user?.name} /></p>
                     <p className="text-xs text-ink-500">{p.student?.class_room?.name || '-'}</p>
                   </td>
-                  <td className="text-ink-700 whitespace-nowrap px-2"><TruncateText text={p.dudi?.nama_perusahaan} /></td>
+                  <td className="text-ink-700 whitespace-nowrap px-2"><TruncateText text={p.iduka?.nama_perusahaan} /></td>
                   <td className="text-ink-700 text-xs whitespace-nowrap px-2">{fmtDMY(p.tanggal_mulai)} s/d {fmtDMY(p.tanggal_selesai)}</td>
                   <td className="text-right py-2 whitespace-nowrap px-2">
                     <TombolAksi p={p} />
@@ -112,7 +112,7 @@ export default function BimbinganSiswaTab() {
                     <p className="text-ink-900 font-medium"><TruncateText text={p.student?.user?.name} /></p>
                     <p className="text-xs text-ink-500">{p.student?.class_room?.name || '-'}</p>
                   </td>
-                  <td className="text-ink-700 whitespace-nowrap px-2"><TruncateText text={p.dudi?.nama_perusahaan} /></td>
+                  <td className="text-ink-700 whitespace-nowrap px-2"><TruncateText text={p.iduka?.nama_perusahaan} /></td>
                   <td className="text-ink-700 text-xs whitespace-nowrap px-2">{fmtDMY(p.tanggal_mulai)} s/d {fmtDMY(p.tanggal_selesai)}</td>
                   <td className="text-right py-2 whitespace-nowrap px-2">
                     <TombolAksi p={p} />

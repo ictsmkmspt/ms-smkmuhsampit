@@ -6,7 +6,7 @@ import PklJournalModal from '../../../components/PklJournalModal';
 import TruncateText from '../../../components/TruncateText';
 import { fmtDMY } from '../../../utils/date';
 
-export default function DudiAbsensiTab() {
+export default function IdukaAbsensiTab() {
   const [list, setList] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -19,11 +19,11 @@ export default function DudiAbsensiTab() {
 
   const loadSiswa = () => {
     setLoading(true);
-    return api.get('/dudi/my-siswa').then((res) => setList(res.data)).finally(() => setLoading(false));
+    return api.get('/iduka/my-siswa').then((res) => setList(res.data)).finally(() => setLoading(false));
   };
   const loadPending = () => {
     setLoadingPending(true);
-    return api.get('/dudi/absensi-pending').then((res) => setPending(res.data)).finally(() => setLoadingPending(false));
+    return api.get('/iduka/absensi-pending').then((res) => setPending(res.data)).finally(() => setLoadingPending(false));
   };
 
   useEffect(() => {

@@ -10,8 +10,8 @@ const PAGE_SIZE = 5;
 
 /**
  * Panel riwayat absensi PKL 1 penempatan, dipakai bersama oleh dashboard Guru
- * (Bimbingan PKL) dan DUDI (Siswa Magang) — jadi cukup ditulis sekali.
- * Dilengkapi form koreksi manual, tombol verifikasi (khusus DUDI/admin lewat
+ * (Bimbingan PKL) dan IDUKA (Siswa Magang) — jadi cukup ditulis sekali.
+ * Dilengkapi form koreksi manual, tombol verifikasi (khusus IDUKA/admin lewat
  * prop canVerify), tombol cetak jurnal, dan paginasi 5 data per halaman.
  */
 export default function PklAttendanceDetailModal({ placement, onClose, canVerify = false, showCetak = true }) {
@@ -96,7 +96,7 @@ export default function PklAttendanceDetailModal({ placement, onClose, canVerify
           <div>
             <h3 className="font-display font-semibold text-ink-900">{placement.student?.user?.name}</h3>
             <p className="text-xs text-ink-500 mt-0.5">
-              {placement.student?.class_room?.name || '-'} · {placement.dudi?.nama_perusahaan || '-'}
+              {placement.student?.class_room?.name || '-'} · {placement.iduka?.nama_perusahaan || '-'}
             </p>
           </div>
           <button onClick={onClose} className="text-ink-300 hover:text-ink-600">

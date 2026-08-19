@@ -70,7 +70,7 @@ class AnnouncementController extends Controller
     /**
      * Unggah/ganti foto pengumuman yang sudah ada — endpoint terpisah dari
      * update() (sama seperti SchoolProfileController::uploadLogo dan
-     * DudiController::uploadTandaTangan) karena PUT+multipart bermasalah
+     * IdukaController::uploadTandaTangan) karena PUT+multipart bermasalah
      * di PHP, jadi dipakai POST tersendiri.
      */
     public function uploadFoto(Request $request, Announcement $announcement)

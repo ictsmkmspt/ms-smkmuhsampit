@@ -16,7 +16,7 @@ use App\Http\Controllers\Api\BkAccountController;
 use App\Http\Controllers\Api\BkCaseController;
 use App\Http\Controllers\Api\ClassRoomController;
 use App\Http\Controllers\Api\DashboardChartController;
-use App\Http\Controllers\Api\DudiController;
+use App\Http\Controllers\Api\IdukaController;
 use App\Http\Controllers\Api\HolidayController;
 use App\Http\Controllers\Api\LaporanController;
 use App\Http\Controllers\Api\MaintenanceModeController;
@@ -52,6 +52,7 @@ use App\Http\Controllers\Api\SppController;
 use App\Http\Controllers\Api\StudentController;
 use App\Http\Controllers\Api\JurusanController;
 use App\Http\Controllers\Api\KartuPelajarController;
+use App\Http\Controllers\Api\KepalaSekolahDashboardController;
 use App\Http\Controllers\Api\StudentSelfController;
 use App\Http\Controllers\Api\SubjectController;
 use App\Http\Controllers\Api\SystemBackupController;
@@ -97,16 +98,16 @@ Route::middleware('auth:sanctum')->group(function () {
     // ke satu role tertentu.
     Route::get('/quran-surah', [TadarusScoreController::class, 'daftarSurah']);
 
-    // Didaftarkan SEBELUM grup role:admin (yang punya apiResource('dudi', ...)
-    // dengan rute wildcard /dudi/{dudi}) — supaya /dudi/profile & /dudi/tanda-tangan
+    // Didaftarkan SEBELUM grup role:admin (yang punya apiResource('iduka', ...)
+    // dengan rute wildcard /iduka/{iduka}) — supaya /iduka/profile & /iduka/tanda-tangan
     // (rute literal) tidak ketiban rute wildcard admin itu. Laravel mencocokkan
     // rute sesuai urutan didaftarkan, jadi rute literal wajib didaftarkan lebih dulu.
-    Route::middleware('role:dudi')->group(function () {
-        Route::get('/my-dudi-profile', [DudiController::class, 'myProfile']);
-        Route::post('/dudi/tanda-tangan', [DudiController::class, 'uploadTandaTangan']);
-        Route::put('/dudi/profile', [DudiController::class, 'updateProfile']);
-        Route::get('/dudi/my-siswa', [PklPlacementController::class, 'siswaSaya']);
-        Route::get('/dudi/absensi-pending', [PklAttendanceController::class, 'pendingVerifikasi']);
+    Route::middleware('role:iduka')->group(function () {
+        Route::get('/my-iduka-profile', [IdukaController::class, 'myProfile']);
+        Route::post('/iduka/tanda-tangan', [IdukaController::class, 'uploadTandaTangan']);
+        Route::put('/iduka/profile', [IdukaController::class, 'updateProfile']);
+        Route::get('/iduka/my-siswa', [PklPlacementController::class, 'siswaSaya']);
+        Route::get('/iduka/absensi-pending', [PklAttendanceController::class, 'pendingVerifikasi']);
         Route::post('/pkl-placements/{pklPlacement}/penilaian', [PklPenilaianController::class, 'store']);
         Route::put('/pkl-placements/{pklPlacement}/penilaian', [PklPenilaianController::class, 'update']);
         Route::delete('/pkl-placements/{pklPlacement}/penilaian', [PklPenilaianController::class, 'destroy']);
@@ -156,6 +157,23 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::apiResource('sanksi-rules', SanksiRuleController::class)->except(['show']);
         Route::get('/sanksi-rules/siswa', [SanksiRuleController::class, 'siswa']);
+    });
+
+    // TU juga boleh kelola data siswa dasar (tambah/ubah/detail/upload foto)
+    // buat kebutuhan penagihan — TAPI TIDAK boleh hapus siswa, reset
+    // password, kembalikan-aktif alumni, atau import massal (tetap
+    // admin/waka_kesiswaan saja, lihat grup di atas). Didaftarkan di sini
+    // (SETELAH grup admin,waka_kesiswaan) supaya menimpa rute store/update/
+    // show/foto untuk TU tanpa mengubah rute lain di grup itu — Laravel
+    // pakai registrasi PALING TERAKHIR yang menang untuk method+URI sama
+    // (pola sama seperti catatan di grup index /students di atas).
+    Route::middleware('role:admin,waka_kesiswaan,tu')->group(function () {
+        Route::post('/students', [StudentController::class, 'store']);
+        Route::get('/students/{student}', [StudentController::class, 'show']);
+        Route::put('/students/{student}', [StudentController::class, 'update']);
+        Route::post('/students/{student}/foto', [StudentController::class, 'uploadFoto']);
+        Route::post('/students/foto-massal', [StudentController::class, 'uploadFotoMassal']);
+        Route::get('/jurusan', [JurusanController::class, 'index']);
     });
 
     // Catatan BK (bk-cases) sengaja PUNYA GRUP SENDIRI (bukan digabung ke
@@ -215,10 +233,10 @@ Route::middleware('auth:sanctum')->group(function () {
     // didaftarkan di grup shared read-only di bawah). Verifikasi pendaftar
     // PPDB dipindah ke grup "Pengembangan" (admin-only) di bawah.
     Route::middleware('role:admin,waka_humas')->group(function () {
-        Route::get('/dudi/import/template', [DudiController::class, 'downloadTemplate']);
-        Route::post('/dudi/import', [DudiController::class, 'import']);
-        Route::apiResource('dudi', DudiController::class)->except(['show', 'index']);
-        Route::put('/dudi/{dudi}/reset-password', [DudiController::class, 'resetPassword']);
+        Route::get('/iduka/import/template', [IdukaController::class, 'downloadTemplate']);
+        Route::post('/iduka/import', [IdukaController::class, 'import']);
+        Route::apiResource('iduka', IdukaController::class)->except(['show', 'index']);
+        Route::put('/iduka/{iduka}/reset-password', [IdukaController::class, 'resetPassword']);
     });
 
     // Penempatan PKL — cuma admin & Waka Kurikulum yang boleh tulis. Waka
@@ -330,6 +348,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/maintenance-requests/{maintenanceRequest}', [MaintenanceRequestController::class, 'destroy']);
     });
 
+    // Dashboard ringkasan Kepala Sekolah — READ ONLY, admin ikut diberi akses
+    // supaya bisa mengecek tampilannya juga (konsisten dengan admin selalu
+    // bisa lihat semua menu).
+    Route::middleware('role:admin,kepala_sekolah')->group(function () {
+        Route::get('/kepala-sekolah/ringkasan', [KepalaSekolahDashboardController::class, 'ringkasan']);
+    });
+
     // Guru, Akun TU, Profil Sekolah TETAP khusus Super Admin. Tahun Ajaran
     // (aktifkan/tanggal) sudah dibagi ke Waka Kurikulum di atas — tapi hapus
     // tahun ajaran tetap di sini karena efeknya permanen ke seluruh riwayat.
@@ -390,7 +415,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // IDUKA di form Penempatan PKL — tulisnya cuma admin & Waka Humas,
     // lihat grup di atas).
     Route::middleware('role:admin,waka_humas,waka_kurikulum')->group(function () {
-        Route::get('/dudi', [DudiController::class, 'index']);
+        Route::get('/iduka', [IdukaController::class, 'index']);
     });
 
     // Daftar wali (parents) — Waka Humas cuma boleh baca, dipakai buat menu
@@ -490,7 +515,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/students/{studentId}/achievements', [AchievementController::class, 'studentAchievements']);
     });
 
-    Route::middleware('role:admin,guru,dudi,siswa')->group(function () {
+    Route::middleware('role:admin,guru,iduka,siswa')->group(function () {
         Route::get('/pkl-placements/{pklPlacement}', [PklPlacementController::class, 'show']);
         Route::get('/pkl-placements/{pklPlacement}/penilaian', [PklPenilaianController::class, 'show']);
         Route::get('/pkl-placements/{pklPlacement}/penilaian/export-word', [PklPenilaianController::class, 'exportWord']);
@@ -500,7 +525,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/pkl-jurnal/{pklJournal}', [PklJournalController::class, 'destroyKegiatan']);
     });
 
-    Route::middleware('role:admin,guru,dudi')->group(function () {
+    Route::middleware('role:admin,guru,iduka')->group(function () {
         Route::get('/pkl-placements/{pklPlacement}/attendances', [PklAttendanceController::class, 'riwayatPenempatan']);
         Route::post('/pkl-attendances/koreksi', [PklAttendanceController::class, 'koreksi']);
         Route::delete('/pkl-attendances/{pklAttendance}', [PklAttendanceController::class, 'hapus']);
@@ -509,10 +534,10 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     // Laporan PKL (admin/Waka Kurikulum) — waka_kurikulum ditambahkan di grup
-    // baru ini (bukan menimpa grup role:admin,guru,dudi di atas) supaya guru
-    // & DUDI tetap bisa baca jurnal bimbingannya sendiri seperti biasa lewat
+    // baru ini (bukan menimpa grup role:admin,guru,iduka di atas) supaya guru
+    // & IDUKA tetap bisa baca jurnal bimbingannya sendiri seperti biasa lewat
     // route yang sama. rekap absensi PKL cuma butuh baca, jadi rute baru.
-    Route::middleware('role:admin,guru,dudi,waka_kurikulum')->group(function () {
+    Route::middleware('role:admin,guru,iduka,waka_kurikulum')->group(function () {
         Route::get('/pkl-pembimbingan', [PklPembimbinganJournalController::class, 'index']);
     });
 
@@ -521,7 +546,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/pkl-jurnal/report', [PklJournalController::class, 'report']);
     });
 
-    Route::middleware('role:admin,dudi')->group(function () {
+    Route::middleware('role:admin,iduka')->group(function () {
         Route::post('/pkl-attendances/{pklAttendance}/verifikasi', [PklAttendanceController::class, 'verifikasi']);
         Route::put('/pkl-jurnal/{pklJournal}/catatan', [PklJournalController::class, 'isiCatatan']);
         Route::post('/pkl-pembimbingan/{pklPembimbinganJournal}/verifikasi', [PklPembimbinganJournalController::class, 'verifikasi']);
@@ -621,6 +646,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/spp/{spp}', [SppController::class, 'update']);
         Route::put('/spp/{spp}/status', [SppController::class, 'updateStatus']);
         Route::put('/spp/{spp}/bayar-sebagian', [SppController::class, 'bayarSebagian']);
+        Route::get('/spp/{spp}/pembayaran', [SppController::class, 'riwayatPembayaran']);
+        Route::delete('/spp/{spp}/pembayaran/{pembayaran}', [SppController::class, 'hapusPembayaran']);
         Route::delete('/spp/bulan', [SppController::class, 'destroyBulan']);
         Route::delete('/spp/{spp}', [SppController::class, 'destroy']);
 
@@ -635,6 +662,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/tagihan-lain', [TagihanLainController::class, 'store']);
         Route::put('/tagihan-lain/{tagihanLain}/status', [TagihanLainController::class, 'updateStatus']);
         Route::put('/tagihan-lain/{tagihanLain}/bayar-sebagian', [TagihanLainController::class, 'bayarSebagian']);
+        Route::get('/tagihan-lain/{tagihanLain}/pembayaran', [TagihanLainController::class, 'riwayatPembayaran']);
+        Route::delete('/tagihan-lain/{tagihanLain}/pembayaran/{pembayaran}', [TagihanLainController::class, 'hapusPembayaran']);
         Route::put('/tagihan-lain/{tagihanLain}', [TagihanLainController::class, 'update']);
         Route::delete('/tagihan-lain/nama', [TagihanLainController::class, 'destroyByNama']);
         Route::delete('/tagihan-lain/{tagihanLain}', [TagihanLainController::class, 'destroy']);

@@ -17,7 +17,7 @@ class PklJournalController extends Controller
 {
     /**
      * True kalau user yang login berwenang melihat jurnal kegiatan penempatan ini —
-     * admin, guru pembimbingnya, atau DUDI pemiliknya.
+     * admin, guru pembimbingnya, atau IDUKA pemiliknya.
      */
     private function bolehLihat(PklPlacement $placement, $user): bool
     {
@@ -28,25 +28,25 @@ class PklJournalController extends Controller
             $teacher = $user->teacher;
             return $teacher && $placement->guru_pembimbing_id === $teacher->id;
         }
-        if ($user->role === 'dudi') {
-            $dudi = $user->dudi;
-            return $dudi && $placement->dudi_id === $dudi->id;
+        if ($user->role === 'iduka') {
+            $iduka = $user->iduka;
+            return $iduka && $placement->iduka_id === $iduka->id;
         }
         return false;
     }
 
     /**
      * True kalau user yang login berwenang mengisi kolom "Catatan" — sesuai format
-     * jurnal kertas, kolom ini cuma diisi Instruktur Dunia Kerja (DUDI), atau admin.
+     * jurnal kertas, kolom ini cuma diisi Instruktur Dunia Kerja (IDUKA), atau admin.
      */
     private function bolehIsiCatatan(PklPlacement $placement, $user): bool
     {
         if ($user->role === 'admin') {
             return true;
         }
-        if ($user->role === 'dudi') {
-            $dudi = $user->dudi;
-            return $dudi && $placement->dudi_id === $dudi->id;
+        if ($user->role === 'iduka') {
+            $iduka = $user->iduka;
+            return $iduka && $placement->iduka_id === $iduka->id;
         }
         return false;
     }
@@ -78,7 +78,7 @@ class PklJournalController extends Controller
     /**
      * Siswa menambah 1 catatan "Kegiatan" baru untuk 1 tanggal (default hari ini).
      * Boleh lebih dari 1 kegiatan dalam tanggal yang sama (misal beda jam/tugas).
-     * Kolom "Catatan" tidak bisa diisi lewat sini — itu wewenang DUDI.
+     * Kolom "Catatan" tidak bisa diisi lewat sini — itu wewenang IDUKA.
      */
     public function simpanKegiatan(Request $request)
     {
@@ -171,7 +171,7 @@ class PklJournalController extends Controller
 
     /**
      * Riwayat jurnal kegiatan 1 penempatan tertentu — dipakai guru pembimbing,
-     * DUDI, atau admin untuk memantau/mengisi catatan.
+     * IDUKA, atau admin untuk memantau/mengisi catatan.
      */
     public function riwayatPenempatan(Request $request, PklPlacement $pklPlacement)
     {
@@ -213,7 +213,7 @@ class PklJournalController extends Controller
         $bulanPilih = $request->query('bulan');
         [$tahun, $bulanNum] = array_map('intval', explode('-', $bulanPilih));
 
-        $pklPlacement->load(['student.user', 'dudi', 'guruPembimbing.user']);
+        $pklPlacement->load(['student.user', 'iduka', 'guruPembimbing.user']);
         $entries = PklJournal::where('pkl_placement_id', $pklPlacement->id)
             ->where('date', 'like', $bulanPilih . '%')
             ->orderBy('date')->get();
@@ -235,8 +235,8 @@ class PklJournalController extends Controller
         $section->addTextBreak(1);
 
         $section->addText('Nama Peserta PKL          : ' . $namaSiswa);
-        $section->addText('Nama Iduka Tempat PKL     : ' . ($pklPlacement->dudi?->nama_perusahaan ?? '-'));
-        $section->addText('Nama Instruktur           : ' . ($pklPlacement->dudi?->penanggung_jawab ?? '-'));
+        $section->addText('Nama Iduka Tempat PKL     : ' . ($pklPlacement->iduka?->nama_perusahaan ?? '-'));
+        $section->addText('Nama Instruktur           : ' . ($pklPlacement->iduka?->penanggung_jawab ?? '-'));
         $section->addText('Nama Guru Pembimbing      : ' . ($pklPlacement->guruPembimbing?->user?->name ?? '-'));
         $section->addText('Bulan                     : ' . $bulanNama[$bulanNum - 1] . ' ' . $tahun);
         $section->addTextBreak(1);
@@ -299,13 +299,13 @@ class PklJournalController extends Controller
     /**
      * Jurnal kegiatan LINTAS penempatan — dipakai Laporan PKL > Kegiatan
      * Siswa > Jurnal Kegiatan (admin/waka kurikulum). Bisa disaring per
-     * IDUKA (dudi_id) & status penempatan, default cuma tahun ajaran aktif
+     * IDUKA (iduka_id) & status penempatan, default cuma tahun ajaran aktif
      * seperti laporan PKL lainnya.
      */
     public function report(Request $request)
     {
         $data = $request->validate([
-            'dudi_id' => 'nullable|exists:dudis,id',
+            'iduka_id' => 'nullable|exists:idukas,id',
             'status' => 'nullable|in:aktif,selesai',
             'tahun_ajaran_id' => 'nullable|exists:tahun_ajarans,id',
         ]);
@@ -313,28 +313,28 @@ class PklJournalController extends Controller
         $tahunAjaranId = $data['tahun_ajaran_id'] ?? TahunAjaran::aktifId();
 
         $placementQuery = PklPlacement::where('tahun_ajaran_id', $tahunAjaranId);
-        if (!empty($data['dudi_id'])) {
-            $placementQuery->where('dudi_id', $data['dudi_id']);
+        if (!empty($data['iduka_id'])) {
+            $placementQuery->where('iduka_id', $data['iduka_id']);
         }
         if (!empty($data['status'])) {
             $placementQuery->where('status', $data['status']);
         }
         $placementIds = $placementQuery->pluck('id');
 
-        return PklJournal::with(['student.user', 'student.classRoom', 'placement.dudi', 'placement.guruPembimbing.user', 'catatanBy'])
+        return PklJournal::with(['student.user', 'student.classRoom', 'placement.iduka', 'placement.guruPembimbing.user', 'catatanBy'])
             ->whereIn('pkl_placement_id', $placementIds)
             ->orderByDesc('date')
             ->get();
     }
 
     /**
-     * DUDI (atau admin) mengisi kolom "Catatan" pada 1 baris jurnal kegiatan.
+     * IDUKA (atau admin) mengisi kolom "Catatan" pada 1 baris jurnal kegiatan.
      */
     public function isiCatatan(Request $request, PklJournal $pklJournal)
     {
         $placement = $pklJournal->placement;
         if (!$this->bolehIsiCatatan($placement, $request->user())) {
-            return response()->json(['message' => 'Hanya DUDI atau admin yang bisa mengisi catatan.'], 403);
+            return response()->json(['message' => 'Hanya IDUKA atau admin yang bisa mengisi catatan.'], 403);
         }
 
         $data = $request->validate([

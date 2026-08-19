@@ -158,8 +158,8 @@ export default function PklSiswaView({ placement, tab }) {
               <Building2 className="w-5 h-5" />
             </div>
             <div>
-              <p className="font-display font-semibold text-lg leading-tight">{placement.dudi?.nama_perusahaan}</p>
-              <p className="text-xs text-brand-100 mt-0.5">{placement.dudi?.alamat || '-'}</p>
+              <p className="font-display font-semibold text-lg leading-tight">{placement.iduka?.nama_perusahaan}</p>
+              <p className="text-xs text-brand-100 mt-0.5">{placement.iduka?.alamat || '-'}</p>
             </div>
           </div>
           {placement.guru_pembimbing?.user?.name && (

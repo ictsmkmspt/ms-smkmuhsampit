@@ -2,7 +2,7 @@
 
 namespace App\Imports;
 
-use App\Models\Dudi;
+use App\Models\Iduka;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Concerns\SkipsFailures;
@@ -14,7 +14,7 @@ use Maatwebsite\Excel\Concerns\WithValidation;
 use PhpOffice\PhpSpreadsheet\Cell\Cell;
 use PhpOffice\PhpSpreadsheet\Cell\DataType;
 
-class DudiImport implements ToModel, WithHeadingRow, WithValidation, SkipsOnFailure, WithCustomValueBinder
+class IdukaImport implements ToModel, WithHeadingRow, WithValidation, SkipsOnFailure, WithCustomValueBinder
 {
     use SkipsFailures;
 
@@ -33,7 +33,7 @@ class DudiImport implements ToModel, WithHeadingRow, WithValidation, SkipsOnFail
     /**
      * Dipanggil untuk setiap baris yang LOLOS validasi di rules(). Akun login
      * dibuat dari kolom "penanggung_jawab" (nama instruktur) + "telepon" —
-     * sama seperti form Tambah Akun IDUKA manual di DudiTab.jsx.
+     * sama seperti form Tambah Akun IDUKA manual di IdukaTab.jsx.
      */
     public function model(array $row)
     {
@@ -45,10 +45,10 @@ class DudiImport implements ToModel, WithHeadingRow, WithValidation, SkipsOnFail
                 'name'     => trim($row['penanggung_jawab']),
                 'phone'    => trim($row['telepon']),
                 'password' => bcrypt($password),
-                'role'     => 'dudi',
+                'role'     => 'iduka',
             ]);
 
-            return Dudi::create([
+            return Iduka::create([
                 'user_id'          => $user->id,
                 'nama_perusahaan'  => $row['nama_perusahaan'],
                 'alamat'           => $row['alamat'] ?? null,

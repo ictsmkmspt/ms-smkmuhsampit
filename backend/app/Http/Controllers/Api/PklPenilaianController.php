@@ -20,9 +20,9 @@ class PklPenilaianController extends Controller
             $teacher = $user->teacher;
             return $teacher && $placement->guru_pembimbing_id === $teacher->id;
         }
-        if ($user->role === 'dudi') {
-            $dudi = $user->dudi;
-            return $dudi && $placement->dudi_id === $dudi->id;
+        if ($user->role === 'iduka') {
+            $iduka = $user->iduka;
+            return $iduka && $placement->iduka_id === $iduka->id;
         }
         if ($user->role === 'siswa') {
             $student = $user->student;
@@ -37,7 +37,7 @@ class PklPenilaianController extends Controller
             return response()->json(['message' => 'Anda tidak berwenang melihat penilaian ini.'], 403);
         }
 
-        $penilaian = $pklPlacement->penilaian()->with(['kompetensis', 'submittedBy.dudi'])->first();
+        $penilaian = $pklPlacement->penilaian()->with(['kompetensis', 'submittedBy.iduka'])->first();
 
         if (!$penilaian) {
             return response('null', 200)->header('Content-Type', 'application/json');
@@ -49,9 +49,9 @@ class PklPenilaianController extends Controller
     public function store(Request $request, PklPlacement $pklPlacement)
     {
         $user = $request->user();
-        $dudi = $user->dudi;
+        $iduka = $user->iduka;
 
-        if (!$dudi || $pklPlacement->dudi_id !== $dudi->id) {
+        if (!$iduka || $pklPlacement->iduka_id !== $iduka->id) {
             return response()->json(['message' => 'Anda tidak berwenang menilai siswa ini.'], 403);
         }
 
@@ -117,9 +117,9 @@ class PklPenilaianController extends Controller
     public function update(Request $request, PklPlacement $pklPlacement)
     {
         $user = $request->user();
-        $dudi = $user->dudi;
+        $iduka = $user->iduka;
 
-        if (!$dudi || $pklPlacement->dudi_id !== $dudi->id) {
+        if (!$iduka || $pklPlacement->iduka_id !== $iduka->id) {
             return response()->json(['message' => 'Anda tidak berwenang mengubah penilaian ini.'], 403);
         }
 
@@ -190,9 +190,9 @@ class PklPenilaianController extends Controller
     public function destroy(Request $request, PklPlacement $pklPlacement)
     {
         $user = $request->user();
-        $dudi = $user->dudi;
+        $iduka = $user->iduka;
 
-        if (!$dudi || $pklPlacement->dudi_id !== $dudi->id) {
+        if (!$iduka || $pklPlacement->iduka_id !== $iduka->id) {
             return response()->json(['message' => 'Anda tidak berwenang menghapus penilaian ini.'], 403);
         }
 
@@ -258,7 +258,7 @@ class PklPenilaianController extends Controller
 
         $section->addText('Nama Peserta            : ' . $namaSiswa);
         $section->addText('Konsentrasi Keahlian    : ' . ($pklPlacement->student?->classRoom?->name ?? '-'));
-        $section->addText('Tempat PKL              : ' . ($pklPlacement->dudi?->nama_perusahaan ?? '-'));
+        $section->addText('Tempat PKL              : ' . ($pklPlacement->iduka?->nama_perusahaan ?? '-'));
         $section->addText('Periode PKL             : ' . $pklPlacement->tanggal_mulai . ' s.d. ' . $pklPlacement->tanggal_selesai);
         $section->addTextBreak(1);
 

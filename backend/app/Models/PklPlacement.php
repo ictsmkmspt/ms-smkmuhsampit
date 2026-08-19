@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class PklPlacement extends Model
 {
     protected $fillable = [
-        'student_id', 'dudi_id', 'guru_pembimbing_id',
+        'student_id', 'iduka_id', 'guru_pembimbing_id',
         'tanggal_mulai', 'tanggal_selesai', 'status',
         'nilai_akhir', 'catatan_pembimbing', 'tahun_ajaran_id',
     ];
@@ -34,9 +34,9 @@ class PklPlacement extends Model
         return $this->belongsTo(Student::class);
     }
 
-    public function dudi()
+    public function iduka()
     {
-        return $this->belongsTo(Dudi::class);
+        return $this->belongsTo(Iduka::class);
     }
 
     public function guruPembimbing()

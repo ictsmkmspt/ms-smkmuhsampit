@@ -7,7 +7,7 @@ use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class DudiTemplateExport implements FromArray, WithHeadings, WithStyles
+class IdukaTemplateExport implements FromArray, WithHeadings, WithStyles
 {
     /**
      * Isi contoh (baris ke-2). Kolom "penanggung_jawab" dipakai juga sebagai

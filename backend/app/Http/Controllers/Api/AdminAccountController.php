@@ -11,7 +11,7 @@ class AdminAccountController extends Controller
 {
     use ResetsPasswordToDefault;
 
-    private const ROLES = ['admin', 'waka', 'waka_kesiswaan', 'waka_kurikulum', 'waka_humas', 'waka_sarpras'];
+    private const ROLES = ['admin', 'waka', 'waka_kesiswaan', 'waka_kurikulum', 'waka_humas', 'waka_sarpras', 'kepala_sekolah'];
 
     public function index()
     {
@@ -24,7 +24,7 @@ class AdminAccountController extends Controller
             'name' => 'required|string|max:100',
             'email' => 'required|email|unique:users,email',
             'password' => 'nullable|min:6',
-            'role' => 'required|in:admin,waka_kesiswaan,waka_kurikulum,waka_humas,waka_sarpras',
+            'role' => 'required|in:admin,waka_kesiswaan,waka_kurikulum,waka_humas,waka_sarpras,kepala_sekolah',
         ]);
 
         $user = User::create([
@@ -49,7 +49,7 @@ class AdminAccountController extends Controller
         $data = $request->validate([
             'name' => 'sometimes|string|max:100',
             'email' => 'sometimes|email|unique:users,email,' . $user->id,
-            'role' => 'sometimes|in:admin,waka_kesiswaan,waka_kurikulum,waka_humas,waka_sarpras',
+            'role' => 'sometimes|in:admin,waka_kesiswaan,waka_kurikulum,waka_humas,waka_sarpras,kepala_sekolah',
         ]);
 
         if (isset($data['role']) && $data['role'] !== 'admin' && $user->role === 'admin' && User::where('role', 'admin')->count() <= 1) {

@@ -17,7 +17,7 @@ class PklAttendanceController extends Controller
 {
     /**
      * True kalau user yang login berwenang MELIHAT absensi penempatan ini —
-     * yaitu admin, guru pembimbingnya, atau DUDI pemiliknya.
+     * yaitu admin, guru pembimbingnya, atau IDUKA pemiliknya.
      */
     private function bolehLihat(PklPlacement $placement, $user): bool
     {
@@ -28,26 +28,26 @@ class PklAttendanceController extends Controller
             $teacher = $user->teacher;
             return $teacher && $placement->guru_pembimbing_id === $teacher->id;
         }
-        if ($user->role === 'dudi') {
-            $dudi = $user->dudi;
-            return $dudi && $placement->dudi_id === $dudi->id;
+        if ($user->role === 'iduka') {
+            $iduka = $user->iduka;
+            return $iduka && $placement->iduka_id === $iduka->id;
         }
         return false;
     }
 
     /**
      * True kalau user yang login berwenang MEMVERIFIKASI (paraf) absensi penempatan
-     * ini — cuma DUDI pemiliknya atau admin. Guru pembimbing bisa lihat & koreksi,
-     * tapi verifikasi/paraf resmi tetap tanggung jawab DUDI (instruktur lapangan).
+     * ini — cuma IDUKA pemiliknya atau admin. Guru pembimbing bisa lihat & koreksi,
+     * tapi verifikasi/paraf resmi tetap tanggung jawab IDUKA (instruktur lapangan).
      */
     private function bolehVerifikasi(PklPlacement $placement, $user): bool
     {
         if ($user->role === 'admin') {
             return true;
         }
-        if ($user->role === 'dudi') {
-            $dudi = $user->dudi;
-            return $dudi && $placement->dudi_id === $dudi->id;
+        if ($user->role === 'iduka') {
+            $iduka = $user->iduka;
+            return $iduka && $placement->iduka_id === $iduka->id;
         }
         return false;
     }
@@ -83,8 +83,8 @@ class PklAttendanceController extends Controller
 
     /**
      * Absen masuk — WAJIB lokasi GPS, harus berada dalam radius yang diatur
-     * admin untuk DUDI itu. Absensi yang tercatat berstatus "hadir" tapi baru
-     * sah kalau sudah diverifikasi (di-paraf) oleh DUDI lewat endpoint verifikasi().
+     * admin untuk IDUKA itu. Absensi yang tercatat berstatus "hadir" tapi baru
+     * sah kalau sudah diverifikasi (di-paraf) oleh IDUKA lewat endpoint verifikasi().
      */
     public function absenMasuk(Request $request)
     {
@@ -98,15 +98,15 @@ class PklAttendanceController extends Controller
             return response()->json(['message' => 'Anda tidak sedang dalam masa PKL.'], 422);
         }
 
-        $dudi = $placement->dudi;
-        if (!$dudi || !$dudi->latitude || !$dudi->longitude) {
-            return response()->json(['message' => 'Lokasi DUDI belum diatur oleh admin. Hubungi admin sekolah.'], 422);
+        $iduka = $placement->iduka;
+        if (!$iduka || !$iduka->latitude || !$iduka->longitude) {
+            return response()->json(['message' => 'Lokasi IDUKA belum diatur oleh admin. Hubungi admin sekolah.'], 422);
         }
 
-        $jarak = $dudi->jarakKe($data['latitude'], $data['longitude']);
-        if (!$dudi->dalamRadius($data['latitude'], $data['longitude'])) {
+        $jarak = $iduka->jarakKe($data['latitude'], $data['longitude']);
+        if (!$iduka->dalamRadius($data['latitude'], $data['longitude'])) {
             return response()->json([
-                'message' => "Anda berada di luar radius lokasi DUDI ({$jarak}m dari lokasi, radius diizinkan {$dudi->radius_meter}m).",
+                'message' => "Anda berada di luar radius lokasi IDUKA ({$jarak}m dari lokasi, radius diizinkan {$iduka->radius_meter}m).",
             ], 422);
         }
 
@@ -147,15 +147,15 @@ class PklAttendanceController extends Controller
             return response()->json(['message' => 'Anda tidak sedang dalam masa PKL.'], 422);
         }
 
-        $dudi = $placement->dudi;
-        if (!$dudi || !$dudi->latitude || !$dudi->longitude) {
-            return response()->json(['message' => 'Lokasi DUDI belum diatur oleh admin. Hubungi admin sekolah.'], 422);
+        $iduka = $placement->iduka;
+        if (!$iduka || !$iduka->latitude || !$iduka->longitude) {
+            return response()->json(['message' => 'Lokasi IDUKA belum diatur oleh admin. Hubungi admin sekolah.'], 422);
         }
 
-        $jarak = $dudi->jarakKe($data['latitude'], $data['longitude']);
-        if (!$dudi->dalamRadius($data['latitude'], $data['longitude'])) {
+        $jarak = $iduka->jarakKe($data['latitude'], $data['longitude']);
+        if (!$iduka->dalamRadius($data['latitude'], $data['longitude'])) {
             return response()->json([
-                'message' => "Anda berada di luar radius lokasi DUDI ({$jarak}m dari lokasi, radius diizinkan {$dudi->radius_meter}m).",
+                'message' => "Anda berada di luar radius lokasi IDUKA ({$jarak}m dari lokasi, radius diizinkan {$iduka->radius_meter}m).",
             ], 422);
         }
 
@@ -277,24 +277,24 @@ class PklAttendanceController extends Controller
     /**
      * Rekap jumlah hadir/izin/sakit/alpa per penempatan PKL — dipakai
      * Laporan PKL > Kegiatan Siswa > Absensi Kegiatan (admin/waka
-     * kurikulum). Bisa disaring per IDUKA (dudi_id) & status penempatan,
+     * kurikulum). Bisa disaring per IDUKA (iduka_id) & status penempatan,
      * default cuma tahun ajaran aktif seperti PklPlacementController::index().
      */
     public function report(Request $request)
     {
         $data = $request->validate([
-            'dudi_id' => 'nullable|exists:dudis,id',
+            'iduka_id' => 'nullable|exists:idukas,id',
             'status' => 'nullable|in:aktif,selesai',
             'tahun_ajaran_id' => 'nullable|exists:tahun_ajarans,id',
         ]);
 
         $tahunAjaranId = $data['tahun_ajaran_id'] ?? TahunAjaran::aktifId();
 
-        $query = PklPlacement::with(['student.user', 'student.classRoom', 'dudi', 'guruPembimbing.user'])
+        $query = PklPlacement::with(['student.user', 'student.classRoom', 'iduka', 'guruPembimbing.user'])
             ->where('tahun_ajaran_id', $tahunAjaranId);
 
-        if (!empty($data['dudi_id'])) {
-            $query->where('dudi_id', $data['dudi_id']);
+        if (!empty($data['iduka_id'])) {
+            $query->where('iduka_id', $data['iduka_id']);
         }
         if (!empty($data['status'])) {
             $query->where('status', $data['status']);
@@ -330,13 +330,13 @@ class PklAttendanceController extends Controller
             return response()->json([]);
         }
 
-        return PklAttendance::with('verifiedBy.dudi')
+        return PklAttendance::with('verifiedBy.iduka')
             ->where('pkl_placement_id', $placement->id)
             ->orderByDesc('date')->get();
     }
 
     /**
-     * Riwayat absensi 1 penempatan PKL tertentu — dipakai guru pembimbing, DUDI,
+     * Riwayat absensi 1 penempatan PKL tertentu — dipakai guru pembimbing, IDUKA,
      * atau admin untuk memantau/mengoreksi/memverifikasi.
      */
     public function riwayatPenempatan(Request $request, PklPlacement $pklPlacement)
@@ -345,7 +345,7 @@ class PklAttendanceController extends Controller
             return response()->json(['message' => 'Anda tidak berwenang melihat absensi siswa ini.'], 403);
         }
 
-        return PklAttendance::with('verifiedBy.dudi')
+        return PklAttendance::with('verifiedBy.iduka')
             ->where('pkl_placement_id', $pklPlacement->id)
             ->orderByDesc('date')->get();
     }
@@ -380,7 +380,7 @@ class PklAttendanceController extends Controller
         $request->validate(['bulan' => 'required|date_format:Y-m']);
         [$tahun, $bulanNum] = array_map('intval', explode('-', $request->query('bulan')));
 
-        $pklPlacement->load(['student.user', 'student.classRoom', 'dudi']);
+        $pklPlacement->load(['student.user', 'student.classRoom', 'iduka']);
         $attendances = PklAttendance::where('pkl_placement_id', $pklPlacement->id)
             ->whereYear('date', $tahun)->whereMonth('date', $bulanNum)
             ->get()->keyBy(fn ($a) => $a->date->format('Y-m-d'));
@@ -404,7 +404,7 @@ class PklAttendanceController extends Controller
 
         $section->addText('Nama Murid              : ' . $namaSiswa);
         $section->addText('Kompetensi Keahlian     : ' . ($pklPlacement->student?->classRoom?->name ?? '-'));
-        $section->addText('Tempat PKL/Nama Iduka   : ' . ($pklPlacement->dudi?->nama_perusahaan ?? '-'));
+        $section->addText('Tempat PKL/Nama Iduka   : ' . ($pklPlacement->iduka?->nama_perusahaan ?? '-'));
         $section->addText('Bulan                   : ' . $bulanNama[$bulanNum - 1] . ' ' . $tahun);
         $section->addTextBreak(1);
 
@@ -455,7 +455,7 @@ class PklAttendanceController extends Controller
 
     /**
      * Buat atau perbaiki 1 baris absensi secara manual — dipakai guru pembimbing,
-     * DUDI, atau admin. Dipakai untuk mencatat izin/sakit/alpa, atau memperbaiki
+     * IDUKA, atau admin. Dipakai untuk mencatat izin/sakit/alpa, atau memperbaiki
      * kesalahan input siswa.
      */
     public function koreksi(Request $request)
@@ -505,14 +505,14 @@ class PklAttendanceController extends Controller
     }
 
     /**
-     * Verifikasi (paraf digital) 1 baris absensi — cuma boleh DUDI pemilik
+     * Verifikasi (paraf digital) 1 baris absensi — cuma boleh IDUKA pemilik
      * penempatan ini atau admin. Menandai absensi hari itu sudah dianggap sah.
      */
     public function verifikasi(Request $request, PklAttendance $pklAttendance)
     {
         $placement = $pklAttendance->placement;
         if (!$this->bolehVerifikasi($placement, $request->user())) {
-            return response()->json(['message' => 'Hanya DUDI atau admin yang bisa memverifikasi absensi ini.'], 403);
+            return response()->json(['message' => 'Hanya IDUKA atau admin yang bisa memverifikasi absensi ini.'], 403);
         }
 
         $pklAttendance->verified_by = $request->user()->id;
@@ -526,20 +526,20 @@ class PklAttendanceController extends Controller
     }
 
     /**
-     * Semua absensi yang BELUM diverifikasi milik DUDI yang sedang login,
+     * Semua absensi yang BELUM diverifikasi milik IDUKA yang sedang login,
      * dari semua siswa magangnya sekaligus — dipakai panel "Verifikasi Absensi"
-     * di dashboard DUDI supaya tidak perlu buka satu-satu per siswa.
+     * di dashboard IDUKA supaya tidak perlu buka satu-satu per siswa.
      */
     public function pendingVerifikasi(Request $request)
     {
-        $dudi = $request->user()->dudi;
-        if (!$dudi) {
-            return response()->json(['message' => 'Akun ini belum terhubung ke profil DUDI.'], 404);
+        $iduka = $request->user()->iduka;
+        if (!$iduka) {
+            return response()->json(['message' => 'Akun ini belum terhubung ke profil IDUKA.'], 404);
         }
 
         return PklAttendance::with('student.user', 'student.classRoom')
             ->whereNull('verified_at')
-            ->whereHas('placement', fn ($q) => $q->where('dudi_id', $dudi->id))
+            ->whereHas('placement', fn ($q) => $q->where('iduka_id', $iduka->id))
             ->orderBy('date')
             ->get();
     }

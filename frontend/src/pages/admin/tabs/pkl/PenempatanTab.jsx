@@ -26,7 +26,7 @@ export default function PenempatanTab() {
   const { isAktif: tahunAktif, selectedId: tahunAjaranId } = useTahunAjaran();
   const [list, setList] = useState([]);
   const [classes, setClasses] = useState([]);
-  const [dudiList, setDudiList] = useState([]);
+  const [idukaList, setIdukaList] = useState([]);
   const [teachers, setTeachers] = useState([]);
   const [error, setError] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
@@ -41,7 +41,7 @@ export default function PenempatanTab() {
   const [rosterStudents, setRosterStudents] = useState([]);
   const [rosterLoading, setRosterLoading] = useState(false);
   const [selectedIds, setSelectedIds] = useState(new Set());
-  const [bulkDudiId, setBulkDudiId] = useState('');
+  const [bulkIdukaId, setBulkIdukaId] = useState('');
   const [bulkGuruId, setBulkGuruId] = useState('');
   const [bulkTanggalMulai, setBulkTanggalMulai] = useState('');
   const [bulkTanggalSelesai, setBulkTanggalSelesai] = useState('');
@@ -114,7 +114,7 @@ export default function PenempatanTab() {
 
   useEffect(() => {
     api.get('/classes').then((res) => setClasses(res.data));
-    api.get('/dudi').then((res) => setDudiList(res.data));
+    api.get('/iduka').then((res) => setIdukaList(res.data));
     api.get('/teachers').then((res) => setTeachers(res.data));
 
     try {
@@ -170,7 +170,7 @@ export default function PenempatanTab() {
     try {
       const res = await api.post('/pkl-placements/bulk', {
         student_ids: [...selectedIds],
-        dudi_id: bulkDudiId,
+        iduka_id: bulkIdukaId,
         guru_pembimbing_id: bulkGuruId || undefined,
         tanggal_mulai: bulkTanggalMulai,
         tanggal_selesai: bulkTanggalSelesai,
@@ -178,7 +178,7 @@ export default function PenempatanTab() {
       setBulkResult(res.data);
       localStorage.setItem(JADWAL_TERAKHIR_KEY, JSON.stringify({ tanggal_mulai: bulkTanggalMulai, tanggal_selesai: bulkTanggalSelesai }));
       setSelectedIds(new Set());
-      setBulkDudiId('');
+      setBulkIdukaId('');
       setShowForm(false);
       load();
       loadAktifCount();
@@ -198,7 +198,7 @@ export default function PenempatanTab() {
     setShowForm(false);
     setRosterClassId('');
     setSelectedIds(new Set());
-    setBulkDudiId('');
+    setBulkIdukaId('');
     setBulkGuruId('');
     setError('');
     setBulkResult(null);
@@ -217,7 +217,7 @@ export default function PenempatanTab() {
   };
 
   const handleDelete = async (p) => {
-    if (!confirm(`Hapus penempatan PKL "${p.student?.user?.name}" di "${p.dudi?.nama_perusahaan}"? Seluruh riwayat absensi PKL-nya juga akan terhapus.`)) return;
+    if (!confirm(`Hapus penempatan PKL "${p.student?.user?.name}" di "${p.iduka?.nama_perusahaan}"? Seluruh riwayat absensi PKL-nya juga akan terhapus.`)) return;
     try {
       await api.delete(`/pkl-placements/${p.id}`);
       load();
@@ -305,9 +305,9 @@ export default function PenempatanTab() {
           )}
 
           <div className="grid grid-cols-2 gap-3">
-            <select value={bulkDudiId} onChange={(e) => setBulkDudiId(e.target.value)} className="field-input text-ink-700" required>
+            <select value={bulkIdukaId} onChange={(e) => setBulkIdukaId(e.target.value)} className="field-input text-ink-700" required>
               <option value="">— Pilih IDUKA —</option>
-              {dudiList.map((d) => (
+              {idukaList.map((d) => (
                 <option key={d.id} value={d.id}>{d.nama_perusahaan}</option>
               ))}
             </select>
@@ -398,7 +398,7 @@ export default function PenempatanTab() {
                   <p className="text-ink-900 font-medium"><TruncateText text={p.student?.user?.name} /></p>
                   <p className="text-xs text-ink-500">{p.student?.class_room?.name || '-'}</p>
                 </td>
-                <td className="text-ink-700 whitespace-nowrap px-2"><TruncateText text={p.dudi?.nama_perusahaan} /></td>
+                <td className="text-ink-700 whitespace-nowrap px-2"><TruncateText text={p.iduka?.nama_perusahaan} /></td>
                 <td className="text-ink-700 whitespace-nowrap px-2"><TruncateText text={p.guru_pembimbing?.user?.name} /></td>
                 <td className="text-ink-700 text-xs whitespace-nowrap px-2">{fmtDMY(p.tanggal_mulai)} s/d {fmtDMY(p.tanggal_selesai)}</td>
                 <td className="whitespace-nowrap px-2">

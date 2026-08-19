@@ -2,13 +2,13 @@ import { useEffect, useState } from 'react';
 import { Star, CheckCircle2 } from 'lucide-react';
 import api from '../../../api/axios';
 
-export default function DudiPenilaianTab() {
+export default function IdukaPenilaianTab() {
   const [list, setList] = useState([]);
   const [loading, setLoading] = useState(false);
 
   const loadSiswa = () => {
     setLoading(true);
-    return api.get('/dudi/my-siswa').then((res) => setList(res.data)).finally(() => setLoading(false));
+    return api.get('/iduka/my-siswa').then((res) => setList(res.data)).finally(() => setLoading(false));
   };
 
   useEffect(() => { loadSiswa(); }, []);

@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Setting;
 use App\Models\Spp;
+use App\Models\SppPembayaran;
 use App\Models\Student;
+use App\Models\TagihanLain;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -130,17 +132,34 @@ class SppController extends Controller
      */
     public function alumni()
     {
-        // 'sebagian' HARUS ikut, bukan cuma 'belum_bayar' — alumni yang
-        // sempat nyicil tapi belum lunas sebelumnya diam-diam hilang dari
-        // daftar tunggakan ini. Sisa tunggakan per baris juga dihitung
-        // (nominal - jumlah_dibayar), bukan nominal penuh, supaya
-        // cicilan yang sudah masuk tidak ikut ditagih ulang — konsisten
-        // dengan LaporanController::tunggakan().
+        // Tampilkan SEMUA alumni (bukan cuma yang masih bertunggakan) —
+        // TU perlu lihat siapa saja yang sudah benar-benar lunas juga,
+        // bukan cuma daftar tagih. 'sebagian' HARUS ikut, bukan cuma
+        // 'belum_bayar' — alumni yang sempat nyicil tapi belum lunas
+        // sebelumnya diam-diam hilang dari daftar tunggakan ini. Sisa
+        // tunggakan per baris juga dihitung (nominal - jumlah_dibayar),
+        // bukan nominal penuh, supaya cicilan yang sudah masuk tidak ikut
+        // ditagih ulang — konsisten dengan LaporanController::tunggakan().
+        //
+        // Tagihan Lain HARUS ikut dihitung juga, bukan cuma SPP — sebelumnya
+        // alumni yang tunggakannya murni Tagihan Lain (tanpa tunggakan SPP
+        // sama sekali) tampil "Lunas" padahal masih ada tagihan lain yang
+        // belum dibayar.
+        $lainAgg = TagihanLain::where('status', '!=', 'lunas')
+            ->whereHas('student', fn ($q) => $q->where('status', 'lulus'))
+            ->selectRaw('student_id, SUM(nominal - jumlah_dibayar) as total, COUNT(*) as jumlah')
+            ->groupBy('student_id')
+            ->get()
+            ->keyBy('student_id');
+
         $students = Student::with(['user', 'classRoom', 'spps' => fn ($q) => $q->where('status', '!=', 'lunas')])
             ->where('status', 'lulus')
-            ->whereHas('spps', fn ($q) => $q->where('status', '!=', 'lunas'))
             ->get()
-            ->map(function ($s) {
+            ->map(function ($s) use ($lainAgg) {
+                $tunggakanSpp = $s->spps->sum(fn ($spp) => $spp->nominal - $spp->jumlah_dibayar);
+                $lain = $lainAgg->get($s->id);
+                $tunggakanLain = $lain ? (int) $lain->total : 0;
+
                 return [
                     'student' => [
                         'id' => $s->id,
@@ -150,10 +169,13 @@ class SppController extends Controller
                         'class_room' => $s->classRoom,
                     ],
                     'jumlah_tunggakan' => $s->spps->count(),
-                    'total_tunggakan' => $s->spps->sum(fn ($spp) => $spp->nominal - $spp->jumlah_dibayar),
+                    'jumlah_tunggakan_lain' => $lain ? (int) $lain->jumlah : 0,
+                    'tunggakan_spp' => $tunggakanSpp,
+                    'tunggakan_lain' => $tunggakanLain,
+                    'total_tunggakan' => $tunggakanSpp + $tunggakanLain,
                 ];
             })
-            ->sortByDesc('total_tunggakan')
+            ->sortBy(fn ($row) => $row['student']['user']->name ?? '')
             ->values();
 
         return response()->json($students);
@@ -195,6 +217,12 @@ class SppController extends Controller
         ]);
 
         return DB::transaction(function () use ($data, $request) {
+            $student = Student::lockForUpdate()->findOrFail($data['student_id']);
+
+            if ($student->status === 'lulus') {
+                return response()->json(['message' => 'Siswa ini sudah alumni, tidak bisa dibuatkan tagihan SPP baru.'], 422);
+            }
+
             $sudahAda = Spp::where('student_id', $data['student_id'])
                 ->where('bulan', $data['bulan'])->where('tahun', $data['tahun'])
                 ->lockForUpdate()->exists();
@@ -265,17 +293,49 @@ class SppController extends Controller
                     $this->catatPembayaranSpp($spp, $sisa, now()->toDateString(), $request->user()->id, 'Ditandai lunas manual');
                 }
             } else {
-                // "Batalkan" — SENGAJA tidak menghapus riwayat pembayaran
-                // yang sudah tercatat (uang yang sudah diterima tetap
-                // tersimpan). Statusnya cuma dilepas dari "lunas": balik
-                // ke "sebagian" kalau ternyata masih ada cicilan asli yang
-                // sudah masuk, atau "belum_bayar" kalau memang belum ada
-                // setoran sama sekali.
+                // "Batalkan" — kalau "lunas"-nya tercapai lewat top-up
+                // otomatis (tombol Tandai Lunas menambah selisih sebagai 1
+                // baris riwayat berketerangan "Ditandai lunas manual"),
+                // batalkan berarti menghapus KEMBALI baris top-up itu, lalu
+                // jumlah_dibayar dihitung ulang dari riwayat yang tersisa.
+                // Sebelumnya cuma status yang diganti tanpa menyentuh
+                // jumlah_dibayar — hasilnya data ganjil: status "Sebagian"
+                // padahal jumlah_dibayar sudah = nominal (sisa Rp0).
                 $spp->refresh();
-                $spp->update([
-                    'status' => $spp->jumlah_dibayar > 0 ? 'sebagian' : 'belum_bayar',
-                    'dicatat_oleh' => $request->user()->id,
-                ]);
+                $topUp = $spp->pembayaran()->where('keterangan', 'Ditandai lunas manual')->latest()->first();
+
+                if ($topUp) {
+                    $topUp->delete();
+                    $spp->refresh();
+                    $totalDibayar = (int) $spp->pembayaran()->sum('jumlah');
+                    $spp->update([
+                        'jumlah_dibayar' => $totalDibayar,
+                        'status' => $totalDibayar > 0 ? 'sebagian' : 'belum_bayar',
+                        'tanggal_bayar' => $spp->pembayaran()->latest('tanggal_bayar')->value('tanggal_bayar'),
+                        'dicatat_oleh' => $request->user()->id,
+                    ]);
+                } elseif ($spp->pembayaran()->count() === 0) {
+                    // Data lama dari sebelum riwayat pembayaran (ledger) ada —
+                    // jumlah_dibayar/status di-set langsung tanpa baris riwayat
+                    // sama sekali, jadi tidak ada apa pun buat dihapus lewat
+                    // Riwayat. Karena riwayatnya memang kosong (bukan ada
+                    // cicilan sungguhan yang tersembunyi), aman untuk langsung
+                    // di-reset ke Belum Bayar.
+                    $spp->update([
+                        'jumlah_dibayar' => 0,
+                        'status' => 'belum_bayar',
+                        'tanggal_bayar' => null,
+                        'dicatat_oleh' => $request->user()->id,
+                    ]);
+                } else {
+                    // Lunas tercapai murni dari cicilan asli (bukan lewat
+                    // tombol Tandai Lunas) — tidak ada top-up buatan yang
+                    // bisa dihapus, jadi tidak bisa "dibatalkan" begitu saja
+                    // tanpa menghapus pembayaran sungguhan.
+                    return response()->json([
+                        'message' => 'Tagihan ini lunas dari cicilan asli (bukan tombol Tandai Lunas), tidak bisa dibatalkan langsung. Hapus/koreksi riwayat pembayarannya manual kalau memang perlu.',
+                    ], 422);
+                }
             }
 
             return $spp->fresh(['student.user', 'student.classRoom']);
@@ -308,6 +368,44 @@ class SppController extends Controller
             ]);
 
             $this->catatPembayaranSpp($spp, $data['jumlah'], now()->toDateString(), $request->user()->id);
+
+            return $spp->fresh(['student.user', 'student.classRoom']);
+        });
+    }
+
+    /**
+     * Riwayat baris pembayaran (cicilan) 1 tagihan SPP — dipakai TU untuk
+     * mengoreksi kalau ada baris yang salah input jumlahnya (lihat
+     * hapusPembayaran()).
+     */
+    public function riwayatPembayaran(Spp $spp)
+    {
+        return $spp->pembayaran()->with('dicatatOleh')->orderByDesc('tanggal_bayar')->orderByDesc('id')->get();
+    }
+
+    /**
+     * Hapus 1 baris cicilan yang salah input — dipakai TU untuk koreksi
+     * (mis. salah ketik jumlah bayar sebagian). jumlah_dibayar/status/
+     * tanggal_bayar di induk dihitung ulang dari sisa riwayat yang ada,
+     * pola sama seperti catatPembayaranSpp() tapi arah sebaliknya (kurangi,
+     * bukan tambah).
+     */
+    public function hapusPembayaran(Spp $spp, SppPembayaran $pembayaran)
+    {
+        if ($pembayaran->spp_id !== $spp->id) {
+            abort(404);
+        }
+
+        return DB::transaction(function () use ($spp, $pembayaran) {
+            $spp = Spp::lockForUpdate()->findOrFail($spp->id);
+            $pembayaran->delete();
+
+            $totalDibayar = (int) $spp->pembayaran()->sum('jumlah');
+            $spp->update([
+                'jumlah_dibayar' => $totalDibayar,
+                'status' => $totalDibayar >= $spp->nominal ? 'lunas' : ($totalDibayar > 0 ? 'sebagian' : 'belum_bayar'),
+                'tanggal_bayar' => $spp->pembayaran()->latest('tanggal_bayar')->value('tanggal_bayar'),
+            ]);
 
             return $spp->fresh(['student.user', 'student.classRoom']);
         });

@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-import { CheckCircle2, Printer, X, CheckCircle, Info, CalendarPlus, Wallet } from 'lucide-react';
+import { CheckCircle2, Printer, X, CheckCircle, Info, CalendarPlus, Wallet, Trash2, History } from 'lucide-react';
 import api from '../../api/axios';
 import { BULAN, formatRupiah, Avatar } from './shared';
+import { fmtDMY } from '../../utils/date';
 
 /**
  * Panel "riwayat tagihan 1 siswa" dengan tombol Bayar Lunas / Bayar Sebagian
@@ -13,7 +14,7 @@ import { BULAN, formatRupiah, Avatar } from './shared';
  * tidak salah bayar tagihan yang beda jenis. Kalau salah satu dimatikan,
  * request API-nya juga tidak dikirim sama sekali (bukan cuma disembunyikan).
  */
-export default function StudentSppPanel({ student, onClose, onPaid, showSpp = true, showTagihanLain = true }) {
+export default function StudentSppPanel({ student, onClose, onPaid, showSpp = true, showTagihanLain = true, showBayarDimuka = true }) {
   const [spp, setSpp] = useState(null);
   const [tagihanLain, setTagihanLain] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -22,6 +23,10 @@ export default function StudentSppPanel({ student, onClose, onPaid, showSpp = tr
   const [partialTarget, setPartialTarget] = useState(null); // `${type}-${id}` yang lagi buka form bayar sebagian
   const [partialAmount, setPartialAmount] = useState('');
   const [payingPartial, setPayingPartial] = useState(false);
+  const [riwayatTarget, setRiwayatTarget] = useState(null); // `${type}-${id}` yang lagi buka riwayat cicilan
+  const [riwayatData, setRiwayatData] = useState([]);
+  const [loadingRiwayat, setLoadingRiwayat] = useState(false);
+  const [deletingPembayaranId, setDeletingPembayaranId] = useState(null);
   const [feedback, setFeedback] = useState(null);
 
   const notify = (type, message) => {
@@ -91,6 +96,42 @@ export default function StudentSppPanel({ student, onClose, onPaid, showSpp = tr
     }
   };
 
+  // Riwayat cicilan 1 tagihan — dipakai TU untuk koreksi kalau ada baris
+  // "Bayar Sebagian" yang salah input jumlahnya.
+  const toggleRiwayat = async (type, item) => {
+    const key = `${type}-${item.id}`;
+    if (riwayatTarget === key) {
+      setRiwayatTarget(null);
+      return;
+    }
+    setRiwayatTarget(key);
+    setLoadingRiwayat(true);
+    try {
+      const res = await api.get(`${endpointFor(type, item.id)}/pembayaran`);
+      setRiwayatData(res.data);
+    } catch (err) {
+      notify('error', err.response?.data?.message || 'Gagal memuat riwayat pembayaran.');
+      setRiwayatTarget(null);
+    } finally {
+      setLoadingRiwayat(false);
+    }
+  };
+
+  const hapusPembayaran = async (type, item, pembayaranId) => {
+    if (!confirm('Hapus baris cicilan ini? Nominal terbayar & status tagihan akan dihitung ulang otomatis.')) return;
+    setDeletingPembayaranId(pembayaranId);
+    try {
+      const res = await api.delete(`${endpointFor(type, item.id)}/pembayaran/${pembayaranId}`);
+      applyUpdate(type, res.data);
+      setRiwayatData((prev) => prev.filter((p) => p.id !== pembayaranId));
+      onPaid?.();
+    } catch (err) {
+      notify('error', err.response?.data?.message || 'Gagal menghapus baris cicilan.');
+    } finally {
+      setDeletingPembayaranId(null);
+    }
+  };
+
   const statusBadge = (status) => {
     if (status === 'lunas') return <span className="badge-soft badge-brand">Lunas</span>;
     if (status === 'sebagian') return <span className="badge-soft badge-honey">Sebagian</span>;
@@ -124,6 +165,15 @@ export default function StudentSppPanel({ student, onClose, onPaid, showSpp = tr
                 >
                   <Printer className="w-3.5 h-3.5" /> Cetak Nota
                 </button>
+                <button
+                  onClick={() => toggleRiwayat(type, item)}
+                  title="Riwayat cicilan (buat koreksi salah input)"
+                  className={`shrink-0 p-1.5 rounded-lg border transition ${
+                    riwayatTarget === key ? 'text-brand-600 border-brand-200 bg-brand-50' : 'text-ink-400 border-line-200 hover:text-brand-600'
+                  }`}
+                >
+                  <History className="w-3.5 h-3.5" />
+                </button>
               </>
             ) : (
               <>
@@ -133,15 +183,26 @@ export default function StudentSppPanel({ student, onClose, onPaid, showSpp = tr
                   disabled={payingId === key}
                   className="text-xs font-medium text-brand-700 bg-brand-50 hover:bg-brand-100 disabled:opacity-60 rounded-lg px-3 py-1.5 transition"
                 >
-                  Bayar Sebagian
+                  Cicil
                 </button>
                 <button
                   onClick={() => bayarLunas(type, item)}
                   disabled={payingId === key}
                   className="text-xs font-medium text-white bg-[#15803D] hover:bg-[#116530] disabled:opacity-60 rounded-lg px-4 py-1.5 transition"
                 >
-                  {payingId === key ? 'Memproses...' : 'Bayar Lunas'}
+                  {payingId === key ? 'Memproses...' : 'Lunas'}
                 </button>
+                {item.status === 'sebagian' && (
+                  <button
+                    onClick={() => toggleRiwayat(type, item)}
+                    title="Riwayat cicilan (buat koreksi salah input)"
+                    className={`shrink-0 p-1.5 rounded-lg border transition ${
+                      riwayatTarget === key ? 'text-brand-600 border-brand-200 bg-brand-50' : 'text-ink-400 border-line-200 hover:text-brand-600'
+                    }`}
+                  >
+                    <History className="w-3.5 h-3.5" />
+                  </button>
+                )}
               </>
             )}
           </div>
@@ -165,6 +226,38 @@ export default function StudentSppPanel({ student, onClose, onPaid, showSpp = tr
             <button onClick={() => setPartialTarget(null)} className="text-xs font-medium text-ink-500 hover:text-ink-700 px-2 py-1.5">
               Batal
             </button>
+          </div>
+        )}
+
+        {riwayatTarget === key && (
+          <div className="mt-2 bg-mist-50 border border-line-200 rounded-lg p-3">
+            <p className="text-xs font-medium text-ink-500 mb-2">Riwayat Cicilan — {labelFor(type, item)}</p>
+            {loadingRiwayat ? (
+              <p className="text-xs text-ink-400 text-center py-3">Memuat...</p>
+            ) : riwayatData.length === 0 ? (
+              <p className="text-xs text-ink-400 text-center py-3">Belum ada baris cicilan tercatat.</p>
+            ) : (
+              <ul className="divide-y divide-line-200">
+                {riwayatData.map((p) => (
+                  <li key={p.id} className="flex items-center justify-between gap-3 py-2">
+                    <div className="min-w-0 text-xs">
+                      <span className="font-medium text-ink-900">{formatRupiah(p.jumlah)}</span>
+                      <span className="text-ink-400"> · {fmtDMY(p.tanggal_bayar)}</span>
+                      {p.keterangan && <span className="text-ink-400"> · {p.keterangan}</span>}
+                      {p.dicatat_oleh?.name && <span className="text-ink-300"> · dicatat {p.dicatat_oleh.name}</span>}
+                    </div>
+                    <button
+                      onClick={() => hapusPembayaran(type, item, p.id)}
+                      disabled={deletingPembayaranId === p.id}
+                      title="Hapus baris ini (salah input)"
+                      className="shrink-0 text-ink-300 hover:text-honey-700 disabled:opacity-40"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         )}
       </li>
@@ -237,7 +330,7 @@ export default function StudentSppPanel({ student, onClose, onPaid, showSpp = tr
         <p className="text-center text-ink-300 py-6 text-sm">Memuat riwayat tagihan...</p>
       ) : (
         <>
-          {showSpp && (
+          {showSpp && showBayarDimuka && (
             <div className="mb-4 pb-4 border-b border-line-200 flex items-center justify-between gap-3">
               <div className="flex items-center gap-2.5 min-w-0">
                 <CalendarPlus className="w-4 h-4 text-ink-400 shrink-0" />

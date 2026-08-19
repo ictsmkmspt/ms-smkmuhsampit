@@ -37,7 +37,7 @@ class LaporanController extends Controller
             ->get()
             ->map(fn ($p) => [
                 'id' => $p->id,
-                'tanggal_bayar' => $p->tanggal_bayar,
+                'tanggal_bayar' => $p->tanggal_bayar->format('Y-m-d'),
                 'jumlah_dibayar' => $p->jumlah,
                 'keterangan' => $p->keterangan,
                 'student' => $p->spp->student,
@@ -52,7 +52,7 @@ class LaporanController extends Controller
             ->get()
             ->map(fn ($p) => [
                 'id' => $p->id,
-                'tanggal_bayar' => $p->tanggal_bayar,
+                'tanggal_bayar' => $p->tanggal_bayar->format('Y-m-d'),
                 'jumlah_dibayar' => $p->jumlah,
                 'keterangan' => $p->keterangan,
                 'student' => $p->tagihanLain->student,

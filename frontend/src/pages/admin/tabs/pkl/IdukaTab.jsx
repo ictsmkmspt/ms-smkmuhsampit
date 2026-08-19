@@ -12,7 +12,7 @@ const emptyForm = {
   latitude: '', longitude: '', radius_meter: '100',
 };
 
-export default function DudiTab() {
+export default function IdukaTab() {
   const { user } = useAuth();
   // Waka Kurikulum cuma boleh lihat daftar IDUKA (dipakai buat pilih IDUKA
   // di form Penempatan PKL) — kelola IDUKA (tambah/edit/hapus/reset
@@ -37,7 +37,7 @@ export default function DudiTab() {
 
   const { page, setPage, totalPages, paginated: listHalaman } = usePagination(list, 30);
 
-  const load = () => api.get('/dudi').then((res) => setList(res.data));
+  const load = () => api.get('/iduka').then((res) => setList(res.data));
   useEffect(() => { load(); }, []);
 
   const ambilLokasi = (onDone) => {
@@ -65,7 +65,7 @@ export default function DudiTab() {
     setLoading(true);
     try {
       // Nama akun login dipakai dari "Nama Instruktur" — tidak perlu diketik terpisah lagi.
-      await api.post('/dudi', { ...form, name: form.penanggung_jawab });
+      await api.post('/iduka', { ...form, name: form.penanggung_jawab });
       setForm(emptyForm);
       setShowForm(false);
       load();
@@ -99,7 +99,7 @@ export default function DudiTab() {
   const handleSaveEdit = async (id) => {
     setSaving(true);
     try {
-      await api.put(`/dudi/${id}`, editData);
+      await api.put(`/iduka/${id}`, editData);
       setEditId(null);
       load();
     } catch (err) {
@@ -112,7 +112,7 @@ export default function DudiTab() {
   const handleDelete = async (d) => {
     if (!confirm(`Hapus akun IDUKA "${d.nama_perusahaan}"? Penempatan PKL yang terhubung ke IDUKA ini juga akan terhapus.`)) return;
     try {
-      await api.delete(`/dudi/${d.id}`);
+      await api.delete(`/iduka/${d.id}`);
       load();
     } catch (err) {
       alert(err.response?.data?.message || 'Gagal menghapus.');
@@ -122,7 +122,7 @@ export default function DudiTab() {
   const handleResetPassword = async (d) => {
     if (!confirm(`Reset password akun IDUKA "${d.nama_perusahaan}" ke default (123456)?`)) return;
     try {
-      const res = await api.put(`/dudi/${d.id}/reset-password`);
+      const res = await api.put(`/iduka/${d.id}/reset-password`);
       alert(res.data.message);
     } catch (err) {
       alert(err.response?.data?.message || 'Gagal mereset password.');
@@ -130,7 +130,7 @@ export default function DudiTab() {
   };
 
   const handleDownloadTemplate = async () => {
-    const res = await api.get('/dudi/import/template', { responseType: 'blob' });
+    const res = await api.get('/iduka/import/template', { responseType: 'blob' });
     const url = window.URL.createObjectURL(new Blob([res.data]));
     const link = document.createElement('a');
     link.href = url;
@@ -154,7 +154,7 @@ export default function DudiTab() {
     formData.append('file', file);
 
     try {
-      const res = await api.post('/dudi/import', formData, {
+      const res = await api.post('/iduka/import', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       setImportResult(res.data);

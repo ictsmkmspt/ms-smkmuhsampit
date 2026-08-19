@@ -41,9 +41,9 @@ class User extends Authenticatable
         return $this->hasOne(Teacher::class);
     }
 
-    public function dudi()
+    public function iduka()
     {
-        return $this->hasOne(Dudi::class);
+        return $this->hasOne(Iduka::class);
     }
 
     /**

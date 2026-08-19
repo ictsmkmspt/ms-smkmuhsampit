@@ -2,19 +2,19 @@ import { useEffect, useRef, useState } from 'react';
 import { LogOut, Building2, ClipboardCheck, NotebookPen, ChevronDown, UserCog, PenTool, Star } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api/axios';
-import DudiAbsensiTab from './tabs/DudiAbsensiTab';
-import DudiJurnalPembimbinganTab from './tabs/DudiJurnalPembimbinganTab';
-import DudiPenilaianTab from './tabs/DudiPenilaianTab';
+import IdukaAbsensiTab from './tabs/IdukaAbsensiTab';
+import IdukaJurnalPembimbinganTab from './tabs/IdukaJurnalPembimbinganTab';
+import IdukaPenilaianTab from './tabs/IdukaPenilaianTab';
 import TandaTanganModal from '../../components/TandaTanganModal';
-import DudiProfileModal from '../../components/DudiProfileModal';
+import IdukaProfileModal from '../../components/IdukaProfileModal';
 
 const TABS = [
-  { key: 'absensi', label: 'Absensi', icon: ClipboardCheck, component: DudiAbsensiTab },
-  { key: 'pembimbingan', label: 'Jurnal Pembimbing', icon: NotebookPen, component: DudiJurnalPembimbinganTab },
-  { key: 'penilaian', label: 'Penilaian', icon: Star, component: DudiPenilaianTab },
+  { key: 'absensi', label: 'Absensi', icon: ClipboardCheck, component: IdukaAbsensiTab },
+  { key: 'pembimbingan', label: 'Jurnal Pembimbing', icon: NotebookPen, component: IdukaJurnalPembimbinganTab },
+  { key: 'penilaian', label: 'Penilaian', icon: Star, component: IdukaPenilaianTab },
 ];
 
-export default function DudiDashboard() {
+export default function IdukaDashboard() {
   const { user, logout } = useAuth();
   const [profile, setProfile] = useState(null);
   const [activeTab, setActiveTab] = useState('absensi');
@@ -24,7 +24,7 @@ export default function DudiDashboard() {
   const [showTandaTangan, setShowTandaTangan] = useState(false);
   const menuRef = useRef(null);
 
-  const loadProfile = () => api.get('/my-dudi-profile').then((res) => setProfile(res.data));
+  const loadProfile = () => api.get('/my-iduka-profile').then((res) => setProfile(res.data));
   useEffect(() => { loadProfile(); }, []);
 
   // Wajib punya tanda tangan sebelum bisa pakai aplikasi — begitu profil
@@ -126,8 +126,8 @@ export default function DudiDashboard() {
       </div>
 
       {showEditProfil && (
-        <DudiProfileModal
-          dudi={profile}
+        <IdukaProfileModal
+          iduka={profile}
           onClose={() => setShowEditProfil(false)}
           onSaved={(updated) => setProfile(updated)}
         />
@@ -135,7 +135,7 @@ export default function DudiDashboard() {
 
       {(showTandaTangan || wajibIsiTandaTangan) && (
         <TandaTanganModal
-          dudi={profile}
+          iduka={profile}
           onClose={() => setShowTandaTangan(false)}
           onSaved={(updated) => setProfile(updated)}
           forced={wajibIsiTandaTangan}

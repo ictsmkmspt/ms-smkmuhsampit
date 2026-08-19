@@ -118,12 +118,12 @@ export default function PrintPklJurnalKegiatan() {
           <tr>
             <td className="pr-3 py-0.5 align-top">Nama Iduka Tempat PKL</td>
             <td className="pr-2 py-0.5 align-top">:</td>
-            <td className="py-0.5">{placement.dudi?.nama_perusahaan}</td>
+            <td className="py-0.5">{placement.iduka?.nama_perusahaan}</td>
           </tr>
           <tr>
             <td className="pr-3 py-0.5 align-top">Nama Instruktur</td>
             <td className="pr-2 py-0.5 align-top">:</td>
-            <td className="py-0.5">{placement.dudi?.penanggung_jawab || '-'}</td>
+            <td className="py-0.5">{placement.iduka?.penanggung_jawab || '-'}</td>
           </tr>
           <tr>
             <td className="pr-3 py-0.5 align-top">Nama Guru Pembimbing</td>

@@ -87,7 +87,7 @@ export default function PklJournalModal({ placement, onClose, canIsiCatatan = fa
         <div className="flex items-start justify-between p-5 border-b border-line-200">
           <div>
             <h3 className="font-display font-semibold text-ink-900">{placement.student?.user?.name}</h3>
-            <p className="text-xs text-ink-500 mt-0.5">Jurnal Kegiatan · {placement.dudi?.nama_perusahaan || '-'}</p>
+            <p className="text-xs text-ink-500 mt-0.5">Jurnal Kegiatan · {placement.iduka?.nama_perusahaan || '-'}</p>
           </div>
           <button onClick={onClose} className="text-ink-300 hover:text-ink-600">
             <X className="w-5 h-5" />

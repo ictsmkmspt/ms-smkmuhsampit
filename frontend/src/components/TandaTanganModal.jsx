@@ -3,12 +3,12 @@ import { X, Eraser, Save } from 'lucide-react';
 import api from '../api/axios';
 
 /**
- * Modal "Tanda Tangan" untuk DUDI — digambar langsung di kanvas pakai
+ * Modal "Tanda Tangan" untuk IDUKA — digambar langsung di kanvas pakai
  * mouse/jari, bukan upload file. Hasil kanvas diekspor jadi PNG transparan
  * lalu dikirim ke server persis seperti file upload biasa. Data profil
- * (nama instruktur, no HP, password) punya menu terpisah (DudiProfileModal).
+ * (nama instruktur, no HP, password) punya menu terpisah (IdukaProfileModal).
  */
-export default function TandaTanganModal({ dudi, onClose, onSaved, forced = false }) {
+export default function TandaTanganModal({ iduka, onClose, onSaved, forced = false }) {
   const canvasRef = useRef(null);
   const drawingRef = useRef(false);
   const lastPointRef = useRef(null);
@@ -83,8 +83,8 @@ export default function TandaTanganModal({ dudi, onClose, onSaved, forced = fals
       try {
         const formData = new FormData();
         formData.append('tanda_tangan', blob, 'tanda-tangan.png');
-        const res = await api.post('/dudi/tanda-tangan', formData);
-        onSaved?.(res.data.dudi);
+        const res = await api.post('/iduka/tanda-tangan', formData);
+        onSaved?.(res.data.iduka);
         onClose();
       } catch (err) {
         setError(err.response?.data?.message || 'Gagal menyimpan tanda tangan.');
@@ -115,17 +115,17 @@ export default function TandaTanganModal({ dudi, onClose, onSaved, forced = fals
         )}
 
         <div className="p-5">
-          {dudi?.tanda_tangan_url && (
+          {iduka?.tanda_tangan_url && (
             <div className="mb-4">
               <p className="text-xs font-medium text-ink-500 mb-2">Tanda tangan tersimpan saat ini</p>
               <div className="border border-line-200 rounded-lg bg-mist-50 flex items-center justify-center p-3">
-                <img src={dudi.tanda_tangan_url} alt="Tanda tangan tersimpan" className="h-16 object-contain" />
+                <img src={iduka.tanda_tangan_url} alt="Tanda tangan tersimpan" className="h-16 object-contain" />
               </div>
             </div>
           )}
 
           <p className="text-xs font-medium text-ink-500 mb-2">
-            {dudi?.tanda_tangan_url ? 'Gambar tanda tangan baru (menggantikan yang lama)' : 'Gambar tanda tangan di sini'}
+            {iduka?.tanda_tangan_url ? 'Gambar tanda tangan baru (menggantikan yang lama)' : 'Gambar tanda tangan di sini'}
           </p>
 
           {error && <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2 mb-3">{error}</p>}

@@ -12,6 +12,7 @@ const ROLE_LABEL = {
   waka_kurikulum: 'Waka Kurikulum',
   waka_humas: 'Waka Humas',
   waka_sarpras: 'Waka Sarpras',
+  kepala_sekolah: 'Kepala Sekolah',
 };
 
 export default function AdminAccountsTab() {
@@ -117,6 +118,7 @@ export default function AdminAccountsTab() {
               <option value="waka_kurikulum">Waka Kurikulum</option>
               <option value="waka_humas">Waka Humas</option>
               <option value="waka_sarpras">Waka Sarpras</option>
+              <option value="kepala_sekolah">Kepala Sekolah</option>
               <option value="admin">Super Admin</option>
             </select>
             <input placeholder="Email" type="email" value={form.email} onChange={(e) => { emailManual.current = true; setForm({ ...form, email: e.target.value }); }} className="field-input col-span-2" required autoComplete="off" />
@@ -163,6 +165,7 @@ export default function AdminAccountsTab() {
                         <option value="waka_kurikulum">Waka Kurikulum</option>
                         <option value="waka_humas">Waka Humas</option>
                         <option value="waka_sarpras">Waka Sarpras</option>
+                        <option value="kepala_sekolah">Kepala Sekolah</option>
                         <option value="admin">Super Admin</option>
                       </select>
                       <input value={editData.email} onChange={(e) => setEditData({ ...editData, email: e.target.value })} className="field-input py-1.5 text-sm col-span-2" placeholder="Email" type="email" />

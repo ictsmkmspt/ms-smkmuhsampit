@@ -12,8 +12,9 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import GuruDashboard from './pages/guru/GuruDashboard';
 import SiswaDashboard from './pages/siswa/SiswaDashboard';
 import ParentDashboard from './pages/wali/ParentDashboard';
-import DudiDashboard from './pages/dudi/DudiDashboard';
+import IdukaDashboard from './pages/iduka/IdukaDashboard';
 import TuDashboard from './pages/tu/TuDashboard';
+import KepalaSekolahDashboard from './pages/kepala-sekolah/KepalaSekolahDashboard';
 import RoomStaffDashboard from './pages/sarpras-staff/RoomStaffDashboard';
 import BkDashboard from './pages/bk/BkDashboard';
 import PerpustakaanStaffDashboard from './pages/perpustakaan-staff/PerpustakaanStaffDashboard';
@@ -23,6 +24,9 @@ import PrintPklJurnalKegiatan from './pages/print/PrintPklJurnalKegiatan';
 import PrintPklPembimbingan from './pages/print/PrintPklPembimbingan';
 import PrintSppNota from './pages/print/PrintSppNota';
 import PrintTagihanLainNota from './pages/print/PrintTagihanLainNota';
+import PrintTagihanBelumBayar from './pages/print/PrintTagihanBelumBayar';
+import PrintLaporanTunggakan from './pages/print/PrintLaporanTunggakan';
+import PrintLaporanTunggakanAlumni from './pages/print/PrintLaporanTunggakanAlumni';
 import PrintKalenderAkademik from './pages/print/PrintKalenderAkademik';
 import PrintAssetLabels from './pages/print/PrintAssetLabels';
 import PrintBukuLabels from './pages/print/PrintBukuLabels';
@@ -87,15 +91,15 @@ export default function App() {
             } />
 
             <Route path="/print/pkl-jurnal" element={
-              <ProtectedRoute allowedRoles={['admin', 'guru', 'dudi', 'siswa']}><PrintPklJurnal /></ProtectedRoute>
+              <ProtectedRoute allowedRoles={['admin', 'guru', 'iduka', 'siswa']}><PrintPklJurnal /></ProtectedRoute>
             } />
 
             <Route path="/print/pkl-jurnal-kegiatan" element={
-              <ProtectedRoute allowedRoles={['admin', 'guru', 'dudi', 'siswa']}><PrintPklJurnalKegiatan /></ProtectedRoute>
+              <ProtectedRoute allowedRoles={['admin', 'guru', 'iduka', 'siswa']}><PrintPklJurnalKegiatan /></ProtectedRoute>
             } />
 
             <Route path="/print/pkl-pembimbingan" element={
-              <ProtectedRoute allowedRoles={['admin', 'guru', 'dudi']}><PrintPklPembimbingan /></ProtectedRoute>
+              <ProtectedRoute allowedRoles={['admin', 'guru', 'iduka']}><PrintPklPembimbingan /></ProtectedRoute>
             } />
 
             <Route path="/print/spp-nota" element={
@@ -104,6 +108,18 @@ export default function App() {
 
             <Route path="/print/tagihan-lain-nota" element={
               <ProtectedRoute allowedRoles={['tu']}><PrintTagihanLainNota /></ProtectedRoute>
+            } />
+
+            <Route path="/print/tagihan-belum-bayar" element={
+              <ProtectedRoute allowedRoles={['tu']}><PrintTagihanBelumBayar /></ProtectedRoute>
+            } />
+
+            <Route path="/print/laporan-tunggakan" element={
+              <ProtectedRoute allowedRoles={['tu']}><PrintLaporanTunggakan /></ProtectedRoute>
+            } />
+
+            <Route path="/print/laporan-tunggakan-alumni" element={
+              <ProtectedRoute allowedRoles={['tu']}><PrintLaporanTunggakanAlumni /></ProtectedRoute>
             } />
 
             <Route path="/print/kalender-akademik" element={
@@ -123,11 +139,11 @@ export default function App() {
             } />
 
             <Route path="/print/buku-induk/:id" element={
-              <ProtectedRoute allowedRoles={['admin', 'waka_kesiswaan']}><PrintBukuInduk /></ProtectedRoute>
+              <ProtectedRoute allowedRoles={['admin', 'waka_kesiswaan', 'tu']}><PrintBukuInduk /></ProtectedRoute>
             } />
 
             <Route path="/print/penilaian-pkl/:id" element={
-              <ProtectedRoute allowedRoles={['admin', 'guru', 'dudi']}><PrintPenilaianPkl /></ProtectedRoute>
+              <ProtectedRoute allowedRoles={['admin', 'guru', 'iduka']}><PrintPenilaianPkl /></ProtectedRoute>
             } />
 
             <Route path="/admin/*" element={
@@ -162,8 +178,8 @@ export default function App() {
               <ProtectedRoute allowedRoles={['wali']}><ParentDashboard /></ProtectedRoute>
             } />
 
-            <Route path="/dudi/*" element={
-              <ProtectedRoute allowedRoles={['dudi']}><DudiDashboard /></ProtectedRoute>
+            <Route path="/iduka/*" element={
+              <ProtectedRoute allowedRoles={['iduka']}><IdukaDashboard /></ProtectedRoute>
             } />
 
             <Route path="/tu/*" element={
@@ -176,6 +192,10 @@ export default function App() {
 
             <Route path="/bk/*" element={
               <ProtectedRoute allowedRoles={['bk']}><BkDashboard /></ProtectedRoute>
+            } />
+
+            <Route path="/kepala-sekolah/*" element={
+              <ProtectedRoute allowedRoles={['kepala_sekolah']}><KepalaSekolahDashboard /></ProtectedRoute>
             } />
 
             <Route path="/perpustakaan-staff/*" element={

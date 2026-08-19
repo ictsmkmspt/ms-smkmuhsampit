@@ -32,7 +32,7 @@ class LaporanKeuanganExport implements FromCollection, WithHeadings, WithMapping
             ->whereBetween('tanggal_bayar', [$this->start, $this->end])
             ->get()
             ->map(fn ($p) => [
-                'tanggal' => $p->tanggal_bayar,
+                'tanggal' => $p->tanggal_bayar->format('d-m-Y'),
                 'jenis' => 'SPP',
                 'keterangan' => 'SPP ' . $this->namaBulan($p->spp->bulan) . ' ' . $p->spp->tahun,
                 'student' => $p->spp->student,
@@ -43,7 +43,7 @@ class LaporanKeuanganExport implements FromCollection, WithHeadings, WithMapping
             ->whereBetween('tanggal_bayar', [$this->start, $this->end])
             ->get()
             ->map(fn ($p) => [
-                'tanggal' => $p->tanggal_bayar,
+                'tanggal' => $p->tanggal_bayar->format('d-m-Y'),
                 'jenis' => 'Tagihan Lain',
                 'keterangan' => $p->tagihanLain->nama_tagihan,
                 'student' => $p->tagihanLain->student,

@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Search, ChevronLeft, ChevronRight, Undo2, Wallet, CalendarDays } from 'lucide-react';
+import { Fragment, useEffect, useState } from 'react';
+import { Search, ChevronLeft, ChevronRight, Undo2, Wallet, CalendarDays, Printer, Trash2, History } from 'lucide-react';
 import api from '../../../../api/axios';
 import { BULAN, formatRupiah, Avatar } from '../../shared';
 import TruncateText from '../../../../components/TruncateText';
@@ -40,6 +40,11 @@ export default function LaporanPeroranganSection() {
   const [partialTarget, setPartialTarget] = useState(null); // `${type}-${id}` yang lagi buka form bayar sebagian
   const [partialAmount, setPartialAmount] = useState('');
   const [payingPartial, setPayingPartial] = useState(false);
+
+  const [riwayatTarget, setRiwayatTarget] = useState(null); // `${type}-${id}` yang riwayat cicilannya lagi dibuka
+  const [riwayatData, setRiwayatData] = useState([]);
+  const [loadingRiwayat, setLoadingRiwayat] = useState(false);
+  const [deletingPembayaranId, setDeletingPembayaranId] = useState(null);
 
   useEffect(() => {
     api.get('/classes').then((res) => setClasses(res.data));
@@ -137,17 +142,70 @@ export default function LaporanPeroranganSection() {
     }
   };
 
+  // Riwayat cicilan 1 tagihan — dipakai TU untuk koreksi kalau ada baris
+  // "Bayar Sebagian" yang salah input jumlahnya (lihat hapusPembayaran()).
+  const toggleRiwayat = async (type, item) => {
+    const key = `${type}-${item.id}`;
+    if (riwayatTarget === key) {
+      setRiwayatTarget(null);
+      return;
+    }
+    setRiwayatTarget(key);
+    setLoadingRiwayat(true);
+    try {
+      const res = await api.get(`${endpointFor(type, item.id)}/pembayaran`);
+      setRiwayatData(res.data);
+    } catch (err) {
+      alert(err.response?.data?.message || 'Gagal memuat riwayat pembayaran.');
+      setRiwayatTarget(null);
+    } finally {
+      setLoadingRiwayat(false);
+    }
+  };
+
+  const hapusPembayaran = async (type, item, pembayaranId) => {
+    if (!confirm('Hapus baris cicilan ini? Nominal terbayar & status tagihan akan dihitung ulang otomatis.')) return;
+    setDeletingPembayaranId(pembayaranId);
+    try {
+      await api.delete(`${endpointFor(type, item.id)}/pembayaran/${pembayaranId}`);
+      setRiwayatData((prev) => prev.filter((p) => p.id !== pembayaranId));
+      reloadDetail();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Gagal menghapus baris cicilan.');
+    } finally {
+      setDeletingPembayaranId(null);
+    }
+  };
+
+  const riwayatButton = (type, item) => {
+    const key = `${type}-${item.id}`;
+    return (
+      <button
+        onClick={() => toggleRiwayat(type, item)}
+        title="Riwayat cicilan (buat koreksi salah input)"
+        className={`shrink-0 p-1 rounded-lg border transition ${
+          riwayatTarget === key ? 'text-brand-600 border-brand-200 bg-brand-50' : 'text-ink-400 border-line-200 hover:text-brand-600'
+        }`}
+      >
+        <History className="w-3.5 h-3.5" />
+      </button>
+    );
+  };
+
   const renderAksi = (type, item) => {
     const key = `${type}-${item.id}`;
     if (item.status === 'lunas') {
       return (
-        <button
-          onClick={() => batalLunas(type, item)}
-          disabled={payingId === key}
-          className="text-xs font-medium text-ink-500 hover:text-honey-700 disabled:opacity-60 border border-line-200 rounded-lg px-2 py-1"
-        >
-          {payingId === key ? '...' : 'Batal Lunas'}
-        </button>
+        <div className="flex items-center gap-1.5">
+          <button
+            onClick={() => batalLunas(type, item)}
+            disabled={payingId === key}
+            className="text-xs font-medium text-ink-500 hover:text-honey-700 disabled:opacity-60 border border-line-200 rounded-lg px-2 py-1"
+          >
+            {payingId === key ? '...' : 'Batal Lunas'}
+          </button>
+          {riwayatButton(type, item)}
+        </div>
       );
     }
     if (partialTarget === key) {
@@ -180,7 +238,7 @@ export default function LaporanPeroranganSection() {
           disabled={payingId === key}
           className="text-xs font-medium text-brand-700 bg-brand-50 hover:bg-brand-100 disabled:opacity-60 rounded-lg px-2 py-1"
         >
-          Bayar Sebagian
+          Cicil
         </button>
         <button
           onClick={() => bayarLunas(type, item)}
@@ -189,7 +247,46 @@ export default function LaporanPeroranganSection() {
         >
           {payingId === key ? '...' : 'Lunas'}
         </button>
+        {riwayatButton(type, item)}
       </div>
+    );
+  };
+
+  const renderRiwayatRow = (type, item, colSpan) => {
+    const key = `${type}-${item.id}`;
+    if (riwayatTarget !== key) return null;
+    return (
+      <tr className="bg-mist-50">
+        <td colSpan={colSpan} className="py-3 px-2">
+          <p className="text-xs font-medium text-ink-500 mb-2">Riwayat Cicilan — {labelFor(type, item)}</p>
+          {loadingRiwayat ? (
+            <p className="text-xs text-ink-400 text-center py-3">Memuat...</p>
+          ) : riwayatData.length === 0 ? (
+            <p className="text-xs text-ink-400 text-center py-3">Belum ada baris cicilan tercatat.</p>
+          ) : (
+            <ul className="divide-y divide-line-200">
+              {riwayatData.map((p) => (
+                <li key={p.id} className="flex items-center justify-between gap-3 py-2">
+                  <div className="min-w-0 text-xs">
+                    <span className="font-medium text-ink-900">{formatRupiah(p.jumlah)}</span>
+                    <span className="text-ink-400"> · {fmtDMY(p.tanggal_bayar)}</span>
+                    {p.keterangan && <span className="text-ink-400"> · {p.keterangan}</span>}
+                    {p.dicatat_oleh?.name && <span className="text-ink-300"> · dicatat {p.dicatat_oleh.name}</span>}
+                  </div>
+                  <button
+                    onClick={() => hapusPembayaran(type, item, p.id)}
+                    disabled={deletingPembayaranId === p.id}
+                    title="Hapus baris ini (salah input)"
+                    className="shrink-0 text-ink-300 hover:text-honey-700 disabled:opacity-40"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </td>
+      </tr>
     );
   };
 
@@ -214,12 +311,20 @@ export default function LaporanPeroranganSection() {
                 <p className="text-xs text-ink-500">{selectedStudent.class_room?.name || '-'} · NIS {selectedStudent.nis}</p>
               </div>
             </div>
-            <button
-              onClick={backToList}
-              className="shrink-0 flex items-center gap-1.5 text-xs font-medium text-ink-500 hover:text-ink-700 border border-line-200 rounded-lg px-3 py-1.5"
-            >
-              <Undo2 className="w-3.5 h-3.5" /> Kembali ke Daftar
-            </button>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                onClick={() => window.open(`/print/tagihan-belum-bayar?student_id=${selectedStudent.id}`, '_blank')}
+                className="flex items-center gap-1.5 text-xs font-medium text-ink-700 bg-mist-50 hover:bg-mist-100 border border-line-200 rounded-lg px-3 py-1.5"
+              >
+                <Printer className="w-3.5 h-3.5" /> Cetak Tagihan Belum Bayar
+              </button>
+              <button
+                onClick={backToList}
+                className="flex items-center gap-1.5 text-xs font-medium text-ink-500 hover:text-ink-700 border border-line-200 rounded-lg px-3 py-1.5"
+              >
+                <Undo2 className="w-3.5 h-3.5" /> Kembali ke Daftar
+              </button>
+            </div>
           </div>
 
           {loadingDetail ? (
@@ -256,7 +361,8 @@ export default function LaporanPeroranganSection() {
                   </thead>
                   <tbody>
                     {sppPaginated.map((s) => (
-                      <tr key={s.id} className="border-t border-line-200">
+                      <Fragment key={s.id}>
+                      <tr className="border-t border-line-200">
                         <td className="py-2.5 text-ink-900 whitespace-nowrap px-2">{BULAN[s.bulan - 1]} {s.tahun}</td>
                         <td className="text-right text-ink-700 whitespace-nowrap px-2">
                           {formatRupiah(s.nominal)}
@@ -266,6 +372,8 @@ export default function LaporanPeroranganSection() {
                         <td className="text-ink-500 text-xs whitespace-nowrap px-2">{fmtDMY(s.tanggal_bayar)}</td>
                         <td className="whitespace-nowrap px-2">{renderAksi('spp', s)}</td>
                       </tr>
+                      {renderRiwayatRow('spp', s, 5)}
+                      </Fragment>
                     ))}
                   </tbody>
                 </table>
@@ -318,7 +426,8 @@ export default function LaporanPeroranganSection() {
                   </thead>
                   <tbody>
                     {lainPaginated.map((t) => (
-                      <tr key={t.id} className="border-t border-line-200">
+                      <Fragment key={t.id}>
+                      <tr className="border-t border-line-200">
                         <td className="py-2.5 text-ink-900 whitespace-nowrap px-2"><TruncateText text={t.nama_tagihan} maxWidth="12rem" /></td>
                         <td className="text-right text-ink-700 whitespace-nowrap px-2">
                           {formatRupiah(t.nominal)}
@@ -329,6 +438,8 @@ export default function LaporanPeroranganSection() {
                         <td className="text-ink-500 text-xs whitespace-nowrap px-2"><TruncateText text={t.keterangan || '-'} maxWidth="10rem" /></td>
                         <td className="whitespace-nowrap px-2">{renderAksi('lain', t)}</td>
                       </tr>
+                      {renderRiwayatRow('lain', t, 6)}
+                      </Fragment>
                     ))}
                   </tbody>
                 </table>

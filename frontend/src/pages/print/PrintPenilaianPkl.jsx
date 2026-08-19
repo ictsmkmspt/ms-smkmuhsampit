@@ -19,15 +19,15 @@ const skorAwal = { skor_disiplin: 3, skor_sikap: 3, skor_komunikasi: 3, skor_ini
 const kompetensiAwal = [{ nama_kompetensi: '', skor: 3 }];
 
 // Halaman "Penilaian PKL" — detail nilai 1 siswa PKL, dibuka lewat menu
-// BARU (window.open, lihat PenilaianIdukaTab.jsx & DudiPenilaianTab.jsx),
+// BARU (window.open, lihat PenilaianIdukaTab.jsx & IdukaPenilaianTab.jsx),
 // BUKAN modal/popup di dalam dashboard, meniru pola PrintBukuInduk.jsx.
 // Dipakai 2 peran: guru/admin cuma BACA (lihat hasil penilaian IDUKA),
-// DUDI bisa ISI/UBAH/HAPUS nilai langsung di halaman ini.
+// IDUKA bisa ISI/UBAH/HAPUS nilai langsung di halaman ini.
 export default function PrintPenilaianPkl() {
   const { id } = useParams();
   const { user } = useAuth();
   const { profile } = useSchoolProfile();
-  const canIsi = user.role === 'dudi';
+  const canIsi = user.role === 'iduka';
 
   const [placement, setPlacement] = useState(null);
   const [penilaian, setPenilaian] = useState(undefined);
@@ -271,7 +271,7 @@ export default function PrintPenilaianPkl() {
                 <tbody>
                   <tr><td className="lembar-label">Nama Siswa</td><td>{placement.student?.user?.name}</td></tr>
                   <tr><td className="lembar-label">Kelas</td><td>{placement.student?.class_room?.name || '-'}</td></tr>
-                  <tr><td className="lembar-label">Tempat PKL (IDUKA)</td><td>{placement.dudi?.nama_perusahaan || '-'}</td></tr>
+                  <tr><td className="lembar-label">Tempat PKL (IDUKA)</td><td>{placement.iduka?.nama_perusahaan || '-'}</td></tr>
                   <tr><td className="lembar-label">Guru Pembimbing</td><td>{placement.guru_pembimbing?.user?.name || '-'}</td></tr>
                 </tbody>
               </table>

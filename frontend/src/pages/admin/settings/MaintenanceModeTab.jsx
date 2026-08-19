@@ -36,7 +36,7 @@ export default function MaintenanceModeTab() {
       <div className="surface-card p-4 border-l-4 border-l-honey-400 flex gap-2">
         <AlertTriangle className="w-4 h-4 text-honey-600 shrink-0 mt-0.5" />
         <p className="text-sm text-ink-700">
-          Saat dinyalakan, <b>semua role selain admin</b> (guru, siswa, wali, TU, DUDI, staf ruang, dst) akan melihat
+          Saat dinyalakan, <b>semua role selain admin</b> (guru, siswa, wali, TU, IDUKA, staf ruang, dst) akan melihat
           halaman "Sedang Dalam Pemeliharaan" dan tidak bisa login sama sekali. Cuma akun admin yang tetap bisa masuk
           untuk kerja dan untuk mematikan mode ini lagi.
         </p>

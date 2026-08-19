@@ -28,11 +28,12 @@ export default function Login() {
       else if (user.role === 'waka_sarpras') navigate('/waka-sarpras');
       else if (user.role === 'guru') navigate('/guru');
       else if (user.role === 'wali') navigate('/wali');
-      else if (user.role === 'dudi') navigate('/dudi');
+      else if (user.role === 'iduka') navigate('/iduka');
       else if (user.role === 'tu') navigate('/tu');
       else if (user.role === 'teknisi' || user.role === 'kepala_bengkel') navigate('/staf-ruang');
       else if (user.role === 'bk') navigate('/bk');
       else if (user.role === 'pustakawan') navigate('/perpustakaan-staff');
+      else if (user.role === 'kepala_sekolah') navigate('/kepala-sekolah');
       else navigate('/siswa');
     } catch {
       setError('Email/No. HP atau password salah.');

@@ -143,7 +143,7 @@ export default function PrintPklJurnal() {
           <tr>
             <td className="pr-3 py-0.5 align-top">Tempat PKL/Nama Iduka</td>
             <td className="pr-2 py-0.5 align-top">:</td>
-            <td className="py-0.5">{placement.dudi?.nama_perusahaan}</td>
+            <td className="py-0.5">{placement.iduka?.nama_perusahaan}</td>
           </tr>
           <tr>
             <td className="pr-3 py-0.5 align-top">Bulan</td>
@@ -181,8 +181,8 @@ export default function PrintPklJurnal() {
               </td>
               <td className="border border-ink-400 px-2 py-1.5 text-center">
                 {r.row?.verified_at ? (
-                  r.row.verified_by?.dudi?.tanda_tangan_url ? (
-                    <img src={r.row.verified_by.dudi.tanda_tangan_url} alt="Tanda tangan" className="h-8 mx-auto object-contain" />
+                  r.row.verified_by?.iduka?.tanda_tangan_url ? (
+                    <img src={r.row.verified_by.iduka.tanda_tangan_url} alt="Tanda tangan" className="h-8 mx-auto object-contain" />
                   ) : '✓'
                 ) : ''}
               </td>

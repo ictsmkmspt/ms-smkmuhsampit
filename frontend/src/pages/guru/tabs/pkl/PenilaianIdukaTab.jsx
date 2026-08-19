@@ -33,7 +33,7 @@ export default function PenilaianIdukaTab() {
             >
               <div>
                 <p className="text-ink-900 font-medium">{p.student?.user?.name}</p>
-                <p className="text-xs text-ink-500">{p.dudi?.nama_perusahaan}</p>
+                <p className="text-xs text-ink-500">{p.iduka?.nama_perusahaan}</p>
               </div>
               {p.nilai_akhir != null ? (
                 <span className="flex items-center gap-1 text-xs font-medium text-brand-700">

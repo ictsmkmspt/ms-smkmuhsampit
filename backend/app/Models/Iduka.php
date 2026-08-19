@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Dudi extends Model
+class Iduka extends Model
 {
     protected $fillable = [
         'user_id', 'nama_perusahaan', 'alamat', 'penanggung_jawab',
@@ -19,7 +19,7 @@ class Dudi extends Model
     }
 
     /**
-     * URL relatif gambar tanda tangan (null kalau DUDI belum pernah unggah).
+     * URL relatif gambar tanda tangan (null kalau IDUKA belum pernah unggah).
      * Sengaja relatif (bukan URL lengkap ke backend) supaya lewat proxy HTTPS
      * Vite yang sama dengan /api — tidak diblokir browser karena mixed-content.
      */
@@ -29,7 +29,7 @@ class Dudi extends Model
     }
 
     /**
-     * Hitung jarak (meter) dari koordinat DUDI ini ke 1 titik koordinat lain,
+     * Hitung jarak (meter) dari koordinat IDUKA ini ke 1 titik koordinat lain,
      * pakai rumus Haversine (jarak garis lurus di permukaan bumi, mengikuti
      * lengkungan bumi — cukup akurat untuk jarak pendek seperti radius lokasi).
      */
@@ -50,7 +50,7 @@ class Dudi extends Model
     }
 
     /**
-     * True kalau 1 titik koordinat berada dalam radius yang diizinkan DUDI ini.
+     * True kalau 1 titik koordinat berada dalam radius yang diizinkan IDUKA ini.
      */
     public function dalamRadius(float $lat, float $lng): bool
     {

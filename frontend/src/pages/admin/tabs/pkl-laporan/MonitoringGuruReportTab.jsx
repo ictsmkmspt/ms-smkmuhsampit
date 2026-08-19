@@ -210,7 +210,7 @@ export default function MonitoringGuruReportTab() {
                   <tr key={j.id} className="border-t border-line-200">
                     <td className="py-2.5 text-ink-700 text-xs whitespace-nowrap px-2">{fmtDMY(j.date)}</td>
                     <td className="text-ink-900 font-medium whitespace-nowrap px-2"><TruncateText text={j.teacher?.user?.name} /></td>
-                    <td className="text-ink-700 whitespace-nowrap px-2"><TruncateText text={j.dudi?.nama_perusahaan} /></td>
+                    <td className="text-ink-700 whitespace-nowrap px-2"><TruncateText text={j.iduka?.nama_perusahaan} /></td>
                     <td className="text-ink-700 px-2"><TruncateText text={j.aktivitas} maxWidth="16rem" /></td>
                     <td className="text-ink-500 px-2"><TruncateText text={j.catatan || '-'} maxWidth="12rem" /></td>
                     <td className="whitespace-nowrap px-2">

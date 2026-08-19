@@ -7,16 +7,16 @@ import { useAuth } from '../../context/AuthContext';
 export default function PrintPklPembimbingan() {
   const { user } = useAuth();
   const [params] = useSearchParams();
-  const dudiId = params.get('dudi_id');
+  const idukaId = params.get('iduka_id');
   const entryId = params.get('entry_id');
-  const dudiNamaParam = params.get('dudi_nama');
+  const idukaNamaParam = params.get('iduka_nama');
 
   const [entries, setEntries] = useState([]);
   const [error, setError] = useState('');
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    api.get('/pkl-pembimbingan', { params: dudiId ? { dudi_id: dudiId } : {} })
+    api.get('/pkl-pembimbingan', { params: idukaId ? { iduka_id: idukaId } : {} })
       .then((res) => {
         let data = res.data;
         if (entryId) {
@@ -26,12 +26,12 @@ export default function PrintPklPembimbingan() {
         setLoaded(true);
       })
       .catch((err) => setError(err.response?.data?.message || 'Gagal memuat data.'));
-  }, [dudiId, entryId]);
+  }, [idukaId, entryId]);
 
   if (error) return <div className="p-8 text-center text-rose-600">{error}</div>;
   if (!loaded) return <div className="p-8 text-center text-ink-400">Memuat data...</div>;
 
-  const namaTempatPkl = entries[0]?.dudi?.nama_perusahaan || dudiNamaParam || '-';
+  const namaTempatPkl = entries[0]?.iduka?.nama_perusahaan || idukaNamaParam || '-';
 
   const namaPembimbing = entries.length > 0
     ? [...new Set(entries.map((e) => e.teacher?.user?.name).filter(Boolean))].join(', ') || '-'
@@ -105,8 +105,8 @@ export default function PrintPklPembimbingan() {
               <td className="border border-ink-400 px-2 py-6 align-top whitespace-pre-wrap">{e.catatan || ''}</td>
               <td className="border border-ink-400 px-2 py-6 text-center align-top">
                 {e.verified_at ? (
-                  e.verified_by?.dudi?.tanda_tangan_url ? (
-                    <img src={e.verified_by.dudi.tanda_tangan_url} alt="Tanda tangan" className="h-10 mx-auto object-contain" />
+                  e.verified_by?.iduka?.tanda_tangan_url ? (
+                    <img src={e.verified_by.iduka.tanda_tangan_url} alt="Tanda tangan" className="h-10 mx-auto object-contain" />
                   ) : '✓'
                 ) : ''}
               </td>

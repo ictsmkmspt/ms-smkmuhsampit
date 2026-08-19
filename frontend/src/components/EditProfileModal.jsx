@@ -13,15 +13,16 @@ const ROLE_LABEL = {
   guru: 'Guru',
   siswa: 'Siswa',
   wali: 'Wali Siswa',
-  dudi: 'IDUKA',
+  iduka: 'IDUKA',
   tu: 'Tata Usaha',
+  kepala_sekolah: 'Kepala Sekolah',
 };
 
 /**
  * Modal "Profil" generik — dipakai bareng Admin, Guru, Siswa, Wali, TU.
  * Sengaja cuma buat LIHAT data diri (tidak bisa diedit dari sini) + ganti
  * password. Perubahan nama/data lain (kalau perlu) tetap lewat admin.
- * DUDI punya versinya sendiri (DudiProfileModal + TandaTanganModal).
+ * IDUKA punya versinya sendiri (IdukaProfileModal + TandaTanganModal).
  */
 export default function EditProfileModal({ onClose }) {
   const { user } = useAuth();

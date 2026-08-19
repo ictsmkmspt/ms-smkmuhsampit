@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useState } from 'react';
-import { Search, Pencil, Check, X, RefreshCw, Trash2, Receipt, Info, CheckCircle, Printer } from 'lucide-react';
+import { Search, Pencil, Check, X, RefreshCw, Trash2, Receipt, Info, CheckCircle, Printer, History } from 'lucide-react';
 import api from '../../../api/axios';
 import { BULAN, formatRupiah, Avatar } from '../shared';
 import TruncateText from '../../../components/TruncateText';
@@ -32,6 +32,11 @@ export default function TagihanTab() {
   const [partialId, setPartialId] = useState(null);
   const [partialAmount, setPartialAmount] = useState('');
   const [payingPartial, setPayingPartial] = useState(false);
+
+  const [riwayatId, setRiwayatId] = useState(null);
+  const [riwayatData, setRiwayatData] = useState([]);
+  const [loadingRiwayat, setLoadingRiwayat] = useState(false);
+  const [deletingPembayaranId, setDeletingPembayaranId] = useState(null);
 
   const [feedback, setFeedback] = useState(null); // { type: 'success' | 'error', message }
 
@@ -148,6 +153,40 @@ export default function TagihanTab() {
     }
   };
 
+  // Riwayat cicilan 1 tagihan — dipakai TU untuk koreksi kalau ada baris
+  // "Bayar Sebagian" yang salah input jumlahnya.
+  const toggleRiwayat = async (s) => {
+    if (riwayatId === s.id) {
+      setRiwayatId(null);
+      return;
+    }
+    setRiwayatId(s.id);
+    setLoadingRiwayat(true);
+    try {
+      const res = await api.get(`/spp/${s.id}/pembayaran`);
+      setRiwayatData(res.data);
+    } catch (err) {
+      notify('error', err.response?.data?.message || 'Gagal memuat riwayat pembayaran.');
+      setRiwayatId(null);
+    } finally {
+      setLoadingRiwayat(false);
+    }
+  };
+
+  const hapusPembayaran = async (s, pembayaranId) => {
+    if (!confirm('Hapus baris cicilan ini? Nominal terbayar & status tagihan akan dihitung ulang otomatis.')) return;
+    setDeletingPembayaranId(pembayaranId);
+    try {
+      const res = await api.delete(`/spp/${s.id}/pembayaran/${pembayaranId}`);
+      setSpps((prev) => prev.map((x) => (x.id === s.id ? res.data : x)));
+      setRiwayatData((prev) => prev.filter((p) => p.id !== pembayaranId));
+    } catch (err) {
+      notify('error', err.response?.data?.message || 'Gagal menghapus baris cicilan.');
+    } finally {
+      setDeletingPembayaranId(null);
+    }
+  };
+
   const toggleStatus = async (s) => {
     const next = s.status === 'lunas' ? 'belum_bayar' : 'lunas';
     if (next === 'belum_bayar' && !confirm(`Tandai SPP ${s.student?.user?.name} bulan ini jadi "Belum Bayar" lagi?`)) return;
@@ -155,7 +194,11 @@ export default function TagihanTab() {
     try {
       const res = await api.put(`/spp/${s.id}/status`, { status: next });
       setSpps((prev) => prev.map((x) => (x.id === s.id ? res.data : x)));
-      if (next === 'lunas') notify('success', `Pembayaran SPP ${s.student?.user?.name} tercatat lunas.`);
+      if (next === 'lunas') {
+        notify('success', `Pembayaran SPP ${s.student?.user?.name} tercatat lunas.`);
+      } else {
+        notify('success', `Status lunas SPP ${s.student?.user?.name} dibatalkan — sekarang "${res.data.status === 'sebagian' ? 'Sebagian' : 'Belum Bayar'}".`);
+      }
     } catch (err) {
       notify('error', err.response?.data?.message || 'Gagal mengubah status pembayaran.');
     } finally {
@@ -345,7 +388,7 @@ export default function TagihanTab() {
                           disabled={savingId === s.id}
                           className="text-xs font-medium text-brand-700 bg-brand-50 hover:bg-brand-100 disabled:opacity-40 rounded-lg px-3 py-1.5 transition"
                         >
-                          Bayar Sebagian
+                          Cicil
                         </button>
                       )}
                       <button
@@ -357,7 +400,7 @@ export default function TagihanTab() {
                             : 'text-white bg-[#15803D] border-transparent hover:bg-[#116530]'
                         }`}
                       >
-                        {s.status === 'lunas' ? 'Batalkan' : 'Tandai Lunas'}
+                        {s.status === 'lunas' ? 'Batalkan' : 'Lunas'}
                       </button>
                       {s.status === 'lunas' && (
                         <button
@@ -369,6 +412,15 @@ export default function TagihanTab() {
                         </button>
                       )}
                       <button
+                        onClick={() => toggleRiwayat(s)}
+                        title="Riwayat cicilan (buat koreksi salah input)"
+                        className={`shrink-0 p-1.5 rounded-lg border transition ${
+                          riwayatId === s.id ? 'text-brand-600 border-brand-200 bg-brand-50' : 'text-ink-400 border-line-200 hover:text-brand-600'
+                        }`}
+                      >
+                        <History className="w-4 h-4" />
+                      </button>
+                      <button
                         onClick={() => handleDelete(s)}
                         disabled={savingId === s.id}
                         title="Hapus tagihan ini"
@@ -379,6 +431,39 @@ export default function TagihanTab() {
                     </div>
                   </td>
                 </tr>
+                {riwayatId === s.id && (
+                  <tr className="bg-mist-50">
+                    <td colSpan="6" className="py-3 px-2">
+                      <p className="text-xs font-medium text-ink-500 mb-2">Riwayat Cicilan — SPP {s.student?.user?.name}</p>
+                      {loadingRiwayat ? (
+                        <p className="text-xs text-ink-400 text-center py-3">Memuat...</p>
+                      ) : riwayatData.length === 0 ? (
+                        <p className="text-xs text-ink-400 text-center py-3">Belum ada baris cicilan tercatat.</p>
+                      ) : (
+                        <ul className="divide-y divide-line-200">
+                          {riwayatData.map((p) => (
+                            <li key={p.id} className="flex items-center justify-between gap-3 py-2">
+                              <div className="min-w-0 text-xs">
+                                <span className="font-medium text-ink-900">{formatRupiah(p.jumlah)}</span>
+                                <span className="text-ink-400"> · {fmtDMY(p.tanggal_bayar)}</span>
+                                {p.keterangan && <span className="text-ink-400"> · {p.keterangan}</span>}
+                                {p.dicatat_oleh?.name && <span className="text-ink-300"> · dicatat {p.dicatat_oleh.name}</span>}
+                              </div>
+                              <button
+                                onClick={() => hapusPembayaran(s, p.id)}
+                                disabled={deletingPembayaranId === p.id}
+                                title="Hapus baris ini (salah input)"
+                                className="shrink-0 text-ink-300 hover:text-honey-700 disabled:opacity-40"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </td>
+                  </tr>
+                )}
                 {partialId === s.id && (
                   <tr className="bg-mist-50">
                     <td colSpan="6" className="py-2 px-2 whitespace-nowrap">

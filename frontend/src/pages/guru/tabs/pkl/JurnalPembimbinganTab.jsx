@@ -6,8 +6,8 @@ import { fmtDMY } from '../../../../utils/date';
 
 export default function JurnalPembimbinganTab() {
   const today = new Date().toISOString().slice(0, 10);
-  const [dudiOptions, setDudiOptions] = useState([]);
-  const [selectedDudi, setSelectedDudi] = useState('');
+  const [idukaOptions, setIdukaOptions] = useState([]);
+  const [selectedIduka, setSelectedIduka] = useState('');
   const [jadwalOptions, setJadwalOptions] = useState([]);
 
   const [entries, setEntries] = useState([]);
@@ -26,13 +26,13 @@ export default function JurnalPembimbinganTab() {
       const unik = [];
       const seen = new Set();
       res.data.forEach((p) => {
-        if (p.dudi && !seen.has(p.dudi.id)) {
-          seen.add(p.dudi.id);
-          unik.push(p.dudi);
+        if (p.iduka && !seen.has(p.iduka.id)) {
+          seen.add(p.iduka.id);
+          unik.push(p.iduka);
         }
       });
-      setDudiOptions(unik);
-      if (unik.length === 1) setSelectedDudi(String(unik[0].id));
+      setIdukaOptions(unik);
+      if (unik.length === 1) setSelectedIduka(String(unik[0].id));
     });
   }, []);
 
@@ -81,7 +81,7 @@ export default function JurnalPembimbinganTab() {
       if (editingId) {
         await api.put(`/pkl-pembimbingan/${editingId}`, { date: tanggal, aktivitas, catatan: catatan || null });
       } else {
-        await api.post('/pkl-pembimbingan', { dudi_id: selectedDudi, date: tanggal, aktivitas, catatan: catatan || null });
+        await api.post('/pkl-pembimbingan', { iduka_id: selectedIduka, date: tanggal, aktivitas, catatan: catatan || null });
       }
       tutupForm();
       loadEntries();
@@ -103,16 +103,16 @@ export default function JurnalPembimbinganTab() {
   };
 
   const handleCetak = () => {
-    if (!selectedDudi) return;
-    const dudi = dudiOptions.find((d) => String(d.id) === String(selectedDudi));
-    window.open(`/print/pkl-pembimbingan?dudi_id=${selectedDudi}&dudi_nama=${encodeURIComponent(dudi?.nama_perusahaan || '')}`, '_blank');
+    if (!selectedIduka) return;
+    const iduka = idukaOptions.find((d) => String(d.id) === String(selectedIduka));
+    window.open(`/print/pkl-pembimbingan?iduka_id=${selectedIduka}&iduka_nama=${encodeURIComponent(iduka?.nama_perusahaan || '')}`, '_blank');
   };
 
   const handleCetakEntry = (entryId) => {
     window.open(`/print/pkl-pembimbingan?entry_id=${entryId}`, '_blank');
   };
 
-  const filtered = selectedDudi ? entries.filter((e) => String(e.dudi_id) === String(selectedDudi)) : entries;
+  const filtered = selectedIduka ? entries.filter((e) => String(e.iduka_id) === String(selectedIduka)) : entries;
 
   return (
     <div className="space-y-6">
@@ -120,18 +120,18 @@ export default function JurnalPembimbinganTab() {
         <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
           <h2 className="font-display font-semibold text-ink-900">Jurnal Pembimbing PKL</h2>
           <select
-            value={selectedDudi}
-            onChange={(e) => setSelectedDudi(e.target.value)}
+            value={selectedIduka}
+            onChange={(e) => setSelectedIduka(e.target.value)}
             className="field-input text-sm text-ink-700 w-56"
           >
             <option value="">— Pilih IDUKA —</option>
-            {dudiOptions.map((d) => (
+            {idukaOptions.map((d) => (
               <option key={d.id} value={d.id}>{d.nama_perusahaan}</option>
             ))}
           </select>
         </div>
 
-        {!selectedDudi ? (
+        {!selectedIduka ? (
           <p className="text-sm text-ink-400 text-center py-6">Pilih IDUKA dulu untuk menambah atau melihat catatan bimbingan.</p>
         ) : (
           <>

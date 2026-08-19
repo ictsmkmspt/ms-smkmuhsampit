@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class PklPembimbinganJournal extends Model
 {
     protected $fillable = [
-        'teacher_id', 'dudi_id', 'date',
+        'teacher_id', 'iduka_id', 'date',
         'aktivitas', 'catatan', 'verified_by', 'verified_at',
     ];
 
@@ -16,9 +16,9 @@ class PklPembimbinganJournal extends Model
         return $this->belongsTo(Teacher::class);
     }
 
-    public function dudi()
+    public function iduka()
     {
-        return $this->belongsTo(Dudi::class);
+        return $this->belongsTo(Iduka::class);
     }
 
     public function verifiedBy()

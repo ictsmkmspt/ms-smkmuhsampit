@@ -26,8 +26,8 @@ export default function KegiatanSiswaReportTab() {
   const { isAktif: tahunAktif } = useTahunAjaran();
   const [innerTab, setInnerTab] = useState('absensi');
 
-  const [dudiList, setDudiList] = useState([]);
-  const [dudiId, setDudiId] = useState('');
+  const [idukaList, setIdukaList] = useState([]);
+  const [idukaId, setIdukaId] = useState('');
   const [status, setStatus] = useState('');
 
   const [absensi, setAbsensi] = useState([]);
@@ -37,13 +37,13 @@ export default function KegiatanSiswaReportTab() {
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    api.get('/dudi').then((res) => setDudiList(res.data));
+    api.get('/iduka').then((res) => setIdukaList(res.data));
   }, []);
 
   const loadAll = () => {
     setLoading(true);
     const params = { ...tahunParam };
-    if (dudiId) params.dudi_id = dudiId;
+    if (idukaId) params.iduka_id = idukaId;
     if (status) params.status = status;
 
     Promise.all([
@@ -77,9 +77,9 @@ export default function KegiatanSiswaReportTab() {
       <div className="surface-card p-5 flex flex-wrap gap-3 items-end">
         <div>
           <label className="block text-xs font-medium text-ink-500 mb-1">Penempatan IDUKA</label>
-          <select value={dudiId} onChange={(e) => setDudiId(e.target.value)} className="field-input text-ink-700 min-w-[12rem]">
+          <select value={idukaId} onChange={(e) => setIdukaId(e.target.value)} className="field-input text-ink-700 min-w-[12rem]">
             <option value="">Semua IDUKA</option>
-            {dudiList.map((d) => <option key={d.id} value={d.id}>{d.nama_perusahaan}</option>)}
+            {idukaList.map((d) => <option key={d.id} value={d.id}>{d.nama_perusahaan}</option>)}
           </select>
         </div>
         <div>
@@ -145,7 +145,7 @@ export default function KegiatanSiswaReportTab() {
                       <p className="text-ink-900 font-medium"><TruncateText text={p.student?.user?.name} /></p>
                       <p className="text-xs text-ink-500">{p.student?.class_room?.name || '-'}</p>
                     </td>
-                    <td className="text-ink-700 whitespace-nowrap px-2"><TruncateText text={p.dudi?.nama_perusahaan} /></td>
+                    <td className="text-ink-700 whitespace-nowrap px-2"><TruncateText text={p.iduka?.nama_perusahaan} /></td>
                     <td className="text-ink-700 whitespace-nowrap px-2"><TruncateText text={p.guru_pembimbing?.user?.name || '-'} /></td>
                     <td className="text-center whitespace-nowrap px-2"><span className="badge-soft badge-brand">{p.rekap_absensi?.hadir ?? 0}</span></td>
                     <td className="text-center whitespace-nowrap px-2"><span className="badge-soft badge-honey">{p.rekap_absensi?.izin ?? 0}</span></td>
@@ -185,7 +185,7 @@ export default function KegiatanSiswaReportTab() {
                       <p className="text-ink-900 font-medium"><TruncateText text={j.student?.user?.name} /></p>
                       <p className="text-xs text-ink-500">{j.student?.class_room?.name || '-'}</p>
                     </td>
-                    <td className="text-ink-700 whitespace-nowrap px-2"><TruncateText text={j.placement?.dudi?.nama_perusahaan} /></td>
+                    <td className="text-ink-700 whitespace-nowrap px-2"><TruncateText text={j.placement?.iduka?.nama_perusahaan} /></td>
                     <td className="text-ink-700 px-2"><TruncateText text={j.kegiatan} maxWidth="18rem" /></td>
                     <td className="text-ink-500 px-2"><TruncateText text={j.catatan || '-'} maxWidth="14rem" /></td>
                   </tr>
@@ -225,7 +225,7 @@ export default function KegiatanSiswaReportTab() {
                       <p className="text-ink-900 font-medium"><TruncateText text={p.student?.user?.name} /></p>
                       <p className="text-xs text-ink-500">{p.student?.class_room?.name || '-'}</p>
                     </td>
-                    <td className="text-ink-700 whitespace-nowrap px-2"><TruncateText text={p.dudi?.nama_perusahaan} /></td>
+                    <td className="text-ink-700 whitespace-nowrap px-2"><TruncateText text={p.iduka?.nama_perusahaan} /></td>
                     <td className="text-ink-700 whitespace-nowrap px-2"><TruncateText text={p.guru_pembimbing?.user?.name || '-'} /></td>
                     <td className="text-center font-medium text-ink-900 whitespace-nowrap px-2">{p.nilai_akhir ?? '-'}</td>
                     <td className="whitespace-nowrap px-2">

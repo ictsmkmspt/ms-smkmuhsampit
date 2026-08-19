@@ -136,7 +136,7 @@ class BukuController extends Controller
 
     /**
      * Endpoint terpisah dari update() (bukan PUT+multipart) — pola sama
-     * AnnouncementController::uploadFoto / DudiController::uploadTandaTangan.
+     * AnnouncementController::uploadFoto / IdukaController::uploadTandaTangan.
      */
     public function uploadCover(Request $request, Buku $buku)
     {

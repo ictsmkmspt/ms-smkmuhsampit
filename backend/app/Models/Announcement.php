@@ -18,7 +18,7 @@ class Announcement extends Model
     /**
      * URL relatif foto pengumuman (null kalau belum/tidak ada foto, atau
      * sudah dihapus otomatis oleh AnnouncementCleanupPhotos setelah 30
-     * hari). Sengaja relatif, sama seperti Dudi::tanda_tangan_url.
+     * hari). Sengaja relatif, sama seperti Iduka::tanda_tangan_url.
      */
     public function getFotoUrlAttribute(): ?string
     {
