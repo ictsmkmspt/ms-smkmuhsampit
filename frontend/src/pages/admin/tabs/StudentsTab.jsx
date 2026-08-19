@@ -5,6 +5,7 @@ import TruncateText from '../../../components/TruncateText';
 import Pagination from '../../../components/Pagination';
 import usePagination from '../../../hooks/usePagination';
 import DateInput from '../../../components/DateInput';
+import { namaKeEmailSekolah } from '../../../utils/email';
 
 import QRCode from "qrcode";
 import JSZip from "jszip";
@@ -40,6 +41,11 @@ export default function StudentsTab() {
 
   const [query, setQuery] = useState('');
   const [filterKelas, setFilterKelas] = useState('');
+
+  // Email auto-terisi dari Nama (nama disambung tanpa spasi + domain sekolah)
+  // selama pengguna belum mengetik sendiri di kolom Email — begitu diketik
+  // manual, auto-isi berhenti supaya tidak menimpa email yang sudah disunting.
+  const emailManual = useRef(false);
 
   const sorted = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -80,6 +86,7 @@ export default function StudentsTab() {
         await api.post(`/students/${res.data.id}/foto`, fd, { headers: { 'Content-Type': 'multipart/form-data' } });
       }
       setForm(FORM_KOSONG);
+      emailManual.current = false;
       setFotoFile(null);
       setShowForm(false);
       loadStudents();
@@ -110,6 +117,7 @@ export default function StudentsTab() {
   const batalForm = () => {
     setShowForm(false);
     setForm(FORM_KOSONG);
+    emailManual.current = false;
     setFotoFile(null);
     setError('');
   };
@@ -361,8 +369,11 @@ export default function StudentsTab() {
           <p className="text-xs text-ink-500 mb-4">Password akun otomatis dibuat "123456" — wajib diganti siswa saat login pertama.</p>
           {error && <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2 mb-3">{error}</p>}
           <div className="grid grid-cols-2 gap-3">
-            <input placeholder="Nama" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="field-input" required />
-            <input placeholder="Email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="field-input" required autoComplete="off" />
+            <input placeholder="Nama" value={form.name} onChange={(e) => {
+              const name = e.target.value;
+              setForm((f) => ({ ...f, name, email: emailManual.current ? f.email : namaKeEmailSekolah(name) }));
+            }} className="field-input" required />
+            <input placeholder="Email" type="email" value={form.email} onChange={(e) => { emailManual.current = true; setForm({ ...form, email: e.target.value }); }} className="field-input" required autoComplete="off" />
             <input placeholder="NIS" value={form.nis} onChange={(e) => setForm({ ...form, nis: e.target.value })} className="field-input" required />
             <input placeholder="NISN (opsional)" value={form.nisn} onChange={(e) => setForm({ ...form, nisn: e.target.value })} className="field-input" />
             <select value={form.jenis_kelamin} onChange={(e) => setForm({ ...form, jenis_kelamin: e.target.value })} className="field-input text-ink-700">
@@ -417,7 +428,7 @@ export default function StudentsTab() {
               <Printer className="w-4 h-4" /> Cetak Kartu Pelajar
             </button>
             {!showForm && (
-              <button onClick={() => { setForm(FORM_KOSONG); setFotoFile(null); setError(''); setShowForm(true); }} className="btn-primary shrink-0">
+              <button onClick={() => { setForm(FORM_KOSONG); emailManual.current = false; setFotoFile(null); setError(''); setShowForm(true); }} className="btn-primary shrink-0">
                 <Plus className="w-4 h-4" /> Tambah Siswa
               </button>
             )}

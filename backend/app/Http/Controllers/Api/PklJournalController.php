@@ -5,8 +5,13 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\PklJournal;
 use App\Models\PklPlacement;
+use App\Models\Setting;
 use App\Models\TahunAjaran;
 use Illuminate\Http\Request;
+use PhpOffice\PhpWord\IOFactory;
+use PhpOffice\PhpWord\PhpWord;
+use PhpOffice\PhpWord\SimpleType\Jc;
+use PhpOffice\PhpWord\Style\ListItem as ListItemStyle;
 
 class PklJournalController extends Controller
 {
@@ -177,6 +182,118 @@ class PklJournalController extends Controller
         return PklJournal::with('catatanBy')
             ->where('pkl_placement_id', $pklPlacement->id)
             ->orderByDesc('date')->get();
+    }
+
+    /**
+     * Sama seperti bolehLihat(), tapi siswa yang bersangkutan juga boleh
+     * (dipakai khusus export-word — siswa bisa unduh jurnal kegiatan
+     * PKL-nya sendiri, sama seperti mereka bisa melihatnya lewat halaman
+     * cetak).
+     */
+    private function bolehLihatTermasukSiswa(PklPlacement $placement, $user): bool
+    {
+        if ($user->role === 'siswa') {
+            $student = $user->student;
+            return $student && $placement->student_id === $student->id;
+        }
+        return $this->bolehLihat($placement, $user);
+    }
+
+    /**
+     * Export "Jurnal Kegiatan PKL" 1 bulan ke .docx — persis data yang
+     * ditampilkan PrintPklJurnalKegiatan.jsx, cuma dalam format Word.
+     */
+    public function exportWord(Request $request, PklPlacement $pklPlacement)
+    {
+        if (!$this->bolehLihatTermasukSiswa($pklPlacement, $request->user())) {
+            return response()->json(['message' => 'Anda tidak berwenang mengakses jurnal siswa ini.'], 403);
+        }
+
+        $request->validate(['bulan' => 'required|date_format:Y-m']);
+        $bulanPilih = $request->query('bulan');
+        [$tahun, $bulanNum] = array_map('intval', explode('-', $bulanPilih));
+
+        $pklPlacement->load(['student.user', 'dudi', 'guruPembimbing.user']);
+        $entries = PklJournal::where('pkl_placement_id', $pklPlacement->id)
+            ->where('date', 'like', $bulanPilih . '%')
+            ->orderBy('date')->get();
+
+        $hari = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+        $bulanNama = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+        $namaSiswa = $pklPlacement->student?->user?->name ?? '-';
+        $namaSekolah = Setting::get('nama_sekolah', '');
+
+        $phpWord = new PhpWord();
+        $section = $phpWord->addSection([
+            'marginTop' => 850, 'marginBottom' => 850, 'marginLeft' => 1400, 'marginRight' => 850,
+        ]);
+
+        $section->addText(strtoupper($namaSekolah), ['bold' => true, 'size' => 11]);
+        $section->addText('JURNAL PRAKTIK KERJA LAPANGAN ' . $tahun, ['bold' => true, 'size' => 9]);
+        $section->addTextBreak(1);
+        $section->addText('JURNAL KEGIATAN PKL', ['bold' => true, 'size' => 13], ['alignment' => Jc::CENTER]);
+        $section->addTextBreak(1);
+
+        $section->addText('Nama Peserta PKL          : ' . $namaSiswa);
+        $section->addText('Nama Iduka Tempat PKL     : ' . ($pklPlacement->dudi?->nama_perusahaan ?? '-'));
+        $section->addText('Nama Instruktur           : ' . ($pklPlacement->dudi?->penanggung_jawab ?? '-'));
+        $section->addText('Nama Guru Pembimbing      : ' . ($pklPlacement->guruPembimbing?->user?->name ?? '-'));
+        $section->addText('Bulan                     : ' . $bulanNama[$bulanNum - 1] . ' ' . $tahun);
+        $section->addTextBreak(1);
+
+        $tableStyle = ['borderSize' => 6, 'borderColor' => '999999', 'cellMargin' => 80];
+        $headerStyle = ['bgColor' => 'EAF2FC', 'bold' => true];
+        $table = $section->addTable($tableStyle);
+
+        $table->addRow();
+        $table->addCell(500)->addText('No', $headerStyle, ['alignment' => Jc::CENTER]);
+        $table->addCell(1600)->addText('Hari, tanggal', $headerStyle);
+        $table->addCell(4200)->addText('Kegiatan', $headerStyle);
+        $table->addCell(2700)->addText('Catatan', $headerStyle);
+
+        foreach ($entries as $i => $e) {
+            $d = strtotime($e->date);
+            $table->addRow();
+            $table->addCell(500)->addText((string) ($i + 1), [], ['alignment' => Jc::CENTER]);
+            $table->addCell(1600)->addText($hari[date('w', $d)] . ', ' . date('j', $d));
+            $table->addCell(4200)->addText($e->kegiatan);
+            $table->addCell(2700)->addText($e->catatan ?: '');
+        }
+        if ($entries->isEmpty()) {
+            $table->addRow();
+            $table->addCell(9000, ['gridSpan' => 4])->addText('Belum ada kegiatan yang diisi untuk bulan ini.', [], ['alignment' => Jc::CENTER]);
+        }
+
+        $section->addTextBreak(2);
+        $footerTable = $section->addTable(['cellMargin' => 0]);
+        $footerTable->addRow();
+        $kiri = $footerTable->addCell(4500);
+        $kiri->addText('Guru Pembimbing,');
+        $kiri->addTextBreak(3);
+        $kiri->addText('.....................................');
+        $kanan = $footerTable->addCell(4500);
+        $kanan->addText('Sampit, .................................', [], ['alignment' => Jc::END]);
+        $kanan->addText('Instruktur Dunia Kerja,', [], ['alignment' => Jc::END]);
+        $kanan->addTextBreak(2);
+        $kanan->addText('.....................................', [], ['alignment' => Jc::END]);
+
+        $section->addTextBreak(1);
+        $section->addText('Format Jurnal Kegiatan PKL', ['bold' => true]);
+        $section->addListItem('Kolom 1 diisi dengan nomor urut', 0, null, ListItemStyle::TYPE_ALPHANUM);
+        $section->addListItem('Kolom 2 diisi dengan Hari dan tanggal kegiatan.', 0, null, ListItemStyle::TYPE_ALPHANUM);
+        $section->addListItem('Kolom 3 diisi dengan jenis kegiatan/pekerjaan atau keterampilan yang dilakukan murid.', 0, null, ListItemStyle::TYPE_ALPHANUM);
+        $section->addListItem('Kolom 4 diisi oleh Instruktur Dunia Kerja pada setiap kegiatan atau waktu tertentu.', 0, null, ListItemStyle::TYPE_ALPHANUM);
+        $section->addListItem('Jurnal diisi setiap hari, setiap bulan jurnal ditandatangani Guru Pembimbing dan Instruktur Dunia Kerja', 0, null, ListItemStyle::TYPE_ALPHANUM);
+
+        $namaFile = 'Jurnal-Kegiatan-PKL-' . preg_replace('/[^A-Za-z0-9\-]/', '-', $namaSiswa) . '-' . $bulanNama[$bulanNum - 1] . '-' . $tahun . '.docx';
+
+        $tempPath = storage_path('app/temp-' . uniqid() . '.docx');
+        $writer = IOFactory::createWriter($phpWord, 'Word2007');
+        $writer->save($tempPath);
+
+        return response()->download($tempPath, $namaFile, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        ])->deleteFileAfterSend(true);
     }
 
     /**

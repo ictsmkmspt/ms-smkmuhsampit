@@ -497,6 +497,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/pkl-placements/{pklPlacement}', [PklPlacementController::class, 'show']);
         Route::get('/pkl-placements/{pklPlacement}/penilaian', [PklPenilaianController::class, 'show']);
         Route::get('/pkl-placements/{pklPlacement}/penilaian/export-word', [PklPenilaianController::class, 'exportWord']);
+        Route::get('/pkl-placements/{pklPlacement}/attendances/export-word', [PklAttendanceController::class, 'exportWord']);
+        Route::get('/pkl-placements/{pklPlacement}/jurnal/export-word', [PklJournalController::class, 'exportWord']);
         Route::put('/pkl-jurnal/{pklJournal}', [PklJournalController::class, 'updateKegiatan']);
         Route::delete('/pkl-jurnal/{pklJournal}', [PklJournalController::class, 'destroyKegiatan']);
     });

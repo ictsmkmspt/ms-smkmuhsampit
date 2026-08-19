@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Plus, Trash2, KeyRound, X } from 'lucide-react';
 import api from '../../../api/axios';
 import TruncateText from '../../../components/TruncateText';
 import { useAuth } from '../../../context/AuthContext';
+import { namaKeEmailSekolah } from '../../../utils/email';
 
 const ROLE_LABEL = { teknisi: 'Teknisi', kepala_bengkel: 'Kepala Bengkel' };
 const ROLE_BADGE = { teknisi: 'badge-soft', kepala_bengkel: 'badge-brand' };
@@ -19,6 +20,12 @@ export default function RoomStaffTab() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
+
+  // Email auto-terisi dari Nama (nama disambung tanpa spasi + domain sekolah)
+  // selama pengguna belum mengetik sendiri di kolom Email — begitu diketik
+  // manual, auto-isi berhenti supaya tidak menimpa email yang sudah disunting.
+  // Hanya berlaku saat tambah akun baru, bukan saat mengubah akun yang ada.
+  const emailManual = useRef(false);
 
   const load = () => api.get('/room-staff').then((res) => setStaff(res.data));
   useEffect(() => {
@@ -37,6 +44,7 @@ export default function RoomStaffTab() {
       }
       setForm(FORM_KOSONG);
       setEditId(null);
+      if (!editId) emailManual.current = false;
       setShowForm(false);
       load();
     } catch (err) {
@@ -57,6 +65,7 @@ export default function RoomStaffTab() {
   const cancelEdit = () => {
     setEditId(null);
     setForm(FORM_KOSONG);
+    emailManual.current = false;
     setError('');
     setShowForm(false);
   };
@@ -93,8 +102,15 @@ export default function RoomStaffTab() {
           </p>
           {error && <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2 mb-3">{error}</p>}
           <div className="grid grid-cols-2 gap-3">
-            <input placeholder="Nama" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="field-input" required />
-            <input placeholder="Email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="field-input" required autoComplete="off" />
+            <input placeholder="Nama" value={form.name} onChange={(e) => {
+              const name = e.target.value;
+              setForm((f) => ({
+                ...f,
+                name,
+                email: (!editId && !emailManual.current) ? namaKeEmailSekolah(name) : f.email,
+              }));
+            }} className="field-input" required />
+            <input placeholder="Email" type="email" value={form.email} onChange={(e) => { emailManual.current = true; setForm({ ...form, email: e.target.value }); }} className="field-input" required autoComplete="off" />
             <select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })} className="field-input text-ink-700" disabled={!!editId}>
               {Object.entries(ROLE_LABEL).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
             </select>
@@ -126,7 +142,7 @@ export default function RoomStaffTab() {
             Daftar Akun <span className="text-ink-500 font-sans font-normal text-sm">({staff.length})</span>
           </h2>
           {canManage && !showForm && (
-            <button onClick={() => { setEditId(null); setForm(FORM_KOSONG); setError(''); setShowForm(true); }} className="btn-primary shrink-0"><Plus className="w-4 h-4" /> Tambah Akun</button>
+            <button onClick={() => { setEditId(null); setForm(FORM_KOSONG); emailManual.current = false; setError(''); setShowForm(true); }} className="btn-primary shrink-0"><Plus className="w-4 h-4" /> Tambah Akun</button>
           )}
         </div>
         <div className="table-scroll">

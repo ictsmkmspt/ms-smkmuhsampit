@@ -5,8 +5,13 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\PklAttendance;
 use App\Models\PklPlacement;
+use App\Models\Setting;
 use App\Models\TahunAjaran;
 use Illuminate\Http\Request;
+use PhpOffice\PhpWord\IOFactory;
+use PhpOffice\PhpWord\PhpWord;
+use PhpOffice\PhpWord\SimpleType\Jc;
+use PhpOffice\PhpWord\Style\ListItem as ListItemStyle;
 
 class PklAttendanceController extends Controller
 {
@@ -343,6 +348,109 @@ class PklAttendanceController extends Controller
         return PklAttendance::with('verifiedBy.dudi')
             ->where('pkl_placement_id', $pklPlacement->id)
             ->orderByDesc('date')->get();
+    }
+
+    /**
+     * Sama seperti bolehLihat(), tapi siswa yang bersangkutan juga boleh
+     * (dipakai khusus export-word — siswa bisa unduh daftar hadir PKL-nya
+     * sendiri, sama seperti mereka bisa melihatnya lewat halaman cetak).
+     */
+    private function bolehLihatTermasukSiswa(PklPlacement $placement, $user): bool
+    {
+        if ($user->role === 'siswa') {
+            $student = $user->student;
+            return $student && $placement->student_id === $student->id;
+        }
+        return $this->bolehLihat($placement, $user);
+    }
+
+    /**
+     * Export "Daftar Hadir Peserta PKL" 1 bulan ke .docx — persis data yang
+     * ditampilkan PrintPklJurnal.jsx, cuma dalam format Word supaya bisa
+     * diedit/dilampirkan. Tanda tangan Instruktur/verifikasi ditandai "✓"
+     * saja (bukan gambar tanda tangan), sama seperti pola export nilai PKL
+     * yang juga menyisakan baris kosong untuk tanda tangan basah.
+     */
+    public function exportWord(Request $request, PklPlacement $pklPlacement)
+    {
+        if (!$this->bolehLihatTermasukSiswa($pklPlacement, $request->user())) {
+            return response()->json(['message' => 'Anda tidak berwenang mengakses absensi siswa ini.'], 403);
+        }
+
+        $request->validate(['bulan' => 'required|date_format:Y-m']);
+        [$tahun, $bulanNum] = array_map('intval', explode('-', $request->query('bulan')));
+
+        $pklPlacement->load(['student.user', 'student.classRoom', 'dudi']);
+        $attendances = PklAttendance::where('pkl_placement_id', $pklPlacement->id)
+            ->whereYear('date', $tahun)->whereMonth('date', $bulanNum)
+            ->get()->keyBy(fn ($a) => $a->date->format('Y-m-d'));
+
+        $hari = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+        $bulanNama = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+        $statusLabel = ['izin' => 'Izin', 'sakit' => 'Sakit', 'alpa' => 'Alpa'];
+        $namaSiswa = $pklPlacement->student?->user?->name ?? '-';
+        $namaSekolah = Setting::get('nama_sekolah', '');
+
+        $phpWord = new PhpWord();
+        $section = $phpWord->addSection([
+            'marginTop' => 850, 'marginBottom' => 850, 'marginLeft' => 1400, 'marginRight' => 850,
+        ]);
+
+        $section->addText(strtoupper($namaSekolah), ['bold' => true, 'size' => 11]);
+        $section->addText('JURNAL PRAKTIK KERJA LAPANGAN ' . $tahun, ['bold' => true, 'size' => 9]);
+        $section->addTextBreak(1);
+        $section->addText('DAFTAR HADIR PESERTA PKL', ['bold' => true, 'size' => 13], ['alignment' => Jc::CENTER]);
+        $section->addTextBreak(1);
+
+        $section->addText('Nama Murid              : ' . $namaSiswa);
+        $section->addText('Kompetensi Keahlian     : ' . ($pklPlacement->student?->classRoom?->name ?? '-'));
+        $section->addText('Tempat PKL/Nama Iduka   : ' . ($pklPlacement->dudi?->nama_perusahaan ?? '-'));
+        $section->addText('Bulan                   : ' . $bulanNama[$bulanNum - 1] . ' ' . $tahun);
+        $section->addTextBreak(1);
+
+        $tableStyle = ['borderSize' => 6, 'borderColor' => '999999', 'cellMargin' => 80];
+        $headerStyle = ['bgColor' => 'EAF2FC', 'bold' => true];
+        $table = $section->addTable($tableStyle);
+
+        $table->addRow();
+        $table->addCell(2200)->addText('Hari, tanggal', $headerStyle);
+        $table->addCell(1300)->addText('Datang', $headerStyle, ['alignment' => Jc::CENTER]);
+        $table->addCell(1300)->addText('Pulang', $headerStyle, ['alignment' => Jc::CENTER]);
+        $table->addCell(2000)->addText('Ket. Tidak Hadir', $headerStyle, ['alignment' => Jc::CENTER]);
+        $table->addCell(2200)->addText('Paraf Instruktur', $headerStyle, ['alignment' => Jc::CENTER]);
+
+        $jumlahHari = (int) date('t', mktime(0, 0, 0, $bulanNum, 1, $tahun));
+        for ($tgl = 1; $tgl <= $jumlahHari; $tgl++) {
+            $dateStr = sprintf('%04d-%02d-%02d', $tahun, $bulanNum, $tgl);
+            $namaHari = $hari[date('w', strtotime($dateStr))];
+            $row = $attendances[$dateStr] ?? null;
+
+            $table->addRow();
+            $table->addCell(2200)->addText($namaHari . ', ' . $tgl);
+            $table->addCell(1300)->addText($row?->time_in ? substr($row->time_in, 0, 5) : '', [], ['alignment' => Jc::CENTER]);
+            $table->addCell(1300)->addText($row?->time_out ? substr($row->time_out, 0, 5) : '', [], ['alignment' => Jc::CENTER]);
+            $table->addCell(2000)->addText($row && $row->status !== 'hadir' ? ($statusLabel[$row->status] ?? '') : '', [], ['alignment' => Jc::CENTER]);
+            $table->addCell(2200)->addText($row?->verified_at ? '✓' : '', [], ['alignment' => Jc::CENTER]);
+        }
+
+        $section->addTextBreak(1);
+        $section->addText('Keterangan pengisian:', ['bold' => true]);
+        $section->addListItem('Satu halaman ini untuk daftar hadir 1 bulan', 0, null, ListItemStyle::TYPE_ALPHANUM);
+        $section->addListItem('Daftar hadir diisi oleh perorangan/individu masing-masing', 0, null, ListItemStyle::TYPE_ALPHANUM);
+        $section->addListItem('Kolom hari/tanggal diisi hari dan tanggal pelaksanaan', 0, null, ListItemStyle::TYPE_ALPHANUM);
+        $section->addListItem('Absensi kerja diisi berdasarkan jam datang dan jam pulang', 0, null, ListItemStyle::TYPE_ALPHANUM);
+        $section->addListItem('Kolom keterangan tidak hadir diisi jika peserta PKL tidak hadir', 0, null, ListItemStyle::TYPE_ALPHANUM);
+        $section->addListItem('Paraf diisi oleh Instruktur Dunia Kerja', 0, null, ListItemStyle::TYPE_ALPHANUM);
+
+        $namaFile = 'Absensi-PKL-' . preg_replace('/[^A-Za-z0-9\-]/', '-', $namaSiswa) . '-' . $bulanNama[$bulanNum - 1] . '-' . $tahun . '.docx';
+
+        $tempPath = storage_path('app/temp-' . uniqid() . '.docx');
+        $writer = IOFactory::createWriter($phpWord, 'Word2007');
+        $writer->save($tempPath);
+
+        return response()->download($tempPath, $namaFile, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        ])->deleteFileAfterSend(true);
     }
 
     /**

@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Plus, Trash2, KeyRound, X } from 'lucide-react';
 import api from '../../../api/axios';
 import TruncateText from '../../../components/TruncateText';
+import { namaKeEmailSekolah } from '../../../utils/email';
 
 const FORM_KOSONG = { name: '', email: '' };
 
@@ -12,6 +13,12 @@ export default function PustakawanTab() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
+
+  // Email auto-terisi dari Nama (nama disambung tanpa spasi + domain sekolah)
+  // selama pengguna belum mengetik sendiri di kolom Email — begitu diketik
+  // manual, auto-isi berhenti supaya tidak menimpa email yang sudah disunting.
+  // Hanya berlaku saat tambah akun baru, bukan saat mengubah akun yang ada.
+  const emailManual = useRef(false);
 
   const load = () => api.get('/pustakawan').then((res) => setStaff(res.data));
   useEffect(() => { load(); }, []);
@@ -27,6 +34,7 @@ export default function PustakawanTab() {
       }
       setForm(FORM_KOSONG);
       setEditId(null);
+      if (!editId) emailManual.current = false;
       setShowForm(false);
       load();
     } catch (err) {
@@ -47,6 +55,7 @@ export default function PustakawanTab() {
   const cancelEdit = () => {
     setEditId(null);
     setForm(FORM_KOSONG);
+    emailManual.current = false;
     setError('');
     setShowForm(false);
   };
@@ -79,8 +88,15 @@ export default function PustakawanTab() {
           <p className="text-xs text-ink-500 mb-4">Password otomatis "123456", wajib diganti saat login pertama.</p>
           {error && <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2 mb-3">{error}</p>}
           <div className="grid grid-cols-2 gap-3">
-            <input placeholder="Nama" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="field-input" required />
-            <input placeholder="Email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="field-input" required autoComplete="off" />
+            <input placeholder="Nama" value={form.name} onChange={(e) => {
+              const name = e.target.value;
+              setForm((f) => ({
+                ...f,
+                name,
+                email: (!editId && !emailManual.current) ? namaKeEmailSekolah(name) : f.email,
+              }));
+            }} className="field-input" required />
+            <input placeholder="Email" type="email" value={form.email} onChange={(e) => { emailManual.current = true; setForm({ ...form, email: e.target.value }); }} className="field-input" required autoComplete="off" />
           </div>
           <div className="flex items-center gap-2 mt-4">
             <button disabled={loading} className="btn-primary">
@@ -99,7 +115,7 @@ export default function PustakawanTab() {
             Daftar Akun <span className="text-ink-500 font-sans font-normal text-sm">({staff.length})</span>
           </h2>
           {!showForm && (
-            <button onClick={() => { setEditId(null); setForm(FORM_KOSONG); setError(''); setShowForm(true); }} className="btn-primary shrink-0">
+            <button onClick={() => { setEditId(null); setForm(FORM_KOSONG); emailManual.current = false; setError(''); setShowForm(true); }} className="btn-primary shrink-0">
               <Plus className="w-4 h-4" /> Tambah Akun
             </button>
           )}

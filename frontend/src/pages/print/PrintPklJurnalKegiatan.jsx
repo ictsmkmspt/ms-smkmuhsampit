@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Printer } from 'lucide-react';
+import { Printer, FileDown } from 'lucide-react';
 import api from '../../api/axios';
 import { useAuth } from '../../context/AuthContext';
 import { useSchoolProfile } from '../../context/SchoolProfileContext';
@@ -54,6 +54,21 @@ export default function PrintPklJurnalKegiatan() {
       });
   }, [entries, bulanPilih]);
 
+  const handleExportWord = async () => {
+    const res = await api.get(`/pkl-placements/${placementId}/jurnal/export-word`, {
+      params: { bulan: bulanPilih },
+      responseType: 'blob',
+    });
+    const url = window.URL.createObjectURL(new Blob([res.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `Jurnal-Kegiatan-PKL-${placement.student?.user?.name || 'siswa'}.docx`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  };
+
   if (error) return <div className="p-8 text-center text-rose-600">{error}</div>;
   if (!placement) return <div className="p-8 text-center text-ink-400">Memuat data...</div>;
 
@@ -68,12 +83,20 @@ export default function PrintPklJurnalKegiatan() {
             return <option key={val} value={val}>{BULAN[i]} {y}</option>;
           })}
         </select>
-        <button
-          onClick={() => window.print()}
-          className="flex items-center gap-2 bg-brand-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-brand-700"
-        >
-          <Printer className="w-4 h-4" /> Print / Simpan PDF
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleExportWord}
+            className="flex items-center gap-2 bg-white text-ink-700 border border-line-200 px-4 py-2 rounded-lg text-sm font-medium hover:bg-mist-50"
+          >
+            <FileDown className="w-4 h-4" /> Export ke Word
+          </button>
+          <button
+            onClick={() => window.print()}
+            className="flex items-center gap-2 bg-brand-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-brand-700"
+          >
+            <Printer className="w-4 h-4" /> Print / Simpan PDF
+          </button>
+        </div>
       </div>
 
       <div className="mb-6 text-sm">

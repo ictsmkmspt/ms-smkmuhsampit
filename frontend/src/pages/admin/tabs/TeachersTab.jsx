@@ -5,6 +5,7 @@ import TruncateText from '../../../components/TruncateText';
 import Pagination from '../../../components/Pagination';
 import usePagination from '../../../hooks/usePagination';
 import { useAuth } from '../../../context/AuthContext';
+import { namaKeEmailSekolah } from '../../../utils/email';
 
 const JK_LABEL = { L: 'Laki-laki', P: 'Perempuan' };
 
@@ -25,6 +26,11 @@ export default function TeachersTab() {
   const [editData, setEditData] = useState({});
   const [saving, setSaving] = useState(false);
 
+  // Email auto-terisi dari Nama (nama disambung tanpa spasi + domain sekolah)
+  // selama pengguna belum mengetik sendiri di kolom Email — begitu diketik
+  // manual, auto-isi berhenti supaya tidak menimpa email yang sudah disunting.
+  const emailManual = useRef(false);
+
   const { page, setPage, totalPages, paginated: teachersHalaman } = usePagination(teachers, 40);
 
   const loadTeachers = () => api.get('/teachers').then((res) => setTeachers(res.data));
@@ -37,6 +43,7 @@ export default function TeachersTab() {
     try {
       await api.post('/teachers', form);
       setForm({ name: '', email: '', nip: '', jenis_kelamin: '' });
+      emailManual.current = false;
       setShowForm(false);
       loadTeachers();
     } catch (err) {
@@ -66,6 +73,7 @@ export default function TeachersTab() {
   const batalForm = () => {
     setShowForm(false);
     setForm({ name: '', email: '', nip: '', jenis_kelamin: '' });
+    emailManual.current = false;
     setError('');
   };
 
@@ -198,8 +206,11 @@ export default function TeachersTab() {
         <p className="text-xs text-ink-500 mb-4">Password akun otomatis dibuat "123456" — wajib diganti guru saat login pertama.</p>
         {error && <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2 mb-3">{error}</p>}
         <div className="grid grid-cols-2 gap-3">
-          <input placeholder="Nama" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="field-input" required />
-          <input placeholder="Email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="field-input" required autoComplete="off" />
+          <input placeholder="Nama" value={form.name} onChange={(e) => {
+            const name = e.target.value;
+            setForm((f) => ({ ...f, name, email: emailManual.current ? f.email : namaKeEmailSekolah(name) }));
+          }} className="field-input" required />
+          <input placeholder="Email" type="email" value={form.email} onChange={(e) => { emailManual.current = true; setForm({ ...form, email: e.target.value }); }} className="field-input" required autoComplete="off" />
           <input placeholder="NIP" value={form.nip} onChange={(e) => setForm({ ...form, nip: e.target.value })} className="field-input col-span-2" required />
           <select value={form.jenis_kelamin} onChange={(e) => setForm({ ...form, jenis_kelamin: e.target.value })} className="field-input col-span-2 text-ink-700">
             <option value="">— Jenis Kelamin —</option>
@@ -220,7 +231,7 @@ export default function TeachersTab() {
         <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
           <h2 className="font-display font-semibold text-ink-900">Daftar Guru <span className="text-ink-500 font-sans font-normal text-sm">({teachers.length})</span></h2>
           {canEdit && !showForm && (
-            <button onClick={() => { setForm({ name: '', email: '', nip: '', jenis_kelamin: '' }); setError(''); setShowForm(true); }} className="btn-primary shrink-0">
+            <button onClick={() => { setForm({ name: '', email: '', nip: '', jenis_kelamin: '' }); emailManual.current = false; setError(''); setShowForm(true); }} className="btn-primary shrink-0">
               <Plus className="w-4 h-4" /> Tambah Guru
             </button>
           )}

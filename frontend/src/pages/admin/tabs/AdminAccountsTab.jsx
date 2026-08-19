@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Plus, Trash2, KeyRound, Save } from 'lucide-react';
 import api from '../../../api/axios';
 import TruncateText from '../../../components/TruncateText';
 import { useAuth } from '../../../context/AuthContext';
+import { namaKeEmailSekolah } from '../../../utils/email';
 
 const ROLE_LABEL = {
   admin: 'Super Admin',
@@ -25,6 +26,11 @@ export default function AdminAccountsTab() {
   const [editData, setEditData] = useState({});
   const [saving, setSaving] = useState(false);
 
+  // Email auto-terisi dari Nama (nama disambung tanpa spasi + domain sekolah)
+  // selama pengguna belum mengetik sendiri di kolom Email — begitu diketik
+  // manual, auto-isi berhenti supaya tidak menimpa email yang sudah disunting.
+  const emailManual = useRef(false);
+
   const loadAccounts = () => api.get('/admin-accounts').then((res) => setAccounts(res.data));
   useEffect(() => { loadAccounts(); }, []);
 
@@ -35,6 +41,7 @@ export default function AdminAccountsTab() {
     try {
       await api.post('/admin-accounts', form);
       setForm({ name: '', email: '', role: 'waka_kesiswaan' });
+      emailManual.current = false;
       setShowForm(false);
       loadAccounts();
     } catch (err) {
@@ -68,6 +75,7 @@ export default function AdminAccountsTab() {
   const batalForm = () => {
     setShowForm(false);
     setForm({ name: '', email: '', role: 'waka_kesiswaan' });
+    emailManual.current = false;
     setError('');
   };
 
@@ -100,7 +108,10 @@ export default function AdminAccountsTab() {
           </p>
           {error && <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2 mb-3">{error}</p>}
           <div className="grid grid-cols-2 gap-3">
-            <input placeholder="Nama" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="field-input" required />
+            <input placeholder="Nama" value={form.name} onChange={(e) => {
+              const name = e.target.value;
+              setForm((f) => ({ ...f, name, email: emailManual.current ? f.email : namaKeEmailSekolah(name) }));
+            }} className="field-input" required />
             <select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })} className="field-input text-ink-700">
               <option value="waka_kesiswaan">Waka Kesiswaan</option>
               <option value="waka_kurikulum">Waka Kurikulum</option>
@@ -108,7 +119,7 @@ export default function AdminAccountsTab() {
               <option value="waka_sarpras">Waka Sarpras</option>
               <option value="admin">Super Admin</option>
             </select>
-            <input placeholder="Email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="field-input col-span-2" required autoComplete="off" />
+            <input placeholder="Email" type="email" value={form.email} onChange={(e) => { emailManual.current = true; setForm({ ...form, email: e.target.value }); }} className="field-input col-span-2" required autoComplete="off" />
           </div>
           <div className="flex gap-2 mt-4">
             <button disabled={loading} className="btn-primary">
@@ -125,7 +136,7 @@ export default function AdminAccountsTab() {
             Daftar Akun Admin <span className="text-ink-500 font-sans font-normal text-sm">({accounts.length})</span>
           </h2>
           {!showForm && (
-            <button onClick={() => { setForm({ name: '', email: '', role: 'waka_kesiswaan' }); setError(''); setShowForm(true); }} className="btn-primary shrink-0">
+            <button onClick={() => { setForm({ name: '', email: '', role: 'waka_kesiswaan' }); emailManual.current = false; setError(''); setShowForm(true); }} className="btn-primary shrink-0">
               <Plus className="w-4 h-4" /> Tambah Akun Admin
             </button>
           )}

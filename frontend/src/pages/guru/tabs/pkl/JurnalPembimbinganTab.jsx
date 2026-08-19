@@ -8,6 +8,7 @@ export default function JurnalPembimbinganTab() {
   const today = new Date().toISOString().slice(0, 10);
   const [dudiOptions, setDudiOptions] = useState([]);
   const [selectedDudi, setSelectedDudi] = useState('');
+  const [jadwalOptions, setJadwalOptions] = useState([]);
 
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -33,6 +34,13 @@ export default function JurnalPembimbinganTab() {
       setDudiOptions(unik);
       if (unik.length === 1) setSelectedDudi(String(unik[0].id));
     });
+  }, []);
+
+  // Pilihan "Aktivitas" diambil dari Jadwal Monitoring PKL yang ditetapkan
+  // admin/Waka Kurikulum (menu PKL > Jadwal Monitoring), bukan diketik bebas
+  // lagi — supaya catatan kunjungan guru konsisten dengan jadwal resminya.
+  useEffect(() => {
+    api.get('/pkl-monitoring-jadwal').then((res) => setJadwalOptions(res.data));
   }, []);
 
   const loadEntries = () => {
@@ -146,12 +154,19 @@ export default function JurnalPembimbinganTab() {
                   value={tanggal} onChange={(e) => setTanggal(e.target.value)}
                   max={today} className="field-input text-sm" required
                 />
-                <textarea
+                <select
                   value={aktivitas} onChange={(e) => setAktivitas(e.target.value)}
-                  className="field-input w-full text-sm" rows="2"
-                  placeholder="Aktivitas pembimbingan (contoh: Kunjungan monitoring ke IDUKA)"
+                  className="field-input w-full text-sm text-ink-700"
                   required
-                />
+                >
+                  <option value="">— Pilih Aktivitas (dari Jadwal Monitoring) —</option>
+                  {jadwalOptions.map((j) => (
+                    <option key={j.id} value={j.judul}>{j.judul}</option>
+                  ))}
+                  {aktivitas && !jadwalOptions.some((j) => j.judul === aktivitas) && (
+                    <option value={aktivitas}>{aktivitas}</option>
+                  )}
+                </select>
                 <textarea
                   value={catatan} onChange={(e) => setCatatan(e.target.value)}
                   className="field-input w-full text-sm" rows="2"
