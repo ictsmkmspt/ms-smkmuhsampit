@@ -36,18 +36,8 @@ class SanksiKejadian extends Model
         return $this->belongsTo(SanksiRule::class);
     }
 
-    public function tahunAjaran()
-    {
-        return $this->belongsTo(TahunAjaran::class);
-    }
-
     public function diprosesOleh()
     {
         return $this->belongsTo(User::class, 'diproses_oleh');
-    }
-
-    public function bkCases()
-    {
-        return $this->hasMany(BkCase::class);
     }
 }

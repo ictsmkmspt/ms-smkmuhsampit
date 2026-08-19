@@ -29,13 +29,21 @@ class PerpustakaanPeminjamanController extends Controller
             ->get();
     }
 
-    public function riwayat()
+    public function riwayat(Request $request)
     {
-        return PerpustakaanPeminjaman::with(['eksemplar.buku', 'peminjam.user'])
-            ->whereIn('status', ['dikembalikan', 'rusak', 'hilang'])
-            ->orderByDesc('tanggal_kembali')
-            ->limit(200)
-            ->get();
+        $data = $request->validate([
+            'start' => 'nullable|date',
+            'end' => 'nullable|date|after_or_equal:start',
+        ]);
+
+        $query = PerpustakaanPeminjaman::with(['eksemplar.buku', 'peminjam.user'])
+            ->whereIn('status', ['dikembalikan', 'rusak', 'hilang']);
+
+        if (isset($data['start'], $data['end'])) {
+            $query->whereBetween('tanggal_kembali', [$data['start'], $data['end']]);
+        }
+
+        return $query->orderByDesc('tanggal_kembali')->limit(200)->get();
     }
 
     /**

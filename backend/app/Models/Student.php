@@ -64,19 +64,9 @@ class Student extends Model
         return $this->hasMany(Spp::class);
     }
 
-    public function bkCases()
-    {
-        return $this->hasMany(BkCase::class);
-    }
-
     public function sanksiKejadian()
     {
         return $this->hasMany(SanksiKejadian::class);
-    }
-
-    public function tagihanLains()
-    {
-        return $this->hasMany(TagihanLain::class);
     }
 
     public function peminjamanPerpustakaan()

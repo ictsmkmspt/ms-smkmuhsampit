@@ -24,11 +24,6 @@ class PklAttendance extends Model
         return $this->belongsTo(Student::class);
     }
 
-    public function correctedBy()
-    {
-        return $this->belongsTo(User::class, 'corrected_by');
-    }
-
     public function verifiedBy()
     {
         return $this->belongsTo(User::class, 'verified_by');

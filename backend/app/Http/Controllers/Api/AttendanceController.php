@@ -405,6 +405,9 @@ class AttendanceController extends Controller
         ]);
 
         $violationType = ViolationType::find($data['violation_type_id']);
+        if ($violationType->isSystem()) {
+            return response()->json(['message' => 'Jenis pelanggaran "' . $violationType->name . '" otomatis dari sistem, tidak bisa dicatat manual.'], 422);
+        }
         $student = Student::with('user')->find($data['student_id']);
 
         $violation = DB::transaction(function () use ($student, $violationType, $data, $request) {

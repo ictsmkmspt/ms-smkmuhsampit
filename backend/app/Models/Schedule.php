@@ -13,11 +13,6 @@ class Schedule extends Model
         return $this->belongsTo(PeriodTemplate::class, 'period_id');
     }
 
-    public function teachingAssignment()
-    {
-        return $this->belongsTo(TeachingAssignment::class);
-    }
-
     public function classRoom()
     {
         return $this->belongsTo(ClassRoom::class);
@@ -33,8 +28,4 @@ class Schedule extends Model
         return $this->belongsTo(Teacher::class);
     }
 
-    public function tahunAjaran()
-    {
-        return $this->belongsTo(TahunAjaran::class);
-    }
 }

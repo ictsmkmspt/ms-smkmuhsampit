@@ -33,11 +33,6 @@ class TahunAjaran extends Model
         return $this->hasMany(PrayerAttendance::class);
     }
 
-    public function academicEvents()
-    {
-        return $this->hasMany(AcademicEvent::class);
-    }
-
     public function teachingAssignments()
     {
         return $this->hasMany(TeachingAssignment::class);
@@ -46,11 +41,6 @@ class TahunAjaran extends Model
     public function schedules()
     {
         return $this->hasMany(Schedule::class);
-    }
-
-    public function bkCases()
-    {
-        return $this->hasMany(BkCase::class);
     }
 
     /**

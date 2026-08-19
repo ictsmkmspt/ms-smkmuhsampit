@@ -64,6 +64,10 @@ class TahsinScoreController extends Controller
 
     public function update(Request $request, TahsinScore $tahsinScore)
     {
+        if ($tahsinScore->recorded_by !== $request->user()->id) {
+            return response()->json(['message' => 'Anda cuma boleh mengubah catatan Tahsin yang Anda catat sendiri.'], 403);
+        }
+
         $data = $request->validate([
             'jilid' => 'required|integer|min:1|max:6',
             'halaman' => 'required|integer|min:1',
@@ -76,8 +80,12 @@ class TahsinScoreController extends Controller
         return $tahsinScore->fresh('student.user');
     }
 
-    public function destroy(TahsinScore $tahsinScore)
+    public function destroy(Request $request, TahsinScore $tahsinScore)
     {
+        if ($tahsinScore->recorded_by !== $request->user()->id) {
+            return response()->json(['message' => 'Anda cuma boleh menghapus catatan Tahsin yang Anda catat sendiri.'], 403);
+        }
+
         $tahsinScore->delete();
 
         return response()->json(['message' => 'Catatan Tahsin dihapus.']);

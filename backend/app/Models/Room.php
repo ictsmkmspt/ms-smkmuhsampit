@@ -22,12 +22,4 @@ class Room extends Model
     {
         return $this->hasMany(MaintenanceRequest::class);
     }
-
-    /**
-     * Akun Teknisi/Kepala Bengkel yang ditugaskan ke ruang ini.
-     */
-    public function staff()
-    {
-        return $this->hasMany(User::class);
-    }
 }

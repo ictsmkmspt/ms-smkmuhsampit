@@ -28,6 +28,11 @@ export default function PoinPelanggaranSection() {
     api.get('/classes').then((res) => setClasses(res.data));
   }, []);
 
+  // Jenis pelanggaran bersistem (mis. "Tidak Hadir") sengaja tidak boleh
+  // dicatat manual di sini — sudah otomatis lewat fitur Proses Alpa,
+  // sama seperti pengecualian di StudentViolationModal.jsx.
+  const manualViolationTypes = violationTypes.filter((v) => !v.system_key);
+
   useEffect(() => {
     if (!selectedClass) { setStudents([]); setRowMessage({}); return; }
     api.get('/students', { params: { class_room_id: selectedClass } }).then((res) => setStudents(res.data));
@@ -111,7 +116,7 @@ export default function PoinPelanggaranSection() {
           <label className="block text-xs font-medium text-ink-500 mb-1">Jenis Pelanggaran</label>
           <select value={scanTypeId} onChange={(e) => setScanTypeId(e.target.value)} className="field-input text-ink-700 mb-3">
             <option value="">— Pilih Jenis Pelanggaran —</option>
-            {violationTypes.map((v) => (
+            {manualViolationTypes.map((v) => (
               <option key={v.id} value={v.id}>{v.name} ({v.poin} poin)</option>
             ))}
           </select>
@@ -197,7 +202,7 @@ export default function PoinPelanggaranSection() {
                         <select value={rowTypeId[s.id] || ''} onChange={(e) => setRowTypeId((p) => ({ ...p, [s.id]: e.target.value }))}
                           className="text-xs border border-line-200 rounded-lg px-2 py-1.5 text-ink-700">
                           <option value="">Pilih...</option>
-                          {violationTypes.map((v) => (
+                          {manualViolationTypes.map((v) => (
                             <option key={v.id} value={v.id}>{v.name} ({v.poin})</option>
                           ))}
                         </select>

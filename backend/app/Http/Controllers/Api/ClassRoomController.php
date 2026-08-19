@@ -30,6 +30,19 @@ class ClassRoomController extends Controller
         return $query->get();
     }
 
+    /**
+     * apiResource mendaftarkan rute ini otomatis (GET /classes/{classRoom})
+     * meski frontend belum pernah memanggilnya — tetap diimplementasikan
+     * supaya rute yang sudah terdaftar tidak error 500 kalau suatu saat
+     * dipakai (mis. lewat link langsung atau fitur baru).
+     */
+    public function show($id)
+    {
+        $classRoom = ClassRoom::with('homeroomTeacher.user')->findOrFail($id);
+        $classRoom->setAttribute('students_count', $classRoom->students()->where('status', 'aktif')->count());
+        return $classRoom;
+    }
+
     public function store(Request $request)
     {
         $data = $request->validate([

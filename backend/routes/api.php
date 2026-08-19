@@ -40,7 +40,6 @@ use App\Http\Controllers\Api\PerpustakaanSirkulasiController;
 use App\Http\Controllers\Api\PustakawanController;
 use App\Http\Controllers\Api\PpdbController;
 use App\Http\Controllers\Api\PrayerAttendanceController;
-use App\Http\Controllers\Api\ProcurementController;
 use App\Http\Controllers\Api\RoomController;
 use App\Http\Controllers\Api\RoomStaffController;
 use App\Http\Controllers\Api\SanksiKejadianController;
@@ -313,8 +312,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/ppdb/pengaturan', [PpdbController::class, 'updatePengaturan']);
         Route::put('/ppdb/{ppdbPendaftar}', [PpdbController::class, 'update']);
         Route::delete('/ppdb/{ppdbPendaftar}', [PpdbController::class, 'destroy']);
-
-        Route::apiResource('procurements', ProcurementController::class)->except(['show']);
 
         // Mode maintenance — SENGAJA cuma Super Admin (bukan waka mana pun)
         // yang boleh nyala/matikan, karena efeknya mengunci akses SELURUH

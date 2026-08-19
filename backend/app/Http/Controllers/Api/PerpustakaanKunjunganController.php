@@ -80,17 +80,23 @@ class PerpustakaanKunjunganController extends Controller
     /**
      * Riwayat kunjungan LENGKAP (semua tanggal, bukan cuma hari ini) —
      * dipakai sub-tab "Kunjungan" di tab Peminjaman, sejajar dengan
-     * Aktif/Terlambat/Riwayat peminjaman buku. Dibatasi 200 baris terbaru
-     * sama seperti PerpustakaanPeminjamanController::riwayat() — rentang
-     * tanggal lebih lengkap ada di export Excel-nya.
+     * Aktif/Terlambat/Riwayat peminjaman buku. Dibatasi 200 baris terbaru,
+     * bisa disaring tanggal Dari/Sampai sama seperti export Excel-nya.
      */
-    public function riwayat()
+    public function riwayat(Request $request)
     {
-        return PerpustakaanKunjungan::with(['pengunjung.user', 'dicatatOleh'])
-            ->orderByDesc('tanggal')
-            ->orderByDesc('created_at')
-            ->limit(200)
-            ->get();
+        $data = $request->validate([
+            'start' => 'nullable|date',
+            'end' => 'nullable|date|after_or_equal:start',
+        ]);
+
+        $query = PerpustakaanKunjungan::with(['pengunjung.user', 'dicatatOleh']);
+
+        if (isset($data['start'], $data['end'])) {
+            $query->whereBetween('tanggal', [$data['start'], $data['end']]);
+        }
+
+        return $query->orderByDesc('tanggal')->orderByDesc('created_at')->limit(200)->get();
     }
 
     public function exportRiwayat(Request $request)

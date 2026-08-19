@@ -28,8 +28,4 @@ class TeachingAssignment extends Model
         return $this->belongsTo(ClassRoom::class);
     }
 
-    public function tahunAjaran()
-    {
-        return $this->belongsTo(TahunAjaran::class);
-    }
 }

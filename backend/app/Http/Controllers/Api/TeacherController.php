@@ -22,6 +22,15 @@ class TeacherController extends Controller
         return Teacher::with('user')->get();
     }
 
+    /**
+     * Rute ini terdaftar terpisah (bukan lewat apiResource) di api.php —
+     * tetap diimplementasikan supaya tidak error 500 kalau dipanggil.
+     */
+    public function show(Teacher $teacher)
+    {
+        return $teacher->load('user');
+    }
+
     public function store(Request $request)
     {
         $data = $request->validate([

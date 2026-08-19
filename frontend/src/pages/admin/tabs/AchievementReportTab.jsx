@@ -108,7 +108,7 @@ export default function AchievementReportTab() {
                     </td>
                     <td className="text-ink-700 whitespace-nowrap px-2">{s.class_room?.name || '-'}</td>
                     <td className="text-right whitespace-nowrap px-2">
-                      <span className={`badge-soft ${s.total_prestasi > 0 ? 'badge-brand' : 'badge-soft'}`}>
+                      <span className={`badge-soft ${s.total_prestasi > 0 ? 'badge-brand' : 'badge-honey'}`}>
                         {s.total_prestasi} poin
                       </span>
                     </td>

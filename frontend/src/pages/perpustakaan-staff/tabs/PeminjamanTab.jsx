@@ -106,9 +106,18 @@ export default function PeminjamanTab() {
 
   const load = (tab) => {
     const endpoint = tab === 'kunjungan' ? '/perpustakaan-kunjungan/riwayat' : `/perpustakaan-peminjaman/${tab}`;
-    return api.get(endpoint).then((res) => setData(res.data));
+    const params = (tab === 'riwayat' || tab === 'kunjungan') && mulai && selesai ? { start: mulai, end: selesai } : {};
+    return api.get(endpoint, { params }).then((res) => setData(res.data));
   };
-  useEffect(() => { load(subTab); }, [subTab]);
+  useEffect(() => { load(subTab); }, [subTab]); // eslint-disable-line react-hooks/exhaustive-deps -- perubahan tanggal dipantau effect terpisah di bawah
+  useEffect(() => {
+    // Cuma reload kalau rentang tanggal LENGKAP (keduanya diisi) atau LENGKAP
+    // dikosongkan lagi (reset filter) — hindari fetch sia-sia saat baru 1
+    // tanggal yang keisi (rentangnya belum valid untuk difilter).
+    const rentangSiap = (mulai && selesai) || (!mulai && !selesai);
+    if (rentangSiap && (subTab === 'riwayat' || subTab === 'kunjungan')) load(subTab);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- sengaja cuma reload saat tanggal berubah, subTab sudah ditangani effect di atas
+  }, [mulai, selesai]);
 
   const handleCariNama = async (q) => {
     setCariNama(q);

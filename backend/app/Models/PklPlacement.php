@@ -29,11 +29,6 @@ class PklPlacement extends Model
         });
     }
 
-    public function tahunAjaran()
-    {
-        return $this->belongsTo(TahunAjaran::class);
-    }
-
     public function student()
     {
         return $this->belongsTo(Student::class);
@@ -54,18 +49,8 @@ class PklPlacement extends Model
         return $this->hasMany(PklAttendance::class);
     }
 
-    public function journals()
-    {
-        return $this->hasMany(PklJournal::class);
-    }
-
     public function penilaian()
     {
         return $this->hasOne(PklPenilaian::class);
-    }
-
-    public function isAktif(): bool
-    {
-        return $this->status === 'aktif';
     }
 }

@@ -21,11 +21,6 @@ class PklMonitoringJadwal extends Model
         });
     }
 
-    public function tahunAjaran()
-    {
-        return $this->belongsTo(TahunAjaran::class);
-    }
-
     public function dibuatOleh()
     {
         return $this->belongsTo(User::class, 'dibuat_oleh');

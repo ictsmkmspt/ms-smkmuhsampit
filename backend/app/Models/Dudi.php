@@ -18,11 +18,6 @@ class Dudi extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function placements()
-    {
-        return $this->hasMany(PklPlacement::class);
-    }
-
     /**
      * URL relatif gambar tanda tangan (null kalau DUDI belum pernah unggah).
      * Sengaja relatif (bukan URL lengkap ke backend) supaya lewat proxy HTTPS

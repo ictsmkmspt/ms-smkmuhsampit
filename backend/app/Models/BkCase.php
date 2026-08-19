@@ -20,11 +20,6 @@ class BkCase extends Model
         return $this->belongsTo(SanksiKejadian::class);
     }
 
-    public function tahunAjaran()
-    {
-        return $this->belongsTo(TahunAjaran::class);
-    }
-
     public function pencatat()
     {
         return $this->belongsTo(User::class, 'dicatat_oleh');

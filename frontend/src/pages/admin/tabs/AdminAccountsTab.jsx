@@ -104,7 +104,7 @@ export default function AdminAccountsTab() {
         <form onSubmit={handleAdd} className="surface-card p-5">
           <h2 className="font-display font-semibold text-ink-900 mb-1">Tambah Akun Admin</h2>
           <p className="text-xs text-ink-500 mb-4">
-            <b>Super Admin</b> punya akses penuh ke semua menu. Tiap <b>Waka</b> hanya melihat & mengelola menu sesuai bidangnya sendiri — Kesiswaan (Kelas/Siswa/Wali/Poin/BK/Sanksi), Kurikulum (Guru/Mapel/Jadwal/Kalender Akademik), Humas (IDUKA/PKL/PPDB), atau Sarpras (Ruang/Aset/Pemeliharaan/Pengadaan). Password akun otomatis dibuat "123456" — wajib diganti saat login pertama.
+            <b>Super Admin</b> punya akses penuh ke semua menu. Tiap <b>Waka</b> hanya melihat & mengelola menu sesuai bidangnya sendiri — Kesiswaan (Kelas/Siswa/Wali/Poin/BK/Sanksi), Kurikulum (Guru/Mapel/Jadwal/Kalender Akademik), Humas (IDUKA/PKL/PPDB), atau Sarpras (Ruang/Aset/Pemeliharaan). Password akun otomatis dibuat "123456" — wajib diganti saat login pertama.
           </p>
           {error && <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2 mb-3">{error}</p>}
           <div className="grid grid-cols-2 gap-3">

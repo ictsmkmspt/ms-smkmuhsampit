@@ -28,11 +28,6 @@ class TagihanLain extends Model
         });
     }
 
-    public function tahunAjaran()
-    {
-        return $this->belongsTo(TahunAjaran::class);
-    }
-
     public function student()
     {
         return $this->belongsTo(Student::class);

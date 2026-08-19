@@ -82,6 +82,10 @@ class TahfidzScoreController extends Controller
 
     public function update(Request $request, TahfidzScore $tahfidzScore)
     {
+        if ($tahfidzScore->recorded_by !== $request->user()->id) {
+            return response()->json(['message' => 'Anda cuma boleh mengubah catatan Tahfidz yang Anda catat sendiri.'], 403);
+        }
+
         $data = $request->validate([
             'surah' => 'required|integer|min:1|max:114',
             'ayat_mulai' => 'required|integer|min:1',
@@ -97,8 +101,12 @@ class TahfidzScoreController extends Controller
         return $tahfidzScore->fresh('student.user');
     }
 
-    public function destroy(TahfidzScore $tahfidzScore)
+    public function destroy(Request $request, TahfidzScore $tahfidzScore)
     {
+        if ($tahfidzScore->recorded_by !== $request->user()->id) {
+            return response()->json(['message' => 'Anda cuma boleh menghapus catatan Tahfidz yang Anda catat sendiri.'], 403);
+        }
+
         $tahfidzScore->delete();
 
         return response()->json(['message' => 'Catatan Tahfidz dihapus.']);

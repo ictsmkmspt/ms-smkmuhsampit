@@ -15,11 +15,6 @@ class AchievementController extends Controller
 {
     use RestrictsGuruToOwnClass;
 
-    public function types()
-    {
-        return AchievementType::orderBy('name')->get();
-    }
-
     public function record(Request $request)
     {
         $data = $request->validate([

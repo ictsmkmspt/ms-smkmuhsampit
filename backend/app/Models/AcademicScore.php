@@ -31,11 +31,6 @@ class AcademicScore extends Model
         return $this->belongsTo(Subject::class);
     }
 
-    public function tahunAjaran()
-    {
-        return $this->belongsTo(TahunAjaran::class);
-    }
-
     public function recordedBy()
     {
         return $this->belongsTo(User::class, 'recorded_by');

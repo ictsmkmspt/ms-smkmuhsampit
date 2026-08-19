@@ -68,7 +68,7 @@ export default function PrestasiReportSection() {
                       </button>
                     </td>
                     <td className="text-right whitespace-nowrap px-2">
-                      <span className={`badge-soft ${s.total_prestasi > 0 ? 'badge-brand' : 'badge-soft'}`}>{s.total_prestasi} poin</span>
+                      <span className={`badge-soft ${s.total_prestasi > 0 ? 'badge-brand' : 'badge-honey'}`}>{s.total_prestasi} poin</span>
                     </td>
                   </tr>
                 ))}
