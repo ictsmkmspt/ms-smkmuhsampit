@@ -381,9 +381,13 @@ class PklAttendanceController extends Controller
         [$tahun, $bulanNum] = array_map('intval', explode('-', $request->query('bulan')));
 
         $pklPlacement->load(['student.user', 'student.classRoom', 'iduka']);
+        // PklAttendance::date TIDAK di-cast ke Carbon (lihat model — cuma
+        // string 'date' biasa persis format kolom MySQL DATE, Y-m-d), jadi
+        // dipakai langsung sebagai key tanpa ->format() supaya tidak fatal
+        // error "Call to a member function format() on string".
         $attendances = PklAttendance::where('pkl_placement_id', $pklPlacement->id)
             ->whereYear('date', $tahun)->whereMonth('date', $bulanNum)
-            ->get()->keyBy(fn ($a) => $a->date->format('Y-m-d'));
+            ->get()->keyBy('date');
 
         $hari = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
         $bulanNama = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
