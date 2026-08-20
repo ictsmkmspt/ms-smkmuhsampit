@@ -15,6 +15,24 @@ git reset --hard origin/main
 echo ">> Restore .env"
 cp /tmp/.env.backup backend/.env
 
+echo ">> Cek ekstensi PHP yang dibutuhkan (export Word/Excel pakai PhpWord/PhpSpreadsheet)"
+# Pemetaan modul PHP -> nama paket apt: "dom" & "simplexml" ikut satu paket
+# php8.4-xml (tidak ada paket php8.4-dom terpisah) — kalau salah nama paket
+# di sini, apt-get install gagal dan deploy berhenti total (set -e di atas).
+declare -A PHP_EXT_PAKET=( [zip]="php8.4-zip" [gd]="php8.4-gd" [mbstring]="php8.4-mbstring" [dom]="php8.4-xml" )
+PHP_PAKET_KURANG=""
+for ext in "${!PHP_EXT_PAKET[@]}"; do
+    if ! php -m | grep -qi "^${ext}$"; then
+        PHP_PAKET_KURANG="$PHP_PAKET_KURANG ${PHP_EXT_PAKET[$ext]}"
+    fi
+done
+if [ -n "$PHP_PAKET_KURANG" ]; then
+    echo "   Ekstensi belum terpasang, memasang paket:$PHP_PAKET_KURANG"
+    sudo apt-get update -y
+    sudo apt-get install -y $PHP_PAKET_KURANG
+    sudo systemctl restart php8.4-fpm
+fi
+
 echo ">> Backend update"
 cd backend
 composer install --optimize-autoloader --no-dev
