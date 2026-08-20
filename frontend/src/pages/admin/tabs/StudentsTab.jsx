@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Plus, Trash2, Download, Upload, KeyRound, Save, Printer, ImagePlus, UserRound, Search } from 'lucide-react';
+import { Plus, Trash2, Download, Upload, KeyRound, Printer, ImagePlus, UserRound, Search } from 'lucide-react';
 import api from '../../../api/axios';
 import TruncateText from '../../../components/TruncateText';
 import Pagination from '../../../components/Pagination';
@@ -33,11 +33,6 @@ export default function StudentsTab() {
   const [uploadingFotoMassal, setUploadingFotoMassal] = useState(false);
   const [fotoMassalResult, setFotoMassalResult] = useState(null);
   const fotoMassalRef = useRef(null);
-
-  const [editId, setEditId] = useState(null);
-  const [editData, setEditData] = useState({});
-  const [editFotoFile, setEditFotoFile] = useState(null);
-  const [saving, setSaving] = useState(false);
 
   const [query, setQuery] = useState('');
   const [filterKelas, setFilterKelas] = useState('');
@@ -120,43 +115,6 @@ export default function StudentsTab() {
     emailManual.current = false;
     setFotoFile(null);
     setError('');
-  };
-
-  const startEdit = (s) => {
-    setEditId(s.id);
-    setEditFotoFile(null);
-    setEditData({
-      name: s.user?.name || '',
-      email: s.user?.email || '',
-      nis: s.nis || '',
-      nisn: s.nisn || '',
-      jenis_kelamin: s.jenis_kelamin || '',
-      class_room_id: s.class_room_id || '',
-      jurusan_id: s.jurusan_id || '',
-      tempat_lahir: s.tempat_lahir || '',
-      tanggal_lahir: s.tanggal_lahir || '',
-      alamat: s.alamat || '',
-    });
-  };
-
-  const handleSaveEdit = async (id) => {
-    setSaving(true);
-    try {
-      await api.put(`/students/${id}`, editData);
-      if (editFotoFile) {
-        const fd = new FormData();
-        fd.append('foto', editFotoFile);
-        await api.post(`/students/${id}/foto`, fd, { headers: { 'Content-Type': 'multipart/form-data' } });
-      }
-      setEditId(null);
-      setEditFotoFile(null);
-      loadStudents();
-    } catch (err) {
-      const msgs = err.response?.data?.errors;
-      alert(msgs ? Object.values(msgs).flat().join(', ') : err.response?.data?.message || 'Gagal menyimpan perubahan.');
-    } finally {
-      setSaving(false);
-    }
   };
 
   const handleDownloadTemplate = async () => {
@@ -457,89 +415,42 @@ export default function StudentsTab() {
             </tr>
           </thead>
           <tbody>
-            {(() => {
-              const rows = [];
-              sortedHalaman.forEach((s) => {
-                if (editId === s.id) {
-                  rows.push(
-                    <tr key={s.id} className="border-t border-line-200 bg-mist-50">
-                      <td colSpan="5" className="py-3 whitespace-nowrap px-2">
-                        <div className="grid grid-cols-2 gap-2 mb-2">
-                          <input value={editData.name} onChange={(e) => setEditData({ ...editData, name: e.target.value })} className="field-input py-1.5 text-sm" placeholder="Nama" />
-                          <input value={editData.email} onChange={(e) => setEditData({ ...editData, email: e.target.value })} className="field-input py-1.5 text-sm" placeholder="Email" type="email" />
-                          <input value={editData.nis} onChange={(e) => setEditData({ ...editData, nis: e.target.value })} className="field-input py-1.5 text-sm" placeholder="NIS" />
-                          <input value={editData.nisn} onChange={(e) => setEditData({ ...editData, nisn: e.target.value })} className="field-input py-1.5 text-sm" placeholder="NISN (opsional)" />
-                          <select value={editData.jenis_kelamin} onChange={(e) => setEditData({ ...editData, jenis_kelamin: e.target.value })} className="field-input py-1.5 text-sm text-ink-700">
-                            <option value="">— Jenis Kelamin —</option>
-                            <option value="L">Laki-laki</option>
-                            <option value="P">Perempuan</option>
-                          </select>
-                          <select value={editData.class_room_id} onChange={(e) => setEditData({ ...editData, class_room_id: e.target.value })} className="field-input py-1.5 text-sm text-ink-700">
-                            <option value="">— Belum Ada Kelas —</option>
-                            {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-                          </select>
-                          <select value={editData.jurusan_id} onChange={(e) => setEditData({ ...editData, jurusan_id: e.target.value })} className="field-input py-1.5 text-sm text-ink-700">
-                            <option value="">— Belum Ada Jurusan —</option>
-                            {jurusanList.map((j) => <option key={j.id} value={j.id}>{j.nama}</option>)}
-                          </select>
-                          <input value={editData.tempat_lahir} onChange={(e) => setEditData({ ...editData, tempat_lahir: e.target.value })} className="field-input py-1.5 text-sm" placeholder="Tempat Lahir" />
-                          <DateInput value={editData.tanggal_lahir} onChange={(e) => setEditData({ ...editData, tanggal_lahir: e.target.value })} className="field-input py-1.5 text-sm w-full" />
-                          <input value={editData.alamat} onChange={(e) => setEditData({ ...editData, alamat: e.target.value })} className="field-input py-1.5 text-sm col-span-2" placeholder="Alamat" />
-                        </div>
-                        <div className="mb-2">
-                          <label className="flex items-center gap-1.5 text-xs font-medium text-ink-500 mb-1"><ImagePlus className="w-3.5 h-3.5" /> Ganti Foto (kosongkan kalau tidak diubah)</label>
-                          <input type="file" accept="image/*" onChange={(e) => setEditFotoFile(e.target.files[0] || null)} className="text-sm" />
-                        </div>
-                        <div className="flex gap-2">
-                          <button onClick={() => handleSaveEdit(s.id)} disabled={saving} className="flex items-center gap-1.5 text-xs font-medium text-white bg-brand-600 hover:bg-brand-700 rounded-lg px-3 py-1.5">
-                            <Save className="w-3.5 h-3.5" /> {saving ? 'Menyimpan...' : 'Simpan'}
-                          </button>
-                          <button onClick={() => setEditId(null)} className="text-xs font-medium text-ink-500 hover:text-ink-700 px-2 py-1.5">Batal</button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                  return;
-                }
-                rows.push(
-                  <tr key={s.id} className="border-t border-line-200">
-                    <td className="py-2.5 text-ink-900 whitespace-nowrap px-2">
-                      <div className="flex items-center gap-2">
-                        {s.foto_url ? (
-                          <img src={s.foto_url} alt="" className="w-6 h-6 rounded-full object-cover shrink-0" />
-                        ) : (
-                          <UserRound className="w-6 h-6 text-ink-300 shrink-0" />
-                        )}
-                        <TruncateText text={s.user?.name} />
-                      </div>
-                    </td>
-                    <td className="text-ink-700 whitespace-nowrap px-2">{s.nisn || '-'}</td>
-                    <td className="text-ink-700 whitespace-nowrap px-2">{s.nis}</td>
-                    <td className="text-ink-700 whitespace-nowrap px-2">{s.class_room?.name || '-'}</td>
-                    <td className="text-right whitespace-nowrap px-2">
-                      <div className="flex justify-end gap-2">
-                        <button onClick={() => window.open(`/print/buku-induk/${s.id}`, '_blank')} className="text-ink-400 hover:text-brand-600 text-xs border border-line-200 rounded-lg px-2 py-1" title="Detail (Buku Induk)">
-                          Detail
-                        </button>
-                        <button onClick={() => window.open(`/print/kartu-pelajar?student_id=${s.id}`, '_blank')} className="text-ink-400 hover:text-brand-600 text-xs border border-line-200 rounded-lg px-2 py-1" title="Cetak Kartu Pelajar siswa ini">
-                          Cetak Kartu
-                        </button>
-                        <button onClick={() => startEdit(s)} className="text-ink-400 hover:text-brand-600 text-xs border border-line-200 rounded-lg px-2 py-1">
-                          Edit
-                        </button>
-                        <button onClick={() => handleResetPassword(s.id, s.user?.name)} className="text-ink-400 hover:text-brand-600" title="Reset Password ke default (123456)">
-                          <KeyRound className="w-4 h-4" />
-                        </button>
-                        <button onClick={() => handleDelete(s.id, s.user?.name)} className="text-ink-300 hover:text-honey-700">
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              });
-              return rows;
-            })()}
+            {sortedHalaman.map((s) => (
+              <tr key={s.id} className="border-t border-line-200">
+                <td className="py-2.5 text-ink-900 whitespace-nowrap px-2">
+                  <div className="flex items-center gap-2">
+                    {s.foto_url ? (
+                      <img src={s.foto_url} alt="" className="w-6 h-6 rounded-full object-cover shrink-0" />
+                    ) : (
+                      <UserRound className="w-6 h-6 text-ink-300 shrink-0" />
+                    )}
+                    <TruncateText text={s.user?.name} />
+                  </div>
+                </td>
+                <td className="text-ink-700 whitespace-nowrap px-2">{s.nisn || '-'}</td>
+                <td className="text-ink-700 whitespace-nowrap px-2">{s.nis}</td>
+                <td className="text-ink-700 whitespace-nowrap px-2">{s.class_room?.name || '-'}</td>
+                <td className="text-right whitespace-nowrap px-2">
+                  <div className="flex justify-end gap-2">
+                    <button onClick={() => window.open(`/print/buku-induk/${s.id}`, '_blank')} className="text-ink-400 hover:text-brand-600 text-xs border border-line-200 rounded-lg px-2 py-1" title="Detail (Buku Induk)">
+                      Detail
+                    </button>
+                    <button onClick={() => window.open(`/print/kartu-pelajar?student_id=${s.id}`, '_blank')} className="text-ink-400 hover:text-brand-600 text-xs border border-line-200 rounded-lg px-2 py-1" title="Cetak Kartu Pelajar siswa ini">
+                      Cetak Kartu
+                    </button>
+                    <button onClick={() => window.open(`/siswa/${s.id}/edit-biodata`, '_blank')} className="text-ink-400 hover:text-brand-600 text-xs border border-line-200 rounded-lg px-2 py-1">
+                      Edit
+                    </button>
+                    <button onClick={() => handleResetPassword(s.id, s.user?.name)} className="text-ink-400 hover:text-brand-600" title="Reset Password ke default (123456)">
+                      <KeyRound className="w-4 h-4" />
+                    </button>
+                    <button onClick={() => handleDelete(s.id, s.user?.name)} className="text-ink-300 hover:text-honey-700">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
             {students.length === 0 && (
               <tr><td colSpan="5" className="py-6 text-center text-ink-300 whitespace-nowrap px-2">Belum ada siswa.</td></tr>
             )}

@@ -327,6 +327,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Sarana & Prasarana (grup di bawah) — bukan lagi di sini.
     Route::middleware('role:admin')->group(function () {
         Route::get('/ppdb', [PpdbController::class, 'index']);
+        Route::post('/ppdb/manual', [PpdbController::class, 'storeManual']);
         Route::put('/ppdb/pengaturan', [PpdbController::class, 'updatePengaturan']);
         Route::put('/ppdb/{ppdbPendaftar}', [PpdbController::class, 'update']);
         Route::delete('/ppdb/{ppdbPendaftar}', [PpdbController::class, 'destroy']);

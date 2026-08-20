@@ -58,14 +58,50 @@ export default function PrintBukuInduk() {
         <div className="lembar-body">
           <table className="lembar-tabel lembar-tabel-full">
             <tbody>
-              <tr><td className="lembar-label">Nama Lengkap</td><td>{siswa.user?.name}</td></tr>
+              <tr><td className="lembar-label">Nama Siswa</td><td>{siswa.user?.name}</td></tr>
+              <tr><td className="lembar-label">Nomor Induk (NIS)</td><td className="font-mono">{siswa.nis || '-'}</td></tr>
               <tr><td className="lembar-label">NISN</td><td className="font-mono">{siswa.nisn || '-'}</td></tr>
-              <tr><td className="lembar-label">NIS</td><td className="font-mono">{siswa.nis || '-'}</td></tr>
+              <tr><td className="lembar-label">NIK</td><td className="font-mono">{siswa.nik || '-'}</td></tr>
               <tr><td className="lembar-label">Jenis Kelamin</td><td>{JK_LABEL[siswa.jenis_kelamin] || '-'}</td></tr>
               <tr><td className="lembar-label">Tempat, Tanggal Lahir</td><td>{[siswa.tempat_lahir, formatTanggal(siswa.tanggal_lahir)].filter(Boolean).join(', ') || '-'}</td></tr>
-              <tr><td className="lembar-label">Alamat</td><td>{siswa.alamat || '-'}</td></tr>
-              <tr><td className="lembar-label">Jurusan</td><td>{siswa.jurusan?.nama || '-'}</td></tr>
+              <tr><td className="lembar-label">Agama</td><td>{siswa.agama || '-'}</td></tr>
+              <tr><td className="lembar-label">Alamat Siswa</td><td>{siswa.alamat || '-'}</td></tr>
+              <tr><td className="lembar-label">Kebutuhan Khusus</td><td>{siswa.kebutuhan_khusus || '-'}</td></tr>
+              <tr><td className="lembar-label">Jumlah Saudara / Anak Ke</td><td>{siswa.jumlah_saudara ?? '-'} / {siswa.anak_ke ?? '-'}</td></tr>
+              <tr><td className="lembar-label">No. Telp Siswa</td><td>{siswa.no_telp || '-'}</td></tr>
               <tr><td className="lembar-label">Email</td><td>{siswa.user?.email || '-'}</td></tr>
+            </tbody>
+          </table>
+
+          <table className="lembar-tabel lembar-tabel-full">
+            <tbody>
+              <tr><td className="lembar-label">Sekolah Asal</td><td>{siswa.sekolah_asal_nama || '-'}</td></tr>
+              <tr><td className="lembar-label">Alamat Sekolah Asal</td><td>{siswa.sekolah_asal_alamat || '-'}</td></tr>
+              <tr><td className="lembar-label">Tahun Ijazah / STTB</td><td>{siswa.ijazah_tahun || '-'}</td></tr>
+              <tr><td className="lembar-label">Nomor Ijazah / STTB</td><td>{siswa.ijazah_nomor || '-'}</td></tr>
+              <tr><td className="lembar-label">Diterima di Tingkat</td><td>{siswa.tingkat_diterima || '-'}</td></tr>
+              <tr><td className="lembar-label">Pada Tanggal</td><td>{formatTanggal(siswa.tanggal_diterima)}</td></tr>
+              <tr><td className="lembar-label">Kompetensi Keahlian</td><td>{siswa.jurusan?.nama || '-'}</td></tr>
+              <tr><td className="lembar-label">Kelas Saat Ini</td><td>{siswa.class_room?.name || '-'}</td></tr>
+            </tbody>
+          </table>
+
+          <table className="lembar-tabel lembar-tabel-full">
+            <tbody>
+              <tr><td className="lembar-label">Nama Ayah</td><td>{siswa.nama_ayah || '-'}</td></tr>
+              <tr><td className="lembar-label">Nama Ibu</td><td>{siswa.nama_ibu || '-'}</td></tr>
+              <tr><td className="lembar-label">Alamat Orang Tua</td><td>{siswa.alamat_ortu || '-'}</td></tr>
+              <tr><td className="lembar-label">No. Telp Orang Tua</td><td>{siswa.telp_ortu || '-'}</td></tr>
+              <tr><td className="lembar-label">Pekerjaan Orang Tua</td><td>{siswa.pekerjaan_ortu || '-'}</td></tr>
+              <tr><td className="lembar-label">Penghasilan Orang Tua</td><td>{siswa.penghasilan_ortu || '-'}</td></tr>
+              {(siswa.nama_wali || siswa.alamat_wali || siswa.telp_wali || siswa.pekerjaan_wali) && (
+                <>
+                  <tr><td className="lembar-label">Nama Wali</td><td>{siswa.nama_wali || '-'}</td></tr>
+                  <tr><td className="lembar-label">Alamat Wali</td><td>{siswa.alamat_wali || '-'}</td></tr>
+                  <tr><td className="lembar-label">No. Telp Wali</td><td>{siswa.telp_wali || '-'}</td></tr>
+                  <tr><td className="lembar-label">Pekerjaan Wali</td><td>{siswa.pekerjaan_wali || '-'}</td></tr>
+                </>
+              )}
             </tbody>
           </table>
 

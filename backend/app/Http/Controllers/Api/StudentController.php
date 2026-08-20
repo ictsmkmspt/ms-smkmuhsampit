@@ -101,22 +101,60 @@ class StudentController extends Controller
     public function update(Request $request, Student $student)
     {
         $data = $request->validate([
-            'name' => 'sometimes|string|max:100',
-            'email' => 'sometimes|email|unique:users,email,' . $student->user_id,
-            'nis' => 'sometimes|string|unique:students,nis,' . $student->id,
+            // name/email/nis/jenis_kelamin/agama/tempat_lahir/tanggal_lahir/
+            // alamat/class_room_id/jurusan_id WAJIB diisi — ini form
+            // biodata lengkap (EditBiodataSiswaPage.jsx), bukan tambah
+            // siswa cepat (store() di bawah TETAP nullable buat field
+            // biodata yang belum tentu diketahui saat pendaftaran awal).
+            'name' => 'required|string|max:100',
+            'email' => 'required|email|unique:users,email,' . $student->user_id,
+            'nis' => 'required|string|unique:students,nis,' . $student->id,
             'nisn' => 'nullable|string|unique:students,nisn,' . $student->id,
-            'jenis_kelamin' => 'nullable|in:L,P',
-            'class_room_id' => 'nullable|exists:class_rooms,id',
-            'jurusan_id' => 'nullable|exists:jurusans,id',
-            'tempat_lahir' => 'nullable|string|max:100',
-            'tanggal_lahir' => 'nullable|date',
-            'alamat' => 'nullable|string|max:300',
+            'nik' => 'nullable|string|max:20',
+            'jenis_kelamin' => 'required|in:L,P',
+            'agama' => 'required|string|max:30',
+            'class_room_id' => 'required|exists:class_rooms,id',
+            'jurusan_id' => 'required|exists:jurusans,id',
+            'tempat_lahir' => 'required|string|max:100',
+            'tanggal_lahir' => 'required|date',
+            'alamat' => 'required|string|max:300',
+            'kebutuhan_khusus' => 'nullable|string|max:255',
+            'jumlah_saudara' => 'nullable|integer|min:0|max:99',
+            'anak_ke' => 'nullable|integer|min:0|max:99',
+            'no_telp' => 'nullable|string|max:30',
+            // Sekolah asal & ijazah/STTB
+            'sekolah_asal_nama' => 'nullable|string|max:255',
+            'sekolah_asal_alamat' => 'nullable|string|max:255',
+            'ijazah_tahun' => 'nullable|string|max:20',
+            'ijazah_nomor' => 'nullable|string|max:100',
+            // Penerimaan di sekolah ini
+            'tingkat_diterima' => 'nullable|string|max:10',
+            'tanggal_diterima' => 'nullable|date',
+            // Orang tua
+            'nama_ayah' => 'nullable|string|max:255',
+            'nama_ibu' => 'nullable|string|max:255',
+            'alamat_ortu' => 'nullable|string|max:300',
+            'telp_ortu' => 'nullable|string|max:60',
+            'pekerjaan_ortu' => 'nullable|string|max:255',
+            'penghasilan_ortu' => 'nullable|string|max:60',
+            // Wali
+            'nama_wali' => 'nullable|string|max:255',
+            'alamat_wali' => 'nullable|string|max:300',
+            'telp_wali' => 'nullable|string|max:60',
+            'pekerjaan_wali' => 'nullable|string|max:255',
         ]);
 
         if (isset($data['name']) || isset($data['email'])) {
             $student->user->update(array_intersect_key($data, array_flip(['name', 'email'])));
         }
-        $student->update($request->only('nis', 'nisn', 'class_room_id', 'jenis_kelamin', 'jurusan_id', 'tempat_lahir', 'tanggal_lahir', 'alamat'));
+        $student->update($request->only([
+            'nis', 'nisn', 'nik', 'class_room_id', 'jenis_kelamin', 'agama', 'jurusan_id',
+            'tempat_lahir', 'tanggal_lahir', 'alamat', 'kebutuhan_khusus', 'jumlah_saudara', 'anak_ke', 'no_telp',
+            'sekolah_asal_nama', 'sekolah_asal_alamat', 'ijazah_tahun', 'ijazah_nomor',
+            'tingkat_diterima', 'tanggal_diterima',
+            'nama_ayah', 'nama_ibu', 'alamat_ortu', 'telp_ortu', 'pekerjaan_ortu', 'penghasilan_ortu',
+            'nama_wali', 'alamat_wali', 'telp_wali', 'pekerjaan_wali',
+        ]));
 
         return $student->load(['user', 'classRoom', 'jurusan']);
     }

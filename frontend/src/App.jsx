@@ -32,6 +32,7 @@ import PrintAssetLabels from './pages/print/PrintAssetLabels';
 import PrintBukuLabels from './pages/print/PrintBukuLabels';
 import PrintKartuPelajar from './pages/print/PrintKartuPelajar';
 import PrintBukuInduk from './pages/print/PrintBukuInduk';
+import EditBiodataSiswaPage from './pages/EditBiodataSiswaPage';
 import PrintPenilaianPkl from './pages/print/PrintPenilaianPkl';
 
 /**
@@ -140,6 +141,10 @@ export default function App() {
 
             <Route path="/print/buku-induk/:id" element={
               <ProtectedRoute allowedRoles={['admin', 'waka_kesiswaan', 'tu']}><PrintBukuInduk /></ProtectedRoute>
+            } />
+
+            <Route path="/siswa/:id/edit-biodata" element={
+              <ProtectedRoute allowedRoles={['admin', 'waka_kesiswaan', 'tu']}><EditBiodataSiswaPage /></ProtectedRoute>
             } />
 
             <Route path="/print/penilaian-pkl/:id" element={

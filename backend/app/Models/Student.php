@@ -10,6 +10,11 @@ class Student extends Model
     protected $fillable = [
         'user_id', 'class_room_id', 'jurusan_id', 'nis', 'nisn', 'jenis_kelamin', 'qr_code', 'foto',
         'tempat_lahir', 'tanggal_lahir', 'alamat', 'total_poin', 'total_prestasi', 'status', 'tanggal_lulus',
+        'nik', 'agama', 'kebutuhan_khusus', 'jumlah_saudara', 'anak_ke', 'no_telp',
+        'sekolah_asal_nama', 'sekolah_asal_alamat', 'ijazah_tahun', 'ijazah_nomor',
+        'tingkat_diterima', 'tanggal_diterima',
+        'nama_ayah', 'nama_ibu', 'alamat_ortu', 'telp_ortu', 'pekerjaan_ortu', 'penghasilan_ortu',
+        'nama_wali', 'alamat_wali', 'telp_wali', 'pekerjaan_wali',
     ];
 
     protected $appends = ['foto_url'];
