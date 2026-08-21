@@ -1,8 +1,17 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { BookOpen, Undo2, Search, CheckCircle2 } from 'lucide-react';
+import QRCode from 'qrcode';
 import QrCodeScanner from '../../../components/QrCodeScanner';
 import api from '../../../api/axios';
 import { fmtDMY } from '../../../utils/date';
+
+// Status eksemplar yang bisa DIPILIH langsung dari hasil cari judul,
+// tergantung mode — sama seperti aturan scanBuku() (Pinjam cuma boleh
+// "tersedia", Kembali cuma boleh "dipinjam"). Eksemplar lain tetap
+// ditampilkan (supaya pengurus lihat semua salinan judul itu) tapi
+// tombolnya nonaktif.
+const STATUS_BISA_DIPILIH = { pinjam: 'tersedia', kembali: 'dipinjam' };
+const STATUS_LABEL = { tersedia: 'Tersedia', dipinjam: 'Dipinjam', rusak: 'Rusak', hilang: 'Hilang' };
 
 const KONDISI_OPSI = [
   { value: 'baik', label: 'Baik' },
@@ -25,6 +34,9 @@ export default function SirkulasiTab() {
   const [kodeManual, setKodeManual] = useState('');
   const [cariNama, setCariNama] = useState('');
   const [hasilCari, setHasilCari] = useState([]);
+  const [cariJudul, setCariJudul] = useState('');
+  const [hasilCariJudul, setHasilCariJudul] = useState([]);
+  const [qrMapJudul, setQrMapJudul] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [sukses, setSukses] = useState('');
 
@@ -37,6 +49,8 @@ export default function SirkulasiTab() {
     setKodeManual('');
     setCariNama('');
     setHasilCari([]);
+    setCariJudul('');
+    setHasilCariJudul([]);
     setSukses('');
   };
 
@@ -81,6 +95,42 @@ export default function SirkulasiTab() {
     if (q.trim().length < 2) { setHasilCari([]); return; }
     const res = await api.get('/perpustakaan-sirkulasi/peminjam/cari', { params: { q } });
     setHasilCari(res.data);
+  };
+
+  // Cari judul buku — jalan lain kalau tidak pegang QR fisiknya, cuma tahu
+  // judulnya. Tiap salinan (eksemplar) ditampilkan dengan QR code-nya
+  // sendiri supaya pengurus bisa cocokkan persis eksemplar mana di rak,
+  // bukan cuma nebak dari judul yang sama.
+  const handleCariJudul = async (q) => {
+    setCariJudul(q);
+    if (q.trim().length < 2) { setHasilCariJudul([]); return; }
+    const res = await api.get('/perpustakaan-sirkulasi/buku-judul', { params: { q } });
+    setHasilCariJudul(res.data);
+  };
+
+  useEffect(() => {
+    if (hasilCariJudul.length === 0) return;
+    let batal = false;
+    (async () => {
+      const map = {};
+      for (const b of hasilCariJudul) {
+        for (const e of b.eksemplars) {
+          map[e.id] = await QRCode.toDataURL(e.kode_eksemplar, { width: 160, margin: 2, color: { dark: '#22344A', light: '#FFFFFF' } });
+        }
+      }
+      if (!batal) setQrMapJudul((prev) => ({ ...prev, ...map }));
+    })();
+    return () => { batal = true; };
+  }, [hasilCariJudul]);
+
+  const pilihEksemplarDariJudul = async (eksemplar) => {
+    const hasil = await scanBuku(eksemplar.kode_eksemplar);
+    if (!hasil.error) {
+      setCariJudul('');
+      setHasilCariJudul([]);
+    } else {
+      alert(hasil.message);
+    }
   };
 
   const pilihPeminjamDariCari = (p) => {
@@ -184,6 +234,57 @@ export default function SirkulasiTab() {
             />
             <button onClick={handleManual} className="btn-primary px-4">Cari</button>
           </div>
+
+          {step === 'scan-buku' && (
+            <div className="mt-4 pt-4 border-t border-line-200">
+              <label className="field-label flex items-center gap-1.5 mb-1.5"><Search className="w-3.5 h-3.5" /> Cari Judul Buku</label>
+              <input
+                value={cariJudul} onChange={(e) => handleCariJudul(e.target.value)}
+                placeholder="Ketik judul buku, minimal 2 huruf..." className="field-input text-sm"
+              />
+              {hasilCariJudul.length > 0 && (
+                <div className="mt-2 space-y-3">
+                  {hasilCariJudul.map((b) => (
+                    <div key={b.id} className="border border-line-200 rounded-lg p-3">
+                      <p className="text-sm font-semibold text-ink-900">{b.judul}</p>
+                      <p className="text-xs text-ink-500 mb-2">{b.penulis || 'Penulis tidak diketahui'}</p>
+                      {b.eksemplars.length === 0 ? (
+                        <p className="text-xs text-ink-300 italic">Belum ada eksemplar buku ini.</p>
+                      ) : (
+                        <div className="flex flex-wrap gap-2">
+                          {b.eksemplars.map((e) => {
+                            const bisaDipilih = e.status === STATUS_BISA_DIPILIH[mode];
+                            return (
+                              <button
+                                key={e.id}
+                                type="button"
+                                disabled={!bisaDipilih}
+                                onClick={() => pilihEksemplarDariJudul(e)}
+                                title={bisaDipilih ? 'Pilih eksemplar ini' : `Status: ${STATUS_LABEL[e.status] || e.status}`}
+                                className={`flex flex-col items-center gap-1 p-2 rounded-lg border text-center w-24 shrink-0 transition ${
+                                  bisaDipilih ? 'border-line-200 hover:border-brand-400 hover:bg-mist-50' : 'border-line-200 opacity-40 cursor-not-allowed'
+                                }`}
+                              >
+                                {qrMapJudul[e.id] ? (
+                                  <img src={qrMapJudul[e.id]} alt={e.kode_eksemplar} className="w-16 h-16 object-contain" />
+                                ) : (
+                                  <div className="w-16 h-16 bg-mist-50 rounded" />
+                                )}
+                                <span className="font-mono text-[10px] text-ink-700 break-all leading-tight">{e.kode_eksemplar}</span>
+                                <span className={`badge-soft ${e.status === 'tersedia' ? 'badge-brand' : e.status === 'dipinjam' ? 'badge-honey' : 'badge-rose'} text-[10px] px-1.5 py-0`}>
+                                  {STATUS_LABEL[e.status] || e.status}
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           {step === 'scan-peminjam' && (
             <div className="mt-4 pt-4 border-t border-line-200">

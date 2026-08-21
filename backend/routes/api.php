@@ -935,6 +935,11 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::get('/perpustakaan-sirkulasi/peminjam/cari', [PerpustakaanSirkulasiController::class, 'cariPeminjamNama']);
         Route::get('/perpustakaan-sirkulasi/peminjam/kode/{kode}', [PerpustakaanSirkulasiController::class, 'cariPeminjamKode']);
+        // Segmen "buku-judul" (bukan "/buku/cari") sengaja dipilih supaya
+        // TIDAK sekelompok/beririsan dengan rute wildcard "/buku/{kode}" di
+        // bawahnya — menghindari kelas bug collision rute yang sama seperti
+        // yang pernah ditemukan di CBT (lihat catatan di route show ujian).
+        Route::get('/perpustakaan-sirkulasi/buku-judul', [PerpustakaanSirkulasiController::class, 'cariBukuJudul']);
         Route::get('/perpustakaan-sirkulasi/buku/{kode}', [PerpustakaanSirkulasiController::class, 'cariBuku']);
         Route::post('/perpustakaan-sirkulasi/pinjam', [PerpustakaanSirkulasiController::class, 'pinjam']);
         Route::post('/perpustakaan-sirkulasi/{peminjaman}/kembalikan', [PerpustakaanSirkulasiController::class, 'kembalikan']);

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Buku;
 use App\Models\BukuEksemplar;
 use App\Models\PerpustakaanPeminjaman;
 use App\Models\Setting;
@@ -55,6 +56,24 @@ class PerpustakaanSirkulasiController extends Controller
         }
 
         return null;
+    }
+
+    /**
+     * Cari buku by judul (dipakai kedua mode, Pinjam & Kembali) — jalan
+     * lain kalau pengurus/peminjam tidak pegang QR fisiknya, cuma tahu
+     * judulnya. Tiap eksemplar (kode + status) ikut dikirim supaya
+     * pengurus bisa lihat persis eksemplar mana yang mau dipilih (dan
+     * frontend menampilkan QR code-nya juga) tanpa perlu scan dulu.
+     */
+    public function cariBukuJudul(Request $request)
+    {
+        $data = $request->validate(['q' => 'required|string|min:2']);
+
+        return Buku::where('judul', 'like', '%'.$data['q'].'%')
+            ->with(['eksemplars' => fn ($q) => $q->orderBy('kode_eksemplar')])
+            ->orderBy('judul')
+            ->limit(10)
+            ->get(['id', 'judul', 'penulis', 'kode_buku']);
     }
 
     /**
