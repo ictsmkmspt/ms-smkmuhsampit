@@ -66,5 +66,12 @@ class AppServiceProvider extends ServiceProvider
                 Limit::perDay(15)->by($request->ip()),
             ];
         });
+
+        // Catatan pindah-tab/blur saat ujian CBT dikirim otomatis dari
+        // browser siswa — batasi supaya event yang salah dikonfigurasi
+        // (mis. loop) tidak membanjiri tabel log.
+        RateLimiter::for('cbt-events', function (Request $request) {
+            return Limit::perMinute(30)->by($request->user()?->id ?: $request->ip());
+        });
     }
 }

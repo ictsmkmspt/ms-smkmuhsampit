@@ -46,13 +46,22 @@ export default function TeachingAssignmentsTab() {
   }, []);
   useEffect(() => { load(); }, [tahunAjaranIdTerpilih]); // eslint-disable-line
 
-  // Kelas yang mapel terpilih SUDAH punya penugasan (guru siapa pun) di
-  // tahun ajaran ini — dihitung dari data `assignments` yang sudah
-  // dimuat, tanpa perlu request tambahan. Sesuai constraint database (1
-  // kelas cuma boleh 1 penugasan per mapel, lepas dari guru), jadi
-  // kotaknya dikunci supaya tidak mencoba bikin baris yang bakal ditolak.
+  // Kelas yang mapel terpilih SUDAH punya penugasan di tahun ajaran ini —
+  // dihitung dari data `assignments` yang sudah dimuat, tanpa perlu
+  // request tambahan. Beda per tipe mapel (samakan dengan backend
+  // storeBulk()): mapel "umum" dikunci lepas dari guru (1 kelas 1 guru
+  // per mapel umum), mapel "kejuruan" cuma dikunci kalau GURU YANG SAMA
+  // yang dipilih sudah ditugaskan — guru lain tetap boleh dicentang untuk
+  // kelas+mapel yang sama (team teaching/mapel produktif).
+  const selectedSubject = subjects.find((s) => String(s.id) === bulkSubjectId);
+  const isKejuruan = selectedSubject?.tipe === 'kejuruan';
   const classIdsSudahAda = bulkSubjectId
-    ? new Set(assignments.filter((a) => String(a.subject_id) === bulkSubjectId).map((a) => a.class_room_id))
+    ? new Set(
+        assignments
+          .filter((a) => String(a.subject_id) === bulkSubjectId)
+          .filter((a) => !isKejuruan || String(a.teacher_id) === bulkTeacherId)
+          .map((a) => a.class_room_id)
+      )
     : new Set();
   const classesBisaDipilih = classes.filter((c) => !classIdsSudahAda.has(c.id));
   const semuaKelasTerpilih = classesBisaDipilih.length > 0 && classesBisaDipilih.every((c) => selectedClassIds.has(c.id));
@@ -226,7 +235,11 @@ export default function TeachingAssignmentsTab() {
               <option value="">Pilih Mata Pelajaran</option>
               {subjects.map((s) => <option key={s.id} value={s.id}>{s.nama}</option>)}
             </select>
-            <select value={bulkTeacherId} onChange={(e) => setBulkTeacherId(e.target.value)} className="field-input text-ink-700" required>
+            <select
+              value={bulkTeacherId}
+              onChange={(e) => { setBulkTeacherId(e.target.value); if (isKejuruan) setSelectedClassIds(new Set()); }}
+              className="field-input text-ink-700" required
+            >
               <option value="">Pilih Guru</option>
               {teachers.map((t) => <option key={t.id} value={t.id}>{t.user?.name}</option>)}
             </select>
@@ -236,6 +249,12 @@ export default function TeachingAssignmentsTab() {
               className="field-input"
             />
           </div>
+
+          {isKejuruan && (
+            <p className="text-xs text-brand-700 bg-brand-50 border border-brand-200 rounded-lg px-3 py-2 mb-4">
+              Mapel kejuruan — kelas yang sudah diampu guru LAIN tetap boleh dicentang (team teaching/mapel produktif boleh &gt;1 guru per kelas). "Sudah ada" di sini cuma mengunci kalau guru yang sama sudah ditugaskan.
+            </p>
+          )}
 
           {bulkSubjectId && (
             <div className="mb-4 border border-line-200 rounded-xl max-h-80 overflow-y-auto table-scroll">

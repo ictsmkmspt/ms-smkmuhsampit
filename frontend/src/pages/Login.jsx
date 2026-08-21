@@ -34,6 +34,7 @@ export default function Login() {
       else if (user.role === 'bk') navigate('/bk');
       else if (user.role === 'pustakawan') navigate('/perpustakaan-staff');
       else if (user.role === 'kepala_sekolah') navigate('/kepala-sekolah');
+      else if (user.role === 'pengawas_ujian') navigate('/ujian');
       else navigate('/siswa');
     } catch {
       setError('Email/No. HP atau password salah.');

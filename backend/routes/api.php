@@ -9,11 +9,25 @@ use App\Http\Controllers\Api\TadarusScoreController;
 use App\Http\Controllers\Api\AchievementController;
 use App\Http\Controllers\Api\AchievementTypeController;
 use App\Http\Controllers\Api\AdminAccountController;
+use App\Http\Controllers\Api\AdminCbtBankSoalController;
+use App\Http\Controllers\Api\AdminCbtEssayController;
+use App\Http\Controllers\Api\AdminCbtExamController;
+use App\Http\Controllers\Api\AdminCbtMateriController;
+use App\Http\Controllers\Api\AdminCbtQuestionController;
+use App\Http\Controllers\Api\AdminCbtTpController;
 use App\Http\Controllers\Api\AssetController;
 use App\Http\Controllers\Api\AttendanceController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BkAccountController;
 use App\Http\Controllers\Api\BkCaseController;
+use App\Http\Controllers\Api\CbtBankSoalController;
+use App\Http\Controllers\Api\CbtEssayController;
+use App\Http\Controllers\Api\CbtExamController;
+use App\Http\Controllers\Api\CbtMateriController;
+use App\Http\Controllers\Api\CbtMonitoringController;
+use App\Http\Controllers\Api\CbtPengawasController;
+use App\Http\Controllers\Api\CbtQuestionController;
+use App\Http\Controllers\Api\CbtTpController;
 use App\Http\Controllers\Api\ClassRoomController;
 use App\Http\Controllers\Api\DashboardChartController;
 use App\Http\Controllers\Api\IdukaController;
@@ -37,6 +51,7 @@ use App\Http\Controllers\Api\PerpustakaanPeminjamanController;
 use App\Http\Controllers\Api\PerpustakaanPengaturanController;
 use App\Http\Controllers\Api\PerpustakaanRakController;
 use App\Http\Controllers\Api\PerpustakaanSirkulasiController;
+use App\Http\Controllers\Api\PengawasUjianAccountController;
 use App\Http\Controllers\Api\PustakawanController;
 use App\Http\Controllers\Api\PpdbController;
 use App\Http\Controllers\Api\PrayerAttendanceController;
@@ -53,6 +68,7 @@ use App\Http\Controllers\Api\StudentController;
 use App\Http\Controllers\Api\JurusanController;
 use App\Http\Controllers\Api\KartuPelajarController;
 use App\Http\Controllers\Api\KepalaSekolahDashboardController;
+use App\Http\Controllers\Api\StudentExamController;
 use App\Http\Controllers\Api\StudentSelfController;
 use App\Http\Controllers\Api\SubjectController;
 use App\Http\Controllers\Api\SystemBackupController;
@@ -587,6 +603,66 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/tadarus-scores/bulk', [TadarusScoreController::class, 'storeBulk']);
         Route::put('/tadarus-scores/{tadarusScore}', [TadarusScoreController::class, 'update']);
         Route::delete('/tadarus-scores/{tadarusScore}', [TadarusScoreController::class, 'destroy']);
+
+        // CBT — Bank Soal & Buat Ujian, khusus guru pemilik Tugas Mengajar
+        // mapel/kelas terkait (dicek di controller lewat TeachingAssignment).
+        Route::get('/cbt-bank-soal', [CbtBankSoalController::class, 'index']);
+        Route::post('/cbt-bank-soal', [CbtBankSoalController::class, 'store']);
+        // Rute statis (lain, duplikat) didaftarkan sebelum {cbtBankSoal}
+        // wildcard, konsisten konvensi yang sudah dipakai di seluruh file ini.
+        Route::get('/cbt-bank-soal/lain', [CbtBankSoalController::class, 'lain']);
+        Route::get('/cbt-bank-soal/{cbtBankSoal}/soal-lain', [CbtBankSoalController::class, 'soalLain']);
+        Route::post('/cbt-bank-soal/duplikat', [CbtBankSoalController::class, 'duplikat']);
+        Route::post('/cbt-bank-soal/{cbtBankSoal}/toggle-share', [CbtBankSoalController::class, 'toggleShare']);
+        Route::put('/cbt-bank-soal/{cbtBankSoal}', [CbtBankSoalController::class, 'update']);
+        Route::delete('/cbt-bank-soal/{cbtBankSoal}', [CbtBankSoalController::class, 'destroy']);
+
+        Route::get('/cbt-questions', [CbtQuestionController::class, 'index']);
+        Route::post('/cbt-questions', [CbtQuestionController::class, 'store']);
+        Route::get('/cbt-questions/import/template', [CbtQuestionController::class, 'downloadTemplate']);
+        Route::post('/cbt-questions/import', [CbtQuestionController::class, 'import']);
+        Route::put('/cbt-questions/{cbtQuestion}', [CbtQuestionController::class, 'update']);
+        Route::post('/cbt-questions/{cbtQuestion}/audio', [CbtQuestionController::class, 'uploadAudio']);
+        Route::delete('/cbt-questions/{cbtQuestion}/audio', [CbtQuestionController::class, 'removeAudio']);
+        Route::delete('/cbt-questions/{cbtQuestion}', [CbtQuestionController::class, 'destroy']);
+
+        Route::get('/cbt-exams', [CbtExamController::class, 'index']);
+        Route::post('/cbt-exams', [CbtExamController::class, 'store']);
+        Route::put('/cbt-exams/{cbtExam}', [CbtExamController::class, 'update']);
+        Route::post('/cbt-exams/{cbtExam}/publish', [CbtExamController::class, 'publish']);
+        Route::post('/cbt-exams/{cbtExam}/close', [CbtExamController::class, 'close']);
+        Route::post('/cbt-exams/{cbtExam}/reopen', [CbtExamController::class, 'reopen']);
+        Route::post('/cbt-exams/{cbtExam}/duplicate', [CbtExamController::class, 'duplicate']);
+        Route::post('/cbt-exams/{cbtExam}/regenerate-token', [CbtExamController::class, 'regenerateToken']);
+        Route::post('/cbt-exams/{cbtExam}/publikasi-nilai', [CbtExamController::class, 'publikasiNilai']);
+        Route::post('/cbt-exams/{cbtExam}/hentikan-semua', [CbtExamController::class, 'hentikanSemua']);
+        Route::delete('/cbt-exams/{cbtExam}', [CbtExamController::class, 'destroy']);
+        Route::get('/cbt-exams/{cbtExam}/attempts', [CbtExamController::class, 'attempts']);
+        Route::get('/cbt-exams/{cbtExam}/export-nilai', [CbtExamController::class, 'exportNilai']);
+        Route::get('/cbt-exams/{cbtExam}/item-analysis', [CbtExamController::class, 'itemAnalysis']);
+        Route::get('/my-cbt-exams', [CbtExamController::class, 'myExams']);
+        Route::post('/cbt-exams/attempts/{cbtExamAttempt}/reset', [CbtExamController::class, 'resetAttempt']);
+        Route::post('/cbt-exams/attempts/{cbtExamAttempt}/hentikan', [CbtExamController::class, 'hentikanAttempt']);
+        Route::post('/cbt-exams/attempts/{cbtExamAttempt}/tambah-waktu', [CbtExamController::class, 'tambahWaktu']);
+        Route::post('/cbt-exams/{cbtExam}/kirim-nilai-akademik', [CbtExamController::class, 'kirimKeNilaiAkademik']);
+
+        // Koreksi Essay — dibuka dari dalam Laporan per-ujian, tidak ada daftar tersendiri
+        Route::get('/cbt-essay/{cbtExam}/koreksi', [CbtEssayController::class, 'koreksi']);
+        Route::get('/cbt-essay/{cbtExam}/koreksi/{cbtExamAttempt}', [CbtEssayController::class, 'koreksiSiswa']);
+        Route::put('/cbt-essay/jawaban/{cbtExamAnswer}/nilai', [CbtEssayController::class, 'simpanNilai']);
+
+        // Tujuan Pembelajaran (TP) — wadah Materi
+        Route::get('/cbt-tp', [CbtTpController::class, 'index']);
+        Route::post('/cbt-tp', [CbtTpController::class, 'store']);
+        Route::put('/cbt-tp/{cbtTp}', [CbtTpController::class, 'update']);
+        Route::delete('/cbt-tp/{cbtTp}', [CbtTpController::class, 'destroy']);
+
+        // Materi bacaan
+        Route::get('/cbt-materi', [CbtMateriController::class, 'index']);
+        Route::post('/cbt-materi', [CbtMateriController::class, 'store']);
+        Route::put('/cbt-materi/{cbtMateri}', [CbtMateriController::class, 'update']);
+        Route::post('/cbt-materi/{cbtMateri}/gambar', [CbtMateriController::class, 'uploadGambar']);
+        Route::delete('/cbt-materi/{cbtMateri}', [CbtMateriController::class, 'destroy']);
     });
 
     // Laporan Nilai Akademik (Waka Kurikulum) & Tahsin/Tahfidz/Tadarus
@@ -600,6 +676,84 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::middleware('role:admin,waka_kurikulum')->group(function () {
         Route::get('/academic-scores/laporan', [AcademicScoreController::class, 'laporan']);
+
+        // Monitoring CBT — baca-saja, lintas guru (lihat CbtMonitoringController).
+        Route::get('/cbt-monitoring/tp', [CbtMonitoringController::class, 'tp']);
+        Route::get('/cbt-monitoring/ujian', [CbtMonitoringController::class, 'ujian']);
+        Route::get('/cbt-monitoring/audit-log', [CbtMonitoringController::class, 'auditLog']);
+
+        // Menu "CBT" Admin/Waka Kurikulum — akses penuh (lihat+ubah+hapus)
+        // ke Bank Soal & Tujuan Pembelajaran/Materi SEMUA guru, teacher_id
+        // dipilih eksplisit di frontend (lihat Admin*Controller terkait
+        // untuk alasannya). Buat Ujian/jadwal ujian TETAP wewenang guru
+        // sendiri, tidak termasuk di sini — cuma dipantau baca-saja lewat
+        // Monitoring CBT di atas.
+        Route::get('/admin-cbt-bank-soal', [AdminCbtBankSoalController::class, 'index']);
+        Route::post('/admin-cbt-bank-soal', [AdminCbtBankSoalController::class, 'store']);
+        Route::post('/admin-cbt-bank-soal/duplikat', [AdminCbtBankSoalController::class, 'duplikat']);
+        Route::post('/admin-cbt-bank-soal/{cbtBankSoal}/toggle-share', [AdminCbtBankSoalController::class, 'toggleShare']);
+        Route::put('/admin-cbt-bank-soal/{cbtBankSoal}', [AdminCbtBankSoalController::class, 'update']);
+        Route::delete('/admin-cbt-bank-soal/{cbtBankSoal}', [AdminCbtBankSoalController::class, 'destroy']);
+
+        Route::get('/admin-cbt-questions', [AdminCbtQuestionController::class, 'index']);
+        Route::post('/admin-cbt-questions', [AdminCbtQuestionController::class, 'store']);
+        Route::get('/admin-cbt-questions/import/template', [AdminCbtQuestionController::class, 'downloadTemplate']);
+        Route::post('/admin-cbt-questions/import', [AdminCbtQuestionController::class, 'import']);
+        Route::put('/admin-cbt-questions/{cbtQuestion}', [AdminCbtQuestionController::class, 'update']);
+        Route::post('/admin-cbt-questions/{cbtQuestion}/audio', [AdminCbtQuestionController::class, 'uploadAudio']);
+        Route::delete('/admin-cbt-questions/{cbtQuestion}/audio', [AdminCbtQuestionController::class, 'removeAudio']);
+        Route::delete('/admin-cbt-questions/{cbtQuestion}', [AdminCbtQuestionController::class, 'destroy']);
+
+        Route::get('/admin-cbt-tp', [AdminCbtTpController::class, 'index']);
+        Route::post('/admin-cbt-tp', [AdminCbtTpController::class, 'store']);
+        Route::put('/admin-cbt-tp/{cbtTp}', [AdminCbtTpController::class, 'update']);
+        Route::delete('/admin-cbt-tp/{cbtTp}', [AdminCbtTpController::class, 'destroy']);
+
+        Route::get('/admin-cbt-materi', [AdminCbtMateriController::class, 'index']);
+        Route::get('/admin-cbt-materi/{cbtMateri}', [AdminCbtMateriController::class, 'show']);
+        Route::post('/admin-cbt-materi', [AdminCbtMateriController::class, 'store']);
+        Route::put('/admin-cbt-materi/{cbtMateri}', [AdminCbtMateriController::class, 'update']);
+        Route::post('/admin-cbt-materi/{cbtMateri}/gambar', [AdminCbtMateriController::class, 'uploadGambar']);
+        Route::delete('/admin-cbt-materi/{cbtMateri}', [AdminCbtMateriController::class, 'destroy']);
+
+        // Buat Ujian & Jadwal, penuh seperti guru pemiliknya — lihat
+        // AdminCbtExamController untuk alasan teacher_id eksplisit &
+        // kenapa pengecekan kepemilikan dihilangkan.
+        Route::get('/admin-cbt-exams', [AdminCbtExamController::class, 'myExams']);
+        Route::post('/admin-cbt-exams', [AdminCbtExamController::class, 'store']);
+        Route::get('/admin-cbt-exams/{cbtExam}', [AdminCbtExamController::class, 'show']);
+        Route::put('/admin-cbt-exams/{cbtExam}', [AdminCbtExamController::class, 'update']);
+        Route::post('/admin-cbt-exams/{cbtExam}/publish', [AdminCbtExamController::class, 'publish']);
+        Route::post('/admin-cbt-exams/{cbtExam}/close', [AdminCbtExamController::class, 'close']);
+        Route::post('/admin-cbt-exams/{cbtExam}/reopen', [AdminCbtExamController::class, 'reopen']);
+        Route::post('/admin-cbt-exams/{cbtExam}/duplicate', [AdminCbtExamController::class, 'duplicate']);
+        Route::post('/admin-cbt-exams/{cbtExam}/regenerate-token', [AdminCbtExamController::class, 'regenerateToken']);
+        Route::post('/admin-cbt-exams/{cbtExam}/publikasi-nilai', [AdminCbtExamController::class, 'publikasiNilai']);
+        Route::post('/admin-cbt-exams/{cbtExam}/hentikan-semua', [AdminCbtExamController::class, 'hentikanSemua']);
+        Route::delete('/admin-cbt-exams/{cbtExam}', [AdminCbtExamController::class, 'destroy']);
+        Route::get('/admin-cbt-exams/{cbtExam}/attempts', [AdminCbtExamController::class, 'attempts']);
+        Route::get('/admin-cbt-exams/{cbtExam}/export-nilai', [AdminCbtExamController::class, 'exportNilai']);
+        Route::get('/admin-cbt-exams/{cbtExam}/item-analysis', [AdminCbtExamController::class, 'itemAnalysis']);
+        Route::post('/admin-cbt-exams/attempts/{cbtExamAttempt}/reset', [AdminCbtExamController::class, 'resetAttempt']);
+        Route::post('/admin-cbt-exams/attempts/{cbtExamAttempt}/hentikan', [AdminCbtExamController::class, 'hentikanAttempt']);
+        Route::post('/admin-cbt-exams/attempts/{cbtExamAttempt}/tambah-waktu', [AdminCbtExamController::class, 'tambahWaktu']);
+        Route::post('/admin-cbt-exams/{cbtExam}/kirim-nilai-akademik', [AdminCbtExamController::class, 'kirimKeNilaiAkademik']);
+
+        // Koreksi Essay, penuh seperti guru pemiliknya.
+        Route::get('/admin-cbt-essay/{cbtExam}/koreksi', [AdminCbtEssayController::class, 'koreksi']);
+        Route::get('/admin-cbt-essay/{cbtExam}/koreksi/{cbtExamAttempt}', [AdminCbtEssayController::class, 'koreksiSiswa']);
+        Route::put('/admin-cbt-essay/jawaban/{cbtExamAnswer}/nilai', [AdminCbtEssayController::class, 'simpanNilai']);
+    });
+
+    // Portal Pengawas Ujian — memantau SEMUA ujian/latihan yang sedang
+    // berlangsung (status 'terbuka') lintas guru/mapel/kelas, dengan
+    // kontrol darurat terbatas (Hentikan sesi, Tambah Waktu) — lihat
+    // CbtPengawasController untuk alasan kenapa TIDAK ada Reset/Koreksi Essay.
+    Route::middleware('role:pengawas_ujian')->group(function () {
+        Route::get('/pengawas/ujian-aktif', [CbtPengawasController::class, 'ujianAktif']);
+        Route::get('/pengawas/ujian/{cbtExam}/attempts', [CbtPengawasController::class, 'attempts']);
+        Route::post('/pengawas/attempts/{cbtExamAttempt}/hentikan', [CbtPengawasController::class, 'hentikanAttempt']);
+        Route::post('/pengawas/attempts/{cbtExamAttempt}/tambah-waktu', [CbtPengawasController::class, 'tambahWaktu']);
     });
 
     Route::middleware('role:siswa')->group(function () {
@@ -621,6 +775,37 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/my-tahsin-scores', [TahsinScoreController::class, 'myScores']);
         Route::get('/my-tahfidz-scores', [TahfidzScoreController::class, 'myScores']);
         Route::get('/my-tadarus-scores', [TadarusScoreController::class, 'myScores']);
+
+        // CBT — sisi siswa (portal /ujian). Rute literal "preview"/"join"
+        // WAJIB didaftarkan sebelum {cbtExamAttempt} yang segmen-nya beda
+        // panjang, tapi tetap dipisah biar jelas: token-based (ujian) vs
+        // langsung dari daftar (latihan).
+        Route::get('/my-cbt-attempts', [StudentExamController::class, 'myAttempts']);
+        Route::get('/cbt-exams/preview', [StudentExamController::class, 'previewToken']);
+        Route::post('/cbt-exams/join', [StudentExamController::class, 'join']);
+        Route::get('/my-cbt-latihan', [StudentExamController::class, 'myLatihan']);
+        Route::post('/cbt-latihan/{cbtExam}/start', [StudentExamController::class, 'startLatihan']);
+        Route::get('/cbt-attempts/{cbtExamAttempt}', [StudentExamController::class, 'show']);
+        Route::put('/cbt-attempts/{cbtExamAttempt}/answers', [StudentExamController::class, 'saveAnswer']);
+        Route::post('/cbt-attempts/{cbtExamAttempt}/submit', [StudentExamController::class, 'submit']);
+        Route::post('/cbt-attempts/{cbtExamAttempt}/tab-switch', [StudentExamController::class, 'logTabSwitch'])->middleware('throttle:cbt-events');
+
+        // Materi bacaan — literal "cari" tidak ada di sini, cuma daftar +
+        // detail, jadi tidak ada risiko bentrok rute wildcard.
+        Route::get('/my-cbt-materi', [CbtMateriController::class, 'myMateri']);
+        Route::get('/cbt-materi/{cbtMateri}', [CbtMateriController::class, 'show']);
+    });
+
+    // GET /cbt-exams/{cbtExam} (show, dipakai form Edit Ujian guru) SENGAJA
+    // didaftarkan di SINI (setelah grup role:siswa di atas), bukan di
+    // dalam grup role:guru utama yang jauh lebih awal — Laravel
+    // mencocokkan rute berdasarkan URUTAN PENDAFTARAN LINTAS SEMUA grup
+    // middleware, bukan per grup, jadi wildcard {cbtExam} ini wajib
+    // berada di BAWAH rute literal "/cbt-exams/preview" milik siswa di
+    // atas, supaya tidak "menelan" rute itu lebih dulu (yang akan membuat
+    // /cbt-exams/preview kena middleware role:guru & gagal untuk siswa).
+    Route::middleware('role:guru')->group(function () {
+        Route::get('/cbt-exams/{cbtExam}', [CbtExamController::class, 'show']);
     });
 
     Route::middleware('role:wali')->group(function () {
@@ -706,6 +891,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/pustakawan/{id}', [PustakawanController::class, 'update']);
         Route::delete('/pustakawan/{id}', [PustakawanController::class, 'destroy']);
         Route::put('/pustakawan/{id}/reset-password', [PustakawanController::class, 'resetPassword']);
+
+        // Kelola akun Pengawas Ujian — lihat PengawasUjianAccountController.
+        Route::get('/pengawas-ujian-accounts', [PengawasUjianAccountController::class, 'index']);
+        Route::post('/pengawas-ujian-accounts', [PengawasUjianAccountController::class, 'store']);
+        Route::put('/pengawas-ujian-accounts/{id}', [PengawasUjianAccountController::class, 'update']);
+        Route::delete('/pengawas-ujian-accounts/{id}', [PengawasUjianAccountController::class, 'destroy']);
+        Route::put('/pengawas-ujian-accounts/{id}/reset-password', [PengawasUjianAccountController::class, 'resetPassword']);
     });
 
     Route::middleware('role:admin,pustakawan,siswa,guru')->group(function () {

@@ -18,6 +18,7 @@ class SubjectController extends Controller
         $data = $request->validate([
             'kode' => 'required|string|max:20|unique:subjects,kode',
             'nama' => 'required|string|max:100',
+            'tipe' => 'nullable|in:umum,kejuruan',
         ]);
 
         return response()->json(Subject::create($data), 201);
@@ -28,6 +29,7 @@ class SubjectController extends Controller
         $data = $request->validate([
             'kode' => 'required|string|max:20|unique:subjects,kode,' . $subject->id,
             'nama' => 'required|string|max:100',
+            'tipe' => 'nullable|in:umum,kejuruan',
         ]);
 
         $subject->update($data);

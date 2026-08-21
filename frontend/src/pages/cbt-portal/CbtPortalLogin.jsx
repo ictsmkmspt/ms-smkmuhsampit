@@ -1,0 +1,115 @@
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Mail, Lock, Monitor } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+
+export default function CbtPortalLogin() {
+  const [identifier, setIdentifier] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const { user, login, logout } = useAuth();
+  const navigate = useNavigate();
+
+  // Sudah login (dari sesi SIM Sekolah biasa ATAU portal ini sebelumnya)
+  // dan rolenya cocok — langsung masuk, tidak perlu isi form lagi.
+  const ROLE_DIBOLEHKAN = ['guru', 'siswa', 'pengawas_ujian', 'admin', 'waka_kurikulum'];
+
+  useEffect(() => {
+    if (user && ROLE_DIBOLEHKAN.includes(user.role)) {
+      navigate('/ujian');
+    }
+  }, [user, navigate]); // eslint-disable-line
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+    try {
+      const loggedInUser = await login(identifier, password);
+      if (!ROLE_DIBOLEHKAN.includes(loggedInUser.role)) {
+        await logout();
+        setError('Portal CBT hanya untuk akun Guru, Siswa, Pengawas Ujian, dan Admin/Waka Kurikulum.');
+        return;
+      }
+      navigate('/ujian');
+    } catch {
+      setError('Email/No. HP atau password salah.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="cbt-scope min-h-screen flex items-center justify-center bg-[#0B1B3A] px-4 py-10 relative overflow-hidden">
+      <div
+        className="absolute top-10 left-6 w-40 h-40 opacity-20 pointer-events-none"
+        style={{ backgroundImage: 'radial-gradient(circle, #F2B705 1.5px, transparent 1.5px)', backgroundSize: '14px 14px' }}
+      />
+      <div
+        className="absolute bottom-10 right-6 w-40 h-40 opacity-15 pointer-events-none"
+        style={{ backgroundImage: 'radial-gradient(circle, #15803D 1.5px, transparent 1.5px)', backgroundSize: '14px 14px' }}
+      />
+
+      <div className="w-full max-w-sm relative z-10">
+        <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
+          <div className="h-1.5 bg-gradient-to-r from-[#F2B705] via-[#15803D] to-[#0B1B3A]" />
+
+          <div className="p-8">
+            <div className="flex flex-col items-center mb-6">
+              <div className="w-12 h-12 rounded-xl bg-[#0B1B3A] flex items-center justify-center mb-3">
+                <Monitor className="w-6 h-6 text-[#F2B705]" />
+              </div>
+              <h1 className="cbt-display text-lg font-bold text-[#0B1B3A] text-center">Portal CBT</h1>
+              <p className="text-xs text-ink-500 mt-1">Masuk dengan akun SIM Sekolah Anda</p>
+            </div>
+
+            {error && (
+              <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2 mb-4">
+                {error}
+              </p>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-3">
+              <div>
+                <label className="block text-xs font-medium text-ink-500 mb-1">Email atau No. HP</label>
+                <div className="relative">
+                  <Mail className="w-4 h-4 text-ink-300 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text" value={identifier} autoFocus
+                    onChange={(e) => setIdentifier(e.target.value)}
+                    className="field-input pl-9 focus:border-[#15803D] focus:ring-[#15803D]/20"
+                    placeholder="nama@sekolah.com atau 08xxxxxxxxxx"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-ink-500 mb-1">Password</label>
+                <div className="relative">
+                  <Lock className="w-4 h-4 text-ink-300 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="password" value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="field-input pl-9 focus:border-[#15803D] focus:ring-[#15803D]/20"
+                    placeholder="••••••••"
+                  />
+                </div>
+              </div>
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full mt-2 flex items-center justify-center gap-2 bg-[#15803D] hover:bg-[#116530] disabled:opacity-60 text-white font-semibold text-sm px-4 py-3 rounded-xl transition"
+              >
+                {loading ? 'Memeriksa...' : 'Masuk'}
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <p className="text-center text-xs text-white/40 mt-6">
+          Akun sama dengan SIM Sekolah &mdash; portal ini cuma untuk mode ujian.
+        </p>
+      </div>
+    </div>
+  );
+}

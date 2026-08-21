@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import QRCode from 'qrcode';
 import {
   LogOut, Clock, ChevronDown, UserCog, ChevronLeft, ChevronRight,
   Award, AlertTriangle, ClipboardCheck, NotebookPen, ClipboardList,
-  QrCode, BookOpen, CalendarRange, Briefcase, Megaphone, Library, Home,
+  QrCode, BookOpen, CalendarRange, Briefcase, Megaphone, Library, Home, Monitor,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api/axios';
@@ -37,6 +38,7 @@ const PKL_SUB_TABS = [
 
 export default function SiswaDashboard() {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const [history, setHistory] = useState([]);
   const [qrImage, setQrImage] = useState('');
@@ -386,6 +388,12 @@ export default function SiswaDashboard() {
                 className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-left text-ink-700 hover:bg-mist-50 transition"
               >
                 <UserCog className="w-4 h-4" /> Edit Profil
+              </button>
+              <button
+                onClick={() => { setMenuOpen(false); navigate('/ujian/login'); }}
+                className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-left text-ink-700 hover:bg-mist-50 transition"
+              >
+                <Monitor className="w-4 h-4" /> Buka Portal CBT
               </button>
               <button
                 onClick={logout}

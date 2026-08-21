@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\ClassRoom;
 use App\Models\Schedule;
+use App\Models\Subject;
 use App\Models\TahunAjaran;
 use App\Models\Teacher;
 use App\Models\TeachingAssignment;
@@ -25,6 +26,9 @@ class TeachingAssignmentController extends Controller
 
         if ($request->filled('class_room_id')) {
             $query->where('class_room_id', $request->class_room_id);
+        }
+        if ($request->filled('teacher_id')) {
+            $query->where('teacher_id', $request->teacher_id);
         }
 
         return $query->get();
@@ -71,14 +75,19 @@ class TeachingAssignmentController extends Controller
      * banyak penugasan sekaligus (pola sama seperti
      * PklPlacementController::storeBulk()).
      *
-     * Kelas yang SUDAH punya penugasan untuk mapel ini DILEWATI (bukan
-     * menggagalkan seluruh batch) — dan ini dicek per mapel+kelas+tahun
-     * ajaran SAJA (bukan ikut menyaring guru), karena constraint unik di
-     * level database (`teaching_assignments_unique`) memang tidak
-     * membedakan guru: 1 kelas cuma boleh punya 1 baris penugasan untuk
-     * 1 mapel yang sama, siapa pun gurunya. Kalau ini dilewatkan begitu
-     * saja, baris ke-2 untuk kelas yang sama bakal gagal dengan
-     * QueryException duplicate-key, bukan pesan yang ramah.
+     * Kelas yang SUDAH punya penugasan DILEWATI (bukan menggagalkan
+     * seluruh batch) — tapi definisi "sudah ada" beda per tipe mapel:
+     * - Mapel "umum": dicek per mapel+kelas+tahun ajaran SAJA (lepas dari
+     *   guru) — 1 kelas cuma 1 guru untuk mapel umum yang sama, supaya
+     *   tidak dobel tanpa sengaja.
+     * - Mapel "kejuruan": dicek per GURU+mapel+kelas+tahun ajaran — guru
+     *   lain BOLEH ditugaskan ke kelas+mapel yang sama (team
+     *   teaching/mapel produktif memang lazim diampu >1 guru sekaligus),
+     *   yang dicegah cuma guru yang SAMA dobel persis. Constraint unik di
+     *   level database sendiri sudah `(teacher_id, subject_id,
+     *   class_room_id, tahun_ajaran_id)` sejak migrasi
+     *   allow_multiple_teachers_per_subject_class — jadi kejuruan di sini
+     *   cuma menyamakan aturan APLIKASI dengan yang sudah diizinkan DB.
      */
     public function storeBulk(Request $request)
     {
@@ -92,10 +101,13 @@ class TeachingAssignmentController extends Controller
             'target_jam' => 'nullable|integer|min:1',
         ]);
 
-        [$classIdsBaru, $classIdsSudahAda] = DB::transaction(function () use ($data, $tahunAjaranId) {
+        $subject = Subject::findOrFail($data['subject_id']);
+
+        [$classIdsBaru, $classIdsSudahAda] = DB::transaction(function () use ($data, $tahunAjaranId, $subject) {
             $classIdsSudahAda = TeachingAssignment::where('subject_id', $data['subject_id'])
                 ->where('tahun_ajaran_id', $tahunAjaranId)
                 ->whereIn('class_room_id', $data['class_room_ids'])
+                ->when($subject->tipe === 'kejuruan', fn ($q) => $q->where('teacher_id', $data['teacher_id']))
                 ->pluck('class_room_id');
 
             $classIdsBaru = collect($data['class_room_ids'])->diff($classIdsSudahAda)->values();

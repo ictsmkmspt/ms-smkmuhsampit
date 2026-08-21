@@ -2,9 +2,11 @@ import { useEffect, useMemo, useState } from 'react';
 import { Plus, Trash2, Save } from 'lucide-react';
 import api from '../../../api/axios';
 
+const TIPE_LABEL = { umum: 'Umum', kejuruan: 'Kejuruan' };
+
 export default function SubjectsTab() {
   const [subjects, setSubjects] = useState([]);
-  const [form, setForm] = useState({ kode: '', nama: '' });
+  const [form, setForm] = useState({ kode: '', nama: '', tipe: 'umum' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
@@ -24,7 +26,7 @@ export default function SubjectsTab() {
     setError(''); setLoading(true);
     try {
       await api.post('/subjects', form);
-      setForm({ kode: '', nama: '' });
+      setForm({ kode: '', nama: '', tipe: 'umum' });
       setShowForm(false);
       load();
     } catch (err) {
@@ -37,11 +39,11 @@ export default function SubjectsTab() {
 
   const batalForm = () => {
     setShowForm(false);
-    setForm({ kode: '', nama: '' });
+    setForm({ kode: '', nama: '', tipe: 'umum' });
     setError('');
   };
 
-  const startEdit = (s) => { setEditId(s.id); setEditForm({ kode: s.kode, nama: s.nama }); };
+  const startEdit = (s) => { setEditId(s.id); setEditForm({ kode: s.kode, nama: s.nama, tipe: s.tipe || 'umum' }); };
 
   const handleSave = async (id) => {
     try {
@@ -72,6 +74,10 @@ export default function SubjectsTab() {
           <div className="flex flex-col sm:flex-row gap-3">
             <input placeholder="Kode (mis. MTK-10)" value={form.kode} onChange={(e) => setForm({ ...form, kode: e.target.value })} className="field-input sm:w-40" required />
             <input placeholder="Nama mata pelajaran" value={form.nama} onChange={(e) => setForm({ ...form, nama: e.target.value })} className="field-input sm:flex-1" required />
+            <select value={form.tipe} onChange={(e) => setForm({ ...form, tipe: e.target.value })} className="field-input sm:w-40 text-ink-700">
+              <option value="umum">Umum</option>
+              <option value="kejuruan">Kejuruan</option>
+            </select>
             <div className="flex gap-2">
               <button disabled={loading} className="btn-primary whitespace-nowrap justify-center"><Plus className="w-4 h-4" /> {loading ? '...' : 'Tambah'}</button>
               <button type="button" onClick={batalForm} className="text-sm text-ink-500 hover:text-ink-700 px-3">Batal</button>
@@ -93,6 +99,7 @@ export default function SubjectsTab() {
             <tr className="text-left text-ink-500 border-b border-line-200">
               <th className="pb-2 font-medium w-32 whitespace-nowrap px-2">Kode</th>
               <th className="font-medium whitespace-nowrap px-2">Nama</th>
+              <th className="font-medium w-32 whitespace-nowrap px-2">Tipe</th>
               <th className="w-24 whitespace-nowrap px-2"></th>
             </tr>
           </thead>
@@ -104,6 +111,18 @@ export default function SubjectsTab() {
                 </td>
                 <td className="whitespace-nowrap px-2">
                   {editId === s.id ? <input value={editForm.nama} onChange={(e) => setEditForm({ ...editForm, nama: e.target.value })} className="field-input py-1" /> : <span className="text-ink-900">{s.nama}</span>}
+                </td>
+                <td className="whitespace-nowrap px-2">
+                  {editId === s.id ? (
+                    <select value={editForm.tipe} onChange={(e) => setEditForm({ ...editForm, tipe: e.target.value })} className="field-input py-1 text-ink-700">
+                      <option value="umum">Umum</option>
+                      <option value="kejuruan">Kejuruan</option>
+                    </select>
+                  ) : (
+                    <span className={`badge-soft ${s.tipe === 'kejuruan' ? 'badge-brand' : 'bg-mist-50 text-ink-500 border border-line-200'}`}>
+                      {TIPE_LABEL[s.tipe] || 'Umum'}
+                    </span>
+                  )}
                 </td>
                 <td className="text-right whitespace-nowrap px-2">
                   {editId === s.id ? (
@@ -120,7 +139,7 @@ export default function SubjectsTab() {
                 </td>
               </tr>
             ))}
-            {subjects.length === 0 && <tr><td colSpan="3" className="py-6 text-center text-ink-300 whitespace-nowrap px-2">Belum ada mata pelajaran.</td></tr>}
+            {subjects.length === 0 && <tr><td colSpan="4" className="py-6 text-center text-ink-300 whitespace-nowrap px-2">Belum ada mata pelajaran.</td></tr>}
           </tbody>
         </table>
         </div>

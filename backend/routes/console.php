@@ -15,3 +15,8 @@ Schedule::command('spp:generate-bulanan')->monthlyOn(1, '00:10');
 // Foto pengumuman (Papan Pengumuman) dihapus otomatis setelah 30 hari
 // supaya storage server tidak terus membengkak — teksnya tetap disimpan.
 Schedule::command('announcements:cleanup-photos')->daily();
+
+// Ujian (tipe ujian, bukan latihan) tidak punya tombol Tutup manual lagi
+// — begitu jadwal_selesai lewat, ditutup otomatis supaya guru bisa lanjut
+// koreksi essay & publikasikan nilai.
+Schedule::command('cbt:tutup-ujian-terjadwal')->everyFiveMinutes();

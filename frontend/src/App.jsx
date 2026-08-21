@@ -34,6 +34,12 @@ import PrintKartuPelajar from './pages/print/PrintKartuPelajar';
 import PrintBukuInduk from './pages/print/PrintBukuInduk';
 import EditBiodataSiswaPage from './pages/EditBiodataSiswaPage';
 import PrintPenilaianPkl from './pages/print/PrintPenilaianPkl';
+import ExamAttemptPage from './pages/siswa/ExamAttemptPage';
+import CbtPortalLogin from './pages/cbt-portal/CbtPortalLogin';
+import CbtGuruPortal from './pages/cbt-portal/CbtGuruPortal';
+import CbtSiswaPortal from './pages/cbt-portal/CbtSiswaPortal';
+import CbtPengawasPortal from './pages/cbt-portal/CbtPengawasPortal';
+import CbtAdminPortal from './pages/cbt-portal/CbtAdminPortal';
 
 /**
  * Gerbang mode maintenance — dicek SEKALI di sini, membungkus seluruh
@@ -74,6 +80,21 @@ function MaintenanceGate({ children }) {
   }
 
   return <MaintenancePage />;
+}
+
+// Portal CBT dipakai bersama guru, siswa, pengawas ujian & admin/waka
+// kurikulum lewat 1 gerbang login (/ujian/login) — begitu masuk, kontennya
+// beda per peran. Admin/waka_kurikulum di sini SENGAJA terpisah dari
+// /admin (AdminDashboard SIM Sekolah) — pengaturan SIM dan pengelolaan CBT
+// (Monitoring, Bank Soal/Materi semua guru, akun Pengawas Ujian) jadi 2
+// menu berbeda walau akunnya sama, login-nya pun terpisah (lihat
+// CbtAdminPortal).
+function CbtPortalHome() {
+  const { user } = useAuth();
+  if (user.role === 'guru') return <CbtGuruPortal />;
+  if (user.role === 'pengawas_ujian') return <CbtPengawasPortal />;
+  if (user.role === 'admin' || user.role === 'waka_kurikulum') return <CbtAdminPortal />;
+  return <CbtSiswaPortal />;
 }
 
 export default function App() {
@@ -177,6 +198,16 @@ export default function App() {
 
             <Route path="/siswa/*" element={
               <ProtectedRoute allowedRoles={['siswa']}><SiswaDashboard /></ProtectedRoute>
+            } />
+
+            <Route path="/ujian/login" element={<CbtPortalLogin />} />
+
+            <Route path="/ujian/exam/:attemptId" element={
+              <ProtectedRoute allowedRoles={['siswa']}><ExamAttemptPage /></ProtectedRoute>
+            } />
+
+            <Route path="/ujian" element={
+              <ProtectedRoute allowedRoles={['guru', 'siswa', 'pengawas_ujian', 'admin', 'waka_kurikulum']}><CbtPortalHome /></ProtectedRoute>
             } />
 
             <Route path="/wali/*" element={
