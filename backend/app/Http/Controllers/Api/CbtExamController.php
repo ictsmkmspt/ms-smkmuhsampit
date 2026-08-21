@@ -335,6 +335,14 @@ class CbtExamController extends Controller
      * (celah lihat skor duluan sebelum ujian benar-benar selesai untuk
      * semua orang); guru wajib publikasikan ulang manual setelah ujian
      * ditutup lagi.
+     *
+     * Khusus tipe "ujian": satu-satunya cara sampai berstatus "selesai"
+     * sekarang adalah jadwal_selesai-nya sudah lewat (lihat
+     * cbt:tutup-ujian-terjadwal) — reopen tanpa memperpanjang jadwal itu
+     * PERCUMA: isOpenForAttempt() tetap menolak siswa (masih di luar
+     * jadwal_mulai..jadwal_selesai) DAN command penutup otomatis bakal
+     * langsung menutupnya lagi begitu jalan berikutnya. Makanya
+     * jadwal_selesai baru (wajib di masa depan) diwajibkan di sini.
      */
     public function reopen(Request $request, CbtExam $cbtExam)
     {
@@ -348,9 +356,18 @@ class CbtExamController extends Controller
             return response()->json(['message' => 'Hanya ujian yang sudah selesai yang bisa dibuka kembali.'], 422);
         }
 
+        $update = ['status' => 'terbuka', 'status_publikasi' => false];
+
+        if ($cbtExam->tipe === 'ujian') {
+            $data = $request->validate([
+                'jadwal_selesai' => 'required|date|after:now',
+            ]);
+            $update['jadwal_selesai'] = $data['jadwal_selesai'];
+        }
+
         $this->catatAuditUjian($request, $cbtExam, 'dibuka_kembali');
 
-        $cbtExam->update(['status' => 'terbuka', 'status_publikasi' => false]);
+        $cbtExam->update($update);
 
         return $cbtExam->fresh();
     }

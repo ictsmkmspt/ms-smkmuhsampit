@@ -49,7 +49,9 @@ class AdminCbtBankSoalController extends Controller
             return response()->json(['message' => 'Guru ini tidak punya Tugas Mengajar untuk mata pelajaran ini.'], 422);
         }
 
-        return response()->json(CbtBankSoal::create($data), 201);
+        // fresh() WAJIB — 'dibagikan' punya default di level DB, tanpa
+        // reload ulang field ini hilang dari respons JSON.
+        return response()->json(CbtBankSoal::create($data)->fresh(), 201);
     }
 
     public function update(Request $request, CbtBankSoal $cbtBankSoal)

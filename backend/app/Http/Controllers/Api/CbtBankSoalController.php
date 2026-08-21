@@ -61,7 +61,10 @@ class CbtBankSoalController extends Controller
 
         $data['teacher_id'] = $this->ownTeacherId($request);
 
-        return response()->json(CbtBankSoal::create($data), 201);
+        // fresh() WAJIB — 'dibagikan' punya default di level DB (bukan di
+        // $attributes model), jadi tanpa reload ulang field ini akan hilang
+        // dari respons JSON (bukan false, betul-betul tidak ada key-nya).
+        return response()->json(CbtBankSoal::create($data)->fresh(), 201);
     }
 
     public function update(Request $request, CbtBankSoal $cbtBankSoal)
@@ -147,13 +150,19 @@ class CbtBankSoalController extends Controller
 
     /**
      * Isi 1 Bank Soal guru lain (baca-saja) — cuma boleh dilihat kalau
-     * mapelnya memang salah satu yang diampu guru yang login, supaya guru
-     * tidak bisa mengintip Bank Soal mapel yang sama sekali bukan urusannya.
+     * mapelnya memang salah satu yang diampu guru yang login DAN bank-nya
+     * memang sudah di-share pemiliknya (dibagikan=true). Tanpa cek
+     * dibagikan ini, guru lain bisa mengintip isi Bank Soal PRIVAT
+     * (belum di-share) cuma dengan menebak bank_id — membatalkan seluruh
+     * maksud tombol "Bagikan" yang sengaja privat-by-default.
      */
     public function soalLain(Request $request, CbtBankSoal $cbtBankSoal)
     {
         if (!$this->isOwnSubject($request, $cbtBankSoal->subject_id)) {
             return response()->json(['message' => 'Anda tidak punya Tugas Mengajar untuk mata pelajaran ini.'], 403);
+        }
+        if ($cbtBankSoal->teacher_id !== $this->ownTeacherId($request) && !$cbtBankSoal->dibagikan) {
+            return response()->json(['message' => 'Bank Soal ini belum dibagikan pemiliknya.'], 403);
         }
 
         return response()->json([
@@ -184,6 +193,9 @@ class CbtBankSoalController extends Controller
         $sumberBank = CbtBankSoal::findOrFail($data['bank_id']);
         if (!$this->isOwnSubject($request, $sumberBank->subject_id)) {
             return response()->json(['message' => 'Anda tidak punya Tugas Mengajar untuk mata pelajaran ini.'], 403);
+        }
+        if ($sumberBank->teacher_id !== $this->ownTeacherId($request) && !$sumberBank->dibagikan) {
+            return response()->json(['message' => 'Bank Soal ini belum dibagikan pemiliknya.'], 403);
         }
 
         $soalTerpilih = CbtQuestion::where('bank_id', $sumberBank->id)

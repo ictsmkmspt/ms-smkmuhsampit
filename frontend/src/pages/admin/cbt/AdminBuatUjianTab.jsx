@@ -66,6 +66,11 @@ export default function AdminBuatUjianTab({ teacherId }) {
   const [attempts, setAttempts] = useState([]);
   const [totalSoalViewing, setTotalSoalViewing] = useState(0);
 
+  const [reopenExam, setReopenExam] = useState(null);
+  const [reopenJadwalSelesai, setReopenJadwalSelesai] = useState('');
+  const [reopenError, setReopenError] = useState('');
+  const [reopenSaving, setReopenSaving] = useState(false);
+
   useEffect(() => {
     setSubjectFilter('');
     setClassFilter('');
@@ -236,13 +241,33 @@ export default function AdminBuatUjianTab({ teacherId }) {
     }
   };
 
-  const handleReopen = async (exam) => {
-    if (!confirm(`Buka kembali ujian "${exam.nama}"? Siswa bisa mulai/melanjutkan mengerjakan lagi. Nilai yang sudah dipublikasikan akan disembunyikan lagi sampai dipublikasikan ulang.`)) return;
+  const handleReopen = (exam) => {
+    if (exam.tipe === 'ujian') {
+      const selesaiBaru = new Date(Date.now() + 60 * 60 * 1000);
+      setReopenJadwalSelesai(toLocalInput(selesaiBaru));
+      setReopenError('');
+      setReopenExam(exam);
+      return;
+    }
+    if (!confirm(`Buka kembali latihan "${exam.nama}"? Siswa bisa mulai/melanjutkan mengerjakan lagi. Nilai yang sudah dipublikasikan akan disembunyikan lagi sampai dipublikasikan ulang.`)) return;
+    api.post(`/admin-cbt-exams/${exam.id}/reopen`).then(loadExams).catch((err) => {
+      alert(err.response?.data?.message || 'Gagal membuka kembali latihan.');
+    });
+  };
+
+  const submitReopenUjian = async (e) => {
+    e.preventDefault();
+    setReopenError('');
+    setReopenSaving(true);
     try {
-      await api.post(`/admin-cbt-exams/${exam.id}/reopen`);
+      await api.post(`/admin-cbt-exams/${reopenExam.id}/reopen`, { jadwal_selesai: reopenJadwalSelesai });
+      setReopenExam(null);
       loadExams();
     } catch (err) {
-      alert(err.response?.data?.message || 'Gagal membuka kembali ujian.');
+      const msgs = err.response?.data?.errors;
+      setReopenError(msgs ? Object.values(msgs).flat().join(', ') : err.response?.data?.message || 'Gagal membuka kembali ujian.');
+    } finally {
+      setReopenSaving(false);
     }
   };
 
@@ -616,6 +641,39 @@ export default function AdminBuatUjianTab({ teacherId }) {
                 <p className="text-sm text-ink-300 text-center py-8">Belum ada siswa yang mengerjakan.</p>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {reopenExam && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-ink-900/40" onClick={() => setReopenExam(null)} />
+          <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-sm">
+            <div className="flex items-center justify-between p-5 border-b border-line-200">
+              <h3 className="font-display font-semibold text-ink-900 flex items-center gap-2">
+                <RotateCcw className="w-4 h-4 text-brand-600" /> Buka Kembali Ujian
+              </h3>
+              <button onClick={() => setReopenExam(null)} className="text-ink-300 hover:text-ink-600"><X className="w-5 h-5" /></button>
+            </div>
+            <form onSubmit={submitReopenUjian} className="p-5 space-y-3">
+              {reopenError && <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2">{reopenError}</p>}
+              <p className="text-xs text-ink-500">
+                Jadwal selesai ujian &ldquo;{reopenExam.nama}&rdquo; sudah lewat — isi jadwal selesai BARU (harus di masa depan) supaya siswa benar-benar bisa mengakses lagi.
+              </p>
+              <div>
+                <label className="block text-xs font-medium text-ink-500 mb-1">Selesai (Baru)</label>
+                <input
+                  type="datetime-local"
+                  value={reopenJadwalSelesai}
+                  onChange={(e) => setReopenJadwalSelesai(e.target.value)}
+                  className="field-input w-full min-w-0"
+                  required
+                />
+              </div>
+              <button disabled={reopenSaving} className="btn-primary w-full justify-center">
+                {reopenSaving ? 'Membuka...' : 'Buka Kembali'}
+              </button>
+            </form>
           </div>
         </div>
       )}

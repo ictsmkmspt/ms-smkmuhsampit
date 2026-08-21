@@ -257,9 +257,18 @@ class AdminCbtExamController extends Controller
             return response()->json(['message' => 'Hanya ujian yang sudah selesai yang bisa dibuka kembali.'], 422);
         }
 
+        $update = ['status' => 'terbuka', 'status_publikasi' => false];
+
+        if ($cbtExam->tipe === 'ujian') {
+            $data = $request->validate([
+                'jadwal_selesai' => 'required|date|after:now',
+            ]);
+            $update['jadwal_selesai'] = $data['jadwal_selesai'];
+        }
+
         $this->catatAuditUjian($request, $cbtExam, 'dibuka_kembali');
 
-        $cbtExam->update(['status' => 'terbuka', 'status_publikasi' => false]);
+        $cbtExam->update($update);
 
         return $cbtExam->fresh();
     }
