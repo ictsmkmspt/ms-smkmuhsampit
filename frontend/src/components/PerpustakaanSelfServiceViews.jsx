@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Search, BookOpen, Clock } from 'lucide-react';
+import { Search, BookOpen, Clock, MapPin, X } from 'lucide-react';
 import api from '../api/axios';
 import TruncateText from './TruncateText';
 import Pagination from './Pagination';
@@ -64,6 +64,7 @@ export function KatalogView() {
   const [kategoriList, setKategoriList] = useState([]);
   const [query, setQuery] = useState('');
   const [kategoriFilter, setKategoriFilter] = useState('');
+  const [detailBuku, setDetailBuku] = useState(null);
 
   useEffect(() => { api.get('/perpustakaan-buku').then((res) => setBuku(res.data)); }, []);
   useEffect(() => { api.get('/perpustakaan-kategori').then((res) => setKategoriList(res.data)); }, []);
@@ -98,7 +99,12 @@ export function KatalogView() {
       </div>
       <div className="grid grid-cols-2 gap-3">
         {bukuHalaman.map((b) => (
-          <div key={b.id} className="surface-card p-3">
+          <button
+            key={b.id}
+            type="button"
+            onClick={() => setDetailBuku(b)}
+            className="surface-card p-3 text-left hover:shadow-md hover:-translate-y-0.5 transition"
+          >
             <div className="w-full aspect-[3/4] rounded-lg bg-mist-50 mb-2 flex items-center justify-center overflow-hidden">
               {b.cover_url ? <img src={b.cover_url} alt={b.judul} className="w-full h-full object-cover" /> : <BookOpen className="w-8 h-8 text-ink-300" />}
             </div>
@@ -111,11 +117,84 @@ export function KatalogView() {
                 <span className="badge-soft badge-rose">Semua dipinjam</span>
               )}
             </div>
-          </div>
+          </button>
         ))}
         {bukuTersaring.length === 0 && <p className="col-span-full text-center text-ink-300 text-sm py-6">{buku.length === 0 ? 'Belum ada data buku.' : 'Tidak ada buku yang cocok.'}</p>}
       </div>
       <Pagination page={page} totalPages={totalPages} onChange={setPage} />
+
+      {detailBuku && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-ink-900/40" onClick={() => setDetailBuku(null)} />
+          <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[85vh] flex flex-col">
+            <div className="flex items-center justify-between p-5 border-b border-line-200 shrink-0">
+              <h3 className="font-display font-semibold text-ink-900">Detail Buku</h3>
+              <button onClick={() => setDetailBuku(null)} className="text-ink-300 hover:text-ink-600"><X className="w-5 h-5" /></button>
+            </div>
+            <div className="overflow-y-auto p-5 space-y-4">
+              {/* Lokasi rak SENGAJA paling atas — ini info paling dicari
+                  peminjam begitu tahu bukunya ada, supaya langsung tahu
+                  mau ke rak mana tanpa scroll cari-cari dulu. */}
+              <div className="rounded-xl bg-brand-50 border border-brand-100 p-3 flex items-center gap-3">
+                <div className="w-9 h-9 rounded-lg bg-white flex items-center justify-center shrink-0">
+                  <MapPin className="w-4.5 h-4.5 text-brand-600" />
+                </div>
+                <div>
+                  <p className="text-[11px] font-medium text-brand-700">Lokasi Rak</p>
+                  <p className="text-sm font-semibold text-ink-900">{detailBuku.rak?.nama || 'Belum ditentukan'}</p>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <div className="w-20 aspect-[3/4] rounded-lg bg-mist-50 shrink-0 overflow-hidden flex items-center justify-center">
+                  {detailBuku.cover_url ? <img src={detailBuku.cover_url} alt={detailBuku.judul} className="w-full h-full object-cover" /> : <BookOpen className="w-6 h-6 text-ink-300" />}
+                </div>
+                <div className="min-w-0">
+                  <p className="font-display font-semibold text-ink-900 leading-tight">{detailBuku.judul}</p>
+                  <p className="text-sm text-ink-500 mt-0.5">{detailBuku.penulis || 'Penulis tidak diketahui'}</p>
+                  {detailBuku.kategori && <span className="badge-soft badge-brand mt-1.5 inline-block">{detailBuku.kategori.nama}</span>}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div>
+                  <p className="text-[11px] text-ink-500">Penerbit</p>
+                  <p className="text-ink-900">{detailBuku.penerbit || '-'}</p>
+                </div>
+                <div>
+                  <p className="text-[11px] text-ink-500">Tahun Terbit</p>
+                  <p className="text-ink-900">{detailBuku.tahun_terbit || '-'}</p>
+                </div>
+                <div>
+                  <p className="text-[11px] text-ink-500">ISBN</p>
+                  <p className="text-ink-900">{detailBuku.isbn || '-'}</p>
+                </div>
+                <div>
+                  <p className="text-[11px] text-ink-500">Kode Buku</p>
+                  <p className="text-ink-900 font-mono">{detailBuku.kode_buku || '-'}</p>
+                </div>
+              </div>
+
+              <div>
+                <p className="text-[11px] text-ink-500 mb-1.5">Ketersediaan</p>
+                <div className="flex flex-wrap gap-1.5">
+                  <span className="badge-soft badge-brand">{detailBuku.ringkasan_eksemplar?.tersedia ?? 0} tersedia</span>
+                  <span className="badge-soft badge-honey">{detailBuku.ringkasan_eksemplar?.dipinjam ?? 0} dipinjam</span>
+                  {(detailBuku.ringkasan_eksemplar?.rusak ?? 0) > 0 && <span className="badge-soft badge-rose">{detailBuku.ringkasan_eksemplar.rusak} rusak</span>}
+                  {(detailBuku.ringkasan_eksemplar?.hilang ?? 0) > 0 && <span className="badge-soft badge-rose">{detailBuku.ringkasan_eksemplar.hilang} hilang</span>}
+                </div>
+              </div>
+
+              {detailBuku.sinopsis && (
+                <div>
+                  <p className="text-[11px] text-ink-500 mb-1">Sinopsis</p>
+                  <p className="text-sm text-ink-700 whitespace-pre-wrap">{detailBuku.sinopsis}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
