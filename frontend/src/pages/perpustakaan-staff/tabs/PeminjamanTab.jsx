@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Search, AlertTriangle, History, BookOpenCheck, Download, UserCheck } from 'lucide-react';
+import { Search, Download } from 'lucide-react';
 import api from '../../../api/axios';
 import TruncateText from '../../../components/TruncateText';
 import DateInput from '../../../components/DateInput';
@@ -8,10 +8,10 @@ import usePagination from '../../../hooks/usePagination';
 import { fmtDMY } from '../../../utils/date';
 
 const SUB_TABS = [
-  { key: 'aktif', label: 'Aktif', icon: BookOpenCheck },
-  { key: 'terlambat', label: 'Terlambat', icon: AlertTriangle },
-  { key: 'riwayat', label: 'Riwayat', icon: History },
-  { key: 'kunjungan', label: 'Kunjungan', icon: UserCheck },
+  { key: 'aktif', label: 'Aktif' },
+  { key: 'terlambat', label: 'Terlambat' },
+  { key: 'riwayat', label: 'Riwayat' },
+  { key: 'kunjungan', label: 'Kunjungan' },
 ];
 
 const STATUS_BADGE = { dipinjam: 'badge-honey', dikembalikan: 'badge-brand', rusak: 'badge-rose', hilang: 'badge-rose' };
@@ -193,18 +193,15 @@ export default function PeminjamanTab() {
       </div>
 
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div className="flex gap-1 bg-white border border-line-200 rounded-xl p-1 w-fit">
-          {SUB_TABS.map((t) => {
-            const Icon = t.icon;
-            return (
-              <button
-                key={t.key} onClick={() => setSubTab(t.key)}
-                className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm font-medium transition ${subTab === t.key ? 'bg-brand-600 text-white shadow-sm' : 'text-ink-700 hover:bg-mist-50'}`}
-              >
-                <Icon className="w-3.5 h-3.5" /> {t.label}
-              </button>
-            );
-          })}
+        <div className="flex flex-wrap gap-1 bg-white border border-line-200 rounded-xl p-1 w-fit">
+          {SUB_TABS.map((t) => (
+            <button
+              key={t.key} onClick={() => setSubTab(t.key)}
+              className={`px-4 py-1.5 rounded-lg text-sm font-medium transition ${subTab === t.key ? 'bg-brand-600 text-white shadow-sm' : 'text-ink-700 hover:bg-mist-50'}`}
+            >
+              {t.label}
+            </button>
+          ))}
         </div>
         {(subTab === 'riwayat' || subTab === 'kunjungan') && (
           <div className="flex items-center gap-2 flex-wrap">
