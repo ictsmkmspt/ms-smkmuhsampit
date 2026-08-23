@@ -29,10 +29,17 @@ export function AuthProvider({ children }) {
   };
 
   const logout = async () => {
-    await api.post('/logout');
-    localStorage.removeItem('token');
-    setUser(null);
-    setMustChangePassword(false);
+    // Bersihkan sesi LOKAL apapun hasil panggilan API-nya (jaringan
+    // putus, timeout, dst) — kalau await di atas gagal tanpa try/finally,
+    // token di localStorage tidak pernah terhapus dan user tetap
+    // "login" di perangkat ini walau sudah menekan Keluar.
+    try {
+      await api.post('/logout');
+    } finally {
+      localStorage.removeItem('token');
+      setUser(null);
+      setMustChangePassword(false);
+    }
   };
 
   const updateUser = (partial) => setUser((prev) => ({ ...prev, ...partial }));

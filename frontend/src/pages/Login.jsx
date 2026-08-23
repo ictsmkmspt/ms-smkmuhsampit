@@ -49,8 +49,12 @@ export default function Login() {
     try {
       const user = await login(identifier, password);
       navigate(dashboardPathForRole(user.role));
-    } catch {
-      setError('Email/No. HP atau password salah.');
+    } catch (err) {
+      // Beda pesan untuk kredensial salah (401/422 dari backend) vs
+      // gangguan jaringan/server — sebelumnya keduanya ditampilkan sebagai
+      // "salah", jadi saat server down/koneksi putus, pengguna mengira
+      // sendiri lupa password padahal bukan itu masalahnya.
+      setError(err.response ? 'Email/No. HP atau password salah.' : 'Tidak bisa terhubung ke server. Cek koneksi internet Anda dan coba lagi.');
     } finally {
       setLoading(false);
     }

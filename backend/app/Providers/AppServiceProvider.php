@@ -67,6 +67,15 @@ class AppServiceProvider extends ServiceProvider
             ];
         });
 
+        // Cek status pendaftaran PPDB (publik, tanpa auth) — kodenya acak
+        // ~2,2 milyar kombinasi jadi tebak-tebakan brute-force tetap tidak
+        // praktis, tapi endpoint ini sebelumnya sama sekali tidak dibatasi
+        // (beda dari /ppdb/daftar), jadi tetap dikasih batas wajar untuk
+        // jaga-jaga terhadap enumerasi/scraping otomatis.
+        RateLimiter::for('ppdb-status', function (Request $request) {
+            return Limit::perMinute(20)->by($request->ip());
+        });
+
         // Catatan pindah-tab/blur saat ujian CBT dikirim otomatis dari
         // browser siswa — batasi supaya event yang salah dikonfigurasi
         // (mis. loop) tidak membanjiri tabel log.

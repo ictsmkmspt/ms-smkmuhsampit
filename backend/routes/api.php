@@ -99,7 +99,7 @@ Route::get('/maintenance-status', [MaintenanceModeController::class, 'status']);
 // PPDB (Penerimaan Peserta Didik Baru) — calon siswa belum punya akun sama
 // sekali, jadi formulir daftar & cek status WAJIB publik (tanpa auth:sanctum).
 Route::post('/ppdb/daftar', [PpdbController::class, 'daftar'])->middleware('throttle:ppdb-daftar');
-Route::get('/ppdb/status/{kode}', [PpdbController::class, 'status']);
+Route::get('/ppdb/status/{kode}', [PpdbController::class, 'status'])->middleware('throttle:ppdb-status');
 Route::get('/ppdb/pengaturan', [PpdbController::class, 'pengaturan']);
 
 Route::middleware('auth:sanctum')->group(function () {
