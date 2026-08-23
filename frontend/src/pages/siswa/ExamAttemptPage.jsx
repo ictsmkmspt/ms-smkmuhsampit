@@ -53,6 +53,19 @@ export default function ExamAttemptPage() {
     if (submittedRef.current) return;
     submittedRef.current = true;
     setSubmitting(true);
+    // Jawaban esai cuma tersimpan ke server saat textarea-nya di-blur —
+    // kalau timer habis SELAGI siswa masih fokus mengetik di textarea itu,
+    // teks terakhir belum pernah terkirim. Simpan paksa semua jawaban esai
+    // yang ada di state lokal dulu sebelum submit, supaya tidak ada yang
+    // hilang di detik-detik terakhir.
+    const soalEssay = (data?.questions || []).filter((q) => q.tipe === 'essay');
+    await Promise.all(soalEssay.map((q) =>
+      api.put(`/cbt-attempts/${attemptId}/answers`, {
+        question_id: q.id,
+        jawaban_essay: jawaban[q.id]?.jawaban_essay || '',
+        device_token: deviceToken,
+      }).catch(() => {})
+    ));
     try {
       await api.post(`/cbt-attempts/${attemptId}/submit`, { device_token: deviceToken });
     } catch {
@@ -60,7 +73,7 @@ export default function ExamAttemptPage() {
     }
     await load();
     setSubmitting(false);
-  }, [attemptId, deviceToken, load]);
+  }, [attemptId, deviceToken, load, data, jawaban]);
 
   const isLatihan = data?.exam?.tipe === 'latihan';
 
@@ -68,13 +81,14 @@ export default function ExamAttemptPage() {
   // server (dicek ulang tiap fetch). Begitu 0, submit otomatis sekali.
   // Latihan SEKARANG juga punya durasi sungguhan, sama seperti ujian.
   useEffect(() => {
-    if (!data || data.attempt.status !== 'in_progress') return;
-    if (remaining <= 0) {
-      handleSubmit();
-      return;
-    }
+    if (!data || data.attempt.status !== 'in_progress' || remaining <= 0) return;
     const id = setInterval(() => setRemaining((r) => Math.max(0, r - 1)), 1000);
     return () => clearInterval(id);
+  }, [data?.attempt.status, remaining <= 0]);
+
+  useEffect(() => {
+    if (!data || data.attempt.status !== 'in_progress') return;
+    if (remaining <= 0) handleSubmit();
   }, [data, remaining, handleSubmit]);
 
   // Lockdown — catat kalau siswa pindah tab/aplikasi lain ATAU keluar

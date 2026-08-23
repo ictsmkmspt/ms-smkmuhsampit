@@ -14,15 +14,21 @@ use App\Models\CbtExamAttempt;
  */
 trait HitungSkorCbt
 {
-    private function hitungSkorAttempt(CbtExamAttempt $attempt): float
+    /**
+     * $examQuestions opsional — kalau pemanggil sudah punya soal exam-nya
+     * di tangan (mis. finalisasi banyak attempt sekaligus untuk 1 exam yang
+     * sama, lihat hentikanSemua()), teruskan supaya tidak query ulang
+     * exam+examQuestions+question untuk tiap attempt padahal soalnya identik.
+     */
+    private function hitungSkorAttempt(CbtExamAttempt $attempt, ?\Illuminate\Support\Collection $examQuestions = null): float
     {
-        $examQuestions = $attempt->exam->examQuestions()->with('question')->get();
+        $examQuestions ??= $attempt->exam->examQuestions()->with('question')->get();
         $totalBobot = $examQuestions->sum(fn ($eq) => $eq->question->bobot);
         if ($totalBobot === 0) {
             return 0;
         }
 
-        $jawabanByQuestionId = $attempt->answers()->get()->keyBy('question_id');
+        $jawabanByQuestionId = $attempt->relationLoaded('answers') ? $attempt->answers->keyBy('question_id') : $attempt->answers()->get()->keyBy('question_id');
 
         $tercapai = $examQuestions->sum(function ($eq) use ($jawabanByQuestionId) {
             $jawab = $jawabanByQuestionId->get($eq->question_id);
@@ -43,7 +49,7 @@ trait HitungSkorCbt
         return round(100 * $tercapai / $totalBobot, 2);
     }
 
-    private function finalisasiAttempt(CbtExamAttempt $attempt): void
+    private function finalisasiAttempt(CbtExamAttempt $attempt, ?\Illuminate\Support\Collection $examQuestions = null): void
     {
         if ($attempt->status !== 'in_progress') {
             return;
@@ -52,7 +58,7 @@ trait HitungSkorCbt
         $attempt->update([
             'status' => 'submitted',
             'submitted_at' => now(),
-            'skor' => $this->hitungSkorAttempt($attempt),
+            'skor' => $this->hitungSkorAttempt($attempt, $examQuestions),
         ]);
     }
 

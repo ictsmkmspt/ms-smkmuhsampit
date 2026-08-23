@@ -328,9 +328,12 @@ class AdminCbtExamController extends Controller
 
     public function hentikanSemua(CbtExam $cbtExam)
     {
-        $berjalan = $cbtExam->attempts()->where('status', 'in_progress')->get();
+        // Lihat komentar sama di CbtExamController::hentikanSemua() — muat
+        // soal exam sekali, bukan per-attempt.
+        $examQuestions = $cbtExam->examQuestions()->with('question')->get();
+        $berjalan = $cbtExam->attempts()->where('status', 'in_progress')->with('answers')->get();
         foreach ($berjalan as $attempt) {
-            $this->finalisasiAttempt($attempt);
+            $this->finalisasiAttempt($attempt, $examQuestions);
         }
 
         return response()->json(['message' => 'Berhasil menghentikan '.$berjalan->count().' sesi yang sedang berjalan.', 'jumlah' => $berjalan->count()]);

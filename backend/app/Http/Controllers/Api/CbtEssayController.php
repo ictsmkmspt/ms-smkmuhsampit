@@ -42,9 +42,10 @@ class CbtEssayController extends Controller
         $attempts = $cbtExam->attempts()
             ->where('status', 'submitted')
             ->with('student.user', 'student.classRoom')
+            ->withCount(['answers as sudah_dinilai_count' => fn ($q) => $q->where('status_koreksi', 'sudah')])
             ->get()
             ->map(function ($attempt) use ($totalEssay) {
-                $sudahDinilai = $attempt->answers()->where('status_koreksi', 'sudah')->count();
+                $sudahDinilai = $attempt->sudah_dinilai_count;
 
                 return [
                     'attempt_id' => $attempt->id,

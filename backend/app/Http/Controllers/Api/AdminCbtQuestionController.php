@@ -8,8 +8,6 @@ use App\Http\Controllers\Controller;
 use App\Imports\CbtQuestionsImport;
 use App\Models\CbtBankSoal;
 use App\Models\CbtQuestion;
-use App\Models\TahunAjaran;
-use App\Models\TeachingAssignment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Maatwebsite\Excel\Facades\Excel;
@@ -27,14 +25,6 @@ class AdminCbtQuestionController extends Controller
     use SaringHtmlCbt;
 
     private const ATURAN_KONTEN = 'required|string|max:2000000';
-
-    private function teacherPunyaMapel(int $teacherId, int $subjectId): bool
-    {
-        return TeachingAssignment::where('teacher_id', $teacherId)
-            ->where('subject_id', $subjectId)
-            ->where('tahun_ajaran_id', TahunAjaran::aktifId())
-            ->exists();
-    }
 
     public function index(Request $request)
     {

@@ -90,7 +90,7 @@ export default function LatihanTab() {
                 <div><p className="text-sm font-semibold text-ink-900">{preview.jumlah_soal}</p><p className="text-[10px] text-ink-500">Soal</p></div>
               </div>
               <ul className="text-xs text-ink-500 space-y-1.5 list-disc pl-4">
-                <li>Tanpa batas waktu, boleh dikerjakan berkali-kali.</li>
+                <li>Waktu pengerjaan {preview.durasi_menit} menit, boleh dikerjakan berkali-kali.</li>
                 <li>Pembahasan langsung tampil setelah dikumpulkan.</li>
                 <li>Soal &amp; urutan pilihan jawaban acak tiap percobaan.</li>
               </ul>

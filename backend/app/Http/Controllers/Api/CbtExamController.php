@@ -487,9 +487,14 @@ class CbtExamController extends Controller
             return response()->json(['message' => 'Anda tidak berwenang mengelola ujian ini.'], 403);
         }
 
-        $berjalan = $cbtExam->attempts()->where('status', 'in_progress')->get();
+        // Semua attempt di sini berbagi 1 exam yang sama — muat soal exam-nya
+        // SEKALI di sini dan teruskan ke tiap finalisasi, bukan biarkan
+        // hitungSkorAttempt() query ulang exam+examQuestions+question untuk
+        // tiap attempt (mis. 40 siswa = 40x query identik sebelumnya).
+        $examQuestions = $cbtExam->examQuestions()->with('question')->get();
+        $berjalan = $cbtExam->attempts()->where('status', 'in_progress')->with('answers')->get();
         foreach ($berjalan as $attempt) {
-            $this->finalisasiAttempt($attempt);
+            $this->finalisasiAttempt($attempt, $examQuestions);
         }
 
         return response()->json(['message' => 'Berhasil menghentikan '.$berjalan->count().' sesi yang sedang berjalan.', 'jumlah' => $berjalan->count()]);

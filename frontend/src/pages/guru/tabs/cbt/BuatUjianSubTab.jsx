@@ -538,7 +538,7 @@ export default function BuatUjianSubTab() {
                     ? 'Tipe tidak bisa diubah setelah dibuat.'
                     : form.tipe === 'ujian'
                     ? 'Pakai token, punya jadwal & batas waktu, 1× kesempatan per siswa.'
-                    : 'Tanpa token (langsung tampil di menu Latihan siswa), tanpa jadwal & batas waktu, boleh dikerjakan berkali-kali.'}
+                    : 'Tanpa token (langsung tampil di menu Latihan siswa), tanpa jadwal, tetap punya batas waktu pengerjaan (isi Durasi di bawah), boleh dikerjakan berkali-kali.'}
                 </p>
               </div>
 

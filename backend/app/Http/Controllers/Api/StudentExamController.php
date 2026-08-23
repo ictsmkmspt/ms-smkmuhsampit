@@ -10,8 +10,8 @@ use App\Models\CbtExamAttempt;
 use App\Models\CbtQuestion;
 use App\Models\CbtTabSwitchLog;
 use App\Models\Student;
-use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class StudentExamController extends Controller
@@ -123,6 +123,7 @@ class StudentExamController extends Controller
             'mapel' => $exam->subject->nama,
             'jumlah_soal' => $exam->exam_questions_count,
             'skor_terbaik' => $terbaik[$exam->id] ?? null,
+            'durasi_menit' => $exam->durasi_menit,
         ]);
     }
 
@@ -232,10 +233,26 @@ class StudentExamController extends Controller
             return response()->json(['message' => 'Ujian ini belum dibuka atau sudah tidak bisa diakses.'], 422);
         }
 
+        // Tabel cbt_exam_attempts SENGAJA tidak lagi punya unique constraint
+        // exam_id+student_id (dihapus supaya latihan bisa dikerjakan
+        // berkali-kali) — jadi window TOCTOU antara cek $existing di atas
+        // dan create() di bawah HARUS ditutup lewat row-lock, bukan
+        // mengandalkan constraint DB seperti sebelumnya. Kunci baris
+        // Student (pola sama seperti PklPlacementController) supaya 2
+        // request join() nyaris bersamaan untuk siswa+ujian yang sama
+        // (dobel klik, 2 tab) diserialisasi — request kedua akan melihat
+        // attempt yang baru dibuat request pertama begitu lock-nya lepas.
         $deviceToken = Str::random(40);
 
-        try {
-            $attempt = CbtExamAttempt::create([
+        $attempt = DB::transaction(function () use ($exam, $student, $deviceToken) {
+            Student::where('id', $student->id)->lockForUpdate()->first();
+
+            $existing = CbtExamAttempt::where('exam_id', $exam->id)->where('student_id', $student->id)->first();
+            if ($existing) {
+                return $existing;
+            }
+
+            return CbtExamAttempt::create([
                 'exam_id' => $exam->id,
                 'student_id' => $student->id,
                 'status' => 'in_progress',
@@ -243,21 +260,21 @@ class StudentExamController extends Controller
                 'soal_acak' => $this->generateSoalAcak($exam),
                 'device_token' => $deviceToken,
             ]);
-        } catch (QueryException $e) {
-            // Dua request nyaris bersamaan (dobel klik) — constraint unik
-            // exam_id+student_id sudah membuat salah satunya gagal, pakai
-            // baris yang berhasil dibuat request lain itu. Tidak
-            // mengembalikan device_token di sini (lihat catatan $existing
-            // di atas) supaya request kedua ini tidak "mencuri" kunci.
-            $attempt = CbtExamAttempt::where('exam_id', $exam->id)->where('student_id', $student->id)->first();
-            if (!$attempt) {
-                throw $e;
-            }
+        });
 
-            return response()->json(['attempt_id' => $attempt->id], 201);
+        // Kalau attempt yang dikembalikan sudah ada SEBELUM transaksi ini
+        // (request lain menang race-nya), jangan ikut kembalikan
+        // device_token — biar request ini tidak "mencuri" kunci perangkat
+        // dari sesi yang sudah berjalan duluan.
+        if ($attempt->wasRecentlyCreated) {
+            return response()->json(['attempt_id' => $attempt->id, 'device_token' => $deviceToken], 201);
         }
 
-        return response()->json(['attempt_id' => $attempt->id, 'device_token' => $deviceToken], 201);
+        if ($attempt->status === 'submitted') {
+            return response()->json(['message' => 'Anda sudah mengerjakan ujian ini.'], 422);
+        }
+
+        return response()->json(['attempt_id' => $attempt->id]);
     }
 
     public function show(Request $request, CbtExamAttempt $cbtExamAttempt)
