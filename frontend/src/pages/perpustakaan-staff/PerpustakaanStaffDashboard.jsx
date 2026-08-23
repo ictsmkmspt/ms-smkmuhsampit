@@ -6,6 +6,7 @@ import SirkulasiTab from './tabs/SirkulasiTab';
 import KunjunganTab from './tabs/KunjunganTab';
 import KatalogTab from './tabs/KatalogTab';
 import PengaturanTab from './tabs/PengaturanTab';
+import NotificationBell from '../../components/NotificationBell';
 
 const TABS = [
   { key: 'beranda', label: 'Beranda', icon: Home, component: BerandaTab },
@@ -36,9 +37,12 @@ export default function PerpustakaanStaffDashboard() {
             </div>
           </div>
 
+          <div className="flex items-center gap-4">
+          <NotificationBell />
           <button onClick={logout} className="flex items-center gap-1.5 text-sm font-semibold text-white hover:text-[#F2B705] transition">
             <LogOut className="w-4 h-4" /> Keluar
           </button>
+          </div>
         </div>
       </div>
 

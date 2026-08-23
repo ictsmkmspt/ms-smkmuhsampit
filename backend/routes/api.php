@@ -35,6 +35,7 @@ use App\Http\Controllers\Api\HolidayController;
 use App\Http\Controllers\Api\LaporanController;
 use App\Http\Controllers\Api\MaintenanceModeController;
 use App\Http\Controllers\Api\MaintenanceRequestController;
+use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\ParentController;
 use App\Http\Controllers\Api\PklAttendanceController;
 use App\Http\Controllers\Api\PklJournalController;
@@ -104,6 +105,13 @@ Route::get('/ppdb/pengaturan', [PpdbController::class, 'pengaturan']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
     Route::put('/me/password', [AuthController::class, 'changePassword']);
+    // Notifikasi in-app (tombol lonceng) — tidak dikunci role: apapun,
+    // setiap user cuma baca/tandai notifikasi miliknya sendiri (di-scope
+    // lewat $request->user()->notifications() di controller-nya).
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount']);
+    Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllRead']);
+    Route::post('/notifications/{notification}/mark-read', [NotificationController::class, 'markRead']);
     // Kartu leaderboard dipakai bersama di beranda Guru, Siswa, dan Wali
     // (lihat LeaderboardPrestasi.jsx) — sengaja tidak dikunci ke satu role
     // tertentu, sama seperti /quran-surah di bawah ini.

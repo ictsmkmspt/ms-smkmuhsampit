@@ -5,6 +5,7 @@ import api from '../../api/axios';
 import InventarisTab from './tabs/InventarisTab';
 import PemeliharaanTab from './tabs/PemeliharaanTab';
 import KunjunganLabTab from './tabs/KunjunganLabTab';
+import NotificationBell from '../../components/NotificationBell';
 
 const BASE_TABS = [
   { key: 'inventaris', label: 'Inventaris', icon: Boxes, component: InventarisTab },
@@ -63,9 +64,12 @@ export default function RoomStaffDashboard() {
             </div>
           </div>
 
+          <div className="flex items-center gap-4">
+          <NotificationBell />
           <button onClick={logout} className="flex items-center gap-1.5 text-sm font-semibold text-white hover:text-[#F2B705] transition">
             <LogOut className="w-4 h-4" /> Keluar
           </button>
+          </div>
         </div>
       </div>
 

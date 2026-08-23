@@ -3,6 +3,7 @@ import { Monitor, Eye, ChevronLeft, Radio, OctagonX, TimerReset } from 'lucide-r
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api/axios';
 import CbtProfilMenu from './CbtProfilMenu';
+import NotificationBell from '../../components/NotificationBell';
 import TruncateText from '../../components/TruncateText';
 
 const POLL_MS = 5000;
@@ -193,6 +194,7 @@ export default function CbtPengawasPortal() {
             <p className="cbt-display text-sm font-semibold text-white">{user.name}</p>
           </div>
         </div>
+        <NotificationBell />
         <CbtProfilMenu role="pengawas" />
       </div>
 
@@ -211,6 +213,7 @@ export default function CbtPengawasPortal() {
             <p className="text-xs font-semibold truncate">{user.name}</p>
             <p className="text-[10px] text-white/40">Pengawas Ujian</p>
           </div>
+          <NotificationBell />
           <CbtProfilMenu role="pengawas" openUpward />
         </div>
       </aside>

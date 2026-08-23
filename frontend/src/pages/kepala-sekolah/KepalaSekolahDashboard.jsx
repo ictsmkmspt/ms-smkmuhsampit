@@ -5,6 +5,7 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { useSchoolProfile } from '../../context/SchoolProfileContext';
 import EditProfileModal from '../../components/EditProfileModal';
+import NotificationBell from '../../components/NotificationBell';
 import api from '../../api/axios';
 
 const fmtRupiah = (n) => 'Rp' + Number(n || 0).toLocaleString('id-ID');
@@ -83,12 +84,15 @@ export default function KepalaSekolahDashboard() {
               <p className="text-[10px] text-white/50">Dashboard Kepala Sekolah</p>
             </div>
           </div>
-          <button
-            onClick={() => setMobileOpen((v) => !v)}
-            className="md:hidden w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-white shrink-0"
-          >
-            {mobileOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
-          </button>
+          <div className="md:hidden flex items-center gap-2 shrink-0">
+            <NotificationBell />
+            <button
+              onClick={() => setMobileOpen((v) => !v)}
+              className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-white shrink-0"
+            >
+              {mobileOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+            </button>
+          </div>
           <div className="hidden md:flex items-center gap-3">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white font-display font-semibold text-xs shrink-0">
@@ -96,6 +100,7 @@ export default function KepalaSekolahDashboard() {
               </div>
               <p className="text-sm text-white truncate">{user.name}</p>
             </div>
+            <NotificationBell />
             <button onClick={() => setShowEditProfil(true)} title="Edit Profil" className="text-white/60 hover:text-[#F2B705] transition">
               <Pencil className="w-4 h-4" />
             </button>

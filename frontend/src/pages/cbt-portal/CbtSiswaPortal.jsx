@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Monitor, ClipboardEdit, GraduationCap, ClipboardList, BookOpen } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import CbtProfilMenu from './CbtProfilMenu';
+import NotificationBell from '../../components/NotificationBell';
 import UjianTab from '../siswa/UjianTab';
 import LatihanTab from '../siswa/LatihanTab';
 import NilaiSiswaTab from '../siswa/NilaiSiswaTab';
@@ -32,6 +33,7 @@ export default function CbtSiswaPortal() {
             <p className="cbt-display text-sm font-semibold text-white">{user.name}</p>
           </div>
         </div>
+        <NotificationBell />
         <CbtProfilMenu role="siswa" />
       </div>
 
@@ -61,6 +63,7 @@ export default function CbtSiswaPortal() {
             <p className="text-xs font-semibold truncate">{user.name}</p>
             <p className="text-[10px] text-white/40">Siswa</p>
           </div>
+          <NotificationBell />
           <CbtProfilMenu role="siswa" openUpward />
         </div>
       </aside>

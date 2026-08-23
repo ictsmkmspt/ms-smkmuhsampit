@@ -7,6 +7,7 @@ import IdukaJurnalPembimbinganTab from './tabs/IdukaJurnalPembimbinganTab';
 import IdukaPenilaianTab from './tabs/IdukaPenilaianTab';
 import TandaTanganModal from '../../components/TandaTanganModal';
 import IdukaProfileModal from '../../components/IdukaProfileModal';
+import NotificationBell from '../../components/NotificationBell';
 
 const TABS = [
   { key: 'absensi', label: 'Absensi', icon: ClipboardCheck, component: IdukaAbsensiTab },
@@ -59,6 +60,8 @@ export default function IdukaDashboard() {
             </div>
           </div>
 
+          <div className="flex items-center gap-4">
+          <NotificationBell />
           <div className="relative" ref={menuRef}>
             <button
               onClick={() => setMenuOpen((v) => !v)}
@@ -90,6 +93,7 @@ export default function IdukaDashboard() {
                 </button>
               </div>
             )}
+          </div>
           </div>
         </div>
       </div>

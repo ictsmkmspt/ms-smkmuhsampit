@@ -8,6 +8,7 @@ import ScanTab from './tabs/ScanTab';
 import LaporanTab from './tabs/LaporanTab';
 import BimbinganPklTab from './tabs/BimbinganPklTab';
 import EditProfileModal from '../../components/EditProfileModal';
+import NotificationBell from '../../components/NotificationBell';
 
 // Urutan navbar bawah: Beranda & Nilai di kiri tombol Scan (tengah,
 // melayang), PKL & Laporan di kanan — Absensi dan Poin digabung jadi 1
@@ -70,6 +71,8 @@ export default function GuruDashboard() {
             <h1 className="font-display text-lg font-semibold text-white">{user.name}</h1>
           </div>
 
+          <div className="flex items-center gap-4">
+          <NotificationBell />
           <div className="relative" ref={menuRef}>
             <button
               onClick={() => setMenuOpen((v) => !v)}
@@ -101,6 +104,7 @@ export default function GuruDashboard() {
                 </button>
               </div>
             )}
+          </div>
           </div>
         </div>
       </div>

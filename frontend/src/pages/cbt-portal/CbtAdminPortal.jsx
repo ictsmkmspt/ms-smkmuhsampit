@@ -3,6 +3,7 @@ import { Monitor, BarChart3, FileQuestion, ClipboardEdit, CalendarRange, FileBar
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api/axios';
 import CbtProfilMenu from './CbtProfilMenu';
+import NotificationBell from '../../components/NotificationBell';
 import MonitoringCbtTab from '../admin/kurikulum/MonitoringCbtTab';
 import AdminBankSoalTab from '../admin/cbt/AdminBankSoalTab';
 import AdminBuatUjianTab from '../admin/cbt/AdminBuatUjianTab';
@@ -112,6 +113,7 @@ export default function CbtAdminPortal() {
             <p className="cbt-display text-sm font-semibold text-white">{user.name}</p>
           </div>
         </div>
+        <NotificationBell />
         <CbtProfilMenu role={user.role} />
       </div>
 
@@ -140,6 +142,7 @@ export default function CbtAdminPortal() {
             <p className="text-xs font-semibold truncate">{user.name}</p>
             <p className="text-[10px] text-white/40">Admin CBT</p>
           </div>
+          <NotificationBell />
           <CbtProfilMenu role={user.role} openUpward />
         </div>
       </aside>

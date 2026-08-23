@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import api from '../../api/axios';
 import LeaderboardPrestasi from '../../components/LeaderboardPrestasi';
 import EditProfileModal from '../../components/EditProfileModal';
+import NotificationBell from '../../components/NotificationBell';
 import KalenderAkademikView from '../../components/KalenderAkademikView';
 import JadwalPelajaranView from '../../components/JadwalPelajaranView';
 import PenilaianQuranTabs from '../../components/PenilaianQuranTabs';
@@ -139,6 +140,8 @@ export default function ParentDashboard() {
             <p className="text-xs text-white/60">Orang Tua / Wali</p>
             <h1 className="font-display text-lg font-semibold text-white">{user.name}</h1>
           </div>
+          <div className="flex items-center gap-4">
+          <NotificationBell />
           <div className="relative" ref={menuRef}>
             <button
               onClick={() => setMenuOpen((v) => !v)}
@@ -164,6 +167,7 @@ export default function ParentDashboard() {
                 </button>
               </div>
             )}
+          </div>
           </div>
         </div>
       </div>

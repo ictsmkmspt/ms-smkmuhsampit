@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Monitor, FileQuestion, ClipboardEdit, BarChart3, CalendarRange, BookOpen } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import CbtProfilMenu from './CbtProfilMenu';
+import NotificationBell from '../../components/NotificationBell';
 import BankSoalSubTab from '../guru/tabs/cbt/BankSoalSubTab';
 import BuatUjianSubTab from '../guru/tabs/cbt/BuatUjianSubTab';
 import JadwalSubTab from '../guru/tabs/cbt/JadwalSubTab';
@@ -34,6 +35,7 @@ export default function CbtGuruPortal() {
             <p className="cbt-display text-sm font-semibold text-white">{user.name}</p>
           </div>
         </div>
+        <NotificationBell />
         <CbtProfilMenu role="guru" />
       </div>
 
@@ -63,6 +65,7 @@ export default function CbtGuruPortal() {
             <p className="text-xs font-semibold truncate">{user.name}</p>
             <p className="text-[10px] text-white/40">Guru</p>
           </div>
+          <NotificationBell />
           <CbtProfilMenu role="guru" openUpward />
         </div>
       </aside>

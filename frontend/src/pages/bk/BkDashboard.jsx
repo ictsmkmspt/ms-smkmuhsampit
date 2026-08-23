@@ -6,6 +6,7 @@ import { TahunAjaranProvider } from '../../context/TahunAjaranContext';
 import SanksiSiswaTab from './tabs/SanksiSiswaTab';
 import CatatanBkTab from './tabs/CatatanBkTab';
 import LaporanBkTab from './tabs/LaporanBkTab';
+import NotificationBell from '../../components/NotificationBell';
 
 const TABS = [
   { key: 'sanksi', label: 'Sanksi Siswa', icon: AlertTriangle },
@@ -46,9 +47,12 @@ export default function BkDashboard() {
             </div>
           </div>
 
+          <div className="flex items-center gap-4">
+          <NotificationBell />
           <button onClick={logout} className="flex items-center gap-1.5 text-sm font-semibold text-white hover:text-[#F2B705] transition">
             <LogOut className="w-4 h-4" /> Keluar
           </button>
+          </div>
         </div>
       </div>
 

@@ -16,6 +16,7 @@ import JadwalPelajaranView from '../../components/JadwalPelajaranView';
 import KalenderAkademikView from '../../components/KalenderAkademikView';
 import PenilaianQuranTabs from '../../components/PenilaianQuranTabs';
 import AnnouncementBoard from '../../components/AnnouncementBoard';
+import NotificationBell from '../../components/NotificationBell';
 import { fmtDMY } from '../../utils/date';
 
 const PENILAIAN_ENDPOINTS = { akademik: '/my-academic-scores', tahsin: '/my-tahsin-scores', tahfidz: '/my-tahfidz-scores', tadarus: '/my-tadarus-scores' };
@@ -126,9 +127,12 @@ export default function SiswaDashboard() {
             <p className="text-xs text-ink-500">Siswa</p>
             <h1 className="font-display text-lg font-semibold text-ink-900">{user.name}</h1>
           </div>
+          <div className="flex items-center gap-4">
+          <NotificationBell variant="light" />
           <button onClick={logout} className="flex items-center gap-1 text-sm font-semibold text-ink-700 hover:text-brand-600 transition">
             Profil <ChevronDown className="w-4 h-4" />
           </button>
+          </div>
         </div>
         <p className="text-center text-ink-300 text-sm mt-10">Memuat...</p>
       </div>
@@ -372,6 +376,8 @@ export default function SiswaDashboard() {
           <h1 className="font-display text-lg font-semibold text-ink-900">{user.name}</h1>
         </div>
 
+        <div className="flex items-center gap-4">
+        <NotificationBell variant="light" />
         <div className="relative" ref={menuRef}>
           <button
             onClick={() => setMenuOpen((v) => !v)}
@@ -403,6 +409,7 @@ export default function SiswaDashboard() {
               </button>
             </div>
           )}
+        </div>
         </div>
       </div>
 

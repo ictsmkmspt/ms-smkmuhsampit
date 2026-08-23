@@ -63,4 +63,15 @@ class User extends Authenticatable
             ->withPivot('hubungan')
             ->withTimestamps();
     }
+
+    /**
+     * Notifikasi in-app milik akun ini. Sengaja method sendiri (bukan pakai
+     * trait Notifiable bawaan Laravel yang cuma nyimpen type/data JSON) —
+     * kolom title/body/url/category di tabel ini flat supaya gampang
+     * di-query & dirender di frontend tanpa parsing.
+     */
+    public function notifications()
+    {
+        return $this->hasMany(Notification::class)->latest();
+    }
 }

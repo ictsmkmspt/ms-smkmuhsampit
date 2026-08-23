@@ -20,6 +20,7 @@ import PustakawanTab from './perpustakaan/PustakawanTab';
 import DashboardHomeTab from './tabs/DashboardHomeTab';
 import LaporanTab, { LAPORAN_SUBMENU } from './tabs/LaporanTab';
 import EditProfileModal from '../../components/EditProfileModal';
+import NotificationBell from '../../components/NotificationBell';
 import { TahunAjaranProvider, useTahunAjaran } from '../../context/TahunAjaranContext';
 
 const ROLE_LABEL = {
@@ -262,12 +263,15 @@ function AdminDashboardContent() {
             )}
             <p className="font-display font-bold text-white text-xs truncate">{profile.nama_sekolah.toUpperCase()}</p>
           </div>
-          <button
-            onClick={() => setMobileOpen((v) => !v)}
-            className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-white shrink-0"
-          >
-            {mobileOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
-          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            <NotificationBell />
+            <button
+              onClick={() => setMobileOpen((v) => !v)}
+              className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-white shrink-0"
+            >
+              {mobileOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+            </button>
+          </div>
         </div>
 
         {/* Dropdown menu — muncul di bawah navbar, bukan menyempitkan konten */}
@@ -331,13 +335,16 @@ function AdminDashboardContent() {
                 <p className="text-sm font-medium text-white truncate">{user.name}</p>
                 <p className="text-xs text-white/50">{ROLE_LABEL[user.role] || 'Super Admin'}</p>
               </div>
-              <button
-                onClick={() => setShowEditProfil(true)}
-                title="Edit Profil"
-                className="shrink-0 text-white/50 hover:text-[#F2B705] transition"
-              >
-                <Pencil className="w-3.5 h-3.5" />
-              </button>
+              <div className="flex items-center gap-2 shrink-0">
+                <NotificationBell />
+                <button
+                  onClick={() => setShowEditProfil(true)}
+                  title="Edit Profil"
+                  className="text-white/50 hover:text-[#F2B705] transition"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
           )}
         </div>
