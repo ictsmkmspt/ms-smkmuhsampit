@@ -18,6 +18,14 @@ return new class extends Migration
 
     public function down(): void
     {
+        // Enum tujuan rollback ini tidak punya 'sakit' — kalau ada baris
+        // berstatus 'sakit' (pasti ada di database mana pun yang sempat
+        // dipakai sejak migration ini, karena 'sakit' baru mulai valid di
+        // sini), ALTER enum di bawah akan ditolak DB (strict mode) atau
+        // datanya rusak diam-diam (non-strict). Konversi dulu ke 'izin'
+        // supaya rollback tetap aman dijalankan kapan pun.
+        DB::table('attendances')->where('status', 'sakit')->update(['status' => 'izin']);
+
         Schema::table('attendances', function (Blueprint $table) {
             $table->enum('status', ['hadir', 'telat', 'izin'])->default('hadir')->change();
         });

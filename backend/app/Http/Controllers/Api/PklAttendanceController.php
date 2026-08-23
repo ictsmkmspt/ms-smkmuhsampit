@@ -483,6 +483,14 @@ class PklAttendanceController extends Controller
             'date'             => $data['date'],
         ]);
 
+        // Sama seperti hapus() — sekali diverifikasi (paraf) IDUKA, catatan
+        // ini seharusnya final. Tanpa guard ini, guru pembimbing/admin bisa
+        // diam-diam mengubah status/jam absensi yang sudah diverifikasi,
+        // padahal tujuan verifikasi itu supaya datanya tidak berubah lagi.
+        if ($absensi->exists && $absensi->verified_at) {
+            return response()->json(['message' => 'Absensi ini sudah diverifikasi IDUKA, tidak bisa dikoreksi lagi.'], 422);
+        }
+
         $absensi->student_id       = $placement->student_id;
         $absensi->status           = $data['status'];
         $absensi->time_in          = $data['time_in'] ?? $absensi->time_in;

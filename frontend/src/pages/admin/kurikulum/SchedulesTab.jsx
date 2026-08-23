@@ -36,7 +36,7 @@ export default function SchedulesTab() {
     setSchedules(res.data.schedules);
     setAssignments(res.data.assignments);
     setSelectedClassId((prev) => prev ?? res.data.classes[0]?.id ?? null);
-  });
+  }).catch(() => alert('Gagal memuat data jadwal.'));
 
   useEffect(() => { loadGrid(); }, [tahunAjaranIdTerpilih]); // eslint-disable-line
   // Reset status "siap tempatkan" cuma saat GANTI tahun ajaran (daftar
@@ -60,27 +60,33 @@ export default function SchedulesTab() {
   // "Total Jp" digabung (rowSpan) buat total keseluruhan guru itu di semua
   // kelas, ditulis 1x saja di baris pertamanya.
   const jpMatrix = useMemo(() => {
+    // Dikelompokkan pakai teacher_id (bukan nama guru) — 2 guru dengan nama
+    // sama persis (umum terjadi di nama Indonesia) sebelumnya tergabung
+    // jadi 1 baris kalau dikelompokkan lewat nama, salah lapor jam
+    // mengajar keduanya.
     const perGuruKelas = new Map();
     const totalPerGuru = new Map();
+    const namaPerGuru = new Map();
     schedules.forEach((s) => {
-      const guru = s.teacher?.user?.name || 'Belum ada guru';
-      const key = `${guru}||${s.class_room_id}`;
+      const guruId = s.teacher_id ?? 'null';
+      namaPerGuru.set(guruId, s.teacher?.user?.name || 'Belum ada guru');
+      const key = `${guruId}||${s.class_room_id}`;
       perGuruKelas.set(key, (perGuruKelas.get(key) || 0) + 1);
-      totalPerGuru.set(guru, (totalPerGuru.get(guru) || 0) + 1);
+      totalPerGuru.set(guruId, (totalPerGuru.get(guruId) || 0) + 1);
     });
 
-    const daftarGuru = [...totalPerGuru.keys()].sort((a, b) => a.localeCompare(b));
+    const daftarGuru = [...totalPerGuru.keys()].sort((a, b) => namaPerGuru.get(a).localeCompare(namaPerGuru.get(b)));
     const baris = [];
-    daftarGuru.forEach((guru) => {
-      const kelasUntukGuru = classes.filter((c) => perGuruKelas.has(`${guru}||${c.id}`));
+    daftarGuru.forEach((guruId) => {
+      const kelasUntukGuru = classes.filter((c) => perGuruKelas.has(`${guruId}||${c.id}`));
       kelasUntukGuru.forEach((c, idx) => {
         baris.push({
-          guru,
+          guru: namaPerGuru.get(guruId),
           kelasId: c.id,
-          jumlah: perGuruKelas.get(`${guru}||${c.id}`),
+          jumlah: perGuruKelas.get(`${guruId}||${c.id}`),
           barisPertamaGuru: idx === 0,
           rowSpanGuru: kelasUntukGuru.length,
-          totalGuru: totalPerGuru.get(guru),
+          totalGuru: totalPerGuru.get(guruId),
         });
       });
     });
@@ -146,9 +152,13 @@ export default function SchedulesTab() {
   const handleDeleteCell = async () => {
     if (!cellModal.existing) return;
     if (!confirm('Hapus isian jadwal ini? Jam yang sudah ditempatkan untuk penugasan ini akan berkurang.')) return;
-    await api.delete(`/schedules/${cellModal.existing.id}`);
-    setCellModal(null);
-    loadGrid();
+    try {
+      await api.delete(`/schedules/${cellModal.existing.id}`);
+      setCellModal(null);
+      loadGrid();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Gagal menghapus isian jadwal.');
+    }
   };
 
   // ===== Export Excel =====

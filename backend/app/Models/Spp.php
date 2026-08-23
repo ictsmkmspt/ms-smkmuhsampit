@@ -53,14 +53,15 @@ class Spp extends Model
                     'status' => 'belum_bayar',
                 ]);
                 $dibuat++;
-            } catch (\Illuminate\Database\QueryException $e) {
+            } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
                 // Duplikat (unique student_id+bulan+tahun) — bisa terjadi
                 // kalau generate dipicu 2x hampir bersamaan (2 TU, atau
                 // scheduler tanggal 1 barengan dgn klik manual). Lewati
                 // baris ini diam-diam alih-alih 500 di tengah loop.
-                if (!str_contains($e->getMessage(), '1062')) {
-                    throw $e;
-                }
+                // UniqueConstraintViolationException (bukan cek string kode
+                // error MySQL '1062') supaya tetap benar juga di SQLite,
+                // yang pesan errornya beda format ("UNIQUE constraint
+                // failed") dan tidak pernah mengandung '1062'.
             }
         }
 

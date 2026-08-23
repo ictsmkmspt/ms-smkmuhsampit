@@ -11,6 +11,7 @@ use App\Models\TahunAjaran;
 use App\Models\Teacher;
 use App\Models\TeachingAssignment;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ScheduleController extends Controller
 {
@@ -84,26 +85,39 @@ class ScheduleController extends Controller
             return response()->json(['message' => 'Guru ini sudah mengajar kelas lain di jam yang sama.'], 422);
         }
 
-        if ($assignment->target_jam !== null) {
-            $terpasang = Schedule::where('teaching_assignment_id', $assignment->id)->count();
-            if ($terpasang >= $assignment->target_jam) {
-                return response()->json(['message' => "Jam untuk penugasan ini sudah penuh ({$assignment->target_jam} jam)."], 422);
-            }
-        }
+        // Cek kuota + create() dikunci dalam 1 transaksi (lock baris
+        // assignment) — tanpa ini, 2 request nyaris bersamaan (dobel klik,
+        // atau 2 admin mengisi grid bersamaan) bisa sama-sama lolos cek
+        // "$terpasang >= target_jam" sebelum salah satunya sempat create(),
+        // membuat jam terpasang melebihi target_jam.
+        $schedule = DB::transaction(function () use ($data, $assignment) {
+            $assignment = TeachingAssignment::where('id', $assignment->id)->lockForUpdate()->first();
 
-        $schedule = Schedule::create([
-            'period_id' => $data['period_id'],
-            'teaching_assignment_id' => $assignment->id,
-            'class_room_id' => $assignment->class_room_id,
-            'subject_id' => $assignment->subject_id,
-            'teacher_id' => $assignment->teacher_id,
-            'tahun_ajaran_id' => $assignment->tahun_ajaran_id,
-            // Kode tampilan di jadwal ikut Kode Guru penugasannya (lihat
-            // TeachingAssignmentController::generateKodeGuru) — kalau belum
-            // pernah di-generate, tetap null dan konsumen (grid/export)
-            // sudah punya fallback ke kode mapel.
-            'kode' => $assignment->kode_guru,
-        ]);
+            if ($assignment->target_jam !== null) {
+                $terpasang = Schedule::where('teaching_assignment_id', $assignment->id)->count();
+                if ($terpasang >= $assignment->target_jam) {
+                    return null;
+                }
+            }
+
+            return Schedule::create([
+                'period_id' => $data['period_id'],
+                'teaching_assignment_id' => $assignment->id,
+                'class_room_id' => $assignment->class_room_id,
+                'subject_id' => $assignment->subject_id,
+                'teacher_id' => $assignment->teacher_id,
+                'tahun_ajaran_id' => $assignment->tahun_ajaran_id,
+                // Kode tampilan di jadwal ikut Kode Guru penugasannya (lihat
+                // TeachingAssignmentController::generateKodeGuru) — kalau belum
+                // pernah di-generate, tetap null dan konsumen (grid/export)
+                // sudah punya fallback ke kode mapel.
+                'kode' => $assignment->kode_guru,
+            ]);
+        });
+
+        if (!$schedule) {
+            return response()->json(['message' => "Jam untuk penugasan ini sudah penuh ({$assignment->target_jam} jam)."], 422);
+        }
 
         return response()->json($schedule->load(['subject', 'teacher.user']), 201);
     }

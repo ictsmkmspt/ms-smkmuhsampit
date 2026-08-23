@@ -262,6 +262,14 @@ class AttendanceController extends Controller
 
         $date = $request->date ?? now()->format('Y-m-d');
 
+        // Sama seperti guard di updateStatus()/recordManual() — tanpa tahun
+        // ajaran aktif, Violation alpa yang dibuat di bawah akan punya
+        // tahun_ajaran_id null dan hilang dari semua laporan pelanggaran,
+        // walau poinnya sudah kepalang masuk ke total_poin siswa.
+        if (!TahunAjaran::where('status', 'aktif')->exists()) {
+            return response()->json(['message' => 'Tidak ada tahun ajaran yang sedang aktif. Aktifkan dulu tahun ajaran di menu Pengaturan sebelum memproses alpa.'], 422);
+        }
+
         if (Holiday::isHariLibur($date)) {
             return response()->json([
                 'message' => 'Tanggal ' . $date . ' adalah hari libur (' . Holiday::keterangan($date) . '). Proses alpa tidak dijalankan.',
@@ -409,6 +417,15 @@ class AttendanceController extends Controller
             return response()->json(['message' => 'Jenis pelanggaran "' . $violationType->name . '" otomatis dari sistem, tidak bisa dicatat manual.'], 422);
         }
         $student = Student::with('user')->find($data['student_id']);
+
+        // Sama seperti guard di updateStatus() — tanpa tahun ajaran aktif,
+        // Violation ini akan tercipta dengan tahun_ajaran_id null (lewat
+        // auto-fill di model) dan jadi tidak pernah muncul lagi di laporan
+        // pelanggaran manapun (semua difilter where tahun_ajaran_id), padahal
+        // poinnya sudah kepalang ditambahkan ke total_poin siswa.
+        if (!TahunAjaran::where('status', 'aktif')->exists()) {
+            return response()->json(['message' => 'Tidak ada tahun ajaran yang sedang aktif. Aktifkan dulu tahun ajaran di menu Pengaturan sebelum mencatat pelanggaran.'], 422);
+        }
 
         $violation = DB::transaction(function () use ($student, $violationType, $data, $request) {
             $v = Violation::create([
@@ -734,6 +751,11 @@ class AttendanceController extends Controller
             ], 422);
         }
 
+        // Sama seperti guard di updateStatus()/recordManual()/processAlpa().
+        if (!TahunAjaran::where('status', 'aktif')->exists()) {
+            return response()->json(['message' => 'Tidak ada tahun ajaran yang sedang aktif. Aktifkan dulu tahun ajaran di menu Pengaturan sebelum mencatat absensi manual.'], 422);
+        }
+
         // Alpa tidak membuat catatan kehadiran (memang begitu konsepnya: alpa = tidak ada
         // catatan). Cukup langsung catat poin pelanggarannya sekali, tanpa nunggu tombol
         // "Proses Alpa Hari Ini".
@@ -750,13 +772,20 @@ class AttendanceController extends Controller
             $jenisAlpa = ViolationType::where('system_key', 'alpa')->first();
             $poinAlpa  = $jenisAlpa?->poin ?? 10;
 
-            Violation::create([
-                'student_id' => $student->id, 'attendance_id' => null,
-                'violation_type_id' => $jenisAlpa?->id,
-                'date' => $today, 'type' => 'alpa', 'poin' => $poinAlpa,
-                'recorded_by' => $request->user()->id,
-            ]);
-            $student->tambahPoin($poinAlpa);
+            // Dibungkus transaksi (sebelumnya tidak, beda dari jalur lain di
+            // file ini yang selalu memasangkan Violation::create() dengan
+            // tambahPoin() dalam 1 transaksi) — tanpa ini, request yang
+            // terputus di antara 2 baris berikut bisa meninggalkan Violation
+            // "yatim" tanpa poin yang ikut bertambah di total_poin siswa.
+            DB::transaction(function () use ($student, $today, $jenisAlpa, $poinAlpa, $request) {
+                Violation::create([
+                    'student_id' => $student->id, 'attendance_id' => null,
+                    'violation_type_id' => $jenisAlpa?->id,
+                    'date' => $today, 'type' => 'alpa', 'poin' => $poinAlpa,
+                    'recorded_by' => $request->user()->id,
+                ]);
+                $student->tambahPoin($poinAlpa);
+            });
 
             return response()->json([
                 'message' => 'Absensi manual berhasil: ' . $student->user->name . ' (alpa)',
