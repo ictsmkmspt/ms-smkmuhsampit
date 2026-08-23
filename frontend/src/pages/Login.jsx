@@ -1,8 +1,26 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useSchoolProfile } from '../context/SchoolProfileContext';
+
+function dashboardPathForRole(role) {
+  if (role === 'admin' || role === 'waka') return '/admin';
+  if (role === 'waka_kesiswaan') return '/waka-kesiswaan';
+  if (role === 'waka_kurikulum') return '/waka-kurikulum';
+  if (role === 'waka_humas') return '/waka-humas';
+  if (role === 'waka_sarpras') return '/waka-sarpras';
+  if (role === 'guru') return '/guru';
+  if (role === 'wali') return '/wali';
+  if (role === 'iduka') return '/iduka';
+  if (role === 'tu') return '/tu';
+  if (role === 'teknisi' || role === 'kepala_bengkel') return '/staf-ruang';
+  if (role === 'bk') return '/bk';
+  if (role === 'pustakawan') return '/perpustakaan-staff';
+  if (role === 'kepala_sekolah') return '/kepala-sekolah';
+  if (role === 'pengawas_ujian') return '/ujian';
+  return '/siswa';
+}
 
 export default function Login() {
   const [identifier, setIdentifier] = useState('');
@@ -10,9 +28,19 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, user, loading: authLoading } = useAuth();
   const { profile } = useSchoolProfile();
   const navigate = useNavigate();
+
+  // Token dari sesi sebelumnya (localStorage) sudah dicek AuthContext saat
+  // app dibuka — kalau ternyata masih valid (`user` terisi), langsung
+  // lempar ke dashboard-nya, jangan tampilkan form login lagi. Ini yang
+  // bikin APK/PWA "ingat" login antar-buka-app, bukan cuma sekali per sesi.
+  useEffect(() => {
+    if (!authLoading && user) {
+      navigate(dashboardPathForRole(user.role), { replace: true });
+    }
+  }, [authLoading, user, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -20,28 +48,21 @@ export default function Login() {
     setLoading(true);
     try {
       const user = await login(identifier, password);
-      if (user.role === 'admin') navigate('/admin');
-      else if (user.role === 'waka') navigate('/admin');
-      else if (user.role === 'waka_kesiswaan') navigate('/waka-kesiswaan');
-      else if (user.role === 'waka_kurikulum') navigate('/waka-kurikulum');
-      else if (user.role === 'waka_humas') navigate('/waka-humas');
-      else if (user.role === 'waka_sarpras') navigate('/waka-sarpras');
-      else if (user.role === 'guru') navigate('/guru');
-      else if (user.role === 'wali') navigate('/wali');
-      else if (user.role === 'iduka') navigate('/iduka');
-      else if (user.role === 'tu') navigate('/tu');
-      else if (user.role === 'teknisi' || user.role === 'kepala_bengkel') navigate('/staf-ruang');
-      else if (user.role === 'bk') navigate('/bk');
-      else if (user.role === 'pustakawan') navigate('/perpustakaan-staff');
-      else if (user.role === 'kepala_sekolah') navigate('/kepala-sekolah');
-      else if (user.role === 'pengawas_ujian') navigate('/ujian');
-      else navigate('/siswa');
+      navigate(dashboardPathForRole(user.role));
     } catch {
       setError('Email/No. HP atau password salah.');
     } finally {
       setLoading(false);
     }
   };
+
+  if (authLoading || user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#0B1B3A]">
+        <div className="w-8 h-8 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#0B1B3A] px-4 py-10 relative overflow-hidden">
