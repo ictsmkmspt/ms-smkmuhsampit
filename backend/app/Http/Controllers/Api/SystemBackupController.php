@@ -38,7 +38,11 @@ class SystemBackupController extends Controller
             'file' => 'required|file|max:512000',
         ]);
 
-        $namaSekolah = trim((string) Setting::get('nama_sekolah', ''));
+        // Default fallback HARUS sama dengan SchoolProfileController::show()
+        // — itu yang ditampilkan ke user buat diketik ulang, jadi kalau
+        // fallback di sini beda (mis. string kosong), user yang mengetik
+        // persis apa yang ditampilkan akan selalu dianggap "tidak cocok".
+        $namaSekolah = trim((string) Setting::get('nama_sekolah', 'SMK Muhammadiyah Sampit'));
         if ($namaSekolah === '' || trim($data['konfirmasi_nama_sekolah']) !== $namaSekolah) {
             return response()->json([
                 'message' => 'Konfirmasi nama sekolah tidak cocok — impor DIBATALKAN demi keamanan. Ketik ulang nama sekolah persis seperti di halaman ini.',
