@@ -33,8 +33,10 @@ export default function CbtSiswaPortal() {
             <p className="cbt-display text-sm font-semibold text-white">{user.name}</p>
           </div>
         </div>
-        <NotificationBell />
-        <CbtProfilMenu role="siswa" />
+        <div className="flex items-center gap-3">
+          <CbtProfilMenu role="siswa" />
+          <NotificationBell />
+        </div>
       </div>
 
       {/* Sidebar — cuma tampil di desktop */}
@@ -63,8 +65,8 @@ export default function CbtSiswaPortal() {
             <p className="text-xs font-semibold truncate">{user.name}</p>
             <p className="text-[10px] text-white/40">Siswa</p>
           </div>
-          <NotificationBell />
           <CbtProfilMenu role="siswa" openUpward />
+          <NotificationBell />
         </div>
       </aside>
 

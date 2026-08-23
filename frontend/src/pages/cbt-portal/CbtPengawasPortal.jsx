@@ -194,8 +194,10 @@ export default function CbtPengawasPortal() {
             <p className="cbt-display text-sm font-semibold text-white">{user.name}</p>
           </div>
         </div>
-        <NotificationBell />
-        <CbtProfilMenu role="pengawas" />
+        <div className="flex items-center gap-3">
+          <CbtProfilMenu role="pengawas" />
+          <NotificationBell />
+        </div>
       </div>
 
       <aside className="hidden md:flex md:w-56 md:flex-col bg-[#0B1B3A] text-white p-4 shrink-0">
@@ -213,8 +215,8 @@ export default function CbtPengawasPortal() {
             <p className="text-xs font-semibold truncate">{user.name}</p>
             <p className="text-[10px] text-white/40">Pengawas Ujian</p>
           </div>
-          <NotificationBell />
           <CbtProfilMenu role="pengawas" openUpward />
+          <NotificationBell />
         </div>
       </aside>
 

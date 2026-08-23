@@ -264,13 +264,13 @@ function AdminDashboardContent() {
             <p className="font-display font-bold text-white text-xs truncate">{profile.nama_sekolah.toUpperCase()}</p>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            <NotificationBell />
             <button
               onClick={() => setMobileOpen((v) => !v)}
               className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-white shrink-0"
             >
               {mobileOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
             </button>
+            <NotificationBell />
           </div>
         </div>
 
@@ -336,7 +336,6 @@ function AdminDashboardContent() {
                 <p className="text-xs text-white/50">{ROLE_LABEL[user.role] || 'Super Admin'}</p>
               </div>
               <div className="flex items-center gap-2 shrink-0">
-                <NotificationBell />
                 <button
                   onClick={() => setShowEditProfil(true)}
                   title="Edit Profil"
@@ -344,6 +343,7 @@ function AdminDashboardContent() {
                 >
                   <Pencil className="w-3.5 h-3.5" />
                 </button>
+                <NotificationBell />
               </div>
             </div>
           )}

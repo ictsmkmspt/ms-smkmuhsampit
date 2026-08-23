@@ -65,10 +65,10 @@ export default function RoomStaffDashboard() {
           </div>
 
           <div className="flex items-center gap-4">
-          <NotificationBell />
           <button onClick={logout} className="flex items-center gap-1.5 text-sm font-semibold text-white hover:text-[#F2B705] transition">
             <LogOut className="w-4 h-4" /> Keluar
           </button>
+          <NotificationBell />
           </div>
         </div>
       </div>

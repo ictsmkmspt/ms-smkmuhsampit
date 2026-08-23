@@ -61,7 +61,6 @@ export default function IdukaDashboard() {
           </div>
 
           <div className="flex items-center gap-4">
-          <NotificationBell />
           <div className="relative" ref={menuRef}>
             <button
               onClick={() => setMenuOpen((v) => !v)}
@@ -94,6 +93,7 @@ export default function IdukaDashboard() {
               </div>
             )}
           </div>
+          <NotificationBell />
           </div>
         </div>
       </div>

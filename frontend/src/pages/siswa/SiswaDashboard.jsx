@@ -128,10 +128,10 @@ export default function SiswaDashboard() {
             <h1 className="font-display text-lg font-semibold text-ink-900">{user.name}</h1>
           </div>
           <div className="flex items-center gap-4">
-          <NotificationBell variant="light" />
           <button onClick={logout} className="flex items-center gap-1 text-sm font-semibold text-ink-700 hover:text-brand-600 transition">
             Profil <ChevronDown className="w-4 h-4" />
           </button>
+          <NotificationBell variant="light" />
           </div>
         </div>
         <p className="text-center text-ink-300 text-sm mt-10">Memuat...</p>
@@ -377,7 +377,6 @@ export default function SiswaDashboard() {
         </div>
 
         <div className="flex items-center gap-4">
-        <NotificationBell variant="light" />
         <div className="relative" ref={menuRef}>
           <button
             onClick={() => setMenuOpen((v) => !v)}
@@ -410,6 +409,7 @@ export default function SiswaDashboard() {
             </div>
           )}
         </div>
+        <NotificationBell variant="light" />
         </div>
       </div>
 

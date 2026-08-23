@@ -35,8 +35,10 @@ export default function CbtGuruPortal() {
             <p className="cbt-display text-sm font-semibold text-white">{user.name}</p>
           </div>
         </div>
-        <NotificationBell />
-        <CbtProfilMenu role="guru" />
+        <div className="flex items-center gap-3">
+          <CbtProfilMenu role="guru" />
+          <NotificationBell />
+        </div>
       </div>
 
       {/* Sidebar — cuma tampil di desktop */}
@@ -65,8 +67,8 @@ export default function CbtGuruPortal() {
             <p className="text-xs font-semibold truncate">{user.name}</p>
             <p className="text-[10px] text-white/40">Guru</p>
           </div>
-          <NotificationBell />
           <CbtProfilMenu role="guru" openUpward />
+          <NotificationBell />
         </div>
       </aside>
 

@@ -85,13 +85,13 @@ export default function KepalaSekolahDashboard() {
             </div>
           </div>
           <div className="md:hidden flex items-center gap-2 shrink-0">
-            <NotificationBell />
             <button
               onClick={() => setMobileOpen((v) => !v)}
               className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-white shrink-0"
             >
               {mobileOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
             </button>
+            <NotificationBell />
           </div>
           <div className="hidden md:flex items-center gap-3">
             <div className="flex items-center gap-2">
@@ -100,13 +100,13 @@ export default function KepalaSekolahDashboard() {
               </div>
               <p className="text-sm text-white truncate">{user.name}</p>
             </div>
-            <NotificationBell />
             <button onClick={() => setShowEditProfil(true)} title="Edit Profil" className="text-white/60 hover:text-[#F2B705] transition">
               <Pencil className="w-4 h-4" />
             </button>
             <button onClick={logout} title="Keluar" className="text-white/60 hover:text-[#F2B705] transition">
               <LogOut className="w-4 h-4" />
             </button>
+            <NotificationBell />
           </div>
         </div>
         {mobileOpen && (

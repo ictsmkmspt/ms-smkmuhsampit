@@ -141,7 +141,6 @@ export default function ParentDashboard() {
             <h1 className="font-display text-lg font-semibold text-white">{user.name}</h1>
           </div>
           <div className="flex items-center gap-4">
-          <NotificationBell />
           <div className="relative" ref={menuRef}>
             <button
               onClick={() => setMenuOpen((v) => !v)}
@@ -168,6 +167,7 @@ export default function ParentDashboard() {
               </div>
             )}
           </div>
+          <NotificationBell />
           </div>
         </div>
       </div>
