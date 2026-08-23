@@ -261,8 +261,12 @@ export default function AdminLaporanTab({ teacherId }) {
 
   const handleHentikan = async (attempt) => {
     if (!confirm(`Paksa-hentikan sesi ${attempt.student?.user?.name}? Jawaban yang sudah tersimpan akan langsung difinalisasi.`)) return;
-    await api.post(`/admin-cbt-exams/attempts/${attempt.id}/hentikan`);
-    refreshAttempts();
+    try {
+      await api.post(`/admin-cbt-exams/attempts/${attempt.id}/hentikan`);
+      refreshAttempts();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Gagal menghentikan sesi ujian.');
+    }
   };
 
   const handleTambahWaktu = async (attempt) => {

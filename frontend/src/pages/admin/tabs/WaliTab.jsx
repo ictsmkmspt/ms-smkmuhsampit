@@ -58,8 +58,12 @@ export default function WaliTab() {
 
   const handleDeleteParent = async (id, name) => {
     if (!confirm(`Hapus akun wali "${name}"? Semua hubungan ke anak juga akan terhapus.`)) return;
-    await api.delete(`/parents/${id}`);
-    loadParents();
+    try {
+      await api.delete(`/parents/${id}`);
+      loadParents();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Gagal menghapus akun wali.');
+    }
   };
 
   const handleResetPassword = async (id, name) => {
@@ -120,20 +124,28 @@ export default function WaliTab() {
 
   const handleUnlink = async (parentId, studentId, studentName) => {
     if (!confirm(`Lepas hubungan ke "${studentName}"?`)) return;
-    await api.delete(`/parents/${parentId}/link/${studentId}`);
-    loadParents();
+    try {
+      await api.delete(`/parents/${parentId}/link/${studentId}`);
+      loadParents();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Gagal melepas hubungan.');
+    }
   };
 
   const handleDownloadTemplate = async () => {
-    const res = await api.get('/parents/import/template', { responseType: 'blob' });
-    const url = window.URL.createObjectURL(new Blob([res.data]));
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', 'template_import_wali.xlsx');
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    window.URL.revokeObjectURL(url);
+    try {
+      const res = await api.get('/parents/import/template', { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'template_import_wali.xlsx');
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch {
+      alert('Gagal mengunduh template.');
+    }
   };
 
   const handleImportClick = () => fileInputRef.current?.click();

@@ -79,8 +79,12 @@ export default function AcademicCalendarTab() {
 
   const handleDeleteEvent = async (ev) => {
     if (!confirm(`Hapus agenda "${ev.nama}"?`)) return;
-    await api.delete(`/academic-events/${ev.id}`);
-    loadEvents();
+    try {
+      await api.delete(`/academic-events/${ev.id}`);
+      loadEvents();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Gagal menghapus agenda.');
+    }
   };
 
   return (

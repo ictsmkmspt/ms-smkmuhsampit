@@ -38,8 +38,12 @@ export default function SanksiTab() {
 
   const handleDelete = async (r) => {
     if (!confirm(`Hapus aturan sanksi "${r.nama}"?`)) return;
-    await api.delete(`/sanksi-rules/${r.id}`);
-    loadRules(); loadSiswa();
+    try {
+      await api.delete(`/sanksi-rules/${r.id}`);
+      loadRules(); loadSiswa();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Gagal menghapus aturan sanksi.');
+    }
   };
 
   return (

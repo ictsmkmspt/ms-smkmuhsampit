@@ -33,7 +33,7 @@ export default function TeachersTab() {
 
   const { page, setPage, totalPages, paginated: teachersHalaman } = usePagination(teachers, 40);
 
-  const loadTeachers = () => api.get('/teachers').then((res) => setTeachers(res.data));
+  const loadTeachers = () => api.get('/teachers').then((res) => setTeachers(res.data)).catch(() => alert('Gagal memuat daftar guru.'));
   useEffect(() => { loadTeachers(); }, []);
 
   const handleAdd = async (e) => {
@@ -56,8 +56,12 @@ export default function TeachersTab() {
 
   const handleDelete = async (id, name) => {
     if (!confirm(`Hapus guru "${name}"?`)) return;
-    await api.delete(`/teachers/${id}`);
-    loadTeachers();
+    try {
+      await api.delete(`/teachers/${id}`);
+      loadTeachers();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Gagal menghapus guru.');
+    }
   };
 
   const handleResetPassword = async (id, name) => {

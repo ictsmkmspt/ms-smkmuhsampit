@@ -31,6 +31,7 @@ export default function StudentsTab() {
   const fileInputRef = useRef(null);
 
   const [uploadingFotoMassal, setUploadingFotoMassal] = useState(false);
+  const [downloadingQR, setDownloadingQR] = useState(false);
   const [fotoMassalResult, setFotoMassalResult] = useState(null);
   const fotoMassalRef = useRef(null);
 
@@ -59,7 +60,7 @@ export default function StudentsTab() {
   }, [students, query, filterKelas]);
   const { page, setPage, totalPages, paginated: sortedHalaman } = usePagination(sorted, 40);
 
-  const loadStudents = () => api.get('/students').then((res) => setStudents(res.data));
+  const loadStudents = () => api.get('/students').then((res) => setStudents(res.data)).catch(() => alert('Gagal memuat daftar siswa.'));
   const loadClasses = () => api.get('/classes').then((res) => setClasses(res.data));
   const loadJurusan = () => api.get('/jurusan').then((res) => setJurusanList(res.data));
 
@@ -95,8 +96,12 @@ export default function StudentsTab() {
 
   const handleDelete = async (id, name) => {
     if (!confirm(`Hapus siswa "${name}"? Data absensi siswa ini juga akan terhapus.`)) return;
-    await api.delete(`/students/${id}`);
-    loadStudents();
+    try {
+      await api.delete(`/students/${id}`);
+      loadStudents();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Gagal menghapus siswa.');
+    }
   };
 
   const handleResetPassword = async (id, name) => {
@@ -188,10 +193,15 @@ export default function StudentsTab() {
   };
 
   const downloadAllQR = async () => {
+  setDownloadingQR(true);
   try {
     const zip = new JSZip();
 
-    for (const s of students) {
+    // Generate semua QR paralel (bukan 1 per 1 lewat for...await) — untuk
+    // ratusan siswa, versi sequential bikin tombol ini terasa macet cukup
+    // lama tanpa indikasi progres, gampang memicu klik ulang yang numpuk
+    // proses ZIP dobel.
+    await Promise.all(students.map(async (s) => {
       const dataUrl = await QRCode.toDataURL(s.qr_code, {
         width: 400,
         margin: 2,
@@ -207,7 +217,7 @@ export default function StudentsTab() {
         base64,
         { base64: true }
       );
-    }
+    }));
 
     const content = await zip.generateAsync({
       type: "blob",
@@ -217,6 +227,8 @@ export default function StudentsTab() {
   } catch (err) {
     console.error(err);
     alert("Gagal membuat ZIP QR Code.");
+  } finally {
+    setDownloadingQR(false);
   }
 };
 
@@ -375,9 +387,10 @@ export default function StudentsTab() {
           <div className="flex items-center gap-2 flex-wrap">
             <button
               onClick={downloadAllQR}
+              disabled={downloadingQR}
               className="flex items-center gap-1.5 text-sm font-medium text-white bg-brand-600 hover:bg-brand-700 disabled:opacity-50 rounded-xl px-4 py-2 transition"
             >
-              Download Semua QR
+              {downloadingQR ? 'Membuat ZIP...' : 'Download Semua QR'}
             </button>
             <button
               onClick={() => window.open('/print/kartu-pelajar', '_blank')}

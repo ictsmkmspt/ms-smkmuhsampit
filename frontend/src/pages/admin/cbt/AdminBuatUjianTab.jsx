@@ -321,8 +321,12 @@ export default function AdminBuatUjianTab({ teacherId }) {
 
   const handleHentikanAttempt = async (attempt) => {
     if (!confirm(`Paksa-hentikan sesi ${attempt.student?.user?.name}? Jawaban yang sudah tersimpan akan langsung difinalisasi.`)) return;
-    await api.post(`/admin-cbt-exams/attempts/${attempt.id}/hentikan`);
-    bukaAttempts(viewingExam);
+    try {
+      await api.post(`/admin-cbt-exams/attempts/${attempt.id}/hentikan`);
+      bukaAttempts(viewingExam);
+    } catch (err) {
+      alert(err.response?.data?.message || 'Gagal menghentikan sesi ujian.');
+    }
   };
 
   const copyToken = (token) => {

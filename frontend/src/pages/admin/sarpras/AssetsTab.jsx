@@ -36,15 +36,19 @@ export default function AssetsTab() {
   useEffect(() => { load(); api.get('/rooms').then((res) => setRooms(res.data)); }, []);
 
   const handleDownloadTemplate = async () => {
-    const res = await api.get('/assets/import/template', { responseType: 'blob' });
-    const url = window.URL.createObjectURL(new Blob([res.data]));
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', 'template_import_aset.xlsx');
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    window.URL.revokeObjectURL(url);
+    try {
+      const res = await api.get('/assets/import/template', { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'template_import_aset.xlsx');
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch {
+      alert('Gagal mengunduh template.');
+    }
   };
 
   const handleImportClick = () => fileInputRef.current?.click();

@@ -26,6 +26,7 @@ export default function AdminAccountsTab() {
   const [editId, setEditId] = useState(null);
   const [editData, setEditData] = useState({});
   const [saving, setSaving] = useState(false);
+  const [busyId, setBusyId] = useState(null);
 
   // Email auto-terisi dari Nama (nama disambung tanpa spasi + domain sekolah)
   // selama pengguna belum mengetik sendiri di kolom Email — begitu diketik
@@ -55,21 +56,27 @@ export default function AdminAccountsTab() {
 
   const handleDelete = async (a) => {
     if (!confirm(`Hapus akun "${a.name}" (${ROLE_LABEL[a.role]})?`)) return;
+    setBusyId(a.id);
     try {
       await api.delete(`/admin-accounts/${a.id}`);
       loadAccounts();
     } catch (err) {
       alert(err.response?.data?.message || 'Gagal menghapus akun.');
+    } finally {
+      setBusyId(null);
     }
   };
 
   const handleResetPassword = async (a) => {
     if (!confirm(`Reset password akun "${a.name}" ke default (123456)?`)) return;
+    setBusyId(a.id);
     try {
       const res = await api.put(`/admin-accounts/${a.id}/reset-password`);
       alert(res.data.message);
     } catch (err) {
       alert(err.response?.data?.message || 'Gagal mereset password.');
+    } finally {
+      setBusyId(null);
     }
   };
 
@@ -197,10 +204,10 @@ export default function AdminAccountsTab() {
                       </button>
                       {a.id !== user.id && (
                         <>
-                          <button onClick={() => handleResetPassword(a)} className="text-ink-400 hover:text-brand-600" title="Reset Password ke default (123456)">
+                          <button onClick={() => handleResetPassword(a)} disabled={busyId === a.id} className="text-ink-400 hover:text-brand-600 disabled:opacity-40" title="Reset Password ke default (123456)">
                             <KeyRound className="w-4 h-4" />
                           </button>
-                          <button onClick={() => handleDelete(a)} className="text-ink-300 hover:text-honey-700">
+                          <button onClick={() => handleDelete(a)} disabled={busyId === a.id} className="text-ink-300 hover:text-honey-700 disabled:opacity-40">
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </>

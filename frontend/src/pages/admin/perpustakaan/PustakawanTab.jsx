@@ -62,8 +62,12 @@ export default function PustakawanTab() {
 
   const handleDelete = async (id, name) => {
     if (!confirm(`Hapus akun "${name}"?`)) return;
-    await api.delete(`/pustakawan/${id}`);
-    load();
+    try {
+      await api.delete(`/pustakawan/${id}`);
+      load();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Gagal menghapus akun.');
+    }
   };
 
   const handleResetPassword = async (id, name) => {

@@ -66,8 +66,12 @@ export default function KalenderLiburTab() {
 
   const handleDelete = async (id, keterangan) => {
     if (!confirm(`Hapus hari libur "${keterangan}"?`)) return;
-    await api.delete(`/holidays/${id}`);
-    loadHolidays();
+    try {
+      await api.delete(`/holidays/${id}`);
+      loadHolidays();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Gagal menghapus hari libur.');
+    }
   };
 
   // Terbaru dulu, dipotong 10 per halaman.

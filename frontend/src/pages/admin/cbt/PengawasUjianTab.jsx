@@ -62,8 +62,12 @@ export default function PengawasUjianTab() {
 
   const handleDelete = async (id, name) => {
     if (!confirm(`Hapus akun "${name}"?`)) return;
-    await api.delete(`/pengawas-ujian-accounts/${id}`);
-    load();
+    try {
+      await api.delete(`/pengawas-ujian-accounts/${id}`);
+      load();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Gagal menghapus akun.');
+    }
   };
 
   const handleResetPassword = async (id, name) => {

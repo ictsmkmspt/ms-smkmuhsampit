@@ -116,8 +116,12 @@ export default function TeachingAssignmentsTab() {
 
   const handleDelete = async (a) => {
     if (!confirm(`Hapus penugasan "${a.subject?.nama}" di kelas "${a.class_room?.name}"? Isian jadwal yang sudah ditempatkan dari penugasan ini ikut terhapus.`)) return;
-    await api.delete(`/teaching-assignments/${a.id}`);
-    load();
+    try {
+      await api.delete(`/teaching-assignments/${a.id}`);
+      load();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Gagal menghapus penugasan.');
+    }
   };
 
   const startEditJam = (a) => {

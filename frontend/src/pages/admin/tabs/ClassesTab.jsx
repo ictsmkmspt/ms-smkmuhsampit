@@ -22,8 +22,8 @@ export default function ClassesTab() {
   const [editSaving, setEditSaving] = useState(false);
   const [editError, setEditError]   = useState('');
 
-  const loadClasses  = () => api.get('/classes').then((res) => setClasses(res.data));
-  const loadTeachers = () => api.get('/teachers').then((res) => setTeachers(res.data));
+  const loadClasses  = () => api.get('/classes').then((res) => setClasses(res.data)).catch(() => alert('Gagal memuat daftar kelas.'));
+  const loadTeachers = () => api.get('/teachers').then((res) => setTeachers(res.data)).catch(() => alert('Gagal memuat daftar guru.'));
 
   useEffect(() => { loadClasses(); loadTeachers(); }, []);
 
@@ -51,8 +51,12 @@ export default function ClassesTab() {
 
   const handleDelete = async (id, className) => {
     if (!confirm(`Hapus kelas "${className}"? Siswa di kelas ini tidak akan terhapus, hanya jadi tanpa kelas.`)) return;
-    await api.delete(`/classes/${id}`);
-    loadClasses();
+    try {
+      await api.delete(`/classes/${id}`);
+      loadClasses();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Gagal menghapus kelas.');
+    }
   };
 
   const handleLuluskan = async (c) => {

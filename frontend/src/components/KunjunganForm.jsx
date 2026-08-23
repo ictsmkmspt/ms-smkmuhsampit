@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Search, CheckCircle2, UserCheck, Clock } from 'lucide-react';
 import QrCodeScanner from './QrCodeScanner';
 import api from '../api/axios';
@@ -60,11 +60,26 @@ export default function KunjunganForm({ basePath }) {
     setKodeManual('');
   };
 
-  const handleCariNama = async (q) => {
+  const cariDebounceRef = useRef(null);
+  const cariRequestIdRef = useRef(0);
+  useEffect(() => () => { if (cariDebounceRef.current) clearTimeout(cariDebounceRef.current); }, []);
+
+  const handleCariNama = (q) => {
     setCariNama(q);
+    if (cariDebounceRef.current) clearTimeout(cariDebounceRef.current);
     if (q.trim().length < 2) { setHasilCari([]); return; }
-    const res = await api.get(`${basePath}/cari`, { params: { q } });
-    setHasilCari(res.data);
+
+    // Debounce 300ms (jangan 1 request per ketukan tombol) + penanda id
+    // request supaya balasan yang lebih lambat dari query LAMA (mis. "ah")
+    // tidak menimpa hasil query yang lebih baru dan lebih spesifik (mis.
+    // "ahmad") kalau kebetulan datang belakangan karena jaringan.
+    const requestId = ++cariRequestIdRef.current;
+    cariDebounceRef.current = setTimeout(async () => {
+      const res = await api.get(`${basePath}/cari`, { params: { q } }).catch(() => null);
+      if (res && requestId === cariRequestIdRef.current) {
+        setHasilCari(res.data);
+      }
+    }, 300);
   };
 
   const pilihDariCari = (p) => {

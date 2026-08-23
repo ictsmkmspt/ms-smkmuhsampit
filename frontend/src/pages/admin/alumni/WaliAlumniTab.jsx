@@ -46,8 +46,12 @@ export default function WaliAlumniTab() {
 
   const handleDeleteParent = async (id, name) => {
     if (!confirm(`Hapus akun wali "${name}"? Semua hubungan ke anak juga akan terhapus.`)) return;
-    await api.delete(`/parents/${id}`);
-    loadParents();
+    try {
+      await api.delete(`/parents/${id}`);
+      loadParents();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Gagal menghapus akun wali.');
+    }
   };
 
   const handleResetPassword = async (id, name) => {

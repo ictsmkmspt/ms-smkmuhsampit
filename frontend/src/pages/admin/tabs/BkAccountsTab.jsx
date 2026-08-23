@@ -43,8 +43,12 @@ export default function BkAccountsTab() {
 
   const handleDelete = async (id, name) => {
     if (!confirm(`Hapus akun BK "${name}"?`)) return;
-    await api.delete(`/bk/${id}`);
-    loadAccounts();
+    try {
+      await api.delete(`/bk/${id}`);
+      loadAccounts();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Gagal menghapus akun BK.');
+    }
   };
 
   const handleResetPassword = async (id, name) => {

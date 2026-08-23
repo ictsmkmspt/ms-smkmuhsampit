@@ -57,8 +57,12 @@ export default function PeriodTemplateTab() {
   };
   const handleDelete = async (r) => {
     if (!confirm(`Hapus baris template ${r.waktu_mulai?.slice(0, 5)}-${r.waktu_selesai?.slice(0, 5)}?`)) return;
-    await api.delete(`/period-templates/${r.id}`);
-    load();
+    try {
+      await api.delete(`/period-templates/${r.id}`);
+      load();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Gagal menghapus baris template.');
+    }
   };
 
   return (

@@ -27,7 +27,7 @@ export default function AttendanceReportTab() {
   const [printYear, setPrintYear] = useState(new Date().getFullYear());
 
   useEffect(() => {
-    api.get('/classes').then((res) => setClasses(res.data));
+    api.get('/classes').then((res) => setClasses(res.data)).catch(() => alert('Gagal memuat daftar kelas.'));
   }, []);
 
   const loadReport = () => {

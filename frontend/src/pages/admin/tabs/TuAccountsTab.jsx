@@ -43,8 +43,12 @@ export default function TuAccountsTab() {
 
   const handleDelete = async (id, name) => {
     if (!confirm(`Hapus akun TU "${name}"?`)) return;
-    await api.delete(`/tu/${id}`);
-    loadAccounts();
+    try {
+      await api.delete(`/tu/${id}`);
+      loadAccounts();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Gagal menghapus akun TU.');
+    }
   };
 
   const handleResetPassword = async (id, name) => {

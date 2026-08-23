@@ -72,8 +72,12 @@ export default function RoomStaffTab() {
 
   const handleDelete = async (id, name) => {
     if (!confirm(`Hapus akun "${name}"?`)) return;
-    await api.delete(`/room-staff/${id}`);
-    load();
+    try {
+      await api.delete(`/room-staff/${id}`);
+      load();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Gagal menghapus akun.');
+    }
   };
 
   const handleResetPassword = async (id, name) => {

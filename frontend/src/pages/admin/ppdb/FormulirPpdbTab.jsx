@@ -41,8 +41,12 @@ export default function FormulirPpdbTab() {
 
   const handleDelete = async (p) => {
     if (!confirm(`Hapus data pendaftar "${p.nama_lengkap}"?`)) return;
-    await api.delete(`/ppdb/${p.id}`);
-    load(statusFilter);
+    try {
+      await api.delete(`/ppdb/${p.id}`);
+      load(statusFilter);
+    } catch (err) {
+      alert(err.response?.data?.message || 'Gagal menghapus data pendaftar.');
+    }
   };
 
   const batalForm = () => {
