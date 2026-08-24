@@ -4,8 +4,11 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Announcement;
+use App\Models\User;
+use App\Services\NotificationDispatcher;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 /**
  * Papan pengumuman — semua guru boleh membuat, dan cuma boleh
@@ -48,7 +51,16 @@ class AnnouncementController extends Controller
             $data['foto_uploaded_at'] = now();
         }
 
-        return response()->json(Announcement::create($data)->load('dibuatOleh'), 201);
+        $announcement = Announcement::create($data)->load('dibuatOleh');
+
+        // Body notifikasi: judul + cuplikan isi (dipotong 150 karakter) —
+        // supaya penerima langsung dapat gambaran isinya dari panel
+        // notifikasi tanpa harus buka halaman Pengumuman dulu.
+        $pesan = $data['judul'] . ' — ' . Str::limit($data['isi'], 150);
+        $penerima = User::where('id', '!=', $data['dibuat_oleh'])->get();
+        NotificationDispatcher::sendManyAcrossRoles($penerima, 'pengumuman', 'Pengumuman baru', $pesan);
+
+        return response()->json($announcement, 201);
     }
 
     public function update(Request $request, Announcement $announcement)

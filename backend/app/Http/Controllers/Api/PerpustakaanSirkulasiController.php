@@ -9,6 +9,7 @@ use App\Models\PerpustakaanPeminjaman;
 use App\Models\Setting;
 use App\Models\Student;
 use App\Models\Teacher;
+use App\Services\NotificationDispatcher;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -174,8 +175,14 @@ class PerpustakaanSirkulasiController extends Controller
                 'status' => 'dipinjam',
             ]);
             $eksemplar->update(['status' => 'dipinjam']);
+            $peminjaman = $peminjaman->load(['eksemplar.buku', 'peminjam.user']);
 
-            return response()->json($peminjaman->load(['eksemplar.buku', 'peminjam.user']), 201);
+            $user = $peminjaman->peminjam?->user;
+            if ($user) {
+                NotificationDispatcher::send($user, 'perpustakaan', 'Buku berhasil dipinjam', "\"{$peminjaman->eksemplar->buku->judul}\" dipinjam, jatuh tempo {$peminjaman->tanggal_jatuh_tempo}.", null);
+            }
+
+            return response()->json($peminjaman, 201);
         });
     }
 

@@ -7,6 +7,7 @@ use App\Models\PklPlacement;
 use App\Models\Student;
 use App\Models\Teacher;
 use App\Models\TahunAjaran;
+use App\Services\NotificationDispatcher;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -101,7 +102,7 @@ class PklPlacementController extends Controller
             'tanggal_selesai'      => 'required|date|after_or_equal:tanggal_mulai',
         ]);
 
-        return DB::transaction(function () use ($data) {
+        $placement = DB::transaction(function () use ($data) {
             // lockForUpdate baris siswanya sendiri supaya 2 permintaan buat
             // penempatan hampir bersamaan untuk siswa yang sama diserialisasi
             // (menutup celah TOCTOU antara exists() dan create() di bawah).
@@ -118,11 +119,34 @@ class PklPlacementController extends Controller
 
             $placement = PklPlacement::create($data + ['status' => 'aktif']);
 
-            return response()->json(
-                $placement->load(['student.user', 'iduka', 'guruPembimbing.user']),
-                201
-            );
+            return $placement->load(['student.user', 'iduka', 'guruPembimbing.user']);
         });
+
+        if ($placement instanceof \Illuminate\Http\JsonResponse) {
+            return $placement;
+        }
+
+        $this->notifyPenempatanBaru($placement);
+
+        return response()->json($placement, 201);
+    }
+
+    /**
+     * Notifikasi penempatan PKL baru — siswa, wali, dan guru pembimbing
+     * (kalau sudah ditentukan sejak awal) sekaligus diberi tahu.
+     */
+    private function notifyPenempatanBaru(PklPlacement $placement): void
+    {
+        $placement->loadMissing(['student.user', 'student.parents', 'iduka', 'guruPembimbing.user']);
+        $student = $placement->student;
+        $namaIduka = $placement->iduka?->nama_perusahaan ?? '-';
+
+        NotificationDispatcher::send($student->user, 'pkl', 'Penempatan PKL baru', "Kamu ditempatkan PKL di {$namaIduka}, mulai {$placement->tanggal_mulai}.", '/siswa');
+        NotificationDispatcher::sendMany($student->parents, 'pkl', 'Penempatan PKL anak Anda', "{$student->user->name} ditempatkan PKL di {$namaIduka}, mulai {$placement->tanggal_mulai}.", '/wali');
+
+        if ($placement->guruPembimbing?->user) {
+            NotificationDispatcher::send($placement->guruPembimbing->user, 'pkl', 'Ditugaskan sebagai pembimbing PKL', "Anda ditugaskan membimbing {$student->user->name} PKL di {$namaIduka}.", '/guru');
+        }
     }
 
     /**
@@ -170,6 +194,15 @@ class PklPlacementController extends Controller
             return [$studentIdsBaru, $studentIdsSudahAktif];
         });
 
+        if ($studentIdsBaru->isNotEmpty()) {
+            PklPlacement::with(['student.user', 'student.parents', 'iduka', 'guruPembimbing.user'])
+                ->whereIn('student_id', $studentIdsBaru)
+                ->where('status', 'aktif')
+                ->where('iduka_id', $data['iduka_id'])
+                ->get()
+                ->each(fn ($p) => $this->notifyPenempatanBaru($p));
+        }
+
         $namaDilewati = $studentIdsSudahAktif->isEmpty() ? [] : Student::with('user')
             ->whereIn('id', $studentIdsSudahAktif)
             ->get()
@@ -196,7 +229,7 @@ class PklPlacementController extends Controller
             'status'             => 'sometimes|in:aktif,selesai',
         ]);
 
-        return DB::transaction(function () use ($data, $pklPlacement) {
+        $result = DB::transaction(function () use ($data, $pklPlacement) {
             $pklPlacement = PklPlacement::lockForUpdate()->findOrFail($pklPlacement->id);
 
             // Reaktivasi (selesai -> aktif) HARUS dicek juga, sama seperti
@@ -216,10 +249,34 @@ class PklPlacementController extends Controller
                 }
             }
 
+            $statusSelesai = ($data['status'] ?? null) === 'selesai' && $pklPlacement->status !== 'selesai';
+
             $pklPlacement->update($data);
 
-            return $pklPlacement->fresh(['student.user', 'iduka', 'guruPembimbing.user']);
+            return [$pklPlacement->fresh(['student.user', 'student.parents', 'iduka', 'guruPembimbing.user']), $statusSelesai];
         });
+
+        if ($result instanceof \Illuminate\Http\JsonResponse) {
+            return $result;
+        }
+
+        [$pklPlacement, $statusSelesai] = $result;
+
+        if ($statusSelesai) {
+            $this->notifyPenempatanSelesai($pklPlacement);
+        }
+
+        return $pklPlacement;
+    }
+
+    /** Notifikasi penempatan PKL ditutup (status jadi "selesai") — siswa & wali. */
+    private function notifyPenempatanSelesai(PklPlacement $placement): void
+    {
+        $student = $placement->student;
+        $namaIduka = $placement->iduka?->nama_perusahaan ?? '-';
+
+        NotificationDispatcher::send($student->user, 'pkl', 'Penempatan PKL selesai', "Penempatan PKL kamu di {$namaIduka} sudah ditandai selesai.", '/siswa');
+        NotificationDispatcher::sendMany($student->parents, 'pkl', 'Penempatan PKL anak Anda selesai', "Penempatan PKL {$student->user->name} di {$namaIduka} sudah ditandai selesai.", '/wali');
     }
 
     public function destroy(PklPlacement $pklPlacement)
@@ -238,12 +295,15 @@ class PklPlacementController extends Controller
     public function tutupSemuaAktif()
     {
         $query = PklPlacement::where('status', 'aktif')->where('tahun_ajaran_id', TahunAjaran::aktifId());
-        $jumlah = $query->count();
+        $placements = $query->with(['student.user', 'student.parents', 'iduka'])->get();
+        $jumlah = $placements->count();
 
         $query->update([
             'status' => 'selesai',
             'tanggal_selesai' => now()->format('Y-m-d'),
         ]);
+
+        $placements->each(fn ($p) => $this->notifyPenempatanSelesai($p));
 
         return response()->json([
             'message' => "$jumlah penempatan PKL berhasil ditutup (ditandai selesai). Semua data riwayatnya tetap tersimpan.",

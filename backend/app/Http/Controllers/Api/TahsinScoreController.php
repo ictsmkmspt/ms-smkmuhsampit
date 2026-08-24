@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Student;
 use App\Models\TahsinScore;
+use App\Services\NotificationDispatcher;
 use Illuminate\Http\Request;
 
 /**
@@ -48,6 +49,8 @@ class TahsinScoreController extends Controller
             'entries.*.keterangan' => 'nullable|string|max:255',
         ]);
 
+        $students = Student::with(['user', 'parents'])->whereIn('id', collect($data['entries'])->pluck('student_id'))->get()->keyBy('id');
+
         foreach ($data['entries'] as $entry) {
             TahsinScore::create([
                 'student_id' => $entry['student_id'],
@@ -57,6 +60,13 @@ class TahsinScoreController extends Controller
                 'tanggal' => $data['tanggal'],
                 'recorded_by' => $request->user()->id,
             ]);
+
+            $student = $students->get($entry['student_id']);
+            if ($student) {
+                $pesan = "Setoran Tahsin jilid {$entry['jilid']} halaman {$entry['halaman']} tercatat.";
+                NotificationDispatcher::send($student->user, 'nilai', 'Nilai Tahsin baru', $pesan, '/siswa');
+                NotificationDispatcher::sendMany($student->parents, 'nilai', 'Nilai Tahsin anak Anda', "{$student->user->name} — {$pesan}", '/wali');
+            }
         }
 
         return response()->json(['message' => count($data['entries']) . ' catatan Tahsin berhasil disimpan.'], 201);

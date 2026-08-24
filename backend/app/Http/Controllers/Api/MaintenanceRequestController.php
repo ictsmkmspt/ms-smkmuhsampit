@@ -6,6 +6,8 @@ use App\Http\Controllers\Api\Concerns\RestrictsToOwnRoom;
 use App\Http\Controllers\Controller;
 use App\Models\Asset;
 use App\Models\MaintenanceRequest;
+use App\Models\User;
+use App\Services\NotificationDispatcher;
 use Illuminate\Http\Request;
 
 class MaintenanceRequestController extends Controller
@@ -68,9 +70,18 @@ class MaintenanceRequestController extends Controller
             'catatan_penyelesaian' => 'nullable|string',
         ]);
 
-        $maintenanceRequest->update($data);
+        $statusBerubah = $data['status'] !== $maintenanceRequest->status;
 
-        return $maintenanceRequest->fresh(['asset', 'room']);
+        $maintenanceRequest->update($data);
+        $maintenanceRequest = $maintenanceRequest->fresh(['asset', 'room']);
+
+        if ($statusBerubah && in_array($data['status'], ['diproses', 'selesai']) && $maintenanceRequest->room_id) {
+            $penanggungJawab = User::where('role', 'kepala_bengkel')->where('room_id', $maintenanceRequest->room_id)->get();
+            $label = $data['status'] === 'diproses' ? 'sedang diproses' : 'selesai';
+            NotificationDispatcher::sendMany($penanggungJawab, 'maintenance', 'Status pemeliharaan diperbarui', "Laporan \"{$maintenanceRequest->deskripsi}\" di ruang {$maintenanceRequest->room?->nama} {$label}.", '/staf-ruang');
+        }
+
+        return $maintenanceRequest;
     }
 
     public function destroy(MaintenanceRequest $maintenanceRequest)

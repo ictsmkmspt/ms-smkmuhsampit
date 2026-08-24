@@ -10,11 +10,28 @@ use App\Models\Student;
 use App\Models\TahunAjaran;
 use App\Models\Teacher;
 use App\Models\TeachingAssignment;
+use App\Services\NotificationDispatcher;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class ScheduleController extends Controller
 {
+    /**
+     * Notif "jadwal pelajaran diubah" ke semua siswa aktif kelas terkait +
+     * gurunya (kalau ada) — dipanggil dari update()/destroy() begitu 1
+     * isian jadwal benar-benar berpindah jam atau dihapus.
+     */
+    private function notifyJadwalBerubah(Schedule $schedule, string $pesan): void
+    {
+        $schedule->loadMissing('subject', 'teacher.user');
+        $students = Student::with('user')->where('class_room_id', $schedule->class_room_id)->where('status', 'aktif')->get();
+        NotificationDispatcher::sendMany($students->pluck('user')->filter(), 'jadwal', 'Jadwal pelajaran diubah', "{$schedule->subject?->nama}: {$pesan}", '/siswa');
+
+        if ($schedule->teacher?->user) {
+            NotificationDispatcher::send($schedule->teacher->user, 'jadwal', 'Jadwal mengajar diubah', "{$schedule->subject?->nama}: {$pesan}", '/guru');
+        }
+    }
+
     /**
      * Data mentah untuk merender grid jadwal — struktur baris jam SELALU
      * ikut Template Jadwal (period_templates, global, tidak per tahun
@@ -139,6 +156,8 @@ class ScheduleController extends Controller
             'kode' => 'nullable|string|max:10',
         ]);
 
+        $periodBerubah = false;
+
         if (!empty($data['period_id']) && (int) $data['period_id'] !== $schedule->period_id) {
             $period = PeriodTemplate::findOrFail($data['period_id']);
             if ($period->tipe !== 'pelajaran') {
@@ -151,6 +170,7 @@ class ScheduleController extends Controller
                 return response()->json(['message' => 'Guru ini sudah mengajar kelas lain di jam yang sama.'], 422);
             }
             $schedule->period_id = $data['period_id'];
+            $periodBerubah = true;
         }
 
         if (array_key_exists('kode', $data)) {
@@ -158,8 +178,13 @@ class ScheduleController extends Controller
         }
 
         $schedule->save();
+        $schedule = $schedule->fresh(['subject', 'teacher.user']);
 
-        return $schedule->fresh(['subject', 'teacher.user']);
+        if ($periodBerubah) {
+            $this->notifyJadwalBerubah($schedule, 'jam pelajaran dipindahkan.');
+        }
+
+        return $schedule;
     }
 
     public function destroy(Schedule $schedule)
@@ -167,6 +192,8 @@ class ScheduleController extends Controller
         if ($schedule->tahun_ajaran_id !== TahunAjaran::aktifId()) {
             return response()->json(['message' => 'Isian jadwal ini milik tahun ajaran yang tidak aktif dan tidak bisa dihapus.'], 422);
         }
+
+        $this->notifyJadwalBerubah($schedule, 'jadwal dihapus dari jam ini.');
 
         $schedule->delete();
 

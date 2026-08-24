@@ -14,6 +14,7 @@ use App\Models\TahunAjaran;
 use App\Models\Teacher;
 use App\Models\Violation;
 use App\Models\ViolationType;
+use App\Services\NotificationDispatcher;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -284,7 +285,7 @@ class AttendanceController extends Controller
         $alpaStudents = Student::where('status', 'aktif')
             ->whereNotIn('id', $studentsAlreadyAbsent)
             ->whereNotIn('id', $siswaPkl)
-            ->with('user')->get();
+            ->with(['user', 'parents'])->get();
 
         $jenisAlpa = ViolationType::where('system_key', 'alpa')->first();
         $poinAlpa  = $jenisAlpa?->poin ?? 10;
@@ -304,6 +305,9 @@ class AttendanceController extends Controller
 
                 $student->tambahPoin($poinAlpa);
                 $diproses[] = $student->user->name;
+
+                NotificationDispatcher::send($student->user, 'absensi', 'Alpa tercatat', "Kamu tercatat alpa (tanpa keterangan) pada tanggal {$date}.", '/siswa');
+                NotificationDispatcher::sendMany($student->parents, 'absensi', 'Anak Anda alpa', "{$student->user->name} tercatat alpa (tanpa keterangan) pada tanggal {$date}.", '/wali');
             }
         });
 
@@ -330,7 +334,7 @@ class AttendanceController extends Controller
             'time_in'    => 'nullable|date_format:H:i',
         ]);
 
-        $student = Student::with('user')->findOrFail($data['student_id']);
+        $student = Student::with(['user', 'parents'])->findOrFail($data['student_id']);
 
         $restricted = $this->guruClassRoomId($request);
         if ($restricted !== null && $student->class_room_id !== $restricted) {
@@ -384,6 +388,9 @@ class AttendanceController extends Controller
                         'type' => 'alpa', 'poin' => $poin, 'recorded_by' => $request->user()->id,
                     ]);
                     $student->tambahPoin($poin);
+
+                    NotificationDispatcher::send($student->user, 'absensi', 'Alpa tercatat', "Kamu tercatat alpa (tanpa keterangan) pada tanggal {$date}.", '/siswa');
+                    NotificationDispatcher::sendMany($student->parents, 'absensi', 'Anak Anda alpa', "{$student->user->name} tercatat alpa (tanpa keterangan) pada tanggal {$date}.", '/wali');
                 }
             } elseif ($attendance) {
                 $attendance->update([
@@ -438,6 +445,9 @@ class AttendanceController extends Controller
             $student->tambahPoin($violationType->poin);
             return $v;
         });
+
+        NotificationDispatcher::send($student->user, 'pelanggaran', 'Pelanggaran tercatat', "Kamu tercatat melakukan pelanggaran \"{$violationType->name}\" (-{$violationType->poin} poin).", '/siswa');
+        NotificationDispatcher::sendMany($student->parents, 'pelanggaran', 'Pelanggaran anak Anda', "{$student->user->name} tercatat melakukan pelanggaran \"{$violationType->name}\" (-{$violationType->poin} poin).", '/wali');
 
         return response()->json([
             'message'   => 'Pelanggaran "' . $violationType->name . '" dicatat untuk ' . $student->user->name . ' (+' . $violationType->poin . ' poin).',
@@ -738,7 +748,7 @@ class AttendanceController extends Controller
             'status'     => 'required|in:hadir,izin,sakit,alpa',
         ]);
 
-        $student = Student::with('user')->find($data['student_id']);
+        $student = Student::with(['user', 'parents'])->find($data['student_id']);
         $today   = now()->format('Y-m-d');
 
         $existing = Attendance::where('student_id', $student->id)
@@ -786,6 +796,9 @@ class AttendanceController extends Controller
                 ]);
                 $student->tambahPoin($poinAlpa);
             });
+
+            NotificationDispatcher::send($student->user, 'absensi', 'Alpa tercatat', "Kamu tercatat alpa (tanpa keterangan) pada tanggal {$today}.", '/siswa');
+            NotificationDispatcher::sendMany($student->parents, 'absensi', 'Anak Anda alpa', "{$student->user->name} tercatat alpa (tanpa keterangan) pada tanggal {$today}.", '/wali');
 
             return response()->json([
                 'message' => 'Absensi manual berhasil: ' . $student->user->name . ' (alpa)',

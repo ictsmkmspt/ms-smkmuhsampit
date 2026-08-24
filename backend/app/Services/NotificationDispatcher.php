@@ -56,4 +56,46 @@ class NotificationDispatcher
 
         return count($rows);
     }
+
+    /**
+     * URL portal per role — dipakai trigger yang menyasar penerima lintas
+     * role sekaligus (mis. pengumuman ke semua orang), supaya tiap
+     * penerima diarahkan ke portalnya sendiri, bukan 1 url yang sama untuk
+     * semua. Cermin dashboardPathForRole() di frontend/src/pages/Login.jsx
+     * — kalau daftar role di sana berubah, samakan juga di sini.
+     */
+    public static function urlForRole(string $role): string
+    {
+        return match ($role) {
+            'admin', 'waka' => '/admin',
+            'waka_kesiswaan' => '/waka-kesiswaan',
+            'waka_kurikulum' => '/waka-kurikulum',
+            'waka_humas' => '/waka-humas',
+            'waka_sarpras' => '/waka-sarpras',
+            'guru' => '/guru',
+            'wali' => '/wali',
+            'iduka' => '/iduka',
+            'tu' => '/tu',
+            'teknisi', 'kepala_bengkel' => '/staf-ruang',
+            'bk' => '/bk',
+            'pustakawan' => '/perpustakaan-staff',
+            'kepala_sekolah' => '/kepala-sekolah',
+            'pengawas_ujian' => '/ujian',
+            default => '/siswa',
+        };
+    }
+
+    /**
+     * Kirim ke banyak user LINTAS ROLE sekaligus (mis. broadcast
+     * pengumuman) — dikelompokkan per role dulu supaya tiap kelompok
+     * diarahkan ke url portalnya sendiri lewat urlForRole().
+     */
+    public static function sendManyAcrossRoles(iterable $users, string $category, string $title, ?string $body = null, array $data = []): int
+    {
+        $total = 0;
+        foreach (collect($users)->filter()->unique('id')->groupBy('role') as $role => $group) {
+            $total += static::sendMany($group, $category, $title, $body, static::urlForRole($role), $data);
+        }
+        return $total;
+    }
 }

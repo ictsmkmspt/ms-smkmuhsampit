@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\PklPenilaian;
 use App\Models\PklPlacement;
+use App\Services\NotificationDispatcher;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use PhpOffice\PhpWord\IOFactory;
@@ -71,7 +72,7 @@ class PklPenilaianController extends Controller
             'kompetensi.*.skor'          => 'required|integer|min:1|max:4',
         ]);
 
-        return DB::transaction(function () use ($data, $pklPlacement, $user) {
+        $penilaian = DB::transaction(function () use ($data, $pklPlacement, $user) {
             $skorTetap = [
                 $data['skor_disiplin'], $data['skor_sikap'], $data['skor_komunikasi'],
                 $data['skor_inisiatif'], $data['skor_k3'],
@@ -102,11 +103,18 @@ class PklPenilaianController extends Controller
 
             $pklPlacement->update(['nilai_akhir' => $nilaiAkhir]);
 
-            return response()->json([
-                'message'   => 'Penilaian berhasil dikirim dan bersifat final.',
-                'penilaian' => $penilaian->load('kompetensis'),
-            ], 201);
+            return $penilaian;
         });
+
+        $pklPlacement->loadMissing(['student.user', 'student.parents']);
+        $student = $pklPlacement->student;
+        NotificationDispatcher::send($student->user, 'pkl', 'Nilai akhir PKL keluar', "Nilai akhir PKL kamu: {$pklPlacement->nilai_akhir}.", '/siswa');
+        NotificationDispatcher::sendMany($student->parents, 'pkl', 'Nilai akhir PKL anak Anda', "Nilai akhir PKL {$student->user->name}: {$pklPlacement->nilai_akhir}.", '/wali');
+
+        return response()->json([
+            'message'   => 'Penilaian berhasil dikirim dan bersifat final.',
+            'penilaian' => $penilaian->load('kompetensis'),
+        ], 201);
     }
 
     /**

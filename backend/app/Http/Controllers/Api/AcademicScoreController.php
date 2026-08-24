@@ -11,6 +11,7 @@ use App\Models\Subject;
 use App\Models\TahunAjaran;
 use App\Models\Teacher;
 use App\Models\TeachingAssignment;
+use App\Services\NotificationDispatcher;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -150,6 +151,16 @@ class AcademicScoreController extends Controller
             }
             return count($data['skor']);
         });
+
+        $subject = Subject::find($data['subject_id']);
+        $students = Student::with(['user', 'parents'])->whereIn('id', $studentIds)->get()->keyBy('id');
+        foreach ($data['skor'] as $item) {
+            $student = $students->get($item['student_id']);
+            if (!$student) continue;
+            $pesan = "Nilai \"{$data['nama_kegiatan']}\" mapel {$subject?->nama}: {$item['nilai']}.";
+            NotificationDispatcher::send($student->user, 'nilai', 'Nilai baru', $pesan, '/siswa');
+            NotificationDispatcher::sendMany($student->parents, 'nilai', 'Nilai baru anak Anda', "{$student->user->name} — {$pesan}", '/wali');
+        }
 
         return response()->json(['message' => "$jumlah nilai berhasil disimpan."], 201);
     }

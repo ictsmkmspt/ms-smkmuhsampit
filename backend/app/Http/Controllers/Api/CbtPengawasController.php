@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\CbtExam;
 use App\Models\CbtExamAttempt;
 use App\Models\TahunAjaran;
+use App\Services\NotificationDispatcher;
 use Illuminate\Http\Request;
 
 /**
@@ -61,6 +62,11 @@ class CbtPengawasController extends Controller
         }
 
         $this->finalisasiAttempt($cbtExamAttempt);
+
+        $cbtExamAttempt->loadMissing('student.user', 'exam');
+        if ($cbtExamAttempt->student?->user) {
+            NotificationDispatcher::send($cbtExamAttempt->student->user, 'ujian', 'Sesi ujian dihentikan', "Sesi ujian \"{$cbtExamAttempt->exam->nama}\" kamu dihentikan paksa oleh pengawas, jawaban yang tersimpan sudah difinalisasi.", '/siswa');
+        }
 
         return $cbtExamAttempt->fresh();
     }

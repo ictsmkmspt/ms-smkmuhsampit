@@ -20,3 +20,6 @@ Schedule::command('announcements:cleanup-photos')->daily();
 // — begitu jadwal_selesai lewat, ditutup otomatis supaya guru bisa lanjut
 // koreksi essay & publikasikan nilai.
 Schedule::command('cbt:tutup-ujian-terjadwal')->everyFiveMinutes();
+
+// Pengingat H-1 & baru-lewat jatuh tempo peminjaman buku perpustakaan.
+Schedule::command('perpustakaan:notif-jatuh-tempo')->daily();

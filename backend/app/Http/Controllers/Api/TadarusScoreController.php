@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Student;
 use App\Models\TadarusScore;
+use App\Services\NotificationDispatcher;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 
@@ -72,6 +73,9 @@ class TadarusScoreController extends Controller
 
         $this->validasiRentangAyat($data['entries']);
 
+        $surahList = config('quran_surah');
+        $students = Student::with(['user', 'parents'])->whereIn('id', collect($data['entries'])->pluck('student_id'))->get()->keyBy('id');
+
         foreach ($data['entries'] as $entry) {
             TadarusScore::create([
                 'student_id' => $entry['student_id'],
@@ -82,6 +86,14 @@ class TadarusScoreController extends Controller
                 'tanggal' => $data['tanggal'],
                 'recorded_by' => $request->user()->id,
             ]);
+
+            $student = $students->get($entry['student_id']);
+            if ($student) {
+                $namaSurah = $surahList[$entry['surah']]['nama'] ?? "Surah #{$entry['surah']}";
+                $pesan = "Setoran Tadarus {$namaSurah} ayat {$entry['ayat_mulai']}-{$entry['ayat_selesai']} tercatat.";
+                NotificationDispatcher::send($student->user, 'nilai', 'Nilai Tadarus baru', $pesan, '/siswa');
+                NotificationDispatcher::sendMany($student->parents, 'nilai', 'Nilai Tadarus anak Anda', "{$student->user->name} — {$pesan}", '/wali');
+            }
         }
 
         return response()->json(['message' => count($data['entries']) . ' catatan Tadarus berhasil disimpan.'], 201);

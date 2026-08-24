@@ -8,6 +8,7 @@ use App\Models\Achievement;
 use App\Models\AchievementType;
 use App\Models\Student;
 use App\Models\TahunAjaran;
+use App\Services\NotificationDispatcher;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -38,6 +39,9 @@ class AchievementController extends Controller
             $student->tambahPrestasi($achievementType->poin);
             return $a;
         });
+
+        NotificationDispatcher::send($student->user, 'prestasi', 'Prestasi baru dicatat', "Kamu mendapat prestasi \"{$achievementType->name}\" (+{$achievementType->poin} poin).", '/siswa');
+        NotificationDispatcher::sendMany($student->parents, 'prestasi', 'Prestasi baru anak Anda', "{$student->user->name} mendapat prestasi \"{$achievementType->name}\" (+{$achievementType->poin} poin).", '/wali');
 
         return response()->json([
             'message'     => 'Prestasi "' . $achievementType->name . '" dicatat untuk ' . $student->user->name . ' (+' . $achievementType->poin . ' poin).',

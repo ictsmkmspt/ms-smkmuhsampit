@@ -7,6 +7,7 @@ use App\Models\Student;
 use App\Models\TagihanLain;
 use App\Models\TagihanLainPembayaran;
 use App\Models\TahunAjaran;
+use App\Services\NotificationDispatcher;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -28,12 +29,22 @@ class TagihanLainController extends Controller
         ]);
 
         $totalDibayar = (int) $tagihanLain->pembayaran()->sum('jumlah');
+        $statusBaru = $totalDibayar >= $tagihanLain->nominal ? 'lunas' : 'sebagian';
         $tagihanLain->update([
             'jumlah_dibayar' => $totalDibayar,
-            'status' => $totalDibayar >= $tagihanLain->nominal ? 'lunas' : 'sebagian',
+            'status' => $statusBaru,
             'tanggal_bayar' => $tanggal,
             'dicatat_oleh' => $dicatatOleh,
         ]);
+
+        $judul = $statusBaru === 'lunas' ? 'Pembayaran tagihan lunas' : 'Pembayaran tagihan diterima (sebagian)';
+        $pesan = "{$tagihanLain->nama_tagihan} — Rp" . number_format($jumlah, 0, ',', '.') . ' diterima. ' .
+            ($statusBaru === 'lunas' ? 'Tagihan ini sudah lunas.' : 'Tagihan ini masih sebagian, sisa Rp' . number_format($tagihanLain->nominal - $totalDibayar, 0, ',', '.') . '.');
+
+        if ($tagihanLain->student->user) {
+            NotificationDispatcher::send($tagihanLain->student->user, 'tagihan_lain', $judul, $pesan, '/siswa');
+            NotificationDispatcher::sendMany($tagihanLain->student->parents, 'tagihan_lain', $judul, "{$tagihanLain->student->user->name} — {$pesan}", '/wali');
+        }
 
         return $tagihanLain;
     }

@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Setting;
+use App\Models\User;
+use App\Services\NotificationDispatcher;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Process;
@@ -17,6 +19,14 @@ use Illuminate\Support\Facades\Process;
  */
 class SystemBackupController extends Controller
 {
+    /** Notif ke semua admin LAIN (bukan yang sedang melakukan aksi ini sendiri). */
+    private function notifyAdminLain(string $judul, string $pesan): void
+    {
+        $aktorId = auth()->id();
+        $admins = User::where('role', 'admin')->where('id', '!=', $aktorId)->get();
+        NotificationDispatcher::sendMany($admins, 'backup', $judul, $pesan, '/admin');
+    }
+
     public function backup()
     {
         return config('database.default') === 'sqlite'
@@ -65,10 +75,13 @@ class SystemBackupController extends Controller
             ->run(['mysqldump', '-h', $conn['host'], '-P', (string) $conn['port'], '-u', $conn['username'], '--no-tablespaces', $conn['database']]);
 
         if (!$process->successful()) {
+            $this->notifyAdminLain('Backup database gagal', 'Percobaan membuat backup database (MySQL) gagal: ' . $process->errorOutput());
             return response()->json(['message' => 'Gagal membuat backup: ' . $process->errorOutput()], 500);
         }
 
         File::put($tempPath, $process->output());
+
+        $this->notifyAdminLain('Backup database dibuat', "Backup database dibuat oleh " . (auth()->user()?->name ?? 'admin') . '.');
 
         return response()->download($tempPath, $filename)->deleteFileAfterSend(true);
     }
@@ -77,6 +90,8 @@ class SystemBackupController extends Controller
     {
         $path = config('database.connections.sqlite.database');
         $filename = 'backup-sqlite-' . now()->format('Ymd_His') . '.sqlite';
+
+        $this->notifyAdminLain('Backup database dibuat', "Backup database dibuat oleh " . (auth()->user()?->name ?? 'admin') . '.');
 
         return response()->download($path, $filename);
     }
@@ -98,6 +113,7 @@ class SystemBackupController extends Controller
             ->run(['mysqldump', '-h', $conn['host'], '-P', (string) $conn['port'], '-u', $conn['username'], '--no-tablespaces', $conn['database']]);
 
         if (!$dump->successful()) {
+            $this->notifyAdminLain('Impor database gagal', 'Backup pengaman sebelum impor gagal dibuat — impor dibatalkan, tidak ada data yang berubah.');
             return response()->json([
                 'message' => 'Gagal membuat backup pengaman sebelum impor — impor DIBATALKAN demi keamanan (tidak ada data yang diubah). ' . $dump->errorOutput(),
             ], 500);
@@ -110,11 +126,14 @@ class SystemBackupController extends Controller
             ->run(['mysql', '-h', $conn['host'], '-P', (string) $conn['port'], '-u', $conn['username'], $conn['database']]);
 
         if (!$restore->successful()) {
+            $this->notifyAdminLain('Impor database gagal', 'Impor database gagal di tengah proses. Backup pengaman sebelum impor tersimpan di server, data mungkin tidak konsisten.');
             return response()->json([
                 'message' => 'Impor gagal di tengah proses: ' . $restore->errorOutput()
                     . ' Backup pengaman sebelum impor tersimpan di server (storage/app/pre-restore-backups) — hubungi teknisi untuk memulihkannya kalau data sekarang sudah tidak konsisten.',
             ], 500);
         }
+
+        $this->notifyAdminLain('Database diganti (impor)', 'Database sistem baru saja diganti total oleh ' . (auth()->user()?->name ?? 'admin') . ' lewat impor backup.');
 
         return response()->json([
             'message' => 'Database berhasil diganti dengan file yang diupload. Backup otomatis sebelum impor tersimpan di server.',
@@ -136,6 +155,8 @@ class SystemBackupController extends Controller
         File::copy($dbPath, $safetyPath);
 
         File::copy($uploadedFile->getRealPath(), $dbPath);
+
+        $this->notifyAdminLain('Database diganti (impor)', 'Database sistem baru saja diganti total oleh ' . (auth()->user()?->name ?? 'admin') . ' lewat impor backup.');
 
         return response()->json([
             'message' => 'Database berhasil diganti dengan file yang diupload. Backup otomatis sebelum impor tersimpan di server.',

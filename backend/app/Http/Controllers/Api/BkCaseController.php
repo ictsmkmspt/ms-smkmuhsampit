@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\Concerns\RestrictsGuruToOwnClass;
 use App\Http\Controllers\Controller;
 use App\Models\BkCase;
 use App\Models\TahunAjaran;
+use App\Services\NotificationDispatcher;
 use Illuminate\Http\Request;
 
 class BkCaseController extends Controller
@@ -52,9 +53,14 @@ class BkCaseController extends Controller
         $data['tahun_ajaran_id'] = TahunAjaran::aktifId();
         $data['status'] = 'berjalan';
 
-        $case = BkCase::create($data);
+        $case = BkCase::create($data)->load(['student.user', 'student.parents', 'student.classRoom', 'pencatat', 'sanksiKejadian.sanksiRule']);
 
-        return response()->json($case->load(['student.user', 'student.classRoom', 'pencatat', 'sanksiKejadian.sanksiRule']), 201);
+        if ($case->student->user) {
+            NotificationDispatcher::send($case->student->user, 'bk', 'Kasus BK baru dicatat', 'Ada catatan BK baru untukmu, temui guru BK untuk tindak lanjut.', '/siswa');
+            NotificationDispatcher::sendMany($case->student->parents, 'bk', 'Kasus BK anak Anda', "Ada catatan BK baru untuk {$case->student->user->name}.", '/wali');
+        }
+
+        return response()->json($case, 201);
     }
 
     public function update(Request $request, BkCase $bkCase)
@@ -66,9 +72,17 @@ class BkCaseController extends Controller
             'status' => 'sometimes|in:berjalan,selesai',
         ]);
 
-        $bkCase->update($data);
+        $statusSelesai = ($data['status'] ?? null) === 'selesai' && $bkCase->status !== 'selesai';
 
-        return $bkCase->fresh(['student.user', 'student.classRoom', 'pencatat']);
+        $bkCase->update($data);
+        $bkCase = $bkCase->fresh(['student.user', 'student.parents', 'student.classRoom', 'pencatat']);
+
+        if ($statusSelesai && $bkCase->student->user) {
+            NotificationDispatcher::send($bkCase->student->user, 'bk', 'Kasus BK selesai', 'Catatan BK-mu sudah ditandai selesai.', '/siswa');
+            NotificationDispatcher::sendMany($bkCase->student->parents, 'bk', 'Kasus BK anak Anda selesai', "Catatan BK {$bkCase->student->user->name} sudah ditandai selesai.", '/wali');
+        }
+
+        return $bkCase;
     }
 
     public function destroy(BkCase $bkCase)

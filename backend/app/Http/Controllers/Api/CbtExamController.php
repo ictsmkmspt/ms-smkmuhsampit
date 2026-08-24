@@ -14,9 +14,11 @@ use App\Models\CbtExamQuestion;
 use App\Models\CbtMateri;
 use App\Models\CbtQuestion;
 use App\Models\Student;
+use App\Models\Subject;
 use App\Models\TahunAjaran;
 use App\Models\Teacher;
 use App\Models\TeachingAssignment;
+use App\Services\NotificationDispatcher;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -26,6 +28,42 @@ class CbtExamController extends Controller
 {
     use HitungSkorCbt;
     use LogsCbtExamAudit;
+
+    /**
+     * Notif "ujian baru dijadwalkan" ke semua siswa aktif di kelas yang
+     * dituju — dipanggil begitu ujian (tipe "ujian", bukan latihan)
+     * langsung terbuka saat dibuat (lihat komentar status di store()).
+     */
+    private function notifyUjianDijadwalkan(CbtExam $exam, array $classRoomIds): void
+    {
+        $subject = Subject::find($exam->subject_id);
+        $students = Student::with('user')->whereIn('class_room_id', $classRoomIds)->where('status', 'aktif')->get();
+        NotificationDispatcher::sendMany($students->pluck('user')->filter(), 'ujian', 'Ujian baru dijadwalkan', "Ujian \"{$exam->nama}\" ({$subject?->nama}) dijadwalkan {$exam->jadwal_mulai} s.d. {$exam->jadwal_selesai}.", '/siswa');
+    }
+
+    /**
+     * Notif "latihan baru dibuka" ke semua siswa aktif di kelas yang
+     * dituju — dipanggil begitu latihan (tipe "latihan") diterbitkan
+     * manual lewat publish().
+     */
+    private function notifyLatihanDibuka(CbtExam $exam): void
+    {
+        $exam->loadMissing('classRooms', 'subject');
+        $classRoomIds = $exam->classRooms->pluck('id');
+        $students = Student::with('user')->whereIn('class_room_id', $classRoomIds)->where('status', 'aktif')->get();
+        NotificationDispatcher::sendMany($students->pluck('user')->filter(), 'ujian', 'Latihan baru dibuka', "Latihan \"{$exam->nama}\" ({$exam->subject?->nama}) sudah bisa dikerjakan.", '/siswa');
+    }
+
+    /**
+     * Notif "hasil ujian keluar" ke siswa yang sudah mengerjakan (attempt)
+     * ujian ini — dipanggil begitu nilai dipublikasikan.
+     */
+    private function notifyHasilUjianKeluar(CbtExam $exam): void
+    {
+        $userIds = $exam->attempts()->with('student.user')->get()
+            ->pluck('student.user')->filter()->unique('id');
+        NotificationDispatcher::sendMany($userIds, 'ujian', 'Hasil ujian keluar', "Hasil ujian \"{$exam->nama}\" sudah bisa dilihat.", '/siswa');
+    }
 
     private function isOwnAssignment(Request $request, int $subjectId, int $classRoomId): bool
     {
@@ -199,6 +237,10 @@ class CbtExamController extends Controller
             return $exam;
         });
 
+        if ($tipe === 'ujian') {
+            $this->notifyUjianDijadwalkan($exam, $data['class_room_ids']);
+        }
+
         return response()->json($exam->fresh(['examQuestions', 'classRooms']), 201);
     }
 
@@ -302,6 +344,8 @@ class CbtExamController extends Controller
         }
 
         $cbtExam->update(['status' => 'terbuka']);
+
+        $this->notifyLatihanDibuka($cbtExam);
 
         return $cbtExam->fresh();
     }
@@ -454,6 +498,8 @@ class CbtExamController extends Controller
 
         $cbtExam->update(['status_publikasi' => true]);
 
+        $this->notifyHasilUjianKeluar($cbtExam);
+
         return $cbtExam->fresh();
     }
 
@@ -472,6 +518,11 @@ class CbtExamController extends Controller
         }
 
         $this->finalisasiAttempt($cbtExamAttempt);
+
+        $cbtExamAttempt->loadMissing('student.user', 'exam');
+        if ($cbtExamAttempt->student?->user) {
+            NotificationDispatcher::send($cbtExamAttempt->student->user, 'ujian', 'Sesi ujian dihentikan', "Sesi ujian \"{$cbtExamAttempt->exam->nama}\" kamu dihentikan paksa oleh guru, jawaban yang tersimpan sudah difinalisasi.", '/siswa');
+        }
 
         return $cbtExamAttempt->fresh();
     }
@@ -492,10 +543,12 @@ class CbtExamController extends Controller
         // hitungSkorAttempt() query ulang exam+examQuestions+question untuk
         // tiap attempt (mis. 40 siswa = 40x query identik sebelumnya).
         $examQuestions = $cbtExam->examQuestions()->with('question')->get();
-        $berjalan = $cbtExam->attempts()->where('status', 'in_progress')->with('answers')->get();
+        $berjalan = $cbtExam->attempts()->where('status', 'in_progress')->with(['answers', 'student.user'])->get();
         foreach ($berjalan as $attempt) {
             $this->finalisasiAttempt($attempt, $examQuestions);
         }
+
+        NotificationDispatcher::sendMany($berjalan->pluck('student.user')->filter(), 'ujian', 'Sesi ujian dihentikan', "Sesi ujian \"{$cbtExam->nama}\" dihentikan paksa oleh guru, jawaban yang tersimpan sudah difinalisasi.", '/siswa');
 
         return response()->json(['message' => 'Berhasil menghentikan '.$berjalan->count().' sesi yang sedang berjalan.', 'jumlah' => $berjalan->count()]);
     }
@@ -544,6 +597,11 @@ class CbtExamController extends Controller
                 'device_token' => null,
             ]);
         });
+
+        $cbtExamAttempt->loadMissing('student.user', 'exam');
+        if ($cbtExamAttempt->student?->user) {
+            NotificationDispatcher::send($cbtExamAttempt->student->user, 'ujian', 'Sesi ujian direset', "Sesi ujian \"{$cbtExamAttempt->exam->nama}\" kamu direset oleh guru, silakan kerjakan ulang dari awal.", '/siswa');
+        }
 
         return response()->json(['message' => 'Sesi direset.']);
     }

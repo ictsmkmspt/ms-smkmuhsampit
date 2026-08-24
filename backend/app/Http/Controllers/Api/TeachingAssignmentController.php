@@ -9,12 +9,27 @@ use App\Models\Subject;
 use App\Models\TahunAjaran;
 use App\Models\Teacher;
 use App\Models\TeachingAssignment;
+use App\Services\NotificationDispatcher;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class TeachingAssignmentController extends Controller
 {
+    private function notifyPenugasanBaru(TeachingAssignment $assignment): void
+    {
+        $assignment->loadMissing('teacher.user', 'subject', 'classRoom');
+        if ($assignment->teacher?->user) {
+            NotificationDispatcher::send($assignment->teacher->user, 'penugasan', 'Tugas mengajar baru', "Anda ditugaskan mengajar {$assignment->subject?->nama} di kelas {$assignment->classRoom?->name}.", '/guru');
+        }
+    }
+
+    private function notifyPenugasanDilepas(TeachingAssignment $assignment): void
+    {
+        if ($assignment->teacher?->user) {
+            NotificationDispatcher::send($assignment->teacher->user, 'penugasan', 'Tugas mengajar dilepas', "Anda tidak lagi ditugaskan mengajar {$assignment->subject?->nama} di kelas {$assignment->classRoom?->name}.", '/guru');
+        }
+    }
     public function index(Request $request)
     {
         $tahunAjaranId = $request->filled('tahun_ajaran_id') ? $request->tahun_ajaran_id : TahunAjaran::aktifId();
@@ -64,6 +79,8 @@ class TeachingAssignmentController extends Controller
         $data['urutan'] = (TeachingAssignment::where('tahun_ajaran_id', $tahunAjaranId)->max('urutan') ?? -1) + 1;
 
         $assignment = TeachingAssignment::create($data);
+
+        $this->notifyPenugasanBaru($assignment);
 
         return response()->json($assignment->load(['teacher.user', 'subject', 'classRoom'])->loadCount('schedules'), 201);
     }
@@ -127,6 +144,16 @@ class TeachingAssignmentController extends Controller
             return [$classIdsBaru, $classIdsSudahAda];
         });
 
+        if ($classIdsBaru->isNotEmpty()) {
+            TeachingAssignment::with(['teacher.user', 'subject', 'classRoom'])
+                ->where('teacher_id', $data['teacher_id'])
+                ->where('subject_id', $data['subject_id'])
+                ->where('tahun_ajaran_id', $tahunAjaranId)
+                ->whereIn('class_room_id', $classIdsBaru)
+                ->get()
+                ->each(fn ($a) => $this->notifyPenugasanBaru($a));
+        }
+
         $namaDilewati = $classIdsSudahAda->isEmpty() ? [] : ClassRoom::whereIn('id', $classIdsSudahAda)
             ->pluck('name')
             ->values();
@@ -157,6 +184,28 @@ class TeachingAssignmentController extends Controller
             'kode_guru' => 'nullable|string|max:10',
         ]);
 
+        $teacherIdLama = $teachingAssignment->teacher_id;
+        $teacherBerubah = (int) $data['teacher_id'] !== $teacherIdLama;
+        $teacherLama = $teacherBerubah ? Teacher::find($teacherIdLama) : null;
+
+        // Sama seperti Rule::unique di store() — tanpa cek ini, memindahkan
+        // penugasan ke guru yang sudah punya penugasan mapel+kelas+tahun
+        // ajaran yang sama akan lolos sampai query UPDATE dan gagal dengan
+        // QueryException 500 mentah (constraint unik di DB), bukan pesan
+        // 422 yang ramah seperti di store().
+        if ($teacherBerubah) {
+            $sudahAda = TeachingAssignment::where('teacher_id', $data['teacher_id'])
+                ->where('subject_id', $teachingAssignment->subject_id)
+                ->where('class_room_id', $teachingAssignment->class_room_id)
+                ->where('tahun_ajaran_id', $teachingAssignment->tahun_ajaran_id)
+                ->where('id', '!=', $teachingAssignment->id)
+                ->exists();
+
+            if ($sudahAda) {
+                return response()->json(['message' => 'Guru ini sudah punya penugasan untuk mata pelajaran & kelas ini di tahun ajaran aktif.'], 422);
+            }
+        }
+
         $teachingAssignment->update($data);
 
         // Samakan dengan Schedule.kode yang sudah ditempatkan dari penugasan
@@ -166,7 +215,16 @@ class TeachingAssignmentController extends Controller
             Schedule::where('teaching_assignment_id', $teachingAssignment->id)->update(['kode' => $data['kode_guru']]);
         }
 
-        return $teachingAssignment->fresh(['teacher.user', 'subject', 'classRoom'])->loadCount('schedules');
+        $teachingAssignment = $teachingAssignment->fresh(['teacher.user', 'subject', 'classRoom'])->loadCount('schedules');
+
+        if ($teacherBerubah) {
+            if ($teacherLama) {
+                $this->notifyPenugasanDilepas((clone $teachingAssignment)->setRelation('teacher', $teacherLama->load('user')));
+            }
+            $this->notifyPenugasanBaru($teachingAssignment);
+        }
+
+        return $teachingAssignment;
     }
 
     public function destroy(TeachingAssignment $teachingAssignment)
@@ -174,6 +232,8 @@ class TeachingAssignmentController extends Controller
         if ($teachingAssignment->tahun_ajaran_id !== TahunAjaran::aktifId()) {
             return response()->json(['message' => 'Penugasan ini milik tahun ajaran yang tidak aktif dan tidak bisa dihapus.'], 422);
         }
+
+        $this->notifyPenugasanDilepas($teachingAssignment->load(['teacher.user', 'subject', 'classRoom']));
 
         $teachingAssignment->delete();
 

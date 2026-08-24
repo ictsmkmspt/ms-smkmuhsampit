@@ -8,6 +8,7 @@ use App\Models\Spp;
 use App\Models\SppPembayaran;
 use App\Models\Student;
 use App\Models\TagihanLain;
+use App\Services\NotificationDispatcher;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -29,12 +30,23 @@ class SppController extends Controller
         ]);
 
         $totalDibayar = (int) $spp->pembayaran()->sum('jumlah');
+        $statusBaru = $totalDibayar >= $spp->nominal ? 'lunas' : 'sebagian';
         $spp->update([
             'jumlah_dibayar' => $totalDibayar,
-            'status' => $totalDibayar >= $spp->nominal ? 'lunas' : 'sebagian',
+            'status' => $statusBaru,
             'tanggal_bayar' => $tanggal,
             'dicatat_oleh' => $dicatatOleh,
         ]);
+
+        $bulanNama = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'][$spp->bulan] ?? $spp->bulan;
+        $judul = $statusBaru === 'lunas' ? 'Pembayaran SPP lunas' : 'Pembayaran SPP diterima (sebagian)';
+        $pesan = "SPP {$bulanNama} {$spp->tahun} — Rp" . number_format($jumlah, 0, ',', '.') . ' diterima. ' .
+            ($statusBaru === 'lunas' ? 'Tagihan bulan ini sudah lunas.' : 'Tagihan bulan ini masih sebagian, sisa Rp' . number_format($spp->nominal - $totalDibayar, 0, ',', '.') . '.');
+
+        if ($spp->student->user) {
+            NotificationDispatcher::send($spp->student->user, 'spp', $judul, $pesan, '/siswa');
+            NotificationDispatcher::sendMany($spp->student->parents, 'spp', $judul, "{$spp->student->user->name} — {$pesan}", '/wali');
+        }
 
         return $spp;
     }

@@ -7,6 +7,7 @@ use App\Models\PklJournal;
 use App\Models\PklPlacement;
 use App\Models\Setting;
 use App\Models\TahunAjaran;
+use App\Services\NotificationDispatcher;
 use Illuminate\Http\Request;
 use PhpOffice\PhpWord\IOFactory;
 use PhpOffice\PhpWord\PhpWord;
@@ -345,6 +346,11 @@ class PklJournalController extends Controller
         $pklJournal->catatan_by = $request->user()->id;
         $pklJournal->catatan_at = now();
         $pklJournal->save();
+
+        $pklJournal->loadMissing('student.user');
+        if ($pklJournal->student?->user) {
+            NotificationDispatcher::send($pklJournal->student->user, 'pkl', 'Jurnal PKL dikomentari', "Kegiatan \"{$pklJournal->kegiatan}\" ({$pklJournal->date}) dikomentari IDUKA.", '/siswa');
+        }
 
         return response()->json([
             'message' => 'Catatan berhasil disimpan.',

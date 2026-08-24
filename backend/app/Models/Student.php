@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\NotificationDispatcher;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 
@@ -169,6 +170,15 @@ class Student extends Model
             'sanksi_rule_id' => $rule->id,
             'total_poin_saat_itu' => $this->total_poin,
         ]);
+
+        // Notifikasi BK (perlu tindak lanjut) + siswa & wali (informasi
+        // poin menembus ambang sanksi) — bukan trigger yang sering, aman
+        // lazy-load $this->user/parents di sini.
+        if ($this->user) {
+            NotificationDispatcher::sendMany(User::where('role', 'bk')->get(), 'bk', 'Kejadian sanksi baru', "{$this->user->name} menembus ambang poin sanksi \"{$rule->nama}\" (total {$this->total_poin} poin), perlu ditindaklanjuti.", '/bk');
+            NotificationDispatcher::send($this->user, 'sanksi', 'Poin menembus ambang sanksi', "Poin pelanggaranmu sudah mencapai {$this->total_poin}, kena aturan sanksi \"{$rule->nama}\".", '/siswa');
+            NotificationDispatcher::sendMany($this->parents, 'sanksi', 'Poin anak Anda menembus ambang sanksi', "Poin pelanggaran {$this->user->name} sudah mencapai {$this->total_poin}, kena aturan sanksi \"{$rule->nama}\".", '/wali');
+        }
     }
 
     public function tambahPrestasi(int $poin): void
