@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, KeyRound } from 'lucide-react';
+import { X, KeyRound, Eye, EyeOff } from 'lucide-react';
 import api from '../api/axios';
 
 /**
@@ -15,6 +15,7 @@ export default function ChangePasswordModal({ onClose, forced = false, onSuccess
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [sukses, setSukses] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -70,28 +71,55 @@ export default function ChangePasswordModal({ onClose, forced = false, onSuccess
 
           <div>
             <label className="block text-xs font-medium text-ink-500 mb-1">Password Saat Ini</label>
-            <input
-              type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)}
-              className="field-input" required autoComplete="current-password"
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'} value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)}
+                className="field-input pr-9" required autoComplete="current-password"
+              />
+              <button
+                type="button" onClick={() => setShowPassword((v) => !v)} tabIndex={-1}
+                title={showPassword ? 'Sembunyikan password' : 'Tampilkan password'}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-300 hover:text-ink-600"
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
           </div>
           <div>
             <label className="block text-xs font-medium text-ink-500 mb-1">Password Baru</label>
-            <input
-              type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)}
-              className="field-input" required minLength={8}
-              pattern="(?=.*[A-Z])(?=.*[^A-Za-z0-9]).{8,}"
-              title="Minimal 8 karakter, wajib ada huruf besar dan simbol"
-              autoComplete="new-password"
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'} value={newPassword} onChange={(e) => setNewPassword(e.target.value)}
+                className="field-input pr-9" required minLength={8}
+                pattern="(?=.*[A-Z])(?=.*[^A-Za-z0-9]).{8,}"
+                title="Minimal 8 karakter, wajib ada huruf besar dan simbol"
+                autoComplete="new-password"
+              />
+              <button
+                type="button" onClick={() => setShowPassword((v) => !v)} tabIndex={-1}
+                title={showPassword ? 'Sembunyikan password' : 'Tampilkan password'}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-300 hover:text-ink-600"
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
             <p className="text-[11px] text-ink-400 mt-1">Minimal 8 karakter, wajib ada huruf besar dan simbol (mis. ! @ # $).</p>
           </div>
           <div>
             <label className="block text-xs font-medium text-ink-500 mb-1">Ulangi Password Baru</label>
-            <input
-              type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
-              className="field-input" required minLength={8} autoComplete="new-password"
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
+                className="field-input pr-9" required minLength={8} autoComplete="new-password"
+              />
+              <button
+                type="button" onClick={() => setShowPassword((v) => !v)} tabIndex={-1}
+                title={showPassword ? 'Sembunyikan password' : 'Tampilkan password'}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-300 hover:text-ink-600"
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
           </div>
 
           <button disabled={saving} className="btn-primary w-full justify-center mt-1">
