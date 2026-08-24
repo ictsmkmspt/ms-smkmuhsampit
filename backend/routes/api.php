@@ -127,7 +127,14 @@ Route::middleware('auth:sanctum')->group(function () {
     // dengan rute wildcard /iduka/{iduka}) — supaya /iduka/profile & /iduka/tanda-tangan
     // (rute literal) tidak ketiban rute wildcard admin itu. Laravel mencocokkan
     // rute sesuai urutan didaftarkan, jadi rute literal wajib didaftarkan lebih dulu.
-    Route::middleware('role:iduka')->group(function () {
+    //
+    // Gerbangnya 'role:instruktur' (BUKAN 'role:iduka' lagi) — akun pembimbing
+    // PKL lapangan sekarang punya role sendiri, terpisah dari IDUKA (yang
+    // nanti dipakai khusus fitur BKK/lowongan). URL path-nya SENGAJA tetap
+    // "/iduka/..." (bukan ikut diganti "/instruktur/...") karena data yang
+    // diakses tetap profil model Iduka (perusahaan mitra) — cuma akun
+    // login yang mengaksesnya yang berganti role.
+    Route::middleware('role:instruktur')->group(function () {
         Route::get('/my-iduka-profile', [IdukaController::class, 'myProfile']);
         Route::post('/iduka/tanda-tangan', [IdukaController::class, 'uploadTandaTangan']);
         Route::put('/iduka/profile', [IdukaController::class, 'updateProfile']);
@@ -253,15 +260,24 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/tahun-ajaran/{id}/aktifkan', [TahunAjaranController::class, 'aktifkan']);
     });
 
-    // Waka Humas (merangkap Hubin) — Kelola IDUKA penuh. Waka Kurikulum cuma
-    // boleh baca (dipakai buat pilih IDUKA di form Penempatan PKL — index-nya
-    // didaftarkan di grup shared read-only di bawah). Verifikasi pendaftar
-    // PPDB dipindah ke grup "Pengembangan" (admin-only) di bawah.
+    // Waka Humas (merangkap Hubin) — Kelola IDUKA penuh (data master
+    // perusahaan mitra + GPS), Kelola Instruktur, dan Kelola IDUKA (BKK).
+    // Waka Kurikulum cuma boleh baca daftar perusahaan (dipakai buat pilih
+    // IDUKA di form Penempatan PKL — index-nya didaftarkan di grup shared
+    // read-only di bawah). Verifikasi pendaftar PPDB dipindah ke grup
+    // "Pengembangan" (admin-only) di bawah.
     Route::middleware('role:admin,waka_humas')->group(function () {
         Route::get('/iduka/import/template', [IdukaController::class, 'downloadTemplate']);
         Route::post('/iduka/import', [IdukaController::class, 'import']);
         Route::apiResource('iduka', IdukaController::class)->except(['show', 'index']);
-        Route::put('/iduka/{iduka}/reset-password', [IdukaController::class, 'resetPassword']);
+
+        // Kelola akun Instruktur — User-sentris (bukan Iduka lagi), karena
+        // sekarang 1 perusahaan mitra bisa punya lebih dari 1 akun.
+        Route::get('/instruktur', [IdukaController::class, 'indexInstruktur']);
+        Route::post('/instruktur', [IdukaController::class, 'storeInstruktur']);
+        Route::put('/instruktur/{instruktur}', [IdukaController::class, 'updateInstruktur']);
+        Route::delete('/instruktur/{instruktur}', [IdukaController::class, 'destroyInstruktur']);
+        Route::put('/instruktur/{instruktur}/reset-password', [IdukaController::class, 'resetPasswordInstruktur']);
     });
 
     // Penempatan PKL — cuma admin & Waka Kurikulum yang boleh tulis. Waka
@@ -546,7 +562,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/students/{studentId}/achievements', [AchievementController::class, 'studentAchievements']);
     });
 
-    Route::middleware('role:admin,guru,iduka,siswa')->group(function () {
+    Route::middleware('role:admin,guru,instruktur,siswa')->group(function () {
         Route::get('/pkl-placements/{pklPlacement}', [PklPlacementController::class, 'show']);
         Route::get('/pkl-placements/{pklPlacement}/penilaian', [PklPenilaianController::class, 'show']);
         Route::get('/pkl-placements/{pklPlacement}/penilaian/export-word', [PklPenilaianController::class, 'exportWord']);
@@ -556,7 +572,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/pkl-jurnal/{pklJournal}', [PklJournalController::class, 'destroyKegiatan']);
     });
 
-    Route::middleware('role:admin,guru,iduka')->group(function () {
+    Route::middleware('role:admin,guru,instruktur')->group(function () {
         Route::get('/pkl-placements/{pklPlacement}/attendances', [PklAttendanceController::class, 'riwayatPenempatan']);
         Route::post('/pkl-attendances/koreksi', [PklAttendanceController::class, 'koreksi']);
         Route::delete('/pkl-attendances/{pklAttendance}', [PklAttendanceController::class, 'hapus']);
@@ -565,10 +581,10 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     // Laporan PKL (admin/Waka Kurikulum) — waka_kurikulum ditambahkan di grup
-    // baru ini (bukan menimpa grup role:admin,guru,iduka di atas) supaya guru
-    // & IDUKA tetap bisa baca jurnal bimbingannya sendiri seperti biasa lewat
-    // route yang sama. rekap absensi PKL cuma butuh baca, jadi rute baru.
-    Route::middleware('role:admin,guru,iduka,waka_kurikulum')->group(function () {
+    // baru ini (bukan menimpa grup role:admin,guru,instruktur di atas) supaya
+    // guru & Instruktur tetap bisa baca jurnal bimbingannya sendiri seperti
+    // biasa lewat route yang sama. rekap absensi PKL cuma butuh baca, jadi rute baru.
+    Route::middleware('role:admin,guru,instruktur,waka_kurikulum')->group(function () {
         Route::get('/pkl-pembimbingan', [PklPembimbinganJournalController::class, 'index']);
     });
 
@@ -577,7 +593,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/pkl-jurnal/report', [PklJournalController::class, 'report']);
     });
 
-    Route::middleware('role:admin,iduka')->group(function () {
+    Route::middleware('role:admin,instruktur')->group(function () {
         Route::post('/pkl-attendances/{pklAttendance}/verifikasi', [PklAttendanceController::class, 'verifikasi']);
         Route::put('/pkl-jurnal/{pklJournal}/catatan', [PklJournalController::class, 'isiCatatan']);
         Route::post('/pkl-pembimbingan/{pklPembimbinganJournal}/verifikasi', [PklPembimbinganJournalController::class, 'verifikasi']);

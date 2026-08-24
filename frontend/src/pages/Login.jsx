@@ -12,7 +12,7 @@ function dashboardPathForRole(role) {
   if (role === 'waka_sarpras') return '/waka-sarpras';
   if (role === 'guru') return '/guru';
   if (role === 'wali') return '/wali';
-  if (role === 'iduka') return '/iduka';
+  if (role === 'instruktur') return '/instruktur';
   if (role === 'tu') return '/tu';
   if (role === 'teknisi' || role === 'kepala_bengkel') return '/staf-ruang';
   if (role === 'bk') return '/bk';

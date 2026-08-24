@@ -74,7 +74,7 @@ class NotificationDispatcher
             'waka_sarpras' => '/waka-sarpras',
             'guru' => '/guru',
             'wali' => '/wali',
-            'iduka' => '/iduka',
+            'instruktur' => '/instruktur',
             'tu' => '/tu',
             'teknisi', 'kepala_bengkel' => '/staf-ruang',
             'bk' => '/bk',

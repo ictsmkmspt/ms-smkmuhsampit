@@ -6,16 +6,23 @@ use Illuminate\Database\Eloquent\Model;
 
 class Iduka extends Model
 {
+    // 'user_id' SENGAJA tidak lagi di sini — perusahaan mitra sekarang data
+    // master lepas, tidak terikat 1:1 ke 1 akun login (lihat User::iduka()).
     protected $fillable = [
-        'user_id', 'nama_perusahaan', 'alamat', 'penanggung_jawab',
+        'nama_perusahaan', 'alamat',
         'telepon', 'latitude', 'longitude', 'radius_meter', 'tanda_tangan',
     ];
 
     protected $appends = ['tanda_tangan_url'];
 
-    public function user()
+    /**
+     * Akun Instruktur yang mewakili perusahaan ini (bisa lebih dari 1).
+     * Dipakai buat cetak jurnal/nilai PKL supaya masih bisa tampilkan nama
+     * "instruktur" walau field penanggung_jawab sudah tidak ada di sini lagi.
+     */
+    public function instrukturs()
     {
-        return $this->belongsTo(User::class);
+        return $this->hasMany(User::class, 'iduka_id')->where('role', 'instruktur');
     }
 
     /**

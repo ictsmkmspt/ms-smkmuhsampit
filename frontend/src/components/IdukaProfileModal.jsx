@@ -4,25 +4,26 @@ import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
 
 /**
- * Modal "Edit Profil" untuk IDUKA — beda dari modal generik role lain karena
- * datanya gabungan User (nama instruktur) + Iduka (nama perusahaan, alamat,
- * no HP). Sengaja cuma "Nama Instruktur" & "No. HP" yang bisa diedit sendiri
- * di sini — nama perusahaan & alamat tetap data resmi yang dikelola admin
- * lewat Master Data > IDUKA. Tanda tangan punya menu sendiri (TandaTanganModal),
- * tidak lagi digabung ke sini.
+ * Modal "Edit Profil" untuk Instruktur/IDUKA — beda dari modal generik role
+ * lain karena datanya gabungan User (nama & no HP akun login, dari
+ * useAuth()) + Iduka (nama perusahaan, alamat — data perusahaan mitra yang
+ * dipilih saat akun ini dibuat, cuma bisa dibaca di sini). Nama perusahaan &
+ * alamat tetap data resmi bersama yang dikelola admin lewat Master Data >
+ * Kelola IDUKA (bisa dipakai lebih dari 1 akun sekaligus). Tanda tangan
+ * punya menu sendiri (TandaTanganModal), tidak lagi digabung ke sini.
  */
 export default function IdukaProfileModal({ iduka, onClose, onSaved }) {
-  const { updateUser } = useAuth();
+  const { user, updateUser } = useAuth();
 
   const [editing, setEditing] = useState(false);
-  const [name, setName] = useState(iduka?.user?.name || '');
-  const [telepon, setTelepon] = useState(iduka?.telepon || '');
+  const [name, setName] = useState(user?.name || '');
+  const [telepon, setTelepon] = useState(user?.phone || '');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
   const startEdit = () => {
-    setName(iduka?.user?.name || '');
-    setTelepon(iduka?.telepon || '');
+    setName(user?.name || '');
+    setTelepon(user?.phone || '');
     setError('');
     setEditing(true);
   };
@@ -33,8 +34,8 @@ export default function IdukaProfileModal({ iduka, onClose, onSaved }) {
     setSaving(true);
     try {
       const res = await api.put('/iduka/profile', { name, telepon });
-      updateUser({ name: res.data.iduka.user.name });
-      onSaved?.(res.data.iduka);
+      updateUser({ name: res.data.user.name, phone: res.data.user.phone });
+      onSaved?.(iduka);
       setEditing(false);
     } catch (err) {
       setError(err.response?.data?.message || 'Gagal menyimpan profil.');
@@ -138,11 +139,11 @@ export default function IdukaProfileModal({ iduka, onClose, onSaved }) {
               <dl className="text-sm space-y-2.5">
                 <div className="flex items-center justify-between gap-3">
                   <dt className="text-ink-500">Nama Instruktur</dt>
-                  <dd className="text-ink-900 font-medium text-right truncate">{iduka?.user?.name || '-'}</dd>
+                  <dd className="text-ink-900 font-medium text-right truncate">{user?.name || '-'}</dd>
                 </div>
                 <div className="flex items-center justify-between gap-3">
                   <dt className="text-ink-500">No. HP</dt>
-                  <dd className="text-ink-900 font-medium text-right truncate">{iduka?.telepon || '-'}</dd>
+                  <dd className="text-ink-900 font-medium text-right truncate">{user?.phone || '-'}</dd>
                 </div>
                 <div className="flex items-center justify-between gap-3">
                   <dt className="text-ink-500">Nama Perusahaan</dt>

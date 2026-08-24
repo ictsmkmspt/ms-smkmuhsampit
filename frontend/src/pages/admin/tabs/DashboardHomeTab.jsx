@@ -74,7 +74,7 @@ function PanduanAwal({ judul, deskripsi, langkah, onNavigate }) {
 // sekarang read-only buat Humas (yang mengisi Waka Kurikulum) dan menu
 // Alumni cuma untuk tracking, bukan pengaturan awal.
 const PANDUAN_HUMAS = [
-  { no: 1, judul: 'Input Data IDUKA', keterangan: 'Daftarkan perusahaan/instansi tempat siswa PKL beserta akun login, instruktur, dan lokasi absensinya.', tab: 'pkl', sub: 'iduka' },
+  { no: 1, judul: 'Input Data IDUKA', keterangan: 'Daftarkan perusahaan/instansi tempat siswa PKL, termasuk lokasi & radius absensinya. Akun login instruktur dibuat terpisah lewat menu Kelola Instruktur setelah IDUKA-nya ada.', tab: 'pkl', sub: 'iduka' },
 ];
 
 // Dashboard Waka Humas cuma menampilkan statistik PKL/IDUKA — bidangnya

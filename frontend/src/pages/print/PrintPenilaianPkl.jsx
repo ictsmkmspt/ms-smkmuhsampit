@@ -28,7 +28,7 @@ export default function PrintPenilaianPkl() {
   const { id } = useParams();
   const { user } = useAuth();
   const { profile } = useSchoolProfile();
-  const canIsi = user.role === 'iduka';
+  const canIsi = user.role === 'instruktur';
 
   const [placement, setPlacement] = useState(null);
   const [penilaian, setPenilaian] = useState(undefined);

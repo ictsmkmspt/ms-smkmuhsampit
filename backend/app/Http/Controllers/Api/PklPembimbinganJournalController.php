@@ -26,7 +26,7 @@ class PklPembimbinganJournalController extends Controller
             $teacher = $user->teacher;
             if (!$teacher) return response()->json([]);
             $query->where('teacher_id', $teacher->id);
-        } elseif ($user->role === 'iduka') {
+        } elseif ($user->role === 'instruktur') {
             $iduka = $user->iduka;
             if (!$iduka) return response()->json([]);
             $query->where('iduka_id', $iduka->id);
@@ -158,7 +158,7 @@ class PklPembimbinganJournalController extends Controller
         $user = $request->user();
 
         $boleh = $user->role === 'admin'
-            || ($user->role === 'iduka' && $user->iduka && $pklPembimbinganJournal->iduka_id === $user->iduka->id);
+            || ($user->role === 'instruktur' && $user->iduka && $pklPembimbinganJournal->iduka_id === $user->iduka->id);
 
         if (!$boleh) {
             return response()->json(['message' => 'Hanya IDUKA atau admin yang bisa memverifikasi catatan ini.'], 403);

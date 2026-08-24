@@ -11,7 +11,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
-#[Fillable(['name', 'email', 'phone', 'password', 'role', 'room_id'])]
+#[Fillable(['name', 'email', 'phone', 'password', 'role', 'room_id', 'iduka_id'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -41,9 +41,20 @@ class User extends Authenticatable
         return $this->hasOne(Teacher::class);
     }
 
+    /**
+     * Perusahaan mitra (IDUKA) yang diwakili akun ini — dipakai akun
+     * Instruktur (bimbingan/absensi/penilaian PKL) MAUPUN akun IDUKA/BKK.
+     * SENGAJA belongsTo lewat users.iduka_id (BUKAN lagi hasOne lewat
+     * idukas.user_id) — 1 perusahaan sekarang bisa diwakili lebih dari 1
+     * akun (mis. beberapa Instruktur beda orang di perusahaan yang sama),
+     * jadi kepemilikannya dibalik: akun MEMILIH perusahaan yang sudah ada,
+     * bukan tiap akun mendirikan baris perusahaan sendiri-sendiri. Nama
+     * method & pemakaiannya di controller PKL sengaja TIDAK berubah
+     * ($user->iduka tetap berfungsi sama seperti sebelumnya).
+     */
     public function iduka()
     {
-        return $this->hasOne(Iduka::class);
+        return $this->belongsTo(Iduka::class, 'iduka_id');
     }
 
     /**

@@ -77,14 +77,14 @@ class PklPlacementController extends Controller
         $user = $request->user();
         $boleh = $user->role === 'admin'
             || ($user->role === 'guru' && $user->teacher && $pklPlacement->guru_pembimbing_id === $user->teacher->id)
-            || ($user->role === 'iduka' && $user->iduka && $pklPlacement->iduka_id === $user->iduka->id)
+            || ($user->role === 'instruktur' && $user->iduka && $pklPlacement->iduka_id === $user->iduka->id)
             || ($user->role === 'siswa' && $user->student && $pklPlacement->student_id === $user->student->id);
 
         if (!$boleh) {
             return response()->json(['message' => 'Anda tidak berwenang melihat penempatan ini.'], 403);
         }
 
-        return $pklPlacement->load(['student.user', 'student.classRoom', 'iduka', 'guruPembimbing.user']);
+        return $pklPlacement->load(['student.user', 'student.classRoom', 'iduka.instrukturs', 'guruPembimbing.user']);
     }
 
     /**

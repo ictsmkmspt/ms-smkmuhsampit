@@ -28,7 +28,7 @@ class PklAttendanceController extends Controller
             $teacher = $user->teacher;
             return $teacher && $placement->guru_pembimbing_id === $teacher->id;
         }
-        if ($user->role === 'iduka') {
+        if ($user->role === 'instruktur') {
             $iduka = $user->iduka;
             return $iduka && $placement->iduka_id === $iduka->id;
         }
@@ -45,7 +45,7 @@ class PklAttendanceController extends Controller
         if ($user->role === 'admin') {
             return true;
         }
-        if ($user->role === 'iduka') {
+        if ($user->role === 'instruktur') {
             $iduka = $user->iduka;
             return $iduka && $placement->iduka_id === $iduka->id;
         }

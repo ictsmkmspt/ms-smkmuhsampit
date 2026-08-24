@@ -15,7 +15,7 @@ const TABS = [
   { key: 'penilaian', label: 'Penilaian', icon: Star, component: IdukaPenilaianTab },
 ];
 
-export default function IdukaDashboard() {
+export default function InstrukturDashboard() {
   const { user, logout } = useAuth();
   const [profile, setProfile] = useState(null);
   const [activeTab, setActiveTab] = useState('absensi');
@@ -55,7 +55,7 @@ export default function IdukaDashboard() {
               <Building2 className="w-5 h-5 text-white" />
             </div>
             <div>
-              <p className="text-xs text-white/60">IDUKA</p>
+              <p className="text-xs text-white/60">Instruktur PKL</p>
               <h1 className="font-display text-lg font-semibold text-white">{profile?.nama_perusahaan || user.name}</h1>
             </div>
           </div>

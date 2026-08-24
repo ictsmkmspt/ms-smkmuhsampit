@@ -12,7 +12,7 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import GuruDashboard from './pages/guru/GuruDashboard';
 import SiswaDashboard from './pages/siswa/SiswaDashboard';
 import ParentDashboard from './pages/wali/ParentDashboard';
-import IdukaDashboard from './pages/iduka/IdukaDashboard';
+import InstrukturDashboard from './pages/instruktur/InstrukturDashboard';
 import TuDashboard from './pages/tu/TuDashboard';
 import KepalaSekolahDashboard from './pages/kepala-sekolah/KepalaSekolahDashboard';
 import RoomStaffDashboard from './pages/sarpras-staff/RoomStaffDashboard';
@@ -113,15 +113,15 @@ export default function App() {
             } />
 
             <Route path="/print/pkl-jurnal" element={
-              <ProtectedRoute allowedRoles={['admin', 'guru', 'iduka', 'siswa']}><PrintPklJurnal /></ProtectedRoute>
+              <ProtectedRoute allowedRoles={['admin', 'guru', 'instruktur', 'siswa']}><PrintPklJurnal /></ProtectedRoute>
             } />
 
             <Route path="/print/pkl-jurnal-kegiatan" element={
-              <ProtectedRoute allowedRoles={['admin', 'guru', 'iduka', 'siswa']}><PrintPklJurnalKegiatan /></ProtectedRoute>
+              <ProtectedRoute allowedRoles={['admin', 'guru', 'instruktur', 'siswa']}><PrintPklJurnalKegiatan /></ProtectedRoute>
             } />
 
             <Route path="/print/pkl-pembimbingan" element={
-              <ProtectedRoute allowedRoles={['admin', 'guru', 'iduka']}><PrintPklPembimbingan /></ProtectedRoute>
+              <ProtectedRoute allowedRoles={['admin', 'guru', 'instruktur']}><PrintPklPembimbingan /></ProtectedRoute>
             } />
 
             <Route path="/print/spp-nota" element={
@@ -169,7 +169,7 @@ export default function App() {
             } />
 
             <Route path="/print/penilaian-pkl/:id" element={
-              <ProtectedRoute allowedRoles={['admin', 'guru', 'iduka']}><PrintPenilaianPkl /></ProtectedRoute>
+              <ProtectedRoute allowedRoles={['admin', 'guru', 'instruktur']}><PrintPenilaianPkl /></ProtectedRoute>
             } />
 
             <Route path="/admin/*" element={
@@ -214,8 +214,8 @@ export default function App() {
               <ProtectedRoute allowedRoles={['wali']}><ParentDashboard /></ProtectedRoute>
             } />
 
-            <Route path="/iduka/*" element={
-              <ProtectedRoute allowedRoles={['iduka']}><IdukaDashboard /></ProtectedRoute>
+            <Route path="/instruktur/*" element={
+              <ProtectedRoute allowedRoles={['instruktur']}><InstrukturDashboard /></ProtectedRoute>
             } />
 
             <Route path="/tu/*" element={

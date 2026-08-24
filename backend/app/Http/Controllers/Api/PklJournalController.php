@@ -29,7 +29,7 @@ class PklJournalController extends Controller
             $teacher = $user->teacher;
             return $teacher && $placement->guru_pembimbing_id === $teacher->id;
         }
-        if ($user->role === 'iduka') {
+        if ($user->role === 'instruktur') {
             $iduka = $user->iduka;
             return $iduka && $placement->iduka_id === $iduka->id;
         }
@@ -45,7 +45,7 @@ class PklJournalController extends Controller
         if ($user->role === 'admin') {
             return true;
         }
-        if ($user->role === 'iduka') {
+        if ($user->role === 'instruktur') {
             $iduka = $user->iduka;
             return $iduka && $placement->iduka_id === $iduka->id;
         }
@@ -214,7 +214,7 @@ class PklJournalController extends Controller
         $bulanPilih = $request->query('bulan');
         [$tahun, $bulanNum] = array_map('intval', explode('-', $bulanPilih));
 
-        $pklPlacement->load(['student.user', 'iduka', 'guruPembimbing.user']);
+        $pklPlacement->load(['student.user', 'iduka.instrukturs', 'guruPembimbing.user']);
         $entries = PklJournal::where('pkl_placement_id', $pklPlacement->id)
             ->where('date', 'like', $bulanPilih . '%')
             ->orderBy('date')->get();
@@ -237,7 +237,7 @@ class PklJournalController extends Controller
 
         $section->addText('Nama Peserta PKL          : ' . $namaSiswa);
         $section->addText('Nama Iduka Tempat PKL     : ' . ($pklPlacement->iduka?->nama_perusahaan ?? '-'));
-        $section->addText('Nama Instruktur           : ' . ($pklPlacement->iduka?->penanggung_jawab ?? '-'));
+        $section->addText('Nama Instruktur           : ' . ($pklPlacement->iduka?->instrukturs?->first()?->name ?? '-'));
         $section->addText('Nama Guru Pembimbing      : ' . ($pklPlacement->guruPembimbing?->user?->name ?? '-'));
         $section->addText('Bulan                     : ' . $bulanNama[$bulanNum - 1] . ' ' . $tahun);
         $section->addTextBreak(1);

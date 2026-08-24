@@ -68,7 +68,7 @@ class SimulasikanNotifikasi extends Command
                 ['spp', 'Tagihan SPP jatuh tempo', 'Tagihan SPP bulan ini untuk DANIL jatuh tempo dalam 3 hari.', false],
                 ['pelanggaran', 'Pelanggaran tercatat', 'DANIL tercatat melakukan pelanggaran ringan hari ini, -5 poin.', false],
             ]],
-            ['role' => 'iduka', 'url' => '/iduka', 'items' => [
+            ['role' => 'instruktur', 'url' => '/instruktur', 'items' => [
                 ['pkl', 'Siswa PKL baru ditempatkan', 'Siswa baru ditempatkan magang di perusahaan Anda.', true],
                 ['pkl', 'Jurnal PKL siswa baru masuk', 'Siswa PKL bimbingan Anda mengisi jurnal kegiatan hari ini, perlu diberi catatan.', false],
             ]],

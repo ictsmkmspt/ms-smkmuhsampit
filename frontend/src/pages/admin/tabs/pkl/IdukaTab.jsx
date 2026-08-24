@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
-import { Plus, Trash2, Building2, MapPin, KeyRound, Download, Upload } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Plus, Trash2, Building2, MapPin } from 'lucide-react';
 import api from '../../../../api/axios';
 import TruncateText from '../../../../components/TruncateText';
 import Pagination from '../../../../components/Pagination';
@@ -7,17 +7,18 @@ import usePagination from '../../../../hooks/usePagination';
 import { useAuth } from '../../../../context/AuthContext';
 
 const emptyForm = {
-  name: '',
-  nama_perusahaan: '', alamat: '', penanggung_jawab: '', telepon: '',
+  nama_perusahaan: '', alamat: '', telepon: '',
   latitude: '', longitude: '', radius_meter: '100',
 };
 
+/**
+ * Kelola IDUKA — data MASTER perusahaan mitra + lokasi/radius GPS (dipakai
+ * geofencing absensi PKL). Tidak ada akun login di sini — akun Instruktur
+ * (Kelola Instruktur) dibuat terpisah, MEMILIH salah satu perusahaan dari
+ * daftar ini.
+ */
 export default function IdukaTab() {
   const { user } = useAuth();
-  // Waka Kurikulum cuma boleh lihat daftar IDUKA (dipakai buat pilih IDUKA
-  // di form Penempatan PKL) — kelola IDUKA (tambah/edit/hapus/reset
-  // password) sekarang eksklusif milik Waka Humas, backend-nya juga sudah
-  // menolak Kurikulum di endpoint-endpoint tersebut.
   const canEdit = user.role === 'admin' || user.role === 'waka_humas';
   const [list, setList] = useState([]);
   const [form, setForm] = useState(emptyForm);
@@ -30,10 +31,6 @@ export default function IdukaTab() {
   const [editData, setEditData] = useState({});
   const [saving, setSaving] = useState(false);
   const [locatingEdit, setLocatingEdit] = useState(false);
-
-  const [importing, setImporting] = useState(false);
-  const [importResult, setImportResult] = useState(null);
-  const fileInputRef = useRef(null);
 
   const { page, setPage, totalPages, paginated: listHalaman } = usePagination(list, 30);
 
@@ -64,8 +61,7 @@ export default function IdukaTab() {
     setError('');
     setLoading(true);
     try {
-      // Nama akun login dipakai dari "Nama Instruktur" — tidak perlu diketik terpisah lagi.
-      await api.post('/iduka', { ...form, name: form.penanggung_jawab });
+      await api.post('/iduka', form);
       setForm(emptyForm);
       setShowForm(false);
       load();
@@ -88,7 +84,6 @@ export default function IdukaTab() {
     setEditData({
       nama_perusahaan: d.nama_perusahaan,
       alamat: d.alamat || '',
-      penanggung_jawab: d.penanggung_jawab || '',
       telepon: d.telepon || '',
       latitude: d.latitude || '',
       longitude: d.longitude || '',
@@ -110,7 +105,7 @@ export default function IdukaTab() {
   };
 
   const handleDelete = async (d) => {
-    if (!confirm(`Hapus akun IDUKA "${d.nama_perusahaan}"? Penempatan PKL yang terhubung ke IDUKA ini juga akan terhapus.`)) return;
+    if (!confirm(`Hapus data IDUKA "${d.nama_perusahaan}"? Akun Instruktur/IDUKA yang mewakilinya tidak ikut terhapus, tapi kehilangan tautan ke perusahaan ini.`)) return;
     try {
       await api.delete(`/iduka/${d.id}`);
       load();
@@ -119,142 +114,24 @@ export default function IdukaTab() {
     }
   };
 
-  const handleResetPassword = async (d) => {
-    if (!confirm(`Reset password akun IDUKA "${d.nama_perusahaan}" ke default (123456)?`)) return;
-    try {
-      const res = await api.put(`/iduka/${d.id}/reset-password`);
-      alert(res.data.message);
-    } catch (err) {
-      alert(err.response?.data?.message || 'Gagal mereset password.');
-    }
-  };
-
-  const handleDownloadTemplate = async () => {
-    try {
-      const res = await api.get('/iduka/import/template', { responseType: 'blob' });
-      const url = window.URL.createObjectURL(new Blob([res.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', 'template_import_iduka.xlsx');
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
-    } catch {
-      alert('Gagal mengunduh template.');
-    }
-  };
-
-  const handleImportClick = () => fileInputRef.current?.click();
-
-  const handleFileChange = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    setImporting(true);
-    setImportResult(null);
-
-    const formData = new FormData();
-    formData.append('file', file);
-
-    try {
-      const res = await api.post('/iduka/import', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      setImportResult(res.data);
-      load();
-    } catch (err) {
-      setImportResult({
-        message: err.response?.data?.message || 'Gagal mengimpor data. Pastikan format file sesuai template.',
-        gagal: [],
-      });
-    } finally {
-      setImporting(false);
-      e.target.value = '';
-    }
-  };
-
   return (
     <div className="space-y-6">
       <div className="surface-card p-4 border-l-4 border-l-brand-400 flex gap-2">
         <Building2 className="w-4 h-4 text-brand-500 shrink-0 mt-0.5" />
         <p className="text-sm text-ink-700">
-          IDUKA (Industri, Dunia Usaha, dan Dunia Kerja) = perusahaan/instansi tempat siswa PKL. Setiap IDUKA punya akun login sendiri untuk memantau kehadiran dan memverifikasi absensi siswa bimbingannya. Lokasi &amp; radius dipakai untuk memvalidasi absen masuk/pulang siswa lewat GPS.
+          IDUKA (Industri, Dunia Usaha, dan Dunia Kerja) = data perusahaan/instansi mitra, termasuk lokasi &amp; radius yang dipakai memvalidasi absen masuk/pulang siswa PKL lewat GPS. Daftar ini murni data master — akun login Instruktur dibuat terpisah di menu Kelola Instruktur, dengan memilih salah satu perusahaan dari sini.
         </p>
       </div>
 
-      {canEdit && (
-        <div className="surface-card p-5 flex flex-wrap items-center gap-3">
-          <h2 className="font-display font-semibold text-ink-900 mr-auto">Import Data IDUKA dari Excel</h2>
-          <button
-            onClick={handleDownloadTemplate}
-            className="flex items-center gap-1.5 text-sm font-medium text-ink-700 bg-mist-50 hover:bg-mist-100 border border-line-200 rounded-xl px-4 py-2 transition"
-          >
-            <Download className="w-4 h-4" /> Download Template
-          </button>
-          <button
-            onClick={handleImportClick}
-            disabled={importing}
-            className="flex items-center gap-1.5 text-sm font-medium text-white bg-brand-600 hover:bg-brand-700 disabled:opacity-50 rounded-xl px-4 py-2 transition"
-          >
-            <Upload className="w-4 h-4" /> {importing ? 'Mengimpor...' : 'Import Excel'}
-          </button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".xlsx,.xls,.csv"
-            onChange={handleFileChange}
-            className="hidden"
-          />
-        </div>
-      )}
-
-      {importResult && (
-        <div className="surface-card p-5">
-          <p className={`text-sm font-medium ${importResult.gagal?.length > 0 ? 'text-honey-700' : 'text-brand-600'}`}>
-            {importResult.message}
-          </p>
-          {importResult.gagal?.length > 0 && (
-            <div className="table-scroll">
-            <table className="w-full text-sm mt-3">
-              <thead>
-                <tr className="text-left text-ink-500 border-b border-line-200">
-                  <th className="pb-2 font-medium whitespace-nowrap px-2">Baris</th>
-                  <th className="font-medium whitespace-nowrap px-2">Kolom</th>
-                  <th className="font-medium whitespace-nowrap px-2">Alasan Gagal</th>
-                </tr>
-              </thead>
-              <tbody>
-                {importResult.gagal.map((g, i) => (
-                  <tr key={i} className="border-t border-line-200">
-                    <td className="py-2 text-ink-900 whitespace-nowrap px-2">{g.baris}</td>
-                    <td className="text-ink-700 whitespace-nowrap px-2">{g.kolom}</td>
-                    <td className="text-honey-700 whitespace-nowrap px-2"><TruncateText text={g.alasan} maxWidth="16rem" /></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            </div>
-          )}
-        </div>
-      )}
-
       {canEdit && showForm && (
         <form onSubmit={handleAdd} className="surface-card p-5">
-          <h2 className="font-display font-semibold text-ink-900 mb-4">Tambah Akun IDUKA</h2>
+          <h2 className="font-display font-semibold text-ink-900 mb-4">Tambah IDUKA</h2>
           {error && <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2 mb-3">{error}</p>}
 
-          <p className="text-xs font-medium text-ink-500 mb-2">Akun login</p>
-          <p className="text-xs text-ink-500 mb-2">Login pakai No. HP di bawah ini (bukan email). Password akun otomatis dibuat "123456" — wajib diganti saat login pertama.</p>
-          <div className="grid grid-cols-2 gap-3 mb-4">
-            <input placeholder="Nama Instruktur" value={form.penanggung_jawab} onChange={(e) => setForm({ ...form, penanggung_jawab: e.target.value })} className="field-input" required />
-            <input placeholder="No. HP (login)" value={form.telepon} onChange={(e) => setForm({ ...form, telepon: e.target.value })} className="field-input" required autoComplete="off" />
-          </div>
-
-          <p className="text-xs font-medium text-ink-500 mb-2">Profil perusahaan</p>
           <div className="grid grid-cols-2 gap-3 mb-4">
             <input placeholder="Nama perusahaan/instansi" value={form.nama_perusahaan} onChange={(e) => setForm({ ...form, nama_perusahaan: e.target.value })} className="field-input col-span-2" required />
             <input placeholder="Alamat" value={form.alamat} onChange={(e) => setForm({ ...form, alamat: e.target.value })} className="field-input col-span-2" />
+            <input placeholder="No. HP/telepon (opsional)" value={form.telepon} onChange={(e) => setForm({ ...form, telepon: e.target.value })} className="field-input col-span-2" />
           </div>
 
           <div className="flex items-center justify-between mb-2">
@@ -299,7 +176,7 @@ export default function IdukaTab() {
           <thead>
             <tr className="text-left text-ink-500 border-b border-line-200">
               <th className="pb-2 font-medium whitespace-nowrap px-2">Perusahaan</th>
-              <th className="font-medium whitespace-nowrap px-2">Kontak</th>
+              <th className="font-medium whitespace-nowrap px-2">Telepon</th>
               <th className="font-medium whitespace-nowrap px-2">Lokasi</th>
               {canEdit && <th className="pb-2 w-24 whitespace-nowrap px-2"></th>}
             </tr>
@@ -310,10 +187,9 @@ export default function IdukaTab() {
                 <tr key={d.id} className="border-t border-line-200 bg-mist-50">
                   <td colSpan="4" className="py-3 whitespace-nowrap px-2">
                     <div className="grid grid-cols-2 gap-2 mb-2">
-                      <input value={editData.nama_perusahaan} onChange={(e) => setEditData({ ...editData, nama_perusahaan: e.target.value })} className="field-input py-1.5 text-sm" placeholder="Nama perusahaan" />
-                      <input value={editData.penanggung_jawab} onChange={(e) => setEditData({ ...editData, penanggung_jawab: e.target.value })} className="field-input py-1.5 text-sm" placeholder="Nama Instruktur" />
+                      <input value={editData.nama_perusahaan} onChange={(e) => setEditData({ ...editData, nama_perusahaan: e.target.value })} className="field-input py-1.5 text-sm col-span-2" placeholder="Nama perusahaan" />
                       <input value={editData.alamat} onChange={(e) => setEditData({ ...editData, alamat: e.target.value })} className="field-input py-1.5 text-sm col-span-2" placeholder="Alamat" />
-                      <input value={editData.telepon} onChange={(e) => setEditData({ ...editData, telepon: e.target.value })} className="field-input py-1.5 text-sm" placeholder="No. HP (login)" required />
+                      <input value={editData.telepon} onChange={(e) => setEditData({ ...editData, telepon: e.target.value })} className="field-input py-1.5 text-sm col-span-2" placeholder="No. HP/telepon" />
                     </div>
                     <div className="flex items-center justify-between mb-1.5">
                       <p className="text-xs font-medium text-ink-500">Lokasi &amp; radius (GPS)</p>
@@ -346,8 +222,7 @@ export default function IdukaTab() {
                     <p className="text-xs text-ink-500"><TruncateText text={d.alamat} /></p>
                   </td>
                   <td className="text-ink-700 whitespace-nowrap px-2">
-                    <p><TruncateText text={d.penanggung_jawab} /></p>
-                    <p className="text-xs text-ink-500">{d.telepon || '-'}</p>
+                    {d.telepon || '-'}
                   </td>
                   <td className="text-ink-700 text-xs whitespace-nowrap px-2">
                     {d.latitude && d.longitude ? (
@@ -362,9 +237,6 @@ export default function IdukaTab() {
                       <div className="flex justify-end gap-2">
                         <button onClick={() => startEdit(d)} className="text-xs text-ink-500 hover:text-brand-600 font-medium border border-line-200 rounded-lg px-2 py-1">
                           Edit
-                        </button>
-                        <button onClick={() => handleResetPassword(d)} className="text-ink-400 hover:text-brand-600" title="Reset Password ke default (123456)">
-                          <KeyRound className="w-4 h-4" />
                         </button>
                         <button onClick={() => handleDelete(d)} className="text-ink-300 hover:text-honey-700">
                           <Trash2 className="w-4 h-4" />

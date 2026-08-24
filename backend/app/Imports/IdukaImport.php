@@ -31,33 +31,39 @@ class IdukaImport implements ToModel, WithHeadingRow, WithValidation, SkipsOnFai
     }
 
     /**
-     * Dipanggil untuk setiap baris yang LOLOS validasi di rules(). Akun login
-     * dibuat dari kolom "penanggung_jawab" (nama instruktur) + "telepon" —
-     * sama seperti form Tambah Akun IDUKA manual di IdukaTab.jsx.
+     * Dipanggil untuk setiap baris yang LOLOS validasi di rules(). Tiap baris
+     * bikin 1 perusahaan mitra BARU sekaligus 1 akun Instruktur yang
+     * mewakilinya — akun login dibuat dari kolom "nama_instruktur" + "telepon"
+     * (email opsional, disiapkan untuk login ke fitur BKK nanti), sama seperti
+     * form Tambah Instruktur manual di InstrukturTab.jsx (bedanya di sana
+     * perusahaannya dipilih dari yang sudah ada, di sini selalu baru per
+     * baris import).
      */
     public function model(array $row)
     {
         $this->successCount++;
 
         return DB::transaction(function () use ($row) {
-            $password = !empty($row['password']) ? trim((string) $row['password']) : '123456';
-            $user = User::create([
-                'name'     => trim($row['penanggung_jawab']),
-                'phone'    => trim($row['telepon']),
-                'password' => bcrypt($password),
-                'role'     => 'iduka',
-            ]);
-
-            return Iduka::create([
-                'user_id'          => $user->id,
+            $iduka = Iduka::create([
                 'nama_perusahaan'  => $row['nama_perusahaan'],
                 'alamat'           => $row['alamat'] ?? null,
-                'penanggung_jawab' => trim($row['penanggung_jawab']),
                 'telepon'          => trim($row['telepon']),
                 'latitude'         => $row['latitude'],
                 'longitude'        => $row['longitude'],
                 'radius_meter'     => !empty($row['radius_meter']) ? (int) $row['radius_meter'] : 100,
             ]);
+
+            $password = !empty($row['password']) ? trim((string) $row['password']) : '123456';
+            User::create([
+                'name'     => trim($row['nama_instruktur']),
+                'phone'    => trim($row['telepon']),
+                'email'    => !empty($row['email']) ? trim($row['email']) : null,
+                'password' => bcrypt($password),
+                'role'     => 'instruktur',
+                'iduka_id' => $iduka->id,
+            ]);
+
+            return $iduka;
         });
     }
 
@@ -66,8 +72,9 @@ class IdukaImport implements ToModel, WithHeadingRow, WithValidation, SkipsOnFai
         return [
             'nama_perusahaan'  => 'required|string|max:150',
             'alamat'           => 'nullable|string|max:255',
-            'penanggung_jawab' => 'required|string|max:100',
+            'nama_instruktur'  => 'required|string|max:100',
             'telepon'          => 'required|string|max:30|unique:users,phone',
+            'email'            => 'nullable|email|max:150|unique:users,email',
             'password'         => 'nullable|min:6',
             'latitude'         => 'required|numeric|between:-90,90',
             'longitude'        => 'required|numeric|between:-180,180',
@@ -78,17 +85,19 @@ class IdukaImport implements ToModel, WithHeadingRow, WithValidation, SkipsOnFai
     public function customValidationMessages()
     {
         return [
-            'nama_perusahaan.required'  => 'Nama perusahaan wajib diisi.',
-            'penanggung_jawab.required' => 'Nama penanggung jawab/instruktur wajib diisi.',
-            'telepon.required'          => 'No. HP wajib diisi.',
-            'telepon.unique'            => 'No. HP sudah dipakai akun lain.',
-            'password.min'              => 'Password minimal 6 karakter.',
-            'latitude.required'         => 'Latitude wajib diisi.',
+            'nama_perusahaan.required' => 'Nama perusahaan wajib diisi.',
+            'nama_instruktur.required' => 'Nama instruktur wajib diisi.',
+            'telepon.required'         => 'No. HP wajib diisi.',
+            'telepon.unique'           => 'No. HP sudah dipakai akun lain.',
+            'email.email'              => 'Format email tidak valid.',
+            'email.unique'             => 'Email sudah dipakai akun lain.',
+            'password.min'             => 'Password minimal 6 karakter.',
+            'latitude.required'        => 'Latitude wajib diisi.',
             'latitude.between'         => 'Latitude harus di antara -90 dan 90.',
-            'longitude.required'        => 'Longitude wajib diisi.',
+            'longitude.required'       => 'Longitude wajib diisi.',
             'longitude.between'        => 'Longitude harus di antara -180 dan 180.',
-            'radius_meter.min'          => 'Radius minimal 10 meter.',
-            'radius_meter.max'          => 'Radius maksimal 5000 meter.',
+            'radius_meter.min'         => 'Radius minimal 10 meter.',
+            'radius_meter.max'         => 'Radius maksimal 5000 meter.',
         ];
     }
 }
