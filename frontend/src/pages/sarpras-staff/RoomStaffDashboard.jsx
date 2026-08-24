@@ -1,11 +1,12 @@
-import { useEffect, useState } from 'react';
-import { LogOut, HardHat, Boxes, Wrench, UserCheck } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { LogOut, HardHat, Boxes, Wrench, UserCheck, ChevronDown, UserCog } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api/axios';
 import InventarisTab from './tabs/InventarisTab';
 import PemeliharaanTab from './tabs/PemeliharaanTab';
 import KunjunganLabTab from './tabs/KunjunganLabTab';
 import NotificationBell from '../../components/NotificationBell';
+import EditProfileModal from '../../components/EditProfileModal';
 
 const BASE_TABS = [
   { key: 'inventaris', label: 'Inventaris', icon: Boxes, component: InventarisTab },
@@ -20,6 +21,17 @@ export default function RoomStaffDashboard() {
   const [room, setRoom] = useState(null);
   const [roomLoaded, setRoomLoaded] = useState(!isKepalaBengkel);
   const [activeTab, setActiveTab] = useState('inventaris');
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [showEditProfil, setShowEditProfil] = useState(false);
+  const menuRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   useEffect(() => {
     // /rooms otomatis dibatasi backend cuma 1 ruang buat Kepala Bengkel.
@@ -65,13 +77,40 @@ export default function RoomStaffDashboard() {
           </div>
 
           <div className="flex items-center gap-4">
-          <button onClick={logout} className="flex items-center gap-1.5 text-sm font-semibold text-white hover:text-[#F2B705] transition">
-            <LogOut className="w-4 h-4" /> Keluar
-          </button>
+          <div className="relative" ref={menuRef}>
+            <button
+              onClick={() => setMenuOpen((v) => !v)}
+              className="flex items-center gap-1 text-sm font-semibold text-white hover:text-[#F2B705] transition"
+            >
+              Profil
+              <ChevronDown className={`w-4 h-4 transition-transform ${menuOpen ? 'rotate-180' : ''}`} />
+            </button>
+
+            {menuOpen && (
+              <div className="absolute right-0 z-20 mt-2 w-44 surface-card overflow-hidden">
+                <button
+                  onClick={() => { setShowEditProfil(true); setMenuOpen(false); }}
+                  className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-left text-ink-700 hover:bg-mist-50 transition"
+                >
+                  <UserCog className="w-4 h-4" /> Edit Profil
+                </button>
+                <button
+                  onClick={logout}
+                  className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-left text-ink-700 hover:bg-mist-50 transition"
+                >
+                  <LogOut className="w-4 h-4" /> Keluar
+                </button>
+              </div>
+            )}
+          </div>
           <NotificationBell />
           </div>
         </div>
       </div>
+
+      {showEditProfil && (
+        <EditProfileModal onClose={() => setShowEditProfil(false)} />
+      )}
 
       {isKepalaBengkel && roomLoaded && room === null && (
         <div className="max-w-4xl mx-auto px-6 pt-6">

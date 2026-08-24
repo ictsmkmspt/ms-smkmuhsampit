@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { LogOut, BookMarked, Home, ScanLine, UserCheck, Library, Settings } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { LogOut, BookMarked, Home, ScanLine, UserCheck, Library, Settings, ChevronDown, UserCog } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import BerandaTab from './tabs/BerandaTab';
 import SirkulasiTab from './tabs/SirkulasiTab';
@@ -7,6 +7,7 @@ import KunjunganTab from './tabs/KunjunganTab';
 import KatalogTab from './tabs/KatalogTab';
 import PengaturanTab from './tabs/PengaturanTab';
 import NotificationBell from '../../components/NotificationBell';
+import EditProfileModal from '../../components/EditProfileModal';
 
 const TABS = [
   { key: 'beranda', label: 'Beranda', icon: Home, component: BerandaTab },
@@ -19,6 +20,17 @@ const TABS = [
 export default function PerpustakaanStaffDashboard() {
   const { user, logout } = useAuth();
   const [activeTab, setActiveTab] = useState('beranda');
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [showEditProfil, setShowEditProfil] = useState(false);
+  const menuRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const active = TABS.find((t) => t.key === activeTab);
   const ActiveComponent = active?.component;
@@ -38,13 +50,40 @@ export default function PerpustakaanStaffDashboard() {
           </div>
 
           <div className="flex items-center gap-4">
-          <button onClick={logout} className="flex items-center gap-1.5 text-sm font-semibold text-white hover:text-[#F2B705] transition">
-            <LogOut className="w-4 h-4" /> Keluar
-          </button>
+          <div className="relative" ref={menuRef}>
+            <button
+              onClick={() => setMenuOpen((v) => !v)}
+              className="flex items-center gap-1 text-sm font-semibold text-white hover:text-[#F2B705] transition"
+            >
+              Profil
+              <ChevronDown className={`w-4 h-4 transition-transform ${menuOpen ? 'rotate-180' : ''}`} />
+            </button>
+
+            {menuOpen && (
+              <div className="absolute right-0 z-20 mt-2 w-44 surface-card overflow-hidden">
+                <button
+                  onClick={() => { setShowEditProfil(true); setMenuOpen(false); }}
+                  className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-left text-ink-700 hover:bg-mist-50 transition"
+                >
+                  <UserCog className="w-4 h-4" /> Edit Profil
+                </button>
+                <button
+                  onClick={logout}
+                  className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-left text-ink-700 hover:bg-mist-50 transition"
+                >
+                  <LogOut className="w-4 h-4" /> Keluar
+                </button>
+              </div>
+            )}
+          </div>
           <NotificationBell />
           </div>
         </div>
       </div>
+
+      {showEditProfil && (
+        <EditProfileModal onClose={() => setShowEditProfil(false)} />
+      )}
 
       <div className="max-w-4xl mx-auto px-6 pt-6">
         {ActiveComponent && <ActiveComponent />}

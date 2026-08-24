@@ -128,13 +128,46 @@ export default function SiswaDashboard() {
             <h1 className="font-display text-lg font-semibold text-ink-900">{user.name}</h1>
           </div>
           <div className="flex items-center gap-4">
-          <button onClick={logout} className="flex items-center gap-1 text-sm font-semibold text-ink-700 hover:text-brand-600 transition">
-            Profil <ChevronDown className="w-4 h-4" />
-          </button>
+          <div className="relative" ref={menuRef}>
+            <button
+              onClick={() => setMenuOpen((v) => !v)}
+              className="flex items-center gap-1 text-sm font-semibold text-ink-700 hover:text-brand-600 transition"
+            >
+              Profil
+              <ChevronDown className={`w-4 h-4 transition-transform ${menuOpen ? 'rotate-180' : ''}`} />
+            </button>
+
+            {menuOpen && (
+              <div className="absolute right-0 z-20 mt-2 w-44 surface-card overflow-hidden">
+                <button
+                  onClick={() => { setMenuOpen(false); navigate('/ujian/login'); }}
+                  className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-left text-ink-700 hover:bg-mist-50 transition"
+                >
+                  <Monitor className="w-4 h-4" /> Buka Portal CBT
+                </button>
+                <button
+                  onClick={() => { setShowEditProfil(true); setMenuOpen(false); }}
+                  className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-left text-ink-700 hover:bg-mist-50 transition"
+                >
+                  <UserCog className="w-4 h-4" /> Edit Profil
+                </button>
+                <button
+                  onClick={logout}
+                  className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-left text-ink-700 hover:bg-mist-50 transition"
+                >
+                  <LogOut className="w-4 h-4" /> Keluar
+                </button>
+              </div>
+            )}
+          </div>
           <NotificationBell variant="light" />
           </div>
         </div>
         <p className="text-center text-ink-300 text-sm mt-10">Memuat...</p>
+
+        {showEditProfil && (
+          <EditProfileModal onClose={() => setShowEditProfil(false)} />
+        )}
       </div>
     );
   }
