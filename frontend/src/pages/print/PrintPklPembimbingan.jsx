@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Printer } from 'lucide-react';
+import PrintKembaliButton from '../../components/PrintKembaliButton';
 import api from '../../api/axios';
 import { useAuth } from '../../context/AuthContext';
 
@@ -60,7 +61,8 @@ export default function PrintPklPembimbingan() {
           </span>
         </div>
       )}
-      <div className="no-print flex justify-end items-center mb-6">
+      <div className="no-print flex justify-end items-center gap-2 mb-6">
+        <PrintKembaliButton />
         <button
           onClick={() => window.print()}
           className="flex items-center gap-2 bg-brand-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-brand-700"

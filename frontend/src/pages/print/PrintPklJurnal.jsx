@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Printer, FileDown } from 'lucide-react';
+import PrintKembaliButton from '../../components/PrintKembaliButton';
 import api from '../../api/axios';
 import { useAuth } from '../../context/AuthContext';
 import { useSchoolProfile } from '../../context/SchoolProfileContext';
@@ -93,6 +94,7 @@ export default function PrintPklJurnal() {
           })}
         </select>
         <div className="flex items-center gap-2">
+          <PrintKembaliButton />
           <button
             onClick={handleExportWord}
             className="flex items-center gap-2 bg-white text-ink-700 border border-line-200 px-4 py-2 rounded-lg text-sm font-medium hover:bg-mist-50"

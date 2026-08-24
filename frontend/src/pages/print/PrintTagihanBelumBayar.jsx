@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Printer } from 'lucide-react';
+import PrintKembaliButton from '../../components/PrintKembaliButton';
 import api from '../../api/axios';
 import { useSchoolProfile } from '../../context/SchoolProfileContext';
 
@@ -52,12 +53,15 @@ export default function PrintTagihanBelumBayar() {
     <div className="p-6 bg-mist-50 min-h-screen">
       <div className="no-print flex items-center justify-between mb-6 max-w-2xl mx-auto">
         <h1 className="font-display text-lg font-semibold text-ink-900">Tagihan Belum Bayar — {student?.user?.name}</h1>
-        <button
-          onClick={() => window.print()}
-          className="flex items-center gap-2 bg-brand-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-brand-700"
-        >
-          <Printer className="w-4 h-4" /> Print / Simpan PDF
-        </button>
+        <div className="flex items-center gap-2">
+          <PrintKembaliButton />
+          <button
+            onClick={() => window.print()}
+            className="flex items-center gap-2 bg-brand-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-brand-700"
+          >
+            <Printer className="w-4 h-4" /> Print / Simpan PDF
+          </button>
+        </div>
       </div>
 
       <div className="lembar max-w-2xl mx-auto bg-white">

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Printer } from 'lucide-react';
+import PrintKembaliButton from '../../components/PrintKembaliButton';
 import api from '../../api/axios';
 
 const BULAN = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
@@ -32,7 +33,8 @@ export default function PrintMonthlyAttendance() {
 
   return (
     <div className="p-6 max-w-6xl mx-auto bg-white text-ink-900">
-      <div className="no-print flex justify-end mb-4">
+      <div className="no-print flex justify-end gap-2 mb-4">
+        <PrintKembaliButton />
         <button
           onClick={() => window.print()}
           className="flex items-center gap-2 bg-brand-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-brand-700"

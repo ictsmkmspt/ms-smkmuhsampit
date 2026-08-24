@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Printer } from 'lucide-react';
+import PrintKembaliButton from '../../components/PrintKembaliButton';
 import QRCode from 'qrcode';
 import api from '../../api/axios';
 
@@ -60,13 +61,16 @@ export default function PrintAssetLabels() {
     <div className="p-6 bg-white text-ink-900 min-h-screen">
       <div className="no-print flex justify-between items-center mb-6">
         <h1 className="font-display text-lg font-semibold">Cetak Label Aset ({assets.length})</h1>
-        <button
-          onClick={() => window.print()}
-          disabled={!semuaQrSiap}
-          className="flex items-center gap-2 bg-brand-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-brand-700 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <Printer className="w-4 h-4" /> {semuaQrSiap ? 'Print / Simpan PDF' : 'Menyiapkan QR...'}
-        </button>
+        <div className="flex items-center gap-2">
+          <PrintKembaliButton />
+          <button
+            onClick={() => window.print()}
+            disabled={!semuaQrSiap}
+            className="flex items-center gap-2 bg-brand-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-brand-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Printer className="w-4 h-4" /> {semuaQrSiap ? 'Print / Simpan PDF' : 'Menyiapkan QR...'}
+          </button>
+        </div>
       </div>
 
       {assets.length === 0 && <p className="text-center text-ink-400">Tidak ada aset untuk dicetak.</p>}

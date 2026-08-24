@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Printer } from 'lucide-react';
+import PrintKembaliButton from '../../components/PrintKembaliButton';
 import api from '../../api/axios';
 import { useSchoolProfile } from '../../context/SchoolProfileContext';
 
@@ -39,7 +40,8 @@ export default function PrintSppNota() {
 
   return (
     <div className="p-4 bg-white text-ink-900 text-sm" style={{ maxWidth: '105mm' }}>
-      <div className="no-print flex justify-end mb-4">
+      <div className="no-print flex justify-end gap-2 mb-4">
+        <PrintKembaliButton />
         <button
           onClick={() => window.print()}
           className="flex items-center gap-2 bg-brand-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-brand-700"

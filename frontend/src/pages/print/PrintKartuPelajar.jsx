@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Download, Printer, User } from 'lucide-react';
+import PrintKembaliButton from '../../components/PrintKembaliButton';
 import QRCode from 'qrcode';
 import html2canvas from 'html2canvas';
 import JSZip from 'jszip';
@@ -139,6 +140,8 @@ export default function PrintKartuPelajar() {
         <h1 className="font-display text-lg font-semibold text-ink-900 mr-auto">
           {studentIdParam ? `Cetak Kartu Pelajar — ${students[0]?.user?.name || ''}` : `Cetak Kartu Pelajar (${students.length})`}
         </h1>
+
+        <PrintKembaliButton />
 
         <div className="flex bg-white border border-line-200 rounded-lg p-1">
           <button onClick={() => setSisi('depan')} className={`text-sm font-medium px-3 py-1.5 rounded-md transition ${sisi === 'depan' ? 'bg-brand-600 text-white' : 'text-ink-600 hover:bg-mist-50'}`}>Sisi Depan</button>

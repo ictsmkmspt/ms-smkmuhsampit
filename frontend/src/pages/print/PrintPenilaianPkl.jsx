@@ -4,6 +4,7 @@ import { Printer, FileDown, Plus, Trash2, Send, Pencil } from 'lucide-react';
 import api from '../../api/axios';
 import { useAuth } from '../../context/AuthContext';
 import { useSchoolProfile } from '../../context/SchoolProfileContext';
+import PrintKembaliButton from '../../components/PrintKembaliButton';
 
 const ASPEK_TETAP = [
   { key: 'skor_disiplin', label: 'Disiplin dan Kehadiran', indikator: 'Hadir tepat waktu, mematuhi jam kerja, dan tertib dalam kehadiran' },
@@ -151,6 +152,7 @@ export default function PrintPenilaianPkl() {
       <div className="no-print flex items-center justify-between mb-6 max-w-3xl mx-auto">
         <h1 className="font-display text-lg font-semibold text-ink-900">Penilaian PKL — {placement.student?.user?.name}</h1>
         <div className="flex items-center gap-2">
+          <PrintKembaliButton />
           {penilaian && !tampilkanForm && (
             <button
               onClick={handleExportWord}
