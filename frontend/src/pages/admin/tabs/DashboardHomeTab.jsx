@@ -74,7 +74,7 @@ function PanduanAwal({ judul, deskripsi, langkah, onNavigate }) {
 // sekarang read-only buat Humas (yang mengisi Waka Kurikulum) dan menu
 // Alumni cuma untuk tracking, bukan pengaturan awal.
 const PANDUAN_HUMAS = [
-  { no: 1, judul: 'Input Data IDUKA', keterangan: 'Daftarkan perusahaan/instansi tempat siswa PKL, termasuk lokasi & radius absensinya. Akun login instruktur dibuat terpisah lewat menu Kelola Instruktur setelah IDUKA-nya ada.', tab: 'pkl', sub: 'iduka' },
+  { no: 1, judul: 'Input Data IDUKA', keterangan: 'Daftarkan perusahaan/instansi tempat siswa PKL lewat menu IDUKA, termasuk lokasi & radius absensinya. Akun login instruktur dibuat terpisah lewat menu PKL > Kelola Instruktur setelah IDUKA-nya ada.', tab: 'iduka' },
 ];
 
 // Dashboard Waka Humas cuma menampilkan statistik PKL/IDUKA — bidangnya
@@ -356,7 +356,8 @@ const MENU_UTAMA = [
   { key: 'master', label: 'Master Data', desc: 'Siswa, guru, kelas & wali', icon: Database, color: '#0B1B3A', submenu: MASTER_DATA_SUBMENU },
   { key: 'alumni', label: 'Alumni', desc: 'Data siswa yang sudah lulus', icon: GraduationCap, color: '#3FB27F', submenu: ALUMNI_SUBMENU },
   { key: 'poin', label: 'Poin', desc: 'Jenis poin & sanksi bertingkat', icon: ClipboardList, color: '#B9504F', submenu: POIN_SUBMENU },
-  { key: 'pkl', label: 'PKL', desc: 'IDUKA & penempatan siswa', icon: Briefcase, color: '#15803D', submenu: PKL_SUBMENU },
+  { key: 'iduka', label: 'IDUKA', desc: 'Data perusahaan mitra & lokasi GPS', icon: Building2, color: '#3FB27F' },
+  { key: 'pkl', label: 'PKL', desc: 'Instruktur & penempatan siswa', icon: Briefcase, color: '#15803D', submenu: PKL_SUBMENU },
   { key: 'kurikulum', label: 'Pembelajaran', desc: 'Kalender, mapel & jadwal', icon: BookOpen, color: '#eb6834', submenu: KURIKULUM_SUBMENU_DATAR },
   { key: 'ppdb', label: 'PPDB', desc: 'Formulir & pengaturan pendaftaran online', icon: UserPlus, color: '#0F766E', submenu: PPDB_SUBMENU },
   { key: 'sarpras-staf', label: 'Teknisi & Kepala Bengkel', desc: 'Penanggung jawab ruang', icon: HardHat, color: '#6B7280' },

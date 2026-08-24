@@ -75,6 +75,7 @@ class NotificationDispatcher
             'guru' => '/guru',
             'wali' => '/wali',
             'instruktur' => '/instruktur',
+            'iduka' => '/iduka',
             'tu' => '/tu',
             'teknisi', 'kepala_bengkel' => '/staf-ruang',
             'bk' => '/bk',

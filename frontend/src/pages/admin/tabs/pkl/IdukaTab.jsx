@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, Trash2, Building2, MapPin } from 'lucide-react';
+import { Plus, Trash2, Building2, MapPin, KeyRound } from 'lucide-react';
 import api from '../../../../api/axios';
 import TruncateText from '../../../../components/TruncateText';
 import Pagination from '../../../../components/Pagination';
@@ -9,13 +9,16 @@ import { useAuth } from '../../../../context/AuthContext';
 const emptyForm = {
   nama_perusahaan: '', alamat: '', telepon: '',
   latitude: '', longitude: '', radius_meter: '100',
+  email: '',
 };
 
 /**
  * Kelola IDUKA — data MASTER perusahaan mitra + lokasi/radius GPS (dipakai
- * geofencing absensi PKL). Tidak ada akun login di sini — akun Instruktur
- * (Kelola Instruktur) dibuat terpisah, MEMILIH salah satu perusahaan dari
- * daftar ini.
+ * geofencing absensi PKL). Akun Instruktur (Kelola Instruktur) dibuat
+ * terpisah, MEMILIH salah satu perusahaan dari daftar ini. Baris IDUKA di
+ * sini SENDIRI sekaligus jadi 1 akun login (email wajib diisi) — password
+ * SELALU dibuat otomatis "123456" (tidak ada input password di form),
+ * diganti lewat tombol reset di tabel.
  */
 export default function IdukaTab() {
   const { user } = useAuth();
@@ -88,7 +91,18 @@ export default function IdukaTab() {
       latitude: d.latitude || '',
       longitude: d.longitude || '',
       radius_meter: d.radius_meter || '100',
+      email: d.user?.email || '',
     });
+  };
+
+  const handleResetPassword = async (d) => {
+    if (!confirm(`Reset password akun "${d.nama_perusahaan}" ke default (123456)?`)) return;
+    try {
+      const res = await api.put(`/iduka/${d.id}/reset-password`);
+      alert(res.data.message);
+    } catch (err) {
+      alert(err.response?.data?.message || 'Gagal mereset password.');
+    }
   };
 
   const handleSaveEdit = async (id) => {
@@ -105,7 +119,7 @@ export default function IdukaTab() {
   };
 
   const handleDelete = async (d) => {
-    if (!confirm(`Hapus data IDUKA "${d.nama_perusahaan}"? Akun Instruktur/IDUKA yang mewakilinya tidak ikut terhapus, tapi kehilangan tautan ke perusahaan ini.`)) return;
+    if (!confirm(`Hapus data IDUKA "${d.nama_perusahaan}"? Akun login perusahaan ini ikut terhapus. Akun Instruktur yang mewakilinya TIDAK ikut terhapus, cuma kehilangan tautan ke perusahaan ini.`)) return;
     try {
       await api.delete(`/iduka/${d.id}`);
       load();
@@ -119,7 +133,7 @@ export default function IdukaTab() {
       <div className="surface-card p-4 border-l-4 border-l-brand-400 flex gap-2">
         <Building2 className="w-4 h-4 text-brand-500 shrink-0 mt-0.5" />
         <p className="text-sm text-ink-700">
-          IDUKA (Industri, Dunia Usaha, dan Dunia Kerja) = data perusahaan/instansi mitra, termasuk lokasi &amp; radius yang dipakai memvalidasi absen masuk/pulang siswa PKL lewat GPS. Daftar ini murni data master — akun login Instruktur dibuat terpisah di menu Kelola Instruktur, dengan memilih salah satu perusahaan dari sini.
+          IDUKA (Industri, Dunia Usaha, dan Dunia Kerja) = data perusahaan/instansi mitra, termasuk lokasi &amp; radius yang dipakai memvalidasi absen masuk/pulang siswa PKL lewat GPS. Setiap baris di sini sekaligus jadi 1 akun login perusahaan (Email wajib diisi) — beda dari akun Instruktur yang dibuat terpisah di menu Kelola Instruktur dengan memilih salah satu perusahaan dari sini.
         </p>
       </div>
 
@@ -151,6 +165,12 @@ export default function IdukaTab() {
             <input placeholder="Radius (meter)" type="number" value={form.radius_meter} onChange={(e) => setForm({ ...form, radius_meter: e.target.value })} className="field-input" required />
           </div>
 
+          <div className="mt-4 pt-4 border-t border-line-200">
+            <p className="text-xs font-medium text-ink-500 mb-2">Akun login perusahaan ini</p>
+            <input type="email" placeholder="Email (login) — wajib diisi" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="field-input" required autoComplete="off" />
+            <p className="text-xs text-ink-400 mt-1.5">Password otomatis dibuat "123456" — wajib diganti saat login pertama.</p>
+          </div>
+
           <div className="flex gap-2 mt-4">
             <button disabled={loading} className="btn-primary">
               <Plus className="w-4 h-4" /> {loading ? 'Menyimpan...' : 'Tambah IDUKA'}
@@ -177,6 +197,7 @@ export default function IdukaTab() {
             <tr className="text-left text-ink-500 border-b border-line-200">
               <th className="pb-2 font-medium whitespace-nowrap px-2">Perusahaan</th>
               <th className="font-medium whitespace-nowrap px-2">Telepon</th>
+              <th className="font-medium whitespace-nowrap px-2">Email (Login)</th>
               <th className="font-medium whitespace-nowrap px-2">Lokasi</th>
               {canEdit && <th className="pb-2 w-24 whitespace-nowrap px-2"></th>}
             </tr>
@@ -185,7 +206,7 @@ export default function IdukaTab() {
             {listHalaman.map((d) => (
               editId === d.id ? (
                 <tr key={d.id} className="border-t border-line-200 bg-mist-50">
-                  <td colSpan="4" className="py-3 whitespace-nowrap px-2">
+                  <td colSpan="5" className="py-3 whitespace-nowrap px-2">
                     <div className="grid grid-cols-2 gap-2 mb-2">
                       <input value={editData.nama_perusahaan} onChange={(e) => setEditData({ ...editData, nama_perusahaan: e.target.value })} className="field-input py-1.5 text-sm col-span-2" placeholder="Nama perusahaan" />
                       <input value={editData.alamat} onChange={(e) => setEditData({ ...editData, alamat: e.target.value })} className="field-input py-1.5 text-sm col-span-2" placeholder="Alamat" />
@@ -207,6 +228,8 @@ export default function IdukaTab() {
                       <input value={editData.longitude} onChange={(e) => setEditData({ ...editData, longitude: e.target.value })} className="field-input py-1.5 text-sm" placeholder="Longitude" />
                       <input type="number" value={editData.radius_meter} onChange={(e) => setEditData({ ...editData, radius_meter: e.target.value })} className="field-input py-1.5 text-sm" placeholder="Radius (m)" />
                     </div>
+                    <p className="text-xs font-medium text-ink-500 mb-1.5">Akun login perusahaan</p>
+                    <input type="email" value={editData.email} onChange={(e) => setEditData({ ...editData, email: e.target.value })} className="field-input py-1.5 text-sm mb-2" placeholder="Email (login) — wajib diisi" required autoComplete="off" />
                     <div className="flex gap-2">
                       <button onClick={() => handleSaveEdit(d.id)} disabled={saving} className="text-xs font-medium text-white bg-brand-600 hover:bg-brand-700 rounded-lg px-3 py-1.5">
                         {saving ? 'Menyimpan...' : 'Simpan'}
@@ -223,6 +246,18 @@ export default function IdukaTab() {
                   </td>
                   <td className="text-ink-700 whitespace-nowrap px-2">
                     {d.telepon || '-'}
+                  </td>
+                  <td className="text-ink-700 text-xs whitespace-nowrap px-2">
+                    {d.user?.email ? (
+                      <div className="flex items-center gap-1.5">
+                        <TruncateText text={d.user.email} />
+                        {canEdit && (
+                          <button onClick={() => handleResetPassword(d)} className="text-ink-400 hover:text-brand-600 shrink-0" title="Reset Password ke default (123456)">
+                            <KeyRound className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    ) : <span className="text-ink-300">Belum ada</span>}
                   </td>
                   <td className="text-ink-700 text-xs whitespace-nowrap px-2">
                     {d.latitude && d.longitude ? (
@@ -248,7 +283,7 @@ export default function IdukaTab() {
               )
             ))}
             {list.length === 0 && (
-              <tr><td colSpan="4" className="py-6 text-center text-ink-300 whitespace-nowrap px-2">Belum ada IDUKA yang terdaftar.</td></tr>
+              <tr><td colSpan="5" className="py-6 text-center text-ink-300 whitespace-nowrap px-2">Belum ada IDUKA yang terdaftar.</td></tr>
             )}
           </tbody>
         </table>

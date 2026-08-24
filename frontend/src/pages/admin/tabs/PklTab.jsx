@@ -1,10 +1,11 @@
-import IdukaTab from './pkl/IdukaTab';
 import InstrukturTab from './pkl/InstrukturTab';
 import PenempatanTab from './pkl/PenempatanTab';
 import MonitoringJadwalTab from './pkl/MonitoringJadwalTab';
 
+// Kelola IDUKA PINDAH jadi menu sendiri di sidebar (lihat AdminDashboard.jsx)
+// — bukan submenu PKL lagi, karena IDUKA ke depan arahnya ke fitur lain
+// (lowongan kerja) yang beda urusan dari PKL.
 export const PKL_SUBMENU = [
-  { key: 'iduka',        label: 'Kelola IDUKA',     component: IdukaTab, restrictTo: ['waka_humas', 'waka_kurikulum'] },
   { key: 'instruktur',   label: 'Kelola Instruktur', component: InstrukturTab, restrictTo: ['waka_humas', 'waka_kurikulum'] },
   { key: 'penempatan',  label: 'Penempatan PKL',  component: PenempatanTab, restrictTo: ['waka_humas', 'waka_kurikulum'] },
   // Jadwal Monitoring GLOBAL (berlaku semua guru) sengaja cuma milik

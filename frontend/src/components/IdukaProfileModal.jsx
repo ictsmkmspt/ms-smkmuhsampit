@@ -14,6 +14,7 @@ import { useAuth } from '../context/AuthContext';
  */
 export default function IdukaProfileModal({ iduka, onClose, onSaved }) {
   const { user, updateUser } = useAuth();
+  const isAkunIduka = user?.role === 'iduka';
 
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(user?.name || '');
@@ -110,17 +111,19 @@ export default function IdukaProfileModal({ iduka, onClose, onSaved }) {
             {editing ? (
               <form onSubmit={handleSave} className="space-y-2.5">
                 <div>
-                  <label className="block text-xs font-medium text-ink-500 mb-1">Nama Instruktur</label>
+                  <label className="block text-xs font-medium text-ink-500 mb-1">{isAkunIduka ? 'Nama Akun' : 'Nama Instruktur'}</label>
                   <input
                     value={name} onChange={(e) => setName(e.target.value)}
                     className="field-input text-sm" required maxLength={100} autoFocus
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-ink-500 mb-1">No. HP (dipakai untuk login)</label>
+                  <label className="block text-xs font-medium text-ink-500 mb-1">
+                    {isAkunIduka ? 'No. HP (opsional)' : 'No. HP (dipakai untuk login)'}
+                  </label>
                   <input
                     value={telepon} onChange={(e) => setTelepon(e.target.value)}
-                    className="field-input text-sm" maxLength={30} required
+                    className="field-input text-sm" maxLength={30} required={!isAkunIduka}
                   />
                 </div>
                 <div className="flex gap-2">
@@ -138,9 +141,15 @@ export default function IdukaProfileModal({ iduka, onClose, onSaved }) {
             ) : (
               <dl className="text-sm space-y-2.5">
                 <div className="flex items-center justify-between gap-3">
-                  <dt className="text-ink-500">Nama Instruktur</dt>
+                  <dt className="text-ink-500">{isAkunIduka ? 'Nama Akun' : 'Nama Instruktur'}</dt>
                   <dd className="text-ink-900 font-medium text-right truncate">{user?.name || '-'}</dd>
                 </div>
+                {isAkunIduka && (
+                  <div className="flex items-center justify-between gap-3">
+                    <dt className="text-ink-500">Email (login)</dt>
+                    <dd className="text-ink-900 font-medium text-right truncate">{user?.email || '-'}</dd>
+                  </div>
+                )}
                 <div className="flex items-center justify-between gap-3">
                   <dt className="text-ink-500">No. HP</dt>
                   <dd className="text-ink-900 font-medium text-right truncate">{user?.phone || '-'}</dd>

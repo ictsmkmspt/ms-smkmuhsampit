@@ -128,16 +128,22 @@ Route::middleware('auth:sanctum')->group(function () {
     // (rute literal) tidak ketiban rute wildcard admin itu. Laravel mencocokkan
     // rute sesuai urutan didaftarkan, jadi rute literal wajib didaftarkan lebih dulu.
     //
-    // Gerbangnya 'role:instruktur' (BUKAN 'role:iduka' lagi) — akun pembimbing
-    // PKL lapangan sekarang punya role sendiri, terpisah dari IDUKA (yang
-    // nanti dipakai khusus fitur BKK/lowongan). URL path-nya SENGAJA tetap
-    // "/iduka/..." (bukan ikut diganti "/instruktur/...") karena data yang
-    // diakses tetap profil model Iduka (perusahaan mitra) — cuma akun
-    // login yang mengaksesnya yang berganti role.
-    Route::middleware('role:instruktur')->group(function () {
+    // Instruktur (pembimbing PKL lapangan) dan IDUKA (akun login milik
+    // perusahaan itu sendiri, lihat Iduka::user()) sama-sama boleh lihat &
+    // edit profil perusahaan mitra + tanda tangan lewat rute di bawah ini.
+    // URL path-nya SENGAJA tetap "/iduka/..." (bukan ikut diganti
+    // "/instruktur/...") karena data yang diakses tetap profil model Iduka
+    // (perusahaan mitra) — cuma akun login yang mengaksesnya beda role.
+    Route::middleware('role:instruktur,iduka')->group(function () {
         Route::get('/my-iduka-profile', [IdukaController::class, 'myProfile']);
         Route::post('/iduka/tanda-tangan', [IdukaController::class, 'uploadTandaTangan']);
         Route::put('/iduka/profile', [IdukaController::class, 'updateProfile']);
+    });
+
+    // Fitur PKL (bimbingan/absensi/penilaian siswa) SENGAJA cuma milik akun
+    // Instruktur — akun IDUKA tidak membimbing siswa PKL, jadi tidak
+    // ikut digabung ke grup di atas.
+    Route::middleware('role:instruktur')->group(function () {
         Route::get('/iduka/my-siswa', [PklPlacementController::class, 'siswaSaya']);
         Route::get('/iduka/absensi-pending', [PklAttendanceController::class, 'pendingVerifikasi']);
         Route::post('/pkl-placements/{pklPlacement}/penilaian', [PklPenilaianController::class, 'store']);
@@ -261,15 +267,16 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     // Waka Humas (merangkap Hubin) — Kelola IDUKA penuh (data master
-    // perusahaan mitra + GPS), Kelola Instruktur, dan Kelola IDUKA (BKK).
-    // Waka Kurikulum cuma boleh baca daftar perusahaan (dipakai buat pilih
-    // IDUKA di form Penempatan PKL — index-nya didaftarkan di grup shared
-    // read-only di bawah). Verifikasi pendaftar PPDB dipindah ke grup
-    // "Pengembangan" (admin-only) di bawah.
+    // perusahaan mitra + GPS + akun login perusahaan sendiri) dan Kelola
+    // Instruktur. Waka Kurikulum cuma boleh baca daftar perusahaan (dipakai
+    // buat pilih IDUKA di form Penempatan PKL — index-nya didaftarkan di
+    // grup shared read-only di bawah). Verifikasi pendaftar PPDB dipindah
+    // ke grup "Pengembangan" (admin-only) di bawah.
     Route::middleware('role:admin,waka_humas')->group(function () {
         Route::get('/iduka/import/template', [IdukaController::class, 'downloadTemplate']);
         Route::post('/iduka/import', [IdukaController::class, 'import']);
         Route::apiResource('iduka', IdukaController::class)->except(['show', 'index']);
+        Route::put('/iduka/{iduka}/reset-password', [IdukaController::class, 'resetPasswordAkun']);
 
         // Kelola akun Instruktur — User-sentris (bukan Iduka lagi), karena
         // sekarang 1 perusahaan mitra bisa punya lebih dari 1 akun.

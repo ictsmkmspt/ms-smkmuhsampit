@@ -13,6 +13,7 @@ import GuruDashboard from './pages/guru/GuruDashboard';
 import SiswaDashboard from './pages/siswa/SiswaDashboard';
 import ParentDashboard from './pages/wali/ParentDashboard';
 import InstrukturDashboard from './pages/instruktur/InstrukturDashboard';
+import IdukaDashboard from './pages/iduka/IdukaDashboard';
 import TuDashboard from './pages/tu/TuDashboard';
 import KepalaSekolahDashboard from './pages/kepala-sekolah/KepalaSekolahDashboard';
 import RoomStaffDashboard from './pages/sarpras-staff/RoomStaffDashboard';
@@ -216,6 +217,10 @@ export default function App() {
 
             <Route path="/instruktur/*" element={
               <ProtectedRoute allowedRoles={['instruktur']}><InstrukturDashboard /></ProtectedRoute>
+            } />
+
+            <Route path="/iduka" element={
+              <ProtectedRoute allowedRoles={['iduka']}><IdukaDashboard /></ProtectedRoute>
             } />
 
             <Route path="/tu/*" element={

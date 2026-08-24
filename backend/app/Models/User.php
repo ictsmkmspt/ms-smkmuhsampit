@@ -43,7 +43,7 @@ class User extends Authenticatable
 
     /**
      * Perusahaan mitra (IDUKA) yang diwakili akun ini — dipakai akun
-     * Instruktur (bimbingan/absensi/penilaian PKL) MAUPUN akun IDUKA/BKK.
+     * Instruktur (bimbingan/absensi/penilaian PKL) MAUPUN akun IDUKA.
      * SENGAJA belongsTo lewat users.iduka_id (BUKAN lagi hasOne lewat
      * idukas.user_id) — 1 perusahaan sekarang bisa diwakili lebih dari 1
      * akun (mis. beberapa Instruktur beda orang di perusahaan yang sama),

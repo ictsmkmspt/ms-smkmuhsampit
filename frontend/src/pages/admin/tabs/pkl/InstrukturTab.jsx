@@ -6,7 +6,7 @@ import Pagination from '../../../../components/Pagination';
 import usePagination from '../../../../hooks/usePagination';
 import { useAuth } from '../../../../context/AuthContext';
 
-const emptyForm = { name: '', telepon: '', email: '', iduka_id: '' };
+const emptyForm = { name: '', telepon: '', iduka_id: '' };
 
 /**
  * Kelola akun Instruktur — pembimbing PKL lapangan di 1 perusahaan mitra
@@ -65,7 +65,7 @@ export default function InstrukturTab() {
 
   const startEdit = (d) => {
     setEditId(d.id);
-    setEditData({ name: d.name, telepon: d.phone || '', email: d.email || '', iduka_id: d.iduka_id || '' });
+    setEditData({ name: d.name, telepon: d.phone || '', iduka_id: d.iduka_id || '' });
   };
 
   const handleSaveEdit = async (id) => {
@@ -216,11 +216,10 @@ export default function InstrukturTab() {
         <form onSubmit={handleAdd} className="surface-card p-5">
           <h2 className="font-display font-semibold text-ink-900 mb-4">Tambah Akun Instruktur</h2>
           {error && <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2 mb-3">{error}</p>}
-          <p className="text-xs text-ink-500 mb-2">Login bisa pakai No. HP atau email (kalau diisi) — email opsional, disiapkan untuk login ke fitur BKK nanti. Password akun otomatis dibuat "123456" — wajib diganti saat login pertama.</p>
+          <p className="text-xs text-ink-500 mb-2">Login pakai No. HP di bawah ini (bukan email). Password akun otomatis dibuat "123456" — wajib diganti saat login pertama.</p>
           <div className="grid grid-cols-2 gap-3 mb-4">
             <input placeholder="Nama Instruktur" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="field-input" required />
             <input placeholder="No. HP (login)" value={form.telepon} onChange={(e) => setForm({ ...form, telepon: e.target.value })} className="field-input" required autoComplete="off" />
-            <input type="email" placeholder="Email (opsional, untuk login BKK nanti)" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="field-input col-span-2" autoComplete="off" />
             <select value={form.iduka_id} onChange={(e) => setForm({ ...form, iduka_id: e.target.value })} className="field-input col-span-2" required>
               <option value="">Pilih IDUKA...</option>
               {idukaList.map((d) => <option key={d.id} value={d.id}>{d.nama_perusahaan}</option>)}
@@ -263,7 +262,6 @@ export default function InstrukturTab() {
                     <div className="grid grid-cols-2 gap-2 mb-2">
                       <input value={editData.name} onChange={(e) => setEditData({ ...editData, name: e.target.value })} className="field-input py-1.5 text-sm" placeholder="Nama Instruktur" />
                       <input value={editData.telepon} onChange={(e) => setEditData({ ...editData, telepon: e.target.value })} className="field-input py-1.5 text-sm" placeholder="No. HP (login)" required />
-                      <input type="email" value={editData.email} onChange={(e) => setEditData({ ...editData, email: e.target.value })} className="field-input py-1.5 text-sm col-span-2" placeholder="Email (opsional, untuk login BKK nanti)" />
                       <select value={editData.iduka_id} onChange={(e) => setEditData({ ...editData, iduka_id: e.target.value })} className="field-input py-1.5 text-sm col-span-2">
                         {idukaList.map((di) => <option key={di.id} value={di.id}>{di.nama_perusahaan}</option>)}
                       </select>
@@ -280,7 +278,7 @@ export default function InstrukturTab() {
                 <tr key={d.id} className="border-t border-line-200">
                   <td className="py-2.5 whitespace-nowrap px-2">
                     <p className="text-ink-900 font-medium"><TruncateText text={d.name} /></p>
-                    <p className="text-xs text-ink-500">{d.phone || '-'}{d.email ? ` · ${d.email}` : ''}</p>
+                    <p className="text-xs text-ink-500">{d.phone || '-'}</p>
                   </td>
                   <td className="text-ink-700 whitespace-nowrap px-2">
                     <TruncateText text={d.iduka?.nama_perusahaan || '-'} />

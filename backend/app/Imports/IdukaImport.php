@@ -34,10 +34,10 @@ class IdukaImport implements ToModel, WithHeadingRow, WithValidation, SkipsOnFai
      * Dipanggil untuk setiap baris yang LOLOS validasi di rules(). Tiap baris
      * bikin 1 perusahaan mitra BARU sekaligus 1 akun Instruktur yang
      * mewakilinya — akun login dibuat dari kolom "nama_instruktur" + "telepon"
-     * (email opsional, disiapkan untuk login ke fitur BKK nanti), sama seperti
-     * form Tambah Instruktur manual di InstrukturTab.jsx (bedanya di sana
-     * perusahaannya dipilih dari yang sudah ada, di sini selalu baru per
-     * baris import).
+     * (login pakai No. HP saja, BUKAN email — itu khusus akun login IDUKA milik
+     * perusahaan sendiri, lihat Iduka::user()), sama seperti form Tambah
+     * Instruktur manual di InstrukturTab.jsx (bedanya di sana perusahaannya
+     * dipilih dari yang sudah ada, di sini selalu baru per baris import).
      */
     public function model(array $row)
     {
@@ -57,7 +57,6 @@ class IdukaImport implements ToModel, WithHeadingRow, WithValidation, SkipsOnFai
             User::create([
                 'name'     => trim($row['nama_instruktur']),
                 'phone'    => trim($row['telepon']),
-                'email'    => !empty($row['email']) ? trim($row['email']) : null,
                 'password' => bcrypt($password),
                 'role'     => 'instruktur',
                 'iduka_id' => $iduka->id,
@@ -74,7 +73,6 @@ class IdukaImport implements ToModel, WithHeadingRow, WithValidation, SkipsOnFai
             'alamat'           => 'nullable|string|max:255',
             'nama_instruktur'  => 'required|string|max:100',
             'telepon'          => 'required|string|max:30|unique:users,phone',
-            'email'            => 'nullable|email|max:150|unique:users,email',
             'password'         => 'nullable|min:6',
             'latitude'         => 'required|numeric|between:-90,90',
             'longitude'        => 'required|numeric|between:-180,180',
@@ -89,8 +87,6 @@ class IdukaImport implements ToModel, WithHeadingRow, WithValidation, SkipsOnFai
             'nama_instruktur.required' => 'Nama instruktur wajib diisi.',
             'telepon.required'         => 'No. HP wajib diisi.',
             'telepon.unique'           => 'No. HP sudah dipakai akun lain.',
-            'email.email'              => 'Format email tidak valid.',
-            'email.unique'             => 'Email sudah dipakai akun lain.',
             'password.min'             => 'Password minimal 6 karakter.',
             'latitude.required'        => 'Latitude wajib diisi.',
             'latitude.between'         => 'Latitude harus di antara -90 dan 90.',

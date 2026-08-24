@@ -6,8 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class Iduka extends Model
 {
-    // 'user_id' SENGAJA tidak lagi di sini — perusahaan mitra sekarang data
-    // master lepas, tidak terikat 1:1 ke 1 akun login (lihat User::iduka()).
+    // 'user_id' SENGAJA tidak di $fillable — dikelola eksplisit lewat
+    // IdukaController (bukan mass-assignment), lihat user() di bawah.
     protected $fillable = [
         'nama_perusahaan', 'alamat',
         'telepon', 'latitude', 'longitude', 'radius_meter', 'tanda_tangan',
@@ -23,6 +23,17 @@ class Iduka extends Model
     public function instrukturs()
     {
         return $this->hasMany(User::class, 'iduka_id')->where('role', 'instruktur');
+    }
+
+    /**
+     * Akun login milik perusahaan ini SENDIRI (role 'iduka', beda dari
+     * akun Instruktur). Baris "Kelola IDUKA" ini LANGSUNG jadi akun login-nya
+     * — bukan menu/tabel akun terpisah — jadi paling banyak 1 akun per
+     * perusahaan, dibuat/diedit lewat form yang sama di IdukaController.
+     */
+    public function user()
+    {
+        return $this->belongsTo(User::class);
     }
 
     /**

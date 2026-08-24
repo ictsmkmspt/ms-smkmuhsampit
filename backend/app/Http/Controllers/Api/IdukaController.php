@@ -15,17 +15,18 @@ use Illuminate\Validation\Rule;
 use Maatwebsite\Excel\Facades\Excel;
 
 /**
- * IDUKA (Industri, Dunia Usaha, dan Dunia Kerja) sekarang murni DATA MASTER
- * perusahaan mitra + lokasi/radius GPS — TIDAK terikat langsung ke akun
- * login manapun. Akun Instruktur (untuk PKL) MEMILIH salah satu baris di
- * sini lewat users.iduka_id, bukan membuat baris perusahaan sendiri-sendiri
- * — supaya 1 perusahaan bisa diwakili lebih dari 1 akun Instruktur
- * sekaligus. Lihat method *Instruktur() di bawah untuk kelola akunnya.
+ * IDUKA (Industri, Dunia Usaha, dan Dunia Kerja) = data master perusahaan
+ * mitra + lokasi/radius GPS. Setiap baris di sini SEKALIGUS jadi 1 akun
+ * login sendiri (role 'iduka', login pakai email — WAJIB diisi) — dibuat/
+ * diedit LANGSUNG lewat form Kelola IDUKA yang sama (bukan menu/tabel
+ * terpisah), jadi maksimal 1 akun per perusahaan, lihat idukas.user_id.
+ * Password SELALU dibuat otomatis "123456" (tidak ada input password di
+ * form), diganti lewat resetPasswordAkun().
  *
- * Fitur BKK (pasang lowongan kerja) belum dibangun — sengaja TIDAK ada
- * akun/role terpisah untuk itu (pernah dicoba, lalu dihapus lagi supaya
- * mitra tidak perlu daftar akun 2x): begitu BKK dikerjakan, akun Instruktur
- * yang sudah ada tinggal dipakai login untuk fitur itu juga.
+ * Ini BEDA dari akun Instruktur (untuk PKL) — itu akunnya sendiri-sendiri
+ * per orang, MEMILIH salah satu baris IDUKA lewat users.iduka_id, dan 1
+ * perusahaan bisa diwakili lebih dari 1 akun Instruktur sekaligus. Lihat
+ * method *Instruktur() di bawah untuk kelola akun itu.
  */
 class IdukaController extends Controller
 {
@@ -33,19 +34,19 @@ class IdukaController extends Controller
 
     /**
      * Daftar semua perusahaan mitra (data master) — dipakai admin kelola
-     * daftar, dropdown pilih perusahaan saat membuat akun Instruktur/IDUKA,
-     * dan dropdown Penempatan PKL.
+     * daftar, dropdown pilih perusahaan saat membuat akun Instruktur, dan
+     * dropdown Penempatan PKL.
      */
     public function index()
     {
-        return Iduka::orderBy('nama_perusahaan')->get();
+        return Iduka::with('user')->orderBy('nama_perusahaan')->get();
     }
 
     /**
      * Daftarkan perusahaan mitra baru (data master + lokasi/radius GPS untuk
-     * geofencing absensi PKL). TIDAK membuat akun login apa pun di sini —
-     * akun Instruktur/IDUKA dibuat terpisah lewat *Instruktur()/*Bkk()
-     * setelah perusahaannya ada.
+     * geofencing absensi PKL). Email WAJIB diisi — sekaligus bikin akun
+     * login (role 'iduka') untuk perusahaan ini, password otomatis "123456"
+     * (tidak ada input password, wajib diganti saat login pertama).
      */
     public function store(Request $request)
     {
@@ -56,11 +57,28 @@ class IdukaController extends Controller
             'latitude'         => 'required|numeric|between:-90,90',
             'longitude'        => 'required|numeric|between:-180,180',
             'radius_meter'     => 'required|integer|min:10|max:5000',
+            'email'            => 'required|email|max:150|unique:users,email',
         ]);
 
-        return response()->json(Iduka::create($data), 201);
+        $iduka = Iduka::create(collect($data)->except(['email'])->toArray());
+
+        $akun = User::create([
+            'name'     => $data['nama_perusahaan'],
+            'email'    => $data['email'],
+            'password' => bcrypt('123456'),
+            'role'     => 'iduka',
+            'iduka_id' => $iduka->id,
+        ]);
+        $iduka->forceFill(['user_id' => $akun->id])->save();
+
+        return response()->json($iduka->fresh()->load('user'), 201);
     }
 
+    /**
+     * Email WAJIB diisi (sama seperti store). Kalau baris IDUKA ini belum
+     * punya akun (data lama dari sebelum email diwajibkan), akun baru
+     * otomatis dibuat di sini dengan password default "123456".
+     */
     public function update(Request $request, Iduka $iduka)
     {
         $data = $request->validate([
@@ -70,23 +88,50 @@ class IdukaController extends Controller
             'latitude'         => 'sometimes|numeric|between:-90,90',
             'longitude'        => 'sometimes|numeric|between:-180,180',
             'radius_meter'     => 'sometimes|integer|min:10|max:5000',
+            'email'            => ['required', 'email', 'max:150', Rule::unique('users', 'email')->ignore($iduka->user_id)],
         ]);
 
-        $iduka->update($data);
+        $iduka->update(collect($data)->except(['email'])->toArray());
 
-        return $iduka->fresh();
+        if ($iduka->user) {
+            $iduka->user->update(['email' => $data['email']]);
+        } else {
+            $akun = User::create([
+                'name'     => $iduka->nama_perusahaan,
+                'email'    => $data['email'],
+                'password' => bcrypt('123456'),
+                'role'     => 'iduka',
+                'iduka_id' => $iduka->id,
+            ]);
+            $iduka->forceFill(['user_id' => $akun->id])->save();
+        }
+
+        return $iduka->fresh()->load('user');
     }
 
     /**
-     * Hapus perusahaan mitra. Akun Instruktur/IDUKA yang tadinya mewakilinya
-     * TIDAK ikut terhapus — cuma tertinggal tanpa perusahaan (iduka_id jadi
-     * null, lihat nullOnDelete di migrasi), supaya tidak kehilangan akses
-     * login cuma karena data perusahaannya dihapus admin.
+     * Hapus perusahaan mitra. Akun login perusahaan ini sendiri
+     * (idukas.user_id) IKUT terhapus — akun itu tidak berarti apa-apa tanpa
+     * perusahaannya. Akun Instruktur yang tadinya mewakilinya TIDAK ikut
+     * terhapus — cuma tertinggal tanpa perusahaan (iduka_id jadi null,
+     * lihat nullOnDelete di migrasi), supaya tidak kehilangan akses login
+     * cuma karena data perusahaannya dihapus admin.
      */
     public function destroy(Iduka $iduka)
     {
+        $iduka->user?->delete();
         $iduka->delete();
         return response()->json(['message' => 'Data perusahaan mitra dihapus.']);
+    }
+
+    /**
+     * Reset password akun login milik 1 perusahaan mitra ke default (123456).
+     */
+    public function resetPasswordAkun(Iduka $iduka)
+    {
+        abort_unless($iduka->user, 404, 'IDUKA ini belum punya akun login.');
+        $this->resetToDefaultPassword($iduka->user);
+        return response()->json(['message' => 'Password akun "' . $iduka->nama_perusahaan . '" berhasil direset ke default (123456).']);
     }
 
     /**
@@ -113,12 +158,17 @@ class IdukaController extends Controller
     {
         $user = $request->user();
 
+        // 'telepon' nullable — akun IDUKA login pakai email dan tidak wajib
+        // punya no HP, beda dari Instruktur yang wajib.
         $data = $request->validate([
             'name'    => 'required|string|max:100',
-            'telepon' => ['required', 'string', 'max:30', Rule::unique('users', 'phone')->ignore($user->id)],
+            'telepon' => ['nullable', 'string', 'max:30', Rule::unique('users', 'phone')->ignore($user->id)],
         ]);
 
-        $user->update(['name' => $data['name'], 'phone' => $data['telepon']]);
+        $user->update([
+            'name'  => $data['name'],
+            'phone' => $data['telepon'] ?? $user->phone,
+        ]);
 
         return response()->json([
             'message' => 'Profil berhasil diperbarui.',
@@ -214,17 +264,14 @@ class IdukaController extends Controller
     /**
      * Buat akun Instruktur baru — MEMILIH perusahaan mitra yang sudah ada
      * (iduka_id) lewat dropdown, bukan mengisi ulang data perusahaan +
-     * GPS dari nol. Email opsional — disiapkan supaya akun ini nanti bisa
-     * dipakai login ke dashboard BKK juga (AuthController::login() sudah
-     * menerima email ATAU no HP secara generik, tidak perlu ubah apa pun
-     * di sana untuk ini).
+     * GPS dari nol. Login pakai No. HP saja (BUKAN email — itu khusus akun
+     * IDUKA milik perusahaan sendiri, lihat Iduka::user()).
      */
     public function storeInstruktur(Request $request)
     {
         $data = $request->validate([
             'name'     => 'required|string|max:100',
             'telepon'  => 'required|string|max:30|unique:users,phone',
-            'email'    => 'nullable|email|max:150|unique:users,email',
             'password' => 'nullable|min:6',
             'iduka_id' => 'required|exists:idukas,id',
         ]);
@@ -232,7 +279,6 @@ class IdukaController extends Controller
         $user = User::create([
             'name'     => $data['name'],
             'phone'    => $data['telepon'],
-            'email'    => $data['email'] ?? null,
             'password' => bcrypt($data['password'] ?? '123456'),
             'role'     => 'instruktur',
             'iduka_id' => $data['iduka_id'],
@@ -248,7 +294,6 @@ class IdukaController extends Controller
         $data = $request->validate([
             'name'     => 'sometimes|string|max:100',
             'telepon'  => ['sometimes', 'string', 'max:30', Rule::unique('users', 'phone')->ignore($instruktur->id)],
-            'email'    => ['nullable', 'email', 'max:150', Rule::unique('users', 'email')->ignore($instruktur->id)],
             'iduka_id' => 'sometimes|exists:idukas,id',
         ]);
 
@@ -276,8 +321,4 @@ class IdukaController extends Controller
         return response()->json(['message' => 'Password akun Instruktur "' . $instruktur->name . '" berhasil direset ke default (123456).']);
     }
 
-    // Akun IDUKA (BKK) terpisah SEMPAT dibuat di sini (indexBkk/storeBkk/dst)
-    // lalu dihapus lagi — supaya tidak ribet daftar 2x, akun Instruktur yang
-    // sudah ada nanti langsung dipakai login ke fitur BKK juga begitu
-    // dibangun, bukan bikin akun baru role 'iduka' terpisah.
 }

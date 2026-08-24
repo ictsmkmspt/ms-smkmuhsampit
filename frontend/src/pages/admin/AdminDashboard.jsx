@@ -12,6 +12,7 @@ import AlumniMenuTab, { ALUMNI_SUBMENU } from './tabs/AlumniMenuTab';
 import PoinTab, { POIN_SUBMENU } from './tabs/PoinTab';
 import SettingsTab, { SETTINGS_SUBMENU } from './tabs/SettingsTab';
 import PklTab, { PKL_SUBMENU } from './tabs/PklTab';
+import IdukaTab from './tabs/pkl/IdukaTab';
 import PpdbTab, { PPDB_SUBMENU } from './tabs/PpdbTab';
 import KurikulumTab, { KURIKULUM_SUBMENU } from './tabs/KurikulumTab';
 import SarprasTab, { SARPRAS_SUBMENU } from './tabs/SarprasTab';
@@ -35,7 +36,7 @@ const ROLE_LABEL = {
 const MASTER_ICONS = { siswa: Users, guru: GraduationCap, kelas: School, wali: UserCog, tu: Wallet, bk: HeartHandshake, admin: ShieldCheck };
 const ALUMNI_ICONS = { siswa: GraduationCap, wali: UserCog };
 const SETTINGS_ICONS = { sekolah: Image, jam: Clock, jurusan: GraduationCap, 'kartu-pelajar': IdCard, backup: DatabaseBackup, maintenance: Wrench };
-const PKL_ICONS = { iduka: Building2, instruktur: UserCog, penempatan: ClipboardList, monitoring: CalendarClock };
+const PKL_ICONS = { instruktur: UserCog, penempatan: ClipboardList, monitoring: CalendarClock };
 const LAPORAN_ICONS = { absensi: ClipboardCheck, pelanggaran: AlertOctagon, prestasi: Trophy, bk: HeartHandshake, 'nilai-akademik': ClipboardList, pkl: Briefcase, 'pkl-kegiatan': Users, 'pkl-monitoring': GraduationCap, tahsin: BookOpen, tahfidz: BookMarked, tadarus: ScrollText };
 const POIN_ICONS = { 'jenis-pelanggaran': AlertOctagon, 'jenis-prestasi': Trophy, sanksi: AlertTriangle };
 const KURIKULUM_ICONS = { kalender: CalendarRange, akademik: CalendarRange, libur: CalendarDays, mapel: BookOpen, tugas: UserCog, jadwal: CalendarClock, template: Sparkles };
@@ -73,6 +74,7 @@ function AdminDashboardContent() {
     { key: 'master',     label: 'Master Data', icon: Database,        hasDropdown: true, submenu: masterDataSubmenu, subIcons: MASTER_ICONS, roles: ['waka_kesiswaan', 'waka_kurikulum'] },
     { key: 'alumni',     label: 'Alumni',      icon: GraduationCap,   hasDropdown: true, submenu: ALUMNI_SUBMENU, subIcons: ALUMNI_ICONS, roles: ['waka_kesiswaan', 'waka_humas'] },
     { key: 'poin',       label: 'Poin',        icon: ClipboardList,   hasDropdown: true, submenu: poinSubmenu, subIcons: POIN_ICONS, roles: ['waka_kesiswaan'] },
+    { key: 'iduka',      label: 'IDUKA',       icon: Building2,       component: IdukaTab, roles: ['waka_humas', 'waka_kurikulum'] },
     { key: 'pkl',        label: 'PKL',         icon: Briefcase,       hasDropdown: true, submenu: pklSubmenu, subIcons: PKL_ICONS, roles: ['waka_humas', 'waka_kurikulum'] },
     { key: 'kurikulum',  label: 'Pembelajaran', icon: BookOpen,        hasDropdown: true, submenu: KURIKULUM_SUBMENU, subIcons: KURIKULUM_ICONS, roles: ['waka_kurikulum'] },
     { key: 'ppdb',       label: 'PPDB',        icon: UserPlus,        hasDropdown: true, submenu: PPDB_SUBMENU, subIcons: PPDB_ICONS, roles: [] },
@@ -89,7 +91,7 @@ function AdminDashboardContent() {
   const [activeMasterSub, setActiveMasterSub] = useState(user.role === 'waka_kesiswaan' ? 'kelas' : 'guru');
   const [activeAlumniSub, setActiveAlumniSub] = useState('siswa');
   const [activeSettingsSub, setActiveSettingsSub] = useState('jam');
-  const [activePklSub, setActivePklSub] = useState('iduka');
+  const [activePklSub, setActivePklSub] = useState('instruktur');
   const [activePpdbSub, setActivePpdbSub] = useState('formulir');
   const [activePoinSub, setActivePoinSub] = useState('jenis-pelanggaran');
   // Default beda per peran — Waka Kurikulum cuma punya akses ke
