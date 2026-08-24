@@ -24,8 +24,8 @@ return new class extends Migration
 
         DB::statement('
             INSERT INTO cbt_exam_class_rooms (exam_id, class_room_id, created_at, updated_at)
-            SELECT id, class_room_id, NOW(), NOW() FROM cbt_exams
-        ');
+            SELECT id, class_room_id, ?, ? FROM cbt_exams
+        ', [now(), now()]);
 
         Schema::table('cbt_exams', function (Blueprint $table) {
             $table->dropForeign(['class_room_id']);

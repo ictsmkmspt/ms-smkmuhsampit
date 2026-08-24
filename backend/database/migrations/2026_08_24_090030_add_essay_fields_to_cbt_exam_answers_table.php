@@ -15,12 +15,24 @@ return new class extends Migration
             $table->string('status_koreksi', 10)->default('belum')->after('nilai_essay');
         });
 
-        DB::statement("ALTER TABLE cbt_exam_answers MODIFY jawaban_dipilih ENUM('A','B','C','D','E') NULL");
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE cbt_exam_answers MODIFY jawaban_dipilih ENUM('A','B','C','D','E') NULL");
+        } else {
+            Schema::table('cbt_exam_answers', function (Blueprint $table) {
+                $table->enum('jawaban_dipilih', ['A', 'B', 'C', 'D', 'E'])->nullable()->change();
+            });
+        }
     }
 
     public function down(): void
     {
-        DB::statement("ALTER TABLE cbt_exam_answers MODIFY jawaban_dipilih ENUM('A','B','C','D') NULL");
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE cbt_exam_answers MODIFY jawaban_dipilih ENUM('A','B','C','D') NULL");
+        } else {
+            Schema::table('cbt_exam_answers', function (Blueprint $table) {
+                $table->enum('jawaban_dipilih', ['A', 'B', 'C', 'D'])->nullable()->change();
+            });
+        }
 
         Schema::table('cbt_exam_answers', function (Blueprint $table) {
             $table->dropColumn(['jawaban_essay', 'nilai_essay', 'status_koreksi']);

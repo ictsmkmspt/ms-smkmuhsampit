@@ -29,6 +29,7 @@ return new class extends Migration
 
         Schema::table('perpustakaan_peminjaman', function (Blueprint $table) {
             $table->dropForeign(['student_id']);
+            $table->dropIndex(['student_id', 'status']);
             $table->dropColumn('student_id');
             $table->string('peminjam_type')->nullable(false)->change();
             $table->unsignedBigInteger('peminjam_id')->nullable(false)->change();

@@ -29,12 +29,24 @@ return new class extends Migration
 
         // enum tidak bisa diubah langsung via change() di semua driver —
         // pakai raw statement supaya pasti jalan (MySQL/MariaDB).
-        DB::statement("ALTER TABLE cbt_questions MODIFY jawaban_benar ENUM('A','B','C','D','E') NULL");
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE cbt_questions MODIFY jawaban_benar ENUM('A','B','C','D','E') NULL");
+        } else {
+            Schema::table('cbt_questions', function (Blueprint $table) {
+                $table->enum('jawaban_benar', ['A', 'B', 'C', 'D', 'E'])->nullable()->change();
+            });
+        }
     }
 
     public function down(): void
     {
-        DB::statement("ALTER TABLE cbt_questions MODIFY jawaban_benar ENUM('A','B','C','D') NOT NULL");
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE cbt_questions MODIFY jawaban_benar ENUM('A','B','C','D') NOT NULL");
+        } else {
+            Schema::table('cbt_questions', function (Blueprint $table) {
+                $table->enum('jawaban_benar', ['A', 'B', 'C', 'D'])->nullable(false)->change();
+            });
+        }
 
         Schema::table('cbt_questions', function (Blueprint $table) {
             $table->longText('pilihan_a')->nullable(false)->change();

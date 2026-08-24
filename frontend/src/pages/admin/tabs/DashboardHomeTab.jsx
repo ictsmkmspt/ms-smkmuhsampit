@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Users, GraduationCap, School, Building2, AlertTriangle, ChevronLeft, ChevronRight, ChevronDown, ArrowRight, Briefcase, ClipboardCheck, BookOpen, DoorOpen, Package, CheckCircle2, XCircle, ClipboardList, Wrench, Database, Settings, UserPlus, HardHat } from 'lucide-react';
+import { Users, GraduationCap, School, Building2, AlertTriangle, ChevronLeft, ChevronRight, ChevronDown, ArrowRight, Briefcase, ClipboardCheck, BookOpen, DoorOpen, Package, CheckCircle2, XCircle, ClipboardList, Wrench, Database, Settings, UserPlus, HardHat, BookMarked, History } from 'lucide-react';
 import api from '../../../api/axios';
 import { useAuth } from '../../../context/AuthContext';
 import CategoryBarChart from '../../../components/CategoryBarChart';
@@ -14,6 +14,7 @@ import { KURIKULUM_SUBMENU } from './KurikulumTab';
 import { SARPRAS_SUBMENU } from './SarprasTab';
 import { SETTINGS_SUBMENU } from './SettingsTab';
 import { PPDB_SUBMENU } from './PpdbTab';
+import ActivityLogReportTab from './ActivityLogReportTab';
 
 // Langkah pengaturan awal Waka Kesiswaan, berurutan sesuai ketergantungan
 // datanya: Kelas harus ada dulu sebelum Siswa bisa dimasukkan, Siswa harus
@@ -359,6 +360,7 @@ const MENU_UTAMA = [
   { key: 'kurikulum', label: 'Pembelajaran', desc: 'Kalender, mapel & jadwal', icon: BookOpen, color: '#eb6834', submenu: KURIKULUM_SUBMENU_DATAR },
   { key: 'ppdb', label: 'PPDB', desc: 'Formulir & pengaturan pendaftaran online', icon: UserPlus, color: '#0F766E', submenu: PPDB_SUBMENU },
   { key: 'sarpras-staf', label: 'Teknisi & Kepala Bengkel', desc: 'Penanggung jawab ruang', icon: HardHat, color: '#6B7280' },
+  { key: 'pustakawan', label: 'Pengurus Perpustakaan', desc: 'Sirkulasi & katalog buku', icon: BookMarked, color: '#A16207' },
   { key: 'sarpras', label: 'Sarana & Prasarana', desc: 'Ruang, aset & pemeliharaan', icon: Wrench, color: '#F2B705', submenu: SARPRAS_SUBMENU },
   { key: 'laporan', label: 'Laporan', desc: 'Absensi, poin, BK & nilai', icon: ClipboardCheck, color: '#2a78d6', submenu: LAPORAN_SUBMENU_DATAR },
   { key: 'pengaturan', label: 'Pengaturan', desc: 'Profil sekolah & cadangan data', icon: Settings, color: '#7C5CBF', submenu: SETTINGS_SUBMENU },
@@ -552,7 +554,20 @@ export default function DashboardHomeTab({ onNavigate }) {
         />
       )}
 
-      {user.role === 'admin' && <MenuUtama onNavigate={onNavigate} />}
+      {user.role === 'admin' && (
+        <>
+          <MenuUtama onNavigate={onNavigate} />
+
+          <div>
+            <div className="flex items-center gap-2">
+              <History className="w-4 h-4 text-brand-600" />
+              <h2 className="font-display text-xl font-semibold text-ink-900">Log Aktivitas</h2>
+            </div>
+            <p className="text-sm text-ink-500 mt-1 mb-4">Semua kegiatan yang tercatat di aplikasi ini — dibuat/diubah/dihapus, plus login/logout.</p>
+            <ActivityLogReportTab />
+          </div>
+        </>
+      )}
 
       {user.role !== 'admin' && (
         <>

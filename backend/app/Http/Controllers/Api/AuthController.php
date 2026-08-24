@@ -7,6 +7,7 @@ use App\Models\Setting;
 use App\Models\TahunAjaran;
 use App\Models\Teacher;
 use App\Models\User;
+use App\Services\ActivityLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
@@ -70,6 +71,12 @@ class AuthController extends Controller
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
+        // auth()->user() belum terisi di sini (rute /login publik, belum
+        // ada token) — sisipkan identitas user manual lewat $extra.
+        ActivityLogger::catat('login', extra: [
+            'user_id' => $user->id, 'actor_nama' => $user->name, 'actor_role' => $user->role,
+        ]);
+
         return response()->json([
             'user' => $this->withGuruFlags($user),
             'token' => $token,
@@ -84,6 +91,7 @@ class AuthController extends Controller
 
     public function logout(Request $request)
     {
+        ActivityLogger::catat('logout');
         $request->user()->currentAccessToken()->delete();
         return response()->json(['message' => 'Berhasil logout.']);
     }

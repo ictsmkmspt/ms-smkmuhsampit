@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Models\Student;
 use App\Models\Teacher;
+use App\Services\ActivityLogger;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\Request;
@@ -82,5 +83,61 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('cbt-events', function (Request $request) {
             return Limit::perMinute(30)->by($request->user()?->id ?: $request->ip());
         });
+
+        $this->registerActivityLogging();
+    }
+
+    /**
+     * Log Aktivitas admin ("betul-betul semua kegiatan", bukan cuma aksi
+     * "penting") — didaftarkan sekali di sini untuk SEMUA model app,
+     * bukan diinstrumentasi manual di tiap controller (61 model x 88
+     * controller tidak realistis dijaga konsisten manual, dan gampang ada
+     * yang terlewat). Daftar class di bawah SENGAJA eksplisit (bukan
+     * glob/scan direktori Models tiap request) — lebih murah & lebih
+     * jelas model mana saja yang tercakup. ActivityLog sendiri SENGAJA
+     * tidak didaftarkan di sini supaya tidak logging-tentang-logging
+     * berulang tanpa henti.
+     */
+    private function registerActivityLogging(): void
+    {
+        $models = [
+            \App\Models\AcademicEvent::class, \App\Models\AcademicScore::class,
+            \App\Models\Achievement::class, \App\Models\AchievementType::class,
+            \App\Models\Announcement::class, \App\Models\Asset::class,
+            \App\Models\Attendance::class, \App\Models\BkCase::class,
+            \App\Models\Buku::class, \App\Models\BukuEksemplar::class,
+            \App\Models\CbtBankSoal::class, \App\Models\CbtExam::class,
+            \App\Models\CbtExamAnswer::class, \App\Models\CbtExamAttempt::class,
+            \App\Models\CbtExamAuditLog::class, \App\Models\CbtExamQuestion::class,
+            \App\Models\CbtMateri::class, \App\Models\CbtQuestion::class,
+            \App\Models\CbtTabSwitchLog::class, \App\Models\CbtTujuanPembelajaran::class,
+            \App\Models\ClassRoom::class, \App\Models\Holiday::class,
+            \App\Models\Iduka::class, \App\Models\Jurusan::class,
+            \App\Models\LaboratoriumKunjungan::class, \App\Models\MaintenanceRequest::class,
+            \App\Models\Notification::class, \App\Models\PeriodTemplate::class,
+            \App\Models\PerpustakaanKategori::class, \App\Models\PerpustakaanKunjungan::class,
+            \App\Models\PerpustakaanPeminjaman::class, \App\Models\PerpustakaanRak::class,
+            \App\Models\PklAttendance::class, \App\Models\PklJournal::class,
+            \App\Models\PklMonitoringJadwal::class, \App\Models\PklPembimbinganJournal::class,
+            \App\Models\PklPenilaian::class, \App\Models\PklPenilaianKompetensi::class,
+            \App\Models\PklPlacement::class, \App\Models\PpdbPendaftar::class,
+            \App\Models\PrayerAttendance::class, \App\Models\Room::class,
+            \App\Models\SanksiKejadian::class, \App\Models\SanksiRule::class,
+            \App\Models\Schedule::class, \App\Models\Setting::class,
+            \App\Models\Spp::class, \App\Models\SppPembayaran::class,
+            \App\Models\Student::class, \App\Models\Subject::class,
+            \App\Models\TadarusScore::class, \App\Models\TagihanLain::class,
+            \App\Models\TagihanLainPembayaran::class, \App\Models\TahfidzScore::class,
+            \App\Models\TahsinScore::class, \App\Models\TahunAjaran::class,
+            \App\Models\Teacher::class, \App\Models\TeachingAssignment::class,
+            \App\Models\User::class, \App\Models\Violation::class,
+            \App\Models\ViolationType::class,
+        ];
+
+        foreach ($models as $class) {
+            $class::created(fn ($model) => ActivityLogger::catat('dibuat', $model));
+            $class::updated(fn ($model) => ActivityLogger::catat('diubah', $model));
+            $class::deleted(fn ($model) => ActivityLogger::catat('dihapus', $model));
+        }
     }
 }

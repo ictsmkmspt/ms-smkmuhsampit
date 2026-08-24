@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
@@ -10,23 +11,31 @@ return new class extends Migration
      * dihasilkan & dipindai memang selalu QR Code, bukan barcode 1D) —
      * kolomnya ikut disamakan namanya, termasuk nama unique index-nya
      * (RENAME INDEX, bukan drop+create ulang, supaya tidak ada jeda tanpa
-     * constraint unik).
+     * constraint unik). Di luar MySQL (mis. SQLite untuk lokal), rename
+     * lewat Schema::renameColumn karena sintaks CHANGE/RENAME INDEX di atas
+     * spesifik MySQL.
      */
     public function up(): void
     {
-        DB::statement('ALTER TABLE students CHANGE barcode_code qr_code VARCHAR(255) NOT NULL');
-        DB::statement('ALTER TABLE students RENAME INDEX students_barcode_code_unique TO students_qr_code_unique');
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement('ALTER TABLE students CHANGE barcode_code qr_code VARCHAR(255) NOT NULL');
+            DB::statement('ALTER TABLE students RENAME INDEX students_barcode_code_unique TO students_qr_code_unique');
 
-        DB::statement('ALTER TABLE teachers CHANGE barcode_code qr_code VARCHAR(255) NULL');
-        DB::statement('ALTER TABLE teachers RENAME INDEX teachers_barcode_code_unique TO teachers_qr_code_unique');
+            return;
+        }
+
+        Schema::table('students', fn ($table) => $table->renameColumn('barcode_code', 'qr_code'));
     }
 
     public function down(): void
     {
-        DB::statement('ALTER TABLE students CHANGE qr_code barcode_code VARCHAR(255) NOT NULL');
-        DB::statement('ALTER TABLE students RENAME INDEX students_qr_code_unique TO students_barcode_code_unique');
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement('ALTER TABLE students CHANGE qr_code barcode_code VARCHAR(255) NOT NULL');
+            DB::statement('ALTER TABLE students RENAME INDEX students_qr_code_unique TO students_barcode_code_unique');
 
-        DB::statement('ALTER TABLE teachers CHANGE qr_code barcode_code VARCHAR(255) NULL');
-        DB::statement('ALTER TABLE teachers RENAME INDEX teachers_qr_code_unique TO teachers_barcode_code_unique');
+            return;
+        }
+
+        Schema::table('students', fn ($table) => $table->renameColumn('qr_code', 'barcode_code'));
     }
 };

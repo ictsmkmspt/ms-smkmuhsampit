@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\TahfidzScoreController;
 use App\Http\Controllers\Api\TadarusScoreController;
 use App\Http\Controllers\Api\AchievementController;
 use App\Http\Controllers\Api\AchievementTypeController;
+use App\Http\Controllers\Api\ActivityLogController;
 use App\Http\Controllers\Api\AdminAccountController;
 use App\Http\Controllers\Api\AdminCbtBankSoalController;
 use App\Http\Controllers\Api\AdminCbtEssayController;
@@ -413,6 +414,11 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::get('/system/backup', [SystemBackupController::class, 'backup']);
         Route::post('/system/restore', [SystemBackupController::class, 'restore']);
+
+        // Log Aktivitas — melihat aktivitas SEMUA role, jadi admin-only
+        // (tidak dibagi ke waka manapun seperti submenu Laporan lain).
+        Route::get('/activity-logs', [ActivityLogController::class, 'index']);
+        Route::get('/activity-logs/model-types', [ActivityLogController::class, 'modelTypes']);
     });
 
     // /teachers dibagi ke Waka Kesiswaan/Kurikulum/Humas/Sarpras. Kesiswaan/

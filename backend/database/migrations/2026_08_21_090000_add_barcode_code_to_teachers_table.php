@@ -16,12 +16,12 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('teachers', function (Blueprint $table) {
-            $table->string('barcode_code')->nullable()->unique()->after('nip');
+            $table->string('qr_code')->nullable()->unique()->after('nip');
         });
 
-        DB::table('teachers')->whereNull('barcode_code')->orderBy('id')->pluck('id')->each(function ($id) {
+        DB::table('teachers')->whereNull('qr_code')->orderBy('id')->pluck('id')->each(function ($id) {
             DB::table('teachers')->where('id', $id)->update([
-                'barcode_code' => 'GRU-' . strtoupper(Str::random(8)),
+                'qr_code' => 'GRU-' . strtoupper(Str::random(8)),
             ]);
         });
     }
@@ -29,7 +29,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('teachers', function (Blueprint $table) {
-            $table->dropColumn('barcode_code');
+            $table->dropColumn('qr_code');
         });
     }
 };

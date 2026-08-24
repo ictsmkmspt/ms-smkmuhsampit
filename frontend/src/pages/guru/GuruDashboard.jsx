@@ -84,16 +84,16 @@ export default function GuruDashboard() {
             {menuOpen && (
               <div className="absolute right-0 z-20 mt-2 w-44 surface-card overflow-hidden">
                 <button
-                  onClick={() => { setShowEditProfil(true); setMenuOpen(false); }}
-                  className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-left text-ink-700 hover:bg-mist-50 transition"
-                >
-                  <UserCog className="w-4 h-4" /> Edit Profil
-                </button>
-                <button
                   onClick={() => { setMenuOpen(false); navigate('/ujian/login'); }}
                   className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-left text-ink-700 hover:bg-mist-50 transition"
                 >
                   <Monitor className="w-4 h-4" /> Buka Portal CBT
+                </button>
+                <button
+                  onClick={() => { setShowEditProfil(true); setMenuOpen(false); }}
+                  className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-left text-ink-700 hover:bg-mist-50 transition"
+                >
+                  <UserCog className="w-4 h-4" /> Edit Profil
                 </button>
                 <button
                   onClick={logout}
