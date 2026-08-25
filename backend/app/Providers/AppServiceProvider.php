@@ -112,7 +112,8 @@ class AppServiceProvider extends ServiceProvider
             \App\Models\CbtMateri::class, \App\Models\CbtQuestion::class,
             \App\Models\CbtTabSwitchLog::class, \App\Models\CbtTujuanPembelajaran::class,
             \App\Models\ClassRoom::class, \App\Models\Holiday::class,
-            \App\Models\Iduka::class, \App\Models\Jurusan::class,
+            \App\Models\Iduka::class, \App\Models\JobApplication::class,
+            \App\Models\JobVacancy::class, \App\Models\Jurusan::class,
             \App\Models\LaboratoriumKunjungan::class, \App\Models\MaintenanceRequest::class,
             \App\Models\Notification::class, \App\Models\PeriodTemplate::class,
             \App\Models\PerpustakaanKategori::class, \App\Models\PerpustakaanKunjungan::class,
@@ -130,6 +131,7 @@ class AppServiceProvider extends ServiceProvider
             \App\Models\TagihanLainPembayaran::class, \App\Models\TahfidzScore::class,
             \App\Models\TahsinScore::class, \App\Models\TahunAjaran::class,
             \App\Models\Teacher::class, \App\Models\TeachingAssignment::class,
+            \App\Models\TracerStudy::class,
             \App\Models\User::class, \App\Models\Violation::class,
             \App\Models\ViolationType::class,
         ];

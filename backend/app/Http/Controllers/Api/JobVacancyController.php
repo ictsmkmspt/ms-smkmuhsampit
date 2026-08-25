@@ -28,7 +28,7 @@ class JobVacancyController extends Controller
      */
     public function publicIndex(Request $request)
     {
-        $query = JobVacancy::with('iduka', 'jurusan')->tayang()->latest();
+        $query = JobVacancy::with('iduka.user', 'jurusan')->tayang()->latest();
 
         if ($request->filled('jurusan_id')) {
             $query->where('jurusan_id', $request->query('jurusan_id'));
@@ -64,7 +64,10 @@ class JobVacancyController extends Controller
     public function publicShow(JobVacancy $jobVacancy)
     {
         abort_if($jobVacancy->status === 'draf', 404);
-        return $jobVacancy->load('iduka', 'jurusan');
+        // 'iduka.user' ikut di-load supaya email perusahaan tersedia untuk
+        // tombol "Hubungi Perusahaan" (lowongan sumber "bkk", lihat
+        // frontend LowonganDetailPublic.jsx/LokerTab.jsx).
+        return $jobVacancy->load('iduka.user', 'jurusan');
     }
 
     /**
@@ -170,6 +173,100 @@ class JobVacancyController extends Controller
     {
         abort_unless($jobVacancy->iduka_id === $request->user()->iduka_id, 403);
 
+        if ($jobVacancy->foto_brosur) {
+            Storage::disk('public')->delete($jobVacancy->foto_brosur);
+        }
+        $jobVacancy->delete();
+
+        return response()->json(['message' => 'Lowongan dihapus.']);
+    }
+
+    /**
+     * BKK pasang lowongan LANGSUNG atas nama 1 IDUKA (mis. perusahaan
+     * telepon/datang langsung tanpa lewat pendaftaran mandiri) — beda dari
+     * storeIduka(): BKK MEMILIH iduka_id sendiri (bukan dari akun yang
+     * login), dan statusnya LANGSUNG "dibuka" (tayang + notif alumni)
+     * tanpa lewat antrean verifikasi lagi, karena BKK sendiri yang
+     * biasanya jadi pihak yang memverifikasi lowongan IDUKA.
+     */
+    public function storeBkk(Request $request)
+    {
+        $data = $request->validate([
+            'iduka_id'       => 'required|exists:idukas,id',
+            'posisi'         => 'required|string|max:150',
+            'deskripsi'      => 'required|string',
+            'kualifikasi'    => 'nullable|string',
+            'gaji'           => 'nullable|string|max:100',
+            'jurusan_id'     => 'nullable|exists:jurusans,id',
+            'kuota'          => 'nullable|integer|min:1',
+            'tanggal_tutup'  => 'nullable|date',
+            'foto_brosur'    => 'nullable|image|max:2048',
+        ]);
+
+        $data['status'] = 'dibuka';
+        $data['sumber'] = 'bkk';
+
+        if ($request->hasFile('foto_brosur')) {
+            $data['foto_brosur'] = $request->file('foto_brosur')->store('lowongan', 'public');
+        }
+
+        $lowongan = JobVacancy::create($data);
+        $lowongan->load('iduka.user', 'jurusan');
+
+        $alumniQuery = Student::where('status', 'lulus')->with('user');
+        if ($lowongan->jurusan_id) {
+            $alumniQuery->where('jurusan_id', $lowongan->jurusan_id);
+        }
+        $penerima = $alumniQuery->get()->pluck('user')->filter();
+
+        NotificationDispatcher::sendMany(
+            $penerima,
+            'lowongan',
+            'Lowongan kerja baru',
+            "{$lowongan->iduka->nama_perusahaan} membuka lowongan {$lowongan->posisi}.",
+            '/siswa'
+        );
+
+        return response()->json($lowongan, 201);
+    }
+
+    /**
+     * BKK edit lowongan APA SAJA (bukan cuma yang dibuat lewat storeBkk())
+     * — dipakai buat perbaiki data yang salah ketik dsb. TIDAK
+     * dikembalikan ke "draf" seperti updateIduka(), karena BKK sendiri
+     * yang berwenang menentukan status lowongan.
+     */
+    public function updateBkk(Request $request, JobVacancy $jobVacancy)
+    {
+        $data = $request->validate([
+            'iduka_id'       => 'sometimes|exists:idukas,id',
+            'posisi'         => 'sometimes|string|max:150',
+            'deskripsi'      => 'sometimes|string',
+            'kualifikasi'    => 'nullable|string',
+            'gaji'           => 'nullable|string|max:100',
+            'jurusan_id'     => 'nullable|exists:jurusans,id',
+            'kuota'          => 'nullable|integer|min:1',
+            'tanggal_tutup'  => 'nullable|date',
+            'foto_brosur'    => 'nullable|image|max:2048',
+        ]);
+
+        if ($request->hasFile('foto_brosur')) {
+            if ($jobVacancy->foto_brosur) {
+                Storage::disk('public')->delete($jobVacancy->foto_brosur);
+            }
+            $data['foto_brosur'] = $request->file('foto_brosur')->store('lowongan', 'public');
+        }
+
+        $jobVacancy->update($data);
+
+        return $jobVacancy->fresh()->load('iduka.user', 'jurusan');
+    }
+
+    /**
+     * BKK hapus lowongan apa saja (bukan cuma buatan sendiri).
+     */
+    public function destroyBkk(JobVacancy $jobVacancy)
+    {
         if ($jobVacancy->foto_brosur) {
             Storage::disk('public')->delete($jobVacancy->foto_brosur);
         }

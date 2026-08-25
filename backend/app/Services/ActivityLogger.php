@@ -48,7 +48,7 @@ class ActivityLogger
      */
     private static function label(Model $model): string
     {
-        foreach (['name', 'nama', 'nama_lengkap', 'judul', 'title', 'nama_perusahaan'] as $field) {
+        foreach (['name', 'nama', 'nama_lengkap', 'judul', 'title', 'nama_perusahaan', 'posisi'] as $field) {
             if (!empty($model->{$field})) {
                 return (string) $model->{$field};
             }

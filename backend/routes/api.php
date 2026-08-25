@@ -339,6 +339,10 @@ Route::middleware('auth:sanctum')->group(function () {
     // Laporan Penempatan (format Disnaker). "Kelola IDUKA" (data master
     // perusahaan + GPS) TETAP wewenang Waka Humas, tidak ikut ke sini.
     Route::middleware('role:admin,pengurus_bkk')->group(function () {
+        Route::post('/bkk/lowongan', [JobVacancyController::class, 'storeBkk']);
+        Route::put('/bkk/lowongan/{jobVacancy}', [JobVacancyController::class, 'updateBkk']);
+        Route::delete('/bkk/lowongan/{jobVacancy}', [JobVacancyController::class, 'destroyBkk']);
+
         Route::get('/lowongan-verifikasi', [JobVacancyController::class, 'indexVerifikasi']);
         Route::put('/lowongan-verifikasi/{jobVacancy}/setujui', [JobVacancyController::class, 'setujui']);
         Route::put('/lowongan-verifikasi/{jobVacancy}/tolak', [JobVacancyController::class, 'tolak']);

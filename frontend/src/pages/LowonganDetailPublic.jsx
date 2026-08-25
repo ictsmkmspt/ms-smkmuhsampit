@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, Building2, Wallet, GraduationCap, Users, MapPin, CalendarClock } from 'lucide-react';
+import { ArrowLeft, Building2, Wallet, GraduationCap, Users, MapPin, CalendarClock, Phone, Mail } from 'lucide-react';
 import api from '../api/axios';
 import { useSchoolProfile } from '../context/SchoolProfileContext';
 import { fmtDMY } from '../utils/date';
@@ -36,7 +36,7 @@ export default function LowonganDetailPublic() {
         </div>
       </div>
 
-      <div className="max-w-3xl mx-auto px-5 pt-2 pb-28 sm:pb-8">
+      <div className="max-w-3xl mx-auto px-5 pt-2 pb-8">
         <Link to="/bursakerjakhusus" className="flex items-center gap-1.5 min-h-11 -ml-1 pl-1 pr-3 text-sm text-ink-500 hover:text-brand-600 mb-6 transition w-fit focus-visible:outline-2 focus-visible:outline-brand-500 focus-visible:outline-offset-2 rounded-lg">
           <ArrowLeft className="w-4 h-4" /> Semua Lowongan
         </Link>
@@ -48,11 +48,13 @@ export default function LowonganDetailPublic() {
         ) : (
           <div className="grid sm:grid-cols-3 gap-x-8 gap-y-8 items-start">
             <div className="sm:col-span-2">
-              <div className="aspect-[16/8] bg-mist-50 rounded-xl flex items-center justify-center overflow-hidden mb-6">
+              <div className="bg-mist-50 rounded-xl flex items-center justify-center overflow-hidden mb-6 max-h-[420px]">
                 {data.foto_brosur_url ? (
-                  <img src={data.foto_brosur_url} alt={data.posisi} className="w-full h-full object-cover" />
+                  <img src={data.foto_brosur_url} alt={data.posisi} className="w-full h-full max-h-[420px] object-contain" />
                 ) : (
-                  <Building2 className="w-9 h-9 text-ink-300" />
+                  <div className="aspect-[16/8] w-full flex items-center justify-center">
+                    <Building2 className="w-9 h-9 text-ink-300" />
+                  </div>
                 )}
               </div>
 
@@ -131,32 +133,37 @@ export default function LowonganDetailPublic() {
                 )}
               </div>
 
-              {data.status === 'dibuka' ? (
-                <Link to="/bursakerjakhusus/masuk" className="btn-primary w-full justify-center">Masuk untuk Melamar</Link>
-              ) : (
+              {data.status !== 'dibuka' ? (
                 <button disabled className="btn-primary w-full justify-center opacity-50">Tidak Menerima Lamaran</button>
+              ) : data.sumber === 'bkk' ? (
+                <div className="space-y-2">
+                  {data.iduka?.telepon && (
+                    <a href={`tel:${data.iduka.telepon}`} className="btn-primary w-full justify-center gap-2">
+                      <Phone className="w-4 h-4" /> {data.iduka.telepon}
+                    </a>
+                  )}
+                  {data.iduka?.user?.email && (
+                    <a href={`mailto:${data.iduka.user.email}`} className="flex items-center justify-center gap-2 border border-line-200 rounded-xl px-4 py-2.5 text-sm font-medium text-ink-700 hover:border-brand-400 transition">
+                      <Mail className="w-4 h-4" /> {data.iduka.user.email}
+                    </a>
+                  )}
+                  {!data.iduka?.telepon && !data.iduka?.user?.email && (
+                    <p className="text-sm text-ink-400 text-center">Kontak perusahaan belum tersedia.</p>
+                  )}
+                </div>
+              ) : (
+                <Link to="/bursakerjakhusus/masuk" className="btn-primary w-full justify-center">Masuk untuk Melamar</Link>
               )}
-              <p className="text-xs text-ink-400 text-center">Khusus alumni {profile?.nama_sekolah || 'sekolah'} — masuk pakai akun siswa.</p>
+              <p className="text-xs text-ink-400 text-center">
+                {data.sumber === 'bkk'
+                  ? 'Lowongan ini dipasang BKK — hubungi perusahaan langsung untuk melamar.'
+                  : `Khusus alumni ${profile?.nama_sekolah || 'sekolah'} — masuk pakai akun siswa.`}
+              </p>
             </div>
           </div>
         )}
       </div>
 
-      {/* CTA melamar dipin di bawah layar khusus mobile (panel kanan sm:
-          sudah punya tombolnya sendiri) — supaya aksi utama selalu
-          terjangkau tanpa scroll balik ke atas. */}
-      {data && !notFound && (
-        <div
-          className="sm:hidden fixed bottom-0 inset-x-0 z-20 bg-white border-t border-line-200 px-5 pt-3"
-          style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))' }}
-        >
-          {data.status === 'dibuka' ? (
-            <Link to="/bursakerjakhusus/masuk" className="btn-primary w-full justify-center">Masuk untuk Melamar</Link>
-          ) : (
-            <button disabled className="btn-primary w-full justify-center opacity-50">Tidak Menerima Lamaran</button>
-          )}
-        </div>
-      )}
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Wallet, GraduationCap, Users, Building2, X, AlertCircle } from 'lucide-react';
+import { Wallet, GraduationCap, Users, Building2, X, AlertCircle, Phone, Mail } from 'lucide-react';
 import api from '../../api/axios';
 import { fmtDMY } from '../../utils/date';
 
@@ -241,7 +241,24 @@ export default function LokerTab({ sub, biodataLengkap, onNavigateBiodata }) {
               )}
             </div>
             <div className="p-5 border-t border-line-200 shrink-0">
-              {sudahMelamar(detail.id) ? (
+              {detail.sumber === 'bkk' ? (
+                <div className="space-y-2">
+                  {detail.iduka?.telepon && (
+                    <a href={`tel:${detail.iduka.telepon}`} className="btn-primary w-full justify-center gap-2">
+                      <Phone className="w-4 h-4" /> {detail.iduka.telepon}
+                    </a>
+                  )}
+                  {detail.iduka?.user?.email && (
+                    <a href={`mailto:${detail.iduka.user.email}`} className="flex items-center justify-center gap-2 border border-line-200 rounded-xl px-4 py-2.5 text-sm font-medium text-ink-700 hover:border-brand-400 transition">
+                      <Mail className="w-4 h-4" /> {detail.iduka.user.email}
+                    </a>
+                  )}
+                  {!detail.iduka?.telepon && !detail.iduka?.user?.email && (
+                    <p className="text-sm text-ink-400 text-center">Kontak perusahaan belum tersedia.</p>
+                  )}
+                  <p className="text-xs text-ink-400 text-center">Lowongan ini dipasang BKK — hubungi perusahaan langsung untuk melamar.</p>
+                </div>
+              ) : sudahMelamar(detail.id) ? (
                 <button disabled className="btn-primary w-full justify-center opacity-50">Sudah Dilamar</button>
               ) : !biodataLengkap ? (
                 <button

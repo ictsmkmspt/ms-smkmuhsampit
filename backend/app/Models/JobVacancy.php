@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\Model;
 class JobVacancy extends Model
 {
     protected $fillable = [
-        'iduka_id', 'jurusan_id', 'posisi', 'deskripsi', 'kualifikasi',
+        'iduka_id', 'sumber', 'jurusan_id', 'posisi', 'deskripsi', 'kualifikasi',
         'gaji', 'foto_brosur', 'kuota', 'tanggal_tutup', 'status', 'catatan_revisi',
     ];
 
