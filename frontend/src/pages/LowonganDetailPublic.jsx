@@ -26,12 +26,14 @@ export default function LowonganDetailPublic() {
 
   return (
     <div className="min-h-screen bg-white">
-      <div className="max-w-3xl mx-auto px-5 py-5 flex items-center justify-between gap-3">
-        <Link to="/bursakerjakhusus" className="flex items-center gap-2 font-display font-semibold text-ink-900 text-sm">
-          {profile?.logo_url && <img src={profile.logo_url} alt="Logo" className="w-7 h-7 object-contain" />}
-          {profile?.nama_sekolah || 'SMK Muhammadiyah Sampit'}
-        </Link>
-        <Link to="/login" className="flex items-center justify-center min-h-11 text-sm font-medium text-ink-700 hover:text-brand-600 transition px-3 focus-visible:outline-2 focus-visible:outline-brand-500 focus-visible:outline-offset-2 rounded-lg">Masuk</Link>
+      <div className="sticky top-0 z-30 bg-white/90 backdrop-blur border-b border-line-200">
+        <div className="max-w-3xl mx-auto px-5 py-4 flex items-center justify-between gap-3">
+          <Link to="/bursakerjakhusus" className="flex items-center gap-2 font-display font-semibold text-ink-900 text-sm">
+            {profile?.logo_url && <img src={profile.logo_url} alt="Logo" className="w-7 h-7 object-contain" />}
+            {profile?.nama_sekolah || 'SMK Muhammadiyah Sampit'}
+          </Link>
+          <Link to="/bursakerjakhusus/masuk" className="flex items-center justify-center min-h-11 text-sm font-medium text-ink-700 hover:text-brand-600 transition px-3 focus-visible:outline-2 focus-visible:outline-brand-500 focus-visible:outline-offset-2 rounded-lg">Masuk</Link>
+        </div>
       </div>
 
       <div className="max-w-3xl mx-auto px-5 pt-2 pb-28 sm:pb-8">
@@ -130,7 +132,7 @@ export default function LowonganDetailPublic() {
               </div>
 
               {data.status === 'dibuka' ? (
-                <Link to="/login" className="btn-primary w-full justify-center">Masuk untuk Melamar</Link>
+                <Link to="/bursakerjakhusus/masuk" className="btn-primary w-full justify-center">Masuk untuk Melamar</Link>
               ) : (
                 <button disabled className="btn-primary w-full justify-center opacity-50">Tidak Menerima Lamaran</button>
               )}
@@ -149,7 +151,7 @@ export default function LowonganDetailPublic() {
           style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))' }}
         >
           {data.status === 'dibuka' ? (
-            <Link to="/login" className="btn-primary w-full justify-center">Masuk untuk Melamar</Link>
+            <Link to="/bursakerjakhusus/masuk" className="btn-primary w-full justify-center">Masuk untuk Melamar</Link>
           ) : (
             <button disabled className="btn-primary w-full justify-center opacity-50">Tidak Menerima Lamaran</button>
           )}

@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\AdminCbtExamController;
 use App\Http\Controllers\Api\AdminCbtMateriController;
 use App\Http\Controllers\Api\AdminCbtQuestionController;
 use App\Http\Controllers\Api\AdminCbtTpController;
+use App\Http\Controllers\Api\AlumniLookupController;
 use App\Http\Controllers\Api\AssetController;
 use App\Http\Controllers\Api\AttendanceController;
 use App\Http\Controllers\Api\AuthController;
@@ -114,6 +115,15 @@ Route::get('/ppdb/pengaturan', [PpdbController::class, 'pengaturan']);
 Route::get('/lowongan', [JobVacancyController::class, 'publicIndex']);
 Route::get('/lowongan-stats', [JobVacancyController::class, 'publicStats']);
 Route::get('/lowongan/{jobVacancy}', [JobVacancyController::class, 'publicShow']);
+
+// Halaman /bursakerjakhusus/masuk — publik, TIDAK butuh login. Alumni
+// masuk pakai NIS (bukan email/HP seperti /login biasa), IDUKA bisa
+// daftar mandiri (butuh persetujuan BKK sebelum bisa login, lihat
+// IdukaController::registerPublic()/setujui()), dan bantuan cari NIS
+// buat alumni yang lupa (AlumniLookupController::cariNis()).
+Route::post('/login-alumni', [AuthController::class, 'loginNis'])->middleware('throttle:login');
+Route::post('/iduka/daftar', [IdukaController::class, 'registerPublic'])->middleware('throttle:login');
+Route::post('/alumni/cari-nis', [AlumniLookupController::class, 'cariNis'])->middleware('throttle:6,1');
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
@@ -333,6 +343,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/lowongan-verifikasi/{jobVacancy}/setujui', [JobVacancyController::class, 'setujui']);
         Route::put('/lowongan-verifikasi/{jobVacancy}/tolak', [JobVacancyController::class, 'tolak']);
         Route::put('/lowongan-verifikasi/{jobVacancy}/tutup', [JobVacancyController::class, 'tutupPaksa']);
+
+        Route::get('/iduka-menunggu', [IdukaController::class, 'indexMenunggu']);
+        Route::put('/iduka-menunggu/{iduka}/setujui', [IdukaController::class, 'setujui']);
+        Route::put('/iduka-menunggu/{iduka}/tolak', [IdukaController::class, 'tolak']);
 
         Route::get('/bkk/beranda', [BkkController::class, 'beranda']);
         Route::get('/bkk/loker-aktif', [BkkController::class, 'lokerAktif']);

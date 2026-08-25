@@ -10,6 +10,7 @@ import MaintenancePage from './pages/MaintenancePage';
 import PpdbPublic from './pages/PpdbPublic';
 import LowonganPublic from './pages/LowonganPublic';
 import LowonganDetailPublic from './pages/LowonganDetailPublic';
+import BursaLoginPage from './pages/BursaLoginPage';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import GuruDashboard from './pages/guru/GuruDashboard';
 import SiswaDashboard from './pages/siswa/SiswaDashboard';
@@ -115,6 +116,7 @@ export default function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/ppdb" element={<PpdbPublic />} />
             <Route path="/bursakerjakhusus" element={<LowonganPublic />} />
+            <Route path="/bursakerjakhusus/masuk" element={<BursaLoginPage />} />
             <Route path="/bursakerjakhusus/:id" element={<LowonganDetailPublic />} />
 
             <Route path="/print/absensi-bulanan" element={

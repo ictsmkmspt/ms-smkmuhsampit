@@ -10,6 +10,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@capacitor/android": "^8.5.0",
+    "@capacitor/cli": "^7.6.8",
+    "@capacitor/core": "^8.5.0",
     "@tailwindcss/vite": "^4.3.1",
     "@tiptap/extension-image": "^3.30.2",
     "@tiptap/extension-link": "^3.30.2",
@@ -29,6 +32,7 @@
     "html5-qrcode": "^2.3.8",
     "jsbarcode": "^3.12.3",
     "jszip": "^3.10.1",
+    "leaflet": "^1.9.4",
     "lucide-react": "^1.22.0",
     "qrcode": "^1.5.4",
     "qrcode.react": "^4.2.0",
@@ -38,6 +42,7 @@
     "tailwindcss": "^4.3.1"
   },
   "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-basic-ssl": "^2.3.0",

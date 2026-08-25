@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Setting;
+use App\Models\Student;
 use App\Models\TahunAjaran;
 use App\Models\Teacher;
 use App\Models\User;
@@ -58,6 +59,43 @@ class AuthController extends Controller
             ]);
         }
 
+        return $this->respondWithLogin($user, $request->password);
+    }
+
+    /**
+     * Login khusus alumni pakai NIS (bukan email/no. HP seperti login()
+     * biasa) — dipakai halaman /bursakerjakhusus/masuk. Cuma siswa
+     * berstatus "lulus" (alumni) yang boleh lewat sini; siswa aktif tetap
+     * login lewat email/no. HP seperti biasa.
+     */
+    public function loginNis(Request $request)
+    {
+        $request->validate([
+            'nis' => 'required|string',
+            'password' => 'required',
+        ]);
+
+        $student = Student::where('nis', trim($request->nis))->where('status', 'lulus')->first();
+        $user = $student?->user;
+
+        if (!$user || !Hash::check($request->password, $user->password)) {
+            throw ValidationException::withMessages([
+                'nis' => ['NIS atau password salah.'],
+            ]);
+        }
+
+        return $this->respondWithLogin($user, $request->password);
+    }
+
+    /**
+     * Bagian bersama login()/loginNis() setelah kredensial terverifikasi:
+     * cek maintenance mode, cek status persetujuan IDUKA (kalau role
+     * 'iduka' dan belum "aktif" — mis. masih "menunggu" persetujuan BKK
+     * atau sudah "ditolak" — TOLAK di sini, di server, supaya tidak bisa
+     * dilewati dari jalur manapun), lalu terbitkan token.
+     */
+    private function respondWithLogin(User $user, string $rawPassword)
+    {
         // Baru bisa dicek SETELAH kredensial benar (role-nya belum tahu
         // sebelum ini) — non-admin ditolak TOTAL selama maintenance nyala,
         // bukan cuma login-lalu-diblokir endpoint lain (lihat juga
@@ -67,6 +105,20 @@ class AuthController extends Controller
                 'message' => 'Sistem sedang dalam pemeliharaan. Silakan coba lagi nanti.',
                 'maintenance' => true,
             ], 503);
+        }
+
+        if ($user->role === 'iduka') {
+            $iduka = $user->iduka;
+            if ($iduka && $iduka->status === 'menunggu') {
+                throw ValidationException::withMessages([
+                    'login' => ['Akun Anda masih menunggu persetujuan tim BKK.'],
+                ]);
+            }
+            if ($iduka && $iduka->status === 'ditolak') {
+                throw ValidationException::withMessages([
+                    'login' => ['Pendaftaran ditolak: ' . ($iduka->catatan_verifikasi ?? 'hubungi BKK untuk info lebih lanjut.')],
+                ]);
+            }
         }
 
         $token = $user->createToken('auth_token')->plainTextToken;
@@ -80,7 +132,7 @@ class AuthController extends Controller
         return response()->json([
             'user' => $this->withGuruFlags($user),
             'token' => $token,
-            'must_change_password' => $request->password === '123456',
+            'must_change_password' => $rawPassword === '123456',
         ]);
     }
 

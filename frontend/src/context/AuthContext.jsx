@@ -20,12 +20,23 @@ export function AuthProvider({ children }) {
       .finally(() => setLoading(false));
   }, []);
 
+  const applyLoginResponse = (data) => {
+    localStorage.setItem('token', data.token);
+    setUser(data.user);
+    setMustChangePassword(!!data.must_change_password);
+    return data.user;
+  };
+
   const login = async (identifier, password) => {
     const res = await api.post('/login', { login: identifier, password });
-    localStorage.setItem('token', res.data.token);
-    setUser(res.data.user);
-    setMustChangePassword(!!res.data.must_change_password);
-    return res.data.user;
+    return applyLoginResponse(res.data);
+  };
+
+  // Login khusus alumni pakai NIS (bukan email/no. HP) — dipakai halaman
+  // /bursakerjakhusus/masuk, lihat AuthController::loginNis().
+  const loginNis = async (nis, password) => {
+    const res = await api.post('/login-alumni', { nis, password });
+    return applyLoginResponse(res.data);
   };
 
   const logout = async () => {
@@ -45,7 +56,7 @@ export function AuthProvider({ children }) {
   const updateUser = (partial) => setUser((prev) => ({ ...prev, ...partial }));
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading, mustChangePassword, setMustChangePassword, updateUser }}>
+    <AuthContext.Provider value={{ user, login, loginNis, logout, loading, mustChangePassword, setMustChangePassword, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

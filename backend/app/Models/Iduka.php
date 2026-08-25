@@ -11,6 +11,7 @@ class Iduka extends Model
     protected $fillable = [
         'nama_perusahaan', 'jenis_kerjasama', 'alamat',
         'telepon', 'latitude', 'longitude', 'radius_meter', 'tanda_tangan', 'dokumen_mou',
+        'status', 'catatan_verifikasi',
     ];
 
     protected $appends = ['tanda_tangan_url', 'dokumen_mou_url'];

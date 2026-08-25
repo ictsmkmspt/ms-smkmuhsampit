@@ -5,6 +5,7 @@ import TruncateText from '../../../../components/TruncateText';
 import Pagination from '../../../../components/Pagination';
 import usePagination from '../../../../hooks/usePagination';
 import { useAuth } from '../../../../context/AuthContext';
+import LocationPickerMap from '../../../../components/LocationPickerMap';
 
 const emptyForm = {
   nama_perusahaan: '', alamat: '', telepon: '',
@@ -159,7 +160,12 @@ export default function IdukaTab() {
               <MapPin className="w-3.5 h-3.5" /> {locating ? 'Mengambil lokasi...' : 'Gunakan lokasi saat ini'}
             </button>
           </div>
-          <div className="grid grid-cols-3 gap-3">
+          <LocationPickerMap
+            latitude={form.latitude ? Number(form.latitude) : null}
+            longitude={form.longitude ? Number(form.longitude) : null}
+            onChange={(lat, lng) => setForm((f) => ({ ...f, latitude: lat.toFixed(7), longitude: lng.toFixed(7) }))}
+          />
+          <div className="grid grid-cols-3 gap-3 mt-2">
             <input placeholder="Latitude" value={form.latitude} onChange={(e) => setForm({ ...form, latitude: e.target.value })} className="field-input" required />
             <input placeholder="Longitude" value={form.longitude} onChange={(e) => setForm({ ...form, longitude: e.target.value })} className="field-input" required />
             <input placeholder="Radius (meter)" type="number" value={form.radius_meter} onChange={(e) => setForm({ ...form, radius_meter: e.target.value })} className="field-input" required />
@@ -223,7 +229,13 @@ export default function IdukaTab() {
                         <MapPin className="w-3.5 h-3.5" /> {locatingEdit ? 'Mengambil lokasi...' : 'Gunakan lokasi saat ini'}
                       </button>
                     </div>
-                    <div className="grid grid-cols-3 gap-2 mb-2">
+                    <LocationPickerMap
+                      latitude={editData.latitude ? Number(editData.latitude) : null}
+                      longitude={editData.longitude ? Number(editData.longitude) : null}
+                      onChange={(lat, lng) => setEditData((f) => ({ ...f, latitude: lat.toFixed(7), longitude: lng.toFixed(7) }))}
+                      height={180}
+                    />
+                    <div className="grid grid-cols-3 gap-2 mb-2 mt-2">
                       <input value={editData.latitude} onChange={(e) => setEditData({ ...editData, latitude: e.target.value })} className="field-input py-1.5 text-sm" placeholder="Latitude" />
                       <input value={editData.longitude} onChange={(e) => setEditData({ ...editData, longitude: e.target.value })} className="field-input py-1.5 text-sm" placeholder="Longitude" />
                       <input type="number" value={editData.radius_meter} onChange={(e) => setEditData({ ...editData, radius_meter: e.target.value })} className="field-input py-1.5 text-sm" placeholder="Radius (m)" />

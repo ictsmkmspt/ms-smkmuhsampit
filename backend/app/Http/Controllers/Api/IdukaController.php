@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Imports\IdukaImport;
 use App\Models\Iduka;
 use App\Models\User;
+use App\Services\NotificationDispatcher;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -150,6 +151,113 @@ class IdukaController extends Controller
         abort_unless($iduka->user, 404, 'IDUKA ini belum punya akun login.');
         $this->resetToDefaultPassword($iduka->user);
         return response()->json(['message' => 'Password akun "' . $iduka->nama_perusahaan . '" berhasil direset ke default (123456).']);
+    }
+
+    /**
+     * Pendaftaran mandiri IDUKA — publik, TIDAK butuh login. Beda dari
+     * store() (admin): password dipilih sendiri oleh perusahaan (bukan
+     * default "123456"), status awal "menunggu" (belum bisa login sampai
+     * disetujui BKK/admin lewat setujui()). Lokasi GPS (latitude/longitude)
+     * WAJIB diisi lewat peta di form pendaftaran — radius selalu 100 meter
+     * (bisa disesuaikan admin/BKK belakangan lewat Kelola IDUKA kalau perlu).
+     */
+    public function registerPublic(Request $request)
+    {
+        $data = $request->validate([
+            'nama_perusahaan' => 'required|string|max:150',
+            'alamat'          => 'nullable|string|max:255',
+            'telepon'         => 'nullable|string|max:30',
+            'email'           => 'required|email|max:150|unique:users,email',
+            'password'        => 'required|string|min:6|confirmed',
+            'latitude'        => 'required|numeric|between:-90,90',
+            'longitude'       => 'required|numeric|between:-180,180',
+        ]);
+
+        $iduka = Iduka::create([
+            'nama_perusahaan' => $data['nama_perusahaan'],
+            'alamat'          => $data['alamat'] ?? null,
+            'telepon'         => $data['telepon'] ?? null,
+            'latitude'        => $data['latitude'],
+            'longitude'       => $data['longitude'],
+            'radius_meter'    => 100,
+            'status'          => 'menunggu',
+        ]);
+
+        $akun = User::create([
+            'name'     => $data['nama_perusahaan'],
+            'email'    => $data['email'],
+            'password' => bcrypt($data['password']),
+            'role'     => 'iduka',
+            'iduka_id' => $iduka->id,
+        ]);
+        $iduka->forceFill(['user_id' => $akun->id])->save();
+
+        NotificationDispatcher::sendMany(
+            User::whereIn('role', ['admin', 'pengurus_bkk'])->get(),
+            'lowongan',
+            'Pendaftaran IDUKA baru',
+            "{$data['nama_perusahaan']} mendaftar sebagai mitra, menunggu persetujuan.",
+            '/bkk'
+        );
+
+        return response()->json([
+            'message' => 'Pendaftaran berhasil. Akun Anda menunggu persetujuan tim BKK sebelum bisa masuk.',
+        ], 201);
+    }
+
+    /**
+     * Daftar IDUKA yang mendaftar mandiri dan belum diputuskan BKK/admin.
+     */
+    public function indexMenunggu()
+    {
+        return Iduka::where('status', 'menunggu')->latest()->get();
+    }
+
+    /**
+     * Setujui pendaftaran mandiri IDUKA — status jadi "aktif", baru dari
+     * titik ini akun perusahaan itu bisa login (lihat AuthController::login()).
+     */
+    public function setujui(Iduka $iduka)
+    {
+        abort_unless($iduka->status === 'menunggu', 422, 'Pendaftaran ini sudah diproses.');
+
+        $iduka->update(['status' => 'aktif', 'catatan_verifikasi' => null]);
+
+        if ($iduka->user) {
+            NotificationDispatcher::send(
+                $iduka->user,
+                'lowongan',
+                'Pendaftaran disetujui',
+                'Akun IDUKA Anda sudah disetujui BKK, silakan masuk.',
+                '/bursakerjakhusus/masuk'
+            );
+        }
+
+        return $iduka->fresh();
+    }
+
+    /**
+     * Tolak pendaftaran mandiri IDUKA — status jadi "ditolak" dengan
+     * catatan alasan, akun tetap tidak bisa login.
+     */
+    public function tolak(Request $request, Iduka $iduka)
+    {
+        abort_unless($iduka->status === 'menunggu', 422, 'Pendaftaran ini sudah diproses.');
+
+        $data = $request->validate(['catatan_verifikasi' => 'required|string|max:500']);
+        $iduka->update(['status' => 'ditolak', 'catatan_verifikasi' => $data['catatan_verifikasi']]);
+
+        if ($iduka->user) {
+            NotificationDispatcher::send(
+                $iduka->user,
+                'lowongan',
+                'Pendaftaran ditolak',
+                "Pendaftaran IDUKA Anda ditolak: {$data['catatan_verifikasi']}",
+                '/bursakerjakhusus/masuk'
+            );
+        }
+
+        return $iduka->fresh();
     }
 
     /**
