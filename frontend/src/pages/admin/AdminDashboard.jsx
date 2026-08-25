@@ -41,7 +41,7 @@ const LAPORAN_ICONS = { absensi: ClipboardCheck, pelanggaran: AlertOctagon, pres
 const POIN_ICONS = { 'jenis-pelanggaran': AlertOctagon, 'jenis-prestasi': Trophy, sanksi: AlertTriangle };
 const KURIKULUM_ICONS = { kalender: CalendarRange, akademik: CalendarRange, libur: CalendarDays, mapel: BookOpen, tugas: UserCog, jadwal: CalendarClock, template: Sparkles };
 const SARPRAS_ICONS = { ruang: Warehouse, aset: Boxes, pemeliharaan: Wrench };
-const PPDB_ICONS = { formulir: UserPlus, pengaturan: Power };
+const PPDB_ICONS = { formulir: UserPlus, keuangan: Wallet, pengaturan: Power };
 
 export default function AdminDashboard() {
   return (

@@ -8,6 +8,7 @@ import api from './api/axios';
 import Login from './pages/Login';
 import MaintenancePage from './pages/MaintenancePage';
 import PpdbPublic from './pages/PpdbPublic';
+import PpdbLandingPublic from './pages/PpdbLandingPublic';
 import LowonganPublic from './pages/LowonganPublic';
 import LowonganDetailPublic from './pages/LowonganDetailPublic';
 import BursaLoginPage from './pages/BursaLoginPage';
@@ -114,7 +115,8 @@ export default function App() {
           <Routes>
             <Route path="/" element={<Login />} />
             <Route path="/login" element={<Login />} />
-            <Route path="/ppdb" element={<PpdbPublic />} />
+            <Route path="/ppdb" element={<PpdbLandingPublic />} />
+            <Route path="/ppdb/daftar" element={<PpdbPublic />} />
             <Route path="/bursakerjakhusus" element={<LowonganPublic />} />
             <Route path="/bursakerjakhusus/masuk" element={<BursaLoginPage />} />
             <Route path="/bursakerjakhusus/:id" element={<LowonganDetailPublic />} />

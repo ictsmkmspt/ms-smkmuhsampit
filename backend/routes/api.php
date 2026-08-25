@@ -62,6 +62,7 @@ use App\Http\Controllers\Api\PerpustakaanSirkulasiController;
 use App\Http\Controllers\Api\PengawasUjianAccountController;
 use App\Http\Controllers\Api\PustakawanController;
 use App\Http\Controllers\Api\PpdbController;
+use App\Http\Controllers\Api\PpdbPeriodeController;
 use App\Http\Controllers\Api\PrayerAttendanceController;
 use App\Http\Controllers\Api\RoomController;
 use App\Http\Controllers\Api\RoomStaffController;
@@ -107,7 +108,10 @@ Route::get('/maintenance-status', [MaintenanceModeController::class, 'status']);
 // sekali, jadi formulir daftar & cek status WAJIB publik (tanpa auth:sanctum).
 Route::post('/ppdb/daftar', [PpdbController::class, 'daftar'])->middleware('throttle:ppdb-daftar');
 Route::get('/ppdb/status/{kode}', [PpdbController::class, 'status'])->middleware('throttle:ppdb-status');
+Route::get('/ppdb/edit/{kode}', [PpdbController::class, 'editByKode'])->middleware('throttle:ppdb-status');
+Route::post('/ppdb/edit/{kode}', [PpdbController::class, 'updateByKode'])->middleware('throttle:ppdb-daftar');
 Route::get('/ppdb/pengaturan', [PpdbController::class, 'pengaturan']);
+Route::get('/ppdb/jurusan', [PpdbController::class, 'jurusanList']);
 
 // Papan lowongan kerja (BKK) — publik, TIDAK butuh login, dipakai halaman
 // /lowongan (pola sama seperti PpdbPublic.jsx). Cuma lowongan berstatus
@@ -455,8 +459,22 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/ppdb', [PpdbController::class, 'index']);
         Route::post('/ppdb/manual', [PpdbController::class, 'storeManual']);
         Route::put('/ppdb/pengaturan', [PpdbController::class, 'updatePengaturan']);
+        Route::post('/ppdb/template-pernyataan', [PpdbController::class, 'uploadTemplatePernyataan']);
         Route::put('/ppdb/{ppdbPendaftar}', [PpdbController::class, 'update']);
+        Route::put('/ppdb/{ppdbPendaftar}/manual', [PpdbController::class, 'updateManual']);
         Route::delete('/ppdb/{ppdbPendaftar}', [PpdbController::class, 'destroy']);
+        Route::post('/ppdb/{ppdbPendaftar}/jadikan-siswa', [PpdbController::class, 'jadikanSiswa']);
+        Route::get('/ppdb/{ppdbPendaftar}/pembayaran', [PpdbController::class, 'pembayaranList']);
+        Route::post('/ppdb/{ppdbPendaftar}/pembayaran', [PpdbController::class, 'storePembayaran']);
+        Route::delete('/ppdb/{ppdbPendaftar}/pembayaran', [PpdbController::class, 'clearPembayaran']);
+        Route::delete('/ppdb/pembayaran/{pembayaran}', [PpdbController::class, 'destroyPembayaran']);
+        Route::get('/ppdb-keuangan/ringkasan', [PpdbController::class, 'keuanganRingkasan']);
+        Route::get('/ppdb-keuangan/transaksi', [PpdbController::class, 'keuanganTransaksi']);
+        Route::get('/ppdb-periode', [PpdbPeriodeController::class, 'index']);
+        Route::post('/ppdb-periode', [PpdbPeriodeController::class, 'store']);
+        Route::put('/ppdb-periode/{ppdbPeriode}', [PpdbPeriodeController::class, 'update']);
+        Route::put('/ppdb-periode/{ppdbPeriode}/aktifkan', [PpdbPeriodeController::class, 'aktifkan']);
+        Route::delete('/ppdb-periode/{ppdbPeriode}', [PpdbPeriodeController::class, 'destroy']);
 
         // Mode maintenance — SENGAJA cuma Super Admin (bukan waka mana pun)
         // yang boleh nyala/matikan, karena efeknya mengunci akses SELURUH

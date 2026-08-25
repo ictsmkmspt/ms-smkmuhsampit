@@ -1,8 +1,10 @@
 import FormulirPpdbTab from '../ppdb/FormulirPpdbTab';
+import KeuanganPpdbTab from '../ppdb/KeuanganPpdbTab';
 import PengaturanPpdbTab from '../ppdb/PengaturanPpdbTab';
 
 export const PPDB_SUBMENU = [
   { key: 'formulir',    label: 'Formulir PPDB',    component: FormulirPpdbTab },
+  { key: 'keuangan',    label: 'Keuangan PPDB',    component: KeuanganPpdbTab },
   { key: 'pengaturan',  label: 'Pengaturan PPDB',  component: PengaturanPpdbTab },
 ];
 
