@@ -143,7 +143,30 @@ class TagihanLainController extends Controller
             'status' => 'belum_bayar',
         ]);
 
-        return response()->json($tagihan->load(['student.user', 'student.classRoom']), 201);
+        $tagihan->load(['student.user', 'student.parents', 'student.classRoom']);
+        $this->notifikasiTagihanBaru($tagihan);
+
+        return response()->json($tagihan, 201);
+    }
+
+    /**
+     * Beri tahu siswa & wali begitu tagihan BARU dibuat (bukan cuma saat
+     * dibayar, lihat catatPembayaranTagihanLain()) — supaya tidak perlu
+     * buka app sendiri buat tahu ada tagihan baru, terutama alumni yang
+     * ditagih biaya pasca-lulus (legalisir ijazah dst) lewat menu TU >
+     * Alumni.
+     */
+    private function notifikasiTagihanBaru(TagihanLain $tagihan): void
+    {
+        if (!$tagihan->student->user) {
+            return;
+        }
+
+        $judul = 'Tagihan baru';
+        $pesan = "{$tagihan->nama_tagihan} — Rp" . number_format($tagihan->nominal, 0, ',', '.');
+
+        NotificationDispatcher::send($tagihan->student->user, 'tagihan_lain', $judul, $pesan, '/siswa');
+        NotificationDispatcher::sendMany($tagihan->student->parents, 'tagihan_lain', $judul, "{$tagihan->student->user->name} — {$pesan}", '/wali');
     }
 
     /**
@@ -206,6 +229,21 @@ class TagihanLainController extends Controller
             ]);
             $dibuat++;
         }
+
+        // Notif massal via sendMany() (1 bulk insert, bukan create() satu-
+        // satu per siswa) — pesannya sama untuk semua siswa jadi tidak
+        // perlu per-siswa seperti store() tunggal. Wali tidak diberi tahu
+        // di sini (beda-beda anak per baris siswa, badan pesan store()
+        // yang menyebut nama siswa tidak cocok dipakai massal) — cukup
+        // siswa yang bersangkutan.
+        $siswaUsers = Student::whereIn('id', $studentIds)->with('user')->get()->pluck('user')->filter();
+        NotificationDispatcher::sendMany(
+            $siswaUsers,
+            'tagihan_lain',
+            'Tagihan baru',
+            "{$namaTagihan} — Rp" . number_format($data['nominal'], 0, ',', '.'),
+            '/siswa'
+        );
 
         return response()->json([
             'message' => "Berhasil membuat tagihan \"{$namaTagihan}\" untuk {$dibuat} siswa.",
