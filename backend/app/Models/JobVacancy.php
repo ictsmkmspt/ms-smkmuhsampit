@@ -14,11 +14,14 @@ use Illuminate\Database\Eloquent\Model;
 class JobVacancy extends Model
 {
     protected $fillable = [
-        'iduka_id', 'sumber', 'jurusan_id', 'posisi', 'deskripsi', 'kualifikasi',
+        'iduka_id', 'sumber', 'nama_perusahaan_manual', 'email_manual', 'telepon_manual',
+        'alamat_manual', 'jurusan_id', 'posisi', 'deskripsi', 'kualifikasi',
         'gaji', 'foto_brosur', 'kuota', 'tanggal_tutup', 'status', 'catatan_revisi',
     ];
 
-    protected $appends = ['foto_brosur_url'];
+    protected $appends = [
+        'foto_brosur_url', 'nama_perusahaan_tampil', 'email_tampil', 'telepon_tampil', 'alamat_tampil',
+    ];
 
     protected function casts(): array
     {
@@ -30,6 +33,34 @@ class JobVacancy extends Model
     public function getFotoBrosurUrlAttribute(): ?string
     {
         return $this->foto_brosur ? '/storage/' . $this->foto_brosur : null;
+    }
+
+    /**
+     * 4 accessor "tampil" di bawah ini — dipakai SELURUH frontend
+     * (publik/siswa/BKK) supaya tidak perlu tahu apakah 1 lowongan
+     * terhubung ke baris IDUKA (storeIduka(), self-service) atau isian
+     * manual BKK (storeBkk(), tanpa iduka_id — lihat migrasi
+     * 2026_08_25_125213). Utamakan data IDUKA (lebih akurat/terverifikasi)
+     * kalau ada, baru fallback ke isian manual.
+     */
+    public function getNamaPerusahaanTampilAttribute(): ?string
+    {
+        return $this->iduka?->nama_perusahaan ?? $this->nama_perusahaan_manual;
+    }
+
+    public function getEmailTampilAttribute(): ?string
+    {
+        return $this->iduka?->user?->email ?? $this->email_manual;
+    }
+
+    public function getTeleponTampilAttribute(): ?string
+    {
+        return $this->iduka?->telepon ?? $this->telepon_manual;
+    }
+
+    public function getAlamatTampilAttribute(): ?string
+    {
+        return $this->iduka?->alamat ?? $this->alamat_manual;
     }
 
     public function iduka()

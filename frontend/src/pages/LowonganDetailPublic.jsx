@@ -68,7 +68,7 @@ export default function LowonganDetailPublic() {
               </div>
               <h1 className="font-display text-2xl sm:text-3xl font-semibold text-ink-900 mb-2 leading-tight">{data.posisi}</h1>
               <p className="text-sm text-ink-500 flex items-center gap-1.5 mb-8">
-                <Building2 className="w-4 h-4 shrink-0" /> {data.iduka?.nama_perusahaan}{data.iduka?.alamat ? ` · ${data.iduka.alamat}` : ''}
+                <Building2 className="w-4 h-4 shrink-0" /> {data.nama_perusahaan_tampil}{data.alamat_tampil ? ` · ${data.alamat_tampil}` : ''}
               </p>
 
               <div className="border-t border-line-200 pt-6 mb-6">
@@ -122,12 +122,12 @@ export default function LowonganDetailPublic() {
                     </div>
                   </div>
                 )}
-                {data.iduka?.alamat && (
+                {data.alamat_tampil && (
                   <div className="flex items-start gap-2.5">
                     <MapPin className="w-4 h-4 text-ink-400 shrink-0 mt-0.5" />
                     <div>
                       <p className="text-xs text-ink-400 uppercase tracking-wide">Lokasi</p>
-                      <p className="font-medium">{data.iduka.alamat}</p>
+                      <p className="font-medium">{data.alamat_tampil}</p>
                     </div>
                   </div>
                 )}
@@ -137,17 +137,17 @@ export default function LowonganDetailPublic() {
                 <button disabled className="btn-primary w-full justify-center opacity-50">Tidak Menerima Lamaran</button>
               ) : data.sumber === 'bkk' ? (
                 <div className="space-y-2">
-                  {data.iduka?.telepon && (
-                    <a href={`tel:${data.iduka.telepon}`} className="btn-primary w-full justify-center gap-2">
-                      <Phone className="w-4 h-4" /> {data.iduka.telepon}
+                  {data.telepon_tampil && (
+                    <a href={`tel:${data.telepon_tampil}`} className="btn-primary w-full justify-center gap-2">
+                      <Phone className="w-4 h-4" /> {data.telepon_tampil}
                     </a>
                   )}
-                  {data.iduka?.user?.email && (
-                    <a href={`mailto:${data.iduka.user.email}`} className="flex items-center justify-center gap-2 border border-line-200 rounded-xl px-4 py-2.5 text-sm font-medium text-ink-700 hover:border-brand-400 transition">
-                      <Mail className="w-4 h-4" /> {data.iduka.user.email}
+                  {data.email_tampil && (
+                    <a href={`mailto:${data.email_tampil}`} className="btn-primary w-full justify-center gap-2">
+                      <Mail className="w-4 h-4" /> {data.email_tampil}
                     </a>
                   )}
-                  {!data.iduka?.telepon && !data.iduka?.user?.email && (
+                  {!data.telepon_tampil && !data.email_tampil && (
                     <p className="text-sm text-ink-400 text-center">Kontak perusahaan belum tersedia.</p>
                   )}
                 </div>

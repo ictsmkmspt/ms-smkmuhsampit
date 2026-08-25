@@ -37,6 +37,7 @@ class JobVacancyController extends Controller
             $cari = '%' . $request->query('q') . '%';
             $query->where(function ($sub) use ($cari) {
                 $sub->where('posisi', 'like', $cari)
+                    ->orWhere('nama_perusahaan_manual', 'like', $cari)
                     ->orWhereHas('iduka', fn ($i) => $i->where('nama_perusahaan', 'like', $cari));
             });
         }
@@ -182,17 +183,27 @@ class JobVacancyController extends Controller
     }
 
     /**
-     * BKK pasang lowongan LANGSUNG atas nama 1 IDUKA (mis. perusahaan
-     * telepon/datang langsung tanpa lewat pendaftaran mandiri) — beda dari
-     * storeIduka(): BKK MEMILIH iduka_id sendiri (bukan dari akun yang
-     * login), dan statusnya LANGSUNG "dibuka" (tayang + notif alumni)
+     * BKK pasang lowongan LANGSUNG — 2 mode:
+     * (1) "Pasang Lowongan" — TIDAK dihubungkan ke baris IDUKA manapun,
+     *     data perusahaan (nama/email/telepon/alamat) diisi manual (lihat
+     *     accessor *_tampil di JobVacancy — utamakan data IDUKA kalau ada,
+     *     fallback ke isian manual ini). Dipakai untuk perusahaan yang
+     *     belum/tidak punya akun IDUKA di sistem.
+     * (2) "Pasang Lowongan Mitra" — iduka_id DIISI, lowongan ini otomatis
+     *     ikut muncul di dashboard IDUKA terkait (JobVacancyController::
+     *     indexIduka(), filter by iduka_id) begitu perusahaan itu login.
+     * Kedua mode statusnya LANGSUNG "dibuka" (tayang + notif alumni)
      * tanpa lewat antrean verifikasi lagi, karena BKK sendiri yang
      * biasanya jadi pihak yang memverifikasi lowongan IDUKA.
      */
     public function storeBkk(Request $request)
     {
         $data = $request->validate([
-            'iduka_id'       => 'required|exists:idukas,id',
+            'iduka_id'               => 'nullable|exists:idukas,id',
+            'nama_perusahaan_manual' => 'required_without:iduka_id|nullable|string|max:150',
+            'email_manual'           => 'nullable|email|max:150',
+            'telepon_manual'         => 'nullable|string|max:30',
+            'alamat_manual'          => 'nullable|string|max:255',
             'posisi'         => 'required|string|max:150',
             'deskripsi'      => 'required|string',
             'kualifikasi'    => 'nullable|string',
@@ -223,7 +234,7 @@ class JobVacancyController extends Controller
             $penerima,
             'lowongan',
             'Lowongan kerja baru',
-            "{$lowongan->iduka->nama_perusahaan} membuka lowongan {$lowongan->posisi}.",
+            "{$lowongan->nama_perusahaan_tampil} membuka lowongan {$lowongan->posisi}.",
             '/siswa'
         );
 
@@ -239,7 +250,11 @@ class JobVacancyController extends Controller
     public function updateBkk(Request $request, JobVacancy $jobVacancy)
     {
         $data = $request->validate([
-            'iduka_id'       => 'sometimes|exists:idukas,id',
+            'iduka_id'               => 'nullable|exists:idukas,id',
+            'nama_perusahaan_manual' => 'sometimes|string|max:150',
+            'email_manual'           => 'nullable|email|max:150',
+            'telepon_manual'         => 'nullable|string|max:30',
+            'alamat_manual'          => 'nullable|string|max:255',
             'posisi'         => 'sometimes|string|max:150',
             'deskripsi'      => 'sometimes|string',
             'kualifikasi'    => 'nullable|string',

@@ -229,7 +229,7 @@ export default function LowonganPublic() {
                     )}
                     <h3 className="font-display font-semibold text-ink-900 group-hover:text-brand-600 transition">{d.posisi}</h3>
                     <p className="text-xs text-ink-500 flex items-center gap-1 mt-1.5">
-                      <MapPin className="w-3.5 h-3.5 shrink-0" /> {d.iduka?.nama_perusahaan}
+                      <MapPin className="w-3.5 h-3.5 shrink-0" /> {d.nama_perusahaan_tampil}
                     </p>
                     {d.gaji && (
                       <p className="text-sm text-ink-900 font-semibold flex items-center gap-1 mt-1.5">

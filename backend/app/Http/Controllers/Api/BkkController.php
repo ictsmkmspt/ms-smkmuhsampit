@@ -43,7 +43,7 @@ class BkkController extends Controller
      */
     public function lokerAktif()
     {
-        return JobVacancy::tayang()->with('iduka', 'jurusan')->withCount('applications')->latest()->get();
+        return JobVacancy::tayang()->with('iduka.user', 'jurusan')->withCount('applications')->latest()->get();
     }
 
     /**

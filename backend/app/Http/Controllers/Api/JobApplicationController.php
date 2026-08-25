@@ -32,7 +32,7 @@ class JobApplicationController extends Controller
     {
         $student = $this->alumniAtauTolak($request);
 
-        return JobApplication::with('jobVacancy.iduka')
+        return JobApplication::with('jobVacancy.iduka.user')
             ->where('student_id', $student->id)
             ->latest()
             ->get();

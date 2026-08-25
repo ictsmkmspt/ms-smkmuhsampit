@@ -6,7 +6,8 @@ import Pagination from '../../../components/Pagination';
 import usePagination from '../../../hooks/usePagination';
 
 const emptyForm = {
-  iduka_id: '', posisi: '', deskripsi: '', kualifikasi: '', gaji: '', jurusan_id: '', kuota: '', tanggal_tutup: '',
+  iduka_id: '', nama_perusahaan_manual: '', email_manual: '', telepon_manual: '', alamat_manual: '',
+  posisi: '', deskripsi: '', kualifikasi: '', gaji: '', jurusan_id: '', kuota: '', tanggal_tutup: '',
 };
 
 /**
@@ -33,6 +34,7 @@ export default function LokerVerifikasiTab() {
   const [idukaList, setIdukaList] = useState([]);
   const [jurusanList, setJurusanList] = useState([]);
   const [showForm, setShowForm] = useState(false);
+  const [formMode, setFormMode] = useState('manual'); // 'manual' | 'mitra'
   const [form, setForm] = useState(emptyForm);
   const [editId, setEditId] = useState(null);
   const [fotoFile, setFotoFile] = useState(null);
@@ -88,8 +90,13 @@ export default function LokerVerifikasiTab() {
 
   const startEdit = (d) => {
     setEditId(d.id);
+    setFormMode(d.iduka_id ? 'mitra' : 'manual');
     setForm({
       iduka_id: d.iduka_id || '',
+      nama_perusahaan_manual: d.nama_perusahaan_manual || '',
+      email_manual: d.email_manual || '',
+      telepon_manual: d.telepon_manual || '',
+      alamat_manual: d.alamat_manual || '',
       posisi: d.posisi,
       deskripsi: d.deskripsi,
       kualifikasi: d.kualifikasi || '',
@@ -229,9 +236,14 @@ export default function LokerVerifikasiTab() {
             Loker Aktif <span className="text-ink-500 font-sans font-normal text-sm">({aktifList.length})</span>
           </h2>
           {!showForm && (
-            <button onClick={() => { setForm(emptyForm); setEditId(null); setShowForm(true); }} className="btn-primary text-sm">
-              <Plus className="w-4 h-4" /> Pasang Lowongan
-            </button>
+            <div className="flex gap-2">
+              <button onClick={() => { setForm(emptyForm); setEditId(null); setFormMode('manual'); setShowForm(true); }} className="btn-primary text-sm">
+                <Plus className="w-4 h-4" /> Pasang Lowongan
+              </button>
+              <button onClick={() => { setForm(emptyForm); setEditId(null); setFormMode('mitra'); setShowForm(true); }} className="flex items-center gap-1.5 text-sm font-medium text-brand-700 bg-brand-50 hover:bg-brand-100 rounded-xl px-4 py-2 transition">
+                <Plus className="w-4 h-4" /> Pasang Lowongan Mitra
+              </button>
+            </div>
           )}
         </div>
 
@@ -239,10 +251,22 @@ export default function LokerVerifikasiTab() {
           <form onSubmit={handleSubmitBkk} className="surface-card p-4 mb-4">
             {formError && <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2 mb-3">{formError}</p>}
             <div className="space-y-3">
-              <select value={form.iduka_id} onChange={(e) => setForm({ ...form, iduka_id: e.target.value })} className="field-input" required>
-                <option value="">Pilih perusahaan mitra...</option>
-                {idukaList.map((i) => <option key={i.id} value={i.id}>{i.nama_perusahaan}</option>)}
-              </select>
+              {formMode === 'mitra' ? (
+                <div>
+                  <select value={form.iduka_id} onChange={(e) => setForm({ ...form, iduka_id: e.target.value })} className="field-input" required>
+                    <option value="">Pilih perusahaan mitra...</option>
+                    {idukaList.map((i) => <option key={i.id} value={i.id}>{i.nama_perusahaan}</option>)}
+                  </select>
+                  <p className="text-xs text-ink-400 mt-1.5">Lowongan ini akan ikut muncul di dashboard IDUKA terkait begitu perusahaannya login.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-3">
+                  <input placeholder="Nama perusahaan" value={form.nama_perusahaan_manual} onChange={(e) => setForm({ ...form, nama_perusahaan_manual: e.target.value })} className="field-input col-span-2" required />
+                  <input placeholder="Email perusahaan (opsional)" type="email" value={form.email_manual} onChange={(e) => setForm({ ...form, email_manual: e.target.value })} className="field-input" />
+                  <input placeholder="No. telepon perusahaan (opsional)" value={form.telepon_manual} onChange={(e) => setForm({ ...form, telepon_manual: e.target.value })} className="field-input" />
+                  <input placeholder="Alamat perusahaan (opsional)" value={form.alamat_manual} onChange={(e) => setForm({ ...form, alamat_manual: e.target.value })} className="field-input col-span-2" />
+                </div>
+              )}
 
               <input placeholder="Posisi/jabatan yang dibutuhkan" value={form.posisi} onChange={(e) => setForm({ ...form, posisi: e.target.value })} className="field-input" required />
               <textarea placeholder="Deskripsi pekerjaan" value={form.deskripsi} onChange={(e) => setForm({ ...form, deskripsi: e.target.value })} className="field-input" rows={3} required />
@@ -290,7 +314,7 @@ export default function LokerVerifikasiTab() {
                   <div className="min-w-0">
                     <h3 className="font-medium text-sm text-ink-900 truncate">{d.posisi}</h3>
                     <p className="text-xs text-ink-500 flex items-center gap-1 mt-0.5">
-                      <Building2 className="w-3.5 h-3.5" /> {d.iduka?.nama_perusahaan || '-'}
+                      <Building2 className="w-3.5 h-3.5" /> {d.nama_perusahaan_tampil || '-'}
                     </p>
                     <div className="flex flex-wrap gap-3 text-xs text-ink-500 mt-1.5">
                       {d.jurusan && <span className="flex items-center gap-1"><GraduationCap className="w-3.5 h-3.5" /> {d.jurusan.nama}</span>}

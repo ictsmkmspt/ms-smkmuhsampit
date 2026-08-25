@@ -71,7 +71,7 @@ export default function LokerTab({ sub, biodataLengkap, onNavigateBiodata }) {
   const sudahMelamar = (jobVacancyId) => lamaran.some((l) => l.job_vacancy_id === jobVacancyId);
 
   const handleLamar = async (jobVacancy) => {
-    if (!confirm(`Lamar posisi "${jobVacancy.posisi}" di ${jobVacancy.iduka?.nama_perusahaan}?`)) return;
+    if (!confirm(`Lamar posisi "${jobVacancy.posisi}" di ${jobVacancy.nama_perusahaan_tampil}?`)) return;
     setApplying(true);
     try {
       await api.post(`/lowongan/${jobVacancy.id}/lamar`);
@@ -172,7 +172,7 @@ export default function LokerTab({ sub, biodataLengkap, onNavigateBiodata }) {
                 <div className="min-w-0 flex-1">
                   <h3 className="font-display font-semibold text-sm text-ink-900 truncate">{d.posisi}</h3>
                   <p className="text-xs text-ink-500 flex items-center gap-1 mt-0.5 truncate">
-                    <Building2 className="w-3.5 h-3.5 shrink-0" /> <span className="truncate">{d.iduka?.nama_perusahaan}</span>
+                    <Building2 className="w-3.5 h-3.5 shrink-0" /> <span className="truncate">{d.nama_perusahaan_tampil}</span>
                   </p>
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5 text-xs text-ink-500">
                     {d.gaji && <span className="flex items-center gap-1 text-brand-700 font-medium"><Wallet className="w-3.5 h-3.5" /> {d.gaji}</span>}
@@ -197,7 +197,7 @@ export default function LokerTab({ sub, biodataLengkap, onNavigateBiodata }) {
               <div className="flex items-start justify-between gap-2">
                 <div>
                   <h3 className="font-display font-semibold text-sm text-ink-900">{l.job_vacancy?.posisi}</h3>
-                  <p className="text-xs text-ink-500">{l.job_vacancy?.iduka?.nama_perusahaan}</p>
+                  <p className="text-xs text-ink-500">{l.job_vacancy?.nama_perusahaan_tampil}</p>
                 </div>
                 <span className={`badge-soft shrink-0 ${STATUS_BADGE[l.status].className}`}>{STATUS_BADGE[l.status].label}</span>
               </div>
@@ -224,7 +224,7 @@ export default function LokerTab({ sub, biodataLengkap, onNavigateBiodata }) {
               {detail.foto_brosur_url && (
                 <img src={detail.foto_brosur_url} alt={detail.posisi} className="w-full rounded-xl border border-line-200" />
               )}
-              <p className="text-sm text-ink-700 flex items-center gap-1.5"><Building2 className="w-4 h-4 text-ink-400" /> {detail.iduka?.nama_perusahaan}</p>
+              <p className="text-sm text-ink-700 flex items-center gap-1.5"><Building2 className="w-4 h-4 text-ink-400" /> {detail.nama_perusahaan_tampil}</p>
               {detail.gaji && <p className="text-sm text-ink-700 flex items-center gap-1.5"><Wallet className="w-4 h-4 text-ink-400" /> {detail.gaji}</p>}
               {detail.jurusan && <p className="text-sm text-ink-700 flex items-center gap-1.5"><GraduationCap className="w-4 h-4 text-ink-400" /> {detail.jurusan.nama}</p>}
               {detail.kuota && <p className="text-sm text-ink-700 flex items-center gap-1.5"><Users className="w-4 h-4 text-ink-400" /> Kuota {detail.kuota} orang</p>}
@@ -243,17 +243,17 @@ export default function LokerTab({ sub, biodataLengkap, onNavigateBiodata }) {
             <div className="p-5 border-t border-line-200 shrink-0">
               {detail.sumber === 'bkk' ? (
                 <div className="space-y-2">
-                  {detail.iduka?.telepon && (
-                    <a href={`tel:${detail.iduka.telepon}`} className="btn-primary w-full justify-center gap-2">
-                      <Phone className="w-4 h-4" /> {detail.iduka.telepon}
+                  {detail.telepon_tampil && (
+                    <a href={`tel:${detail.telepon_tampil}`} className="btn-primary w-full justify-center gap-2">
+                      <Phone className="w-4 h-4" /> {detail.telepon_tampil}
                     </a>
                   )}
-                  {detail.iduka?.user?.email && (
-                    <a href={`mailto:${detail.iduka.user.email}`} className="flex items-center justify-center gap-2 border border-line-200 rounded-xl px-4 py-2.5 text-sm font-medium text-ink-700 hover:border-brand-400 transition">
-                      <Mail className="w-4 h-4" /> {detail.iduka.user.email}
+                  {detail.email_tampil && (
+                    <a href={`mailto:${detail.email_tampil}`} className="btn-primary w-full justify-center gap-2">
+                      <Mail className="w-4 h-4" /> {detail.email_tampil}
                     </a>
                   )}
-                  {!detail.iduka?.telepon && !detail.iduka?.user?.email && (
+                  {!detail.telepon_tampil && !detail.email_tampil && (
                     <p className="text-sm text-ink-400 text-center">Kontak perusahaan belum tersedia.</p>
                   )}
                   <p className="text-xs text-ink-400 text-center">Lowongan ini dipasang BKK — hubungi perusahaan langsung untuk melamar.</p>
