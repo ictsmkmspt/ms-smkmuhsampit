@@ -5,7 +5,7 @@ import {
   LogOut, Clock, ChevronDown, UserCog, ChevronLeft, ChevronRight,
   Award, AlertTriangle, ClipboardCheck, NotebookPen, ClipboardList,
   QrCode, BookOpen, CalendarRange, Briefcase, Megaphone, Library, Home, Monitor,
-  Inbox, GraduationCap, IdCard,
+  Inbox, GraduationCap, IdCard, Wallet,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api/axios';
@@ -13,6 +13,7 @@ import PklSiswaView from './PklSiswaView';
 import PerpustakaanTab from './PerpustakaanTab';
 import LokerTab from './LokerTab';
 import BiodataTab from './BiodataTab';
+import AlumniTagihanTab from './AlumniTagihanTab';
 import EditProfileModal from '../../components/EditProfileModal';
 import LeaderboardPrestasi from '../../components/LeaderboardPrestasi';
 import JadwalPelajaranView from '../../components/JadwalPelajaranView';
@@ -55,11 +56,11 @@ export default function SiswaDashboard() {
   const [showEditProfil, setShowEditProfil] = useState(false);
   const menuRef = useRef(null);
 
-  // Navigasi utama (navbar bawah): 'qr' (tengah, melayang) | 'beranda'/'perpus' (kiri) | 'nilai'/'pkl' (kanan, PKL cuma kalau siswa pernah PKL)
+  // Navigasi utama (navbar bawah): 'qr' (tengah, melayang) | 'beranda'/'perpus' (kiri) | 'nilai'/'pkl' (kanan)
   const [activeTab, setActiveTab] = useState('qr');
   const [berandaSub, setBerandaSub] = useState('pengumuman');
   const [pklSub, setPklSub] = useState('absensi');
-  const [alumniSub, setAlumniSub] = useState('biodata'); // navbar bawah alumni: 'biodata' | 'terbuka' | 'lamaran' | 'tracer'
+  const [alumniSub, setAlumniSub] = useState('tagihan'); // navbar bawah alumni: 'tagihan' | 'biodata' | 'terbuka' | 'lamaran' | 'tracer'
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -76,8 +77,9 @@ export default function SiswaDashboard() {
   // siswa yang PKL-nya sudah berakhir tetap bisa buka menu Absensi & Jurnal
   // Kegiatan untuk lihat riwayat lamanya, cuma tombol "buat baru"-nya saja
   // yang otomatis ditolak backend karena penempatannya sudah tidak aktif.
-  // Tab PKL di navbar bawah cuma tampil kalau ini true (siswa belum pernah
-  // PKL sama sekali tidak perlu lihat menu ini).
+  // Tab PKL di navbar bawah SELALU tampil (biar simetris) — ini cuma
+  // menentukan ISI tab-nya: siswa yang belum pernah PKL lihat pesan
+  // "belum ada penempatan" alih-alih PklSiswaView (lihat activeTab === 'pkl' di bawah).
   const isPkl = !!(pklPlacement && Object.keys(pklPlacement).length > 0);
   // Loker (BKK) cuma buat alumni (status "lulus") — siswa aktif belum
   // ditawari lowongan kerja.
@@ -180,12 +182,17 @@ export default function SiswaDashboard() {
   }
 
   // Alumni (status "lulus") dapat dashboard yang jauh lebih sederhana —
-  // cuma menu Loker (Lowongan Terbuka/Lamaran Saya/Tracer Study, lihat
-  // LokerTab.jsx). Beranda, Penilaian, QR absensi, Perpus, dan PKL sengaja
-  // TIDAK ditampilkan lagi buat alumni (semua itu relevan buat siswa aktif
-  // yang masih sekolah, bukan yang sudah lulus).
+  // Tagihan (lihat status SPP/tagihan lain sendiri, read-only — bayar
+  // tetap lewat TU), Biodata, dan menu Loker (Lowongan Terbuka/Lamaran
+  // Saya/Tracer Study, lihat LokerTab.jsx). Beranda, Penilaian, QR
+  // absensi, Perpus, dan PKL sengaja TIDAK ditampilkan lagi buat alumni
+  // (semua itu relevan buat siswa aktif yang masih sekolah, bukan yang
+  // sudah lulus). Tagihan sengaja jadi tab DEFAULT (bukan Biodata) —
+  // alumni paling sering buka dashboard ini untuk cek status
+  // pembayaran/tunggakan.
   if (isAlumni) {
     const ALUMNI_TABS = [
+      { key: 'tagihan', label: 'Tagihan', icon: Wallet },
       { key: 'biodata', label: 'Biodata', icon: IdCard },
       { key: 'terbuka', label: 'Lowongan', icon: Briefcase },
       { key: 'lamaran', label: 'Lamaran', icon: Inbox },
@@ -229,7 +236,9 @@ export default function SiswaDashboard() {
           </div>
         </div>
 
-        {alumniSub === 'biodata' ? (
+        {alumniSub === 'tagihan' ? (
+          <AlumniTagihanTab />
+        ) : alumniSub === 'biodata' ? (
           <BiodataTab profile={profile} onUpdated={setProfile} />
         ) : (
           <LokerTab sub={alumniSub} biodataLengkap={profile?.biodata_lengkap} onNavigateBiodata={() => setAlumniSub('biodata')} />
@@ -477,7 +486,10 @@ export default function SiswaDashboard() {
   ];
   const BOTTOM_TABS_RIGHT = [
     { key: 'nilai', label: 'Penilaian', icon: ClipboardList },
-    ...(isPkl ? [{ key: 'pkl', label: 'PKL', icon: Briefcase }] : []),
+    // Tab PKL SELALU tampil (bukan cuma kalau isPkl) supaya navbar bawah
+    // simetris (2 kiri, 2 kanan) — siswa yang belum PKL tetap lihat tabnya,
+    // cuma isinya jadi pesan "belum ada penempatan" (lihat activeTab === 'pkl' di bawah).
+    { key: 'pkl', label: 'PKL', icon: Briefcase },
   ];
 
   return (
@@ -533,30 +545,40 @@ export default function SiswaDashboard() {
 
       {activeTab === 'perpus' && <PerpustakaanTab />}
 
-      {activeTab === 'pkl' && isPkl && (
-        <>
-          <div className="flex gap-1 bg-white border border-line-200 rounded-xl p-1 mb-4 w-fit mx-auto">
-            {PKL_SUB_TABS.map((t) => {
-              const isActive = pklSub === t.key;
-              return (
-                <button
-                  key={t.key}
-                  onClick={() => setPklSub(t.key)}
-                  className={`flex items-center gap-1.5 px-3 sm:px-4 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-medium whitespace-nowrap transition ${
-                    isActive ? 'bg-brand-600 text-white shadow-sm' : 'text-ink-700 hover:bg-mist-50 hover:text-ink-900'
-                  }`}
-                >
-                  <t.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                  {t.label}
-                </button>
-              );
-            })}
+      {activeTab === 'pkl' && (
+        isPkl ? (
+          <>
+            <div className="flex gap-1 bg-white border border-line-200 rounded-xl p-1 mb-4 w-fit mx-auto">
+              {PKL_SUB_TABS.map((t) => {
+                const isActive = pklSub === t.key;
+                return (
+                  <button
+                    key={t.key}
+                    onClick={() => setPklSub(t.key)}
+                    className={`flex items-center gap-1.5 px-3 sm:px-4 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-medium whitespace-nowrap transition ${
+                      isActive ? 'bg-brand-600 text-white shadow-sm' : 'text-ink-700 hover:bg-mist-50 hover:text-ink-900'
+                    }`}
+                  >
+                    <t.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                    {t.label}
+                  </button>
+                );
+              })}
+            </div>
+            <PklSiswaView placement={pklPlacement} tab={pklSub} />
+          </>
+        ) : (
+          <div className="max-w-md mx-auto text-center py-16">
+            <div className="w-14 h-14 rounded-full bg-mist-50 flex items-center justify-center mx-auto mb-4">
+              <Briefcase className="w-6 h-6 text-ink-300" />
+            </div>
+            <p className="text-sm font-medium text-ink-700 mb-1">Belum ada penempatan PKL</p>
+            <p className="text-xs text-ink-500">Menu ini akan aktif kalau kamu sudah ditempatkan PKL oleh sekolah.</p>
           </div>
-          <PklSiswaView placement={pklPlacement} tab={pklSub} />
-        </>
+        )
       )}
 
-      {/* Navbar bawah — Beranda & Perpus kiri, QR melayang tengah, Penilaian & PKL kanan (PKL kalau relevan) */}
+      {/* Navbar bawah — Beranda & Perpus kiri, QR melayang tengah, Penilaian & PKL kanan (simetris 2-2, PKL selalu tampil) */}
       <div className="fixed bottom-0 left-0 right-0 z-50">
         <div className="relative bg-white border-t border-line-200">
           <div className="max-w-md mx-auto flex items-stretch">

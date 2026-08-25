@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  Search, Building2, MapPin, UserPlus, Send, CheckCircle2, ArrowRight, Wallet,
+  Search, Building2, MapPin, UserPlus, Send, CheckCircle2, ArrowRight, Wallet, ChevronDown,
 } from 'lucide-react';
 import api from '../api/axios';
 import { useSchoolProfile } from '../context/SchoolProfileContext';
@@ -31,6 +31,7 @@ export default function LowonganPublic() {
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState('');
   const [jurusanId, setJurusanId] = useState(null);
+  const [showAlur, setShowAlur] = useState(false);
 
   const load = (query, jid) => {
     setLoading(true);
@@ -163,9 +164,20 @@ export default function LowonganPublic() {
       <div className="max-w-6xl mx-auto px-5 py-16 sm:py-24">
         <Reveal>
           <p className="text-xs uppercase tracking-[0.2em] text-ink-300 font-semibold mb-2">Alur</p>
-          <h2 className="font-display text-2xl font-semibold text-ink-900 mb-12">Bagaimana caranya</h2>
+          <h2 className="font-display text-2xl font-semibold text-ink-900 mb-6 sm:mb-12">Bagaimana caranya</h2>
         </Reveal>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-10">
+        <Reveal delay={60}>
+          <button
+            type="button"
+            onClick={() => setShowAlur((v) => !v)}
+            aria-expanded={showAlur}
+            className="sm:hidden w-full flex items-center justify-center gap-2 text-sm font-medium text-ink-500 hover:text-brand-600 py-3.5 mb-8 border-y border-line-200 transition-colors duration-300"
+          >
+            {showAlur ? 'Sembunyikan alur' : 'Lihat alur pendaftaran'}
+            <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${showAlur ? 'rotate-180' : ''}`} />
+          </button>
+        </Reveal>
+        <div className={`${showAlur ? 'grid' : 'hidden sm:grid'} sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-10`}>
           {LANGKAH.map((l, i) => (
             <Reveal key={l.judul} delay={i * 90}>
               <div className="flex items-center gap-2 mb-4">

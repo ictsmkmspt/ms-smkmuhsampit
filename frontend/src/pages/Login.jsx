@@ -56,7 +56,11 @@ export default function Login() {
       // gangguan jaringan/server — sebelumnya keduanya ditampilkan sebagai
       // "salah", jadi saat server down/koneksi putus, pengguna mengira
       // sendiri lupa password padahal bukan itu masalahnya.
-      setError(err.response ? 'Email/No. HP atau password salah.' : 'Tidak bisa terhubung ke server. Cek koneksi internet Anda dan coba lagi.');
+      if (!err.response) {
+        setError('Tidak bisa terhubung ke server. Cek koneksi internet Anda dan coba lagi.');
+      } else {
+        setError('Email/No. HP/NIS atau password salah.');
+      }
     } finally {
       setLoading(false);
     }
@@ -115,14 +119,14 @@ export default function Login() {
 
             <form onSubmit={handleSubmit} className="space-y-3">
               <div>
-                <label className="block text-xs font-medium text-ink-500 mb-1">Email atau No. HP</label>
+                <label className="block text-xs font-medium text-ink-500 mb-1">Email/NIS/No.HP</label>
                 <div className="relative">
                   <Mail className="w-4 h-4 text-ink-300 absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
                     type="text" value={identifier} autoFocus
                     onChange={(e) => setIdentifier(e.target.value)}
                     className="field-input pl-9 focus:border-[#15803D] focus:ring-[#15803D]/20"
-                    placeholder="nama@sekolah.com atau 08xxxxxxxxxx"
+                    placeholder="Email/NIS/No.HP"
                   />
                 </div>
               </div>

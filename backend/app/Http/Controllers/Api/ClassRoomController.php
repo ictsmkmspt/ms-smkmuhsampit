@@ -27,6 +27,11 @@ class ClassRoomController extends Controller
             $query->where('status', $status);
         }
 
+        // Kelas aktif: kecil ke besar (X, XI, XII — tingkat rendah dulu).
+        // Kelas alumni: nama depannya tahun lulus (mis. "2026 XII TKJ 1"),
+        // besar ke kecil supaya tahun terbaru tampil duluan.
+        $query->orderBy('name', $status === 'lulus' ? 'desc' : 'asc');
+
         return $query->get();
     }
 
@@ -43,10 +48,17 @@ class ClassRoomController extends Controller
         return $classRoom;
     }
 
+    /**
+     * `status` opsional (default "aktif") — dipakai menu Alumni buat bikin
+     * "kelas alumni" LANGSUNG berstatus "lulus" (mis. mengarsipkan
+     * angkatan lama yang belum pernah tercatat sebagai kelas aktif di
+     * sistem ini), tanpa harus lewat alur luluskan() satu kelas aktif.
+     */
     public function store(Request $request)
     {
         $data = $request->validate([
             'name' => 'required|string|max:50',
+            'status' => 'nullable|in:aktif,lulus',
             'homeroom_teacher_id' => [
                 'nullable',
                 'exists:teachers,id',
@@ -103,16 +115,33 @@ class ClassRoomController extends Controller
      * angkatan. Kelas yang sudah lulus otomatis hilang dari daftar Kelas
      * aktif (pindah ke menu Alumni), tapi datanya tidak dihapus supaya
      * riwayat "kelas asal" alumni tetap valid.
+     *
+     * `name` (opsional) — nama kelas diganti sekalian (mis. digabung
+     * dengan tahun lulus jadi "2026 XII TKJ 1") supaya nama angkatan
+     * lulusnya jelas di riwayat, bukan cuma "XII TKJ 1" polos yang bisa
+     * dipakai ulang kelas aktif berikutnya. `tanggal_lulus` (opsional)
+     * — default hari ini kalau tidak diisi, tapi admin boleh set tanggal
+     * kelulusan resmi yang beda dari tanggal proses di sistem.
      */
-    public function luluskan($id)
+    public function luluskan(Request $request, $id)
     {
         $classRoom = ClassRoom::findOrFail($id);
 
+        $data = $request->validate([
+            'name'          => 'nullable|string|max:100',
+            'tanggal_lulus' => 'nullable|date',
+        ]);
+
+        $tanggalLulus = $data['tanggal_lulus'] ?? now()->toDateString();
+
         $diluluskan = Student::where('class_room_id', $classRoom->id)
             ->where('status', 'aktif')
-            ->update(['status' => 'lulus', 'tanggal_lulus' => now()->toDateString()]);
+            ->update(['status' => 'lulus', 'tanggal_lulus' => $tanggalLulus]);
 
-        $classRoom->update(['status' => 'lulus']);
+        $classRoom->update([
+            'status' => 'lulus',
+            'name'   => $data['name'] ?? $classRoom->name,
+        ]);
 
         return response()->json([
             'message' => "Berhasil meluluskan {$diluluskan} siswa di kelas {$classRoom->name}.",

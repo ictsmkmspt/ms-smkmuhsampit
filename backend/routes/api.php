@@ -207,7 +207,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/classes/{classRoom}/aktifkan', [ClassRoomController::class, 'aktifkan']);
         Route::get('/students/import/template', [StudentController::class, 'downloadTemplate']);
         Route::post('/students/import', [StudentController::class, 'import']);
+        Route::get('/students/import-alumni/template', [StudentController::class, 'downloadTemplateAlumni']);
+        Route::post('/students/import-alumni', [StudentController::class, 'importAlumni']);
         Route::apiResource('students', StudentController::class);
+        Route::put('/students/{student}/ringkas', [StudentController::class, 'updateRingkas']);
         Route::put('/students/{student}/kembalikan-aktif', [StudentController::class, 'kembalikanAktif']);
         Route::put('/students/{student}/reset-password', [StudentController::class, 'resetPassword']);
         Route::post('/students/{student}/foto', [StudentController::class, 'uploadFoto']);
@@ -887,6 +890,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/my-attendances', [StudentSelfController::class, 'attendances']);
         Route::get('/my-violations', [StudentSelfController::class, 'violations']);
         Route::get('/my-achievements', [StudentSelfController::class, 'achievements']);
+        Route::get('/my-spp', [StudentSelfController::class, 'mySpp']);
+        Route::get('/my-tagihan-lain', [StudentSelfController::class, 'myTagihanLain']);
         Route::get('/my-pkl-placement', [PklPlacementController::class, 'punyaKuSekarang']);
         Route::get('/my-pkl-attendances', [PklAttendanceController::class, 'riwayatSaya']);
         Route::post('/pkl/absen-masuk', [PklAttendanceController::class, 'absenMasuk']);

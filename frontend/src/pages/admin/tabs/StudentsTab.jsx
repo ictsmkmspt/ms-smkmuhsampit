@@ -343,7 +343,7 @@ export default function StudentsTab() {
               const name = e.target.value;
               setForm((f) => ({ ...f, name, email: emailManual.current ? f.email : namaKeEmailSekolah(name) }));
             }} className="field-input" required />
-            <input placeholder="Email" type="email" value={form.email} onChange={(e) => { emailManual.current = true; setForm({ ...form, email: e.target.value }); }} className="field-input" required autoComplete="off" />
+            <input placeholder="Email (opsional)" type="email" value={form.email} onChange={(e) => { emailManual.current = true; setForm({ ...form, email: e.target.value }); }} className="field-input" autoComplete="off" />
             <input placeholder="NIS" value={form.nis} onChange={(e) => setForm({ ...form, nis: e.target.value })} className="field-input" required />
             <input placeholder="NISN (opsional)" value={form.nisn} onChange={(e) => setForm({ ...form, nisn: e.target.value })} className="field-input" />
             <select value={form.jenis_kelamin} onChange={(e) => setForm({ ...form, jenis_kelamin: e.target.value })} className="field-input text-ink-700">

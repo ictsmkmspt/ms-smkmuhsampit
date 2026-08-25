@@ -104,8 +104,8 @@ function AlumniPanel({ mode, setMode }) {
   const navigate = useNavigate();
 
   const [namaLengkap, setNamaLengkap] = useState('');
-  const [tanggalLahir, setTanggalLahir] = useState('');
-  const [nisn, setNisn] = useState('');
+  const [jurusan, setJurusan] = useState('');
+  const [tahunLulus, setTahunLulus] = useState('');
   const [cariError, setCariError] = useState('');
   const [cariResult, setCariResult] = useState(null);
   const [cariLoading, setCariLoading] = useState(false);
@@ -130,7 +130,7 @@ function AlumniPanel({ mode, setMode }) {
     setCariResult(null);
     setCariLoading(true);
     try {
-      const res = await api.post('/alumni/cari-nis', { nama_lengkap: namaLengkap, tanggal_lahir: tanggalLahir, nisn });
+      const res = await api.post('/alumni/cari-nis', { nama: namaLengkap, jurusan, tahun_lulus: tahunLulus });
       setCariResult(res.data.nis);
     } catch (err) {
       setCariError(err.response?.data?.message || 'Data tidak ditemukan.');
@@ -186,12 +186,12 @@ function AlumniPanel({ mode, setMode }) {
             <input type="text" value={namaLengkap} autoFocus onChange={(e) => setNamaLengkap(e.target.value)} className="field-input" placeholder="Sesuai data sekolah" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-ink-500 mb-1">Tanggal Lahir</label>
-            <input type="date" value={tanggalLahir} onChange={(e) => setTanggalLahir(e.target.value)} className="field-input" />
+            <label className="block text-xs font-medium text-ink-500 mb-1">Jurusan</label>
+            <input type="text" value={jurusan} onChange={(e) => setJurusan(e.target.value)} className="field-input" placeholder="Contoh: TKJ" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-ink-500 mb-1">NISN</label>
-            <input type="text" value={nisn} onChange={(e) => setNisn(e.target.value)} className="field-input" placeholder="Nomor Induk Siswa Nasional" />
+            <label className="block text-xs font-medium text-ink-500 mb-1">Tahun Lulus</label>
+            <input type="text" inputMode="numeric" maxLength={4} value={tahunLulus} onChange={(e) => setTahunLulus(e.target.value)} className="field-input" placeholder="Contoh: 2022" />
           </div>
           <button type="submit" disabled={cariLoading} className="btn-primary w-full justify-center mt-2 gap-2">
             <Search className="w-4 h-4" /> {cariLoading ? 'Mencari...' : 'Cari NIS'}

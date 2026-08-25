@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Exports\AlumniTemplateExport;
 use App\Exports\StudentTemplateExport;
 use App\Http\Controllers\Api\Concerns\ResetsPasswordToDefault;
 use App\Http\Controllers\Controller;
+use App\Imports\AlumniImport;
 use App\Imports\StudentsImport;
 use App\Models\Achievement;
 use App\Models\Student;
@@ -47,11 +49,23 @@ class StudentController extends Controller
             ->get();
     }
 
+    /**
+     * `status`/`tanggal_lulus` opsional — dipakai menu Alumni buat
+     * "Tambah Siswa" LANGSUNG sebagai alumni ke 1 kelas alumni (mis.
+     * mencatat lulusan lama yang belum pernah masuk sistem ini sebagai
+     * siswa aktif). Default tetap "aktif" tanpa tanggal_lulus kalau tidak
+     * diisi (perilaku lama, dipakai Master Data > Siswa, tidak berubah).
+     *
+     * `email` OPSIONAL — siswa (aktif maupun alumni) login pakai NIS lewat
+     * AuthController::loginNis(), jadi email tidak lagi wajib buat bisa
+     * login. Kolom users.email sendiri sudah nullable (pola yang sama
+     * dipakai akun wali, yang memang tidak punya email sama sekali).
+     */
     public function store(Request $request)
     {
         $data = $request->validate([
             'name' => 'required|string|max:100',
-            'email' => 'required|email|unique:users,email',
+            'email' => 'nullable|email|unique:users,email',
             'password' => 'nullable|min:6',
             'nis' => 'required|string|unique:students,nis',
             'nisn' => 'nullable|string|unique:students,nisn',
@@ -61,12 +75,14 @@ class StudentController extends Controller
             'tempat_lahir' => 'nullable|string|max:100',
             'tanggal_lahir' => 'nullable|date',
             'alamat' => 'nullable|string|max:300',
+            'status' => 'nullable|in:aktif,lulus',
+            'tanggal_lulus' => 'nullable|date',
         ]);
 
         return DB::transaction(function () use ($data) {
             $user = User::create([
                 'name' => $data['name'],
-                'email' => $data['email'],
+                'email' => $data['email'] ?? null,
                 'password' => bcrypt($data['password'] ?? '123456'),
                 'role' => 'siswa',
             ]);
@@ -81,6 +97,8 @@ class StudentController extends Controller
                 'tempat_lahir' => $data['tempat_lahir'] ?? null,
                 'tanggal_lahir' => $data['tanggal_lahir'] ?? null,
                 'alamat' => $data['alamat'] ?? null,
+                'status' => $data['status'] ?? 'aktif',
+                'tanggal_lulus' => $data['tanggal_lulus'] ?? null,
                 'qr_code' => 'STD-' . strtoupper(Str::random(8)),
             ]);
 
@@ -155,6 +173,36 @@ class StudentController extends Controller
             'nama_ayah', 'nama_ibu', 'alamat_ortu', 'telp_ortu', 'pekerjaan_ortu', 'penghasilan_ortu',
             'nama_wali', 'alamat_wali', 'telp_wali', 'pekerjaan_wali',
         ]));
+
+        return $student->load(['user', 'classRoom', 'jurusan']);
+    }
+
+    /**
+     * Edit ringan alumni dari AlumniTab (nama, email, nis, nisn, jurusan,
+     * tanggal_lulus) — BEDA dari update() yang mewajibkan biodata lengkap
+     * (dipakai EditBiodataSiswaPage.jsx). Alumni yang datanya seadanya
+     * (hasil AlumniImport cuma nama/nis/jurusan/tanggal_lulus, atau
+     * ditambah manual lewat "Tambah Siswa") tidak bisa lewat update()
+     * karena banyak field wajib di sana yang tidak mereka punya.
+     */
+    public function updateRingkas(Request $request, Student $student)
+    {
+        $data = $request->validate([
+            'name' => 'required|string|max:100',
+            'email' => 'nullable|email|unique:users,email,' . $student->user_id,
+            'nis' => 'required|string|unique:students,nis,' . $student->id,
+            'nisn' => 'nullable|string|unique:students,nisn,' . $student->id,
+            'jurusan_id' => 'nullable|exists:jurusans,id',
+            'tanggal_lulus' => 'nullable|date',
+        ]);
+
+        $student->user->update(['name' => $data['name'], 'email' => $data['email'] ?? null]);
+        $student->update([
+            'nis' => $data['nis'],
+            'nisn' => $data['nisn'] ?? null,
+            'jurusan_id' => $data['jurusan_id'] ?? null,
+            'tanggal_lulus' => $data['tanggal_lulus'] ?? $student->tanggal_lulus,
+        ]);
 
         return $student->load(['user', 'classRoom', 'jurusan']);
     }
@@ -332,6 +380,47 @@ class StudentController extends Controller
 
         return response()->json([
             'message'  => $import->successCount . ' siswa berhasil diimport, ' . count($gagal) . ' baris gagal.',
+            'berhasil' => $import->successCount,
+            'gagal'    => $gagal,
+        ]);
+    }
+
+    /**
+     * Download file Excel (.xlsx) kosong berisi contoh format kolom untuk import data alumni.
+     */
+    public function downloadTemplateAlumni()
+    {
+        return Excel::download(new AlumniTemplateExport, 'template_import_alumni.xlsx');
+    }
+
+    /**
+     * Import banyak alumni sekaligus ke SATU kelas alumni (dipilih di AlumniTab
+     * sebelum upload) dari file Excel (.xlsx) yang diupload. Format kolom harus
+     * sesuai template (nama, email, nis, nisn, tempat_lahir, tanggal_lahir,
+     * tanggal_lulus). Email opsional — alumni login pakai NIS. Baris yang
+     * gagal tidak menghentikan proses, cukup dilaporkan di akhir.
+     */
+    public function importAlumni(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:xlsx,xls,csv',
+            'class_room_id' => 'required|exists:class_rooms,id',
+        ]);
+
+        $import = new AlumniImport((int) $request->class_room_id);
+        Excel::import($import, $request->file('file'));
+
+        $gagal = [];
+        foreach ($import->failures() as $failure) {
+            $gagal[] = [
+                'baris'  => $failure->row(),
+                'kolom'  => $failure->attribute(),
+                'alasan' => implode(' ', $failure->errors()),
+            ];
+        }
+
+        return response()->json([
+            'message'  => $import->successCount . ' alumni berhasil diimport, ' . count($gagal) . ' baris gagal.',
             'berhasil' => $import->successCount,
             'gagal'    => $gagal,
         ]);

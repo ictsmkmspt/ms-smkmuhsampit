@@ -88,7 +88,7 @@ export default function AlumniTab() {
                 <Printer className="w-3.5 h-3.5" /> Cetak Surat Tagihan
               </button>
             </div>
-            <StudentSppPanel student={selectedStudent} onClose={backToStudentList} onPaid={loadAlumni} showBayarDimuka={false} />
+            <StudentSppPanel student={selectedStudent} onClose={backToStudentList} onPaid={loadAlumni} showBayarDimuka={false} allowAddTagihan />
           </>
         ) : selectedKelas ? (
           <>

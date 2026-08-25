@@ -22,6 +22,13 @@ export default function ClassesTab() {
   const [editSaving, setEditSaving] = useState(false);
   const [editError, setEditError]   = useState('');
 
+  const [lulusModal, setLulusModal]         = useState(null); // kelas yang mau diluluskan
+  const [lulusTahun, setLulusTahun]         = useState('');
+  const [lulusNamaKelas, setLulusNamaKelas] = useState('');
+  const [lulusTanggal, setLulusTanggal]     = useState('');
+  const [lulusSaving, setLulusSaving]   = useState(false);
+  const [lulusError, setLulusError]     = useState('');
+
   const loadClasses  = () => api.get('/classes').then((res) => setClasses(res.data)).catch(() => alert('Gagal memuat daftar kelas.'));
   const loadTeachers = () => api.get('/teachers').then((res) => setTeachers(res.data)).catch(() => alert('Gagal memuat daftar guru.'));
 
@@ -59,14 +66,39 @@ export default function ClassesTab() {
     }
   };
 
-  const handleLuluskan = async (c) => {
-    if (!confirm(`Luluskan ${c.students_count ?? 0} siswa aktif di kelas "${c.name}"? Mereka akan pindah ke menu Alumni, datanya tidak akan hilang.`)) return;
+  // Buka modal luluskan — tahun lulus & nama kelas dipisah jadi 2 field
+  // (tahun disarankan tahun berjalan, nama kelas disarankan nama kelas
+  // lama), digabung "{tahun} {nama kelas}" (mis. "2026 XII TKJ 1") baru
+  // dikirim ke backend jadi 1 nama kelas. Tanggal lulus default hari
+  // ini, semuanya boleh diubah sebelum konfirmasi.
+  const openLulusModal = (c) => {
+    setLulusModal(c);
+    setLulusTahun(String(new Date().getFullYear()));
+    setLulusNamaKelas(c.name);
+    setLulusTanggal(new Date().toISOString().slice(0, 10));
+    setLulusError('');
+  };
+
+  const batalLulusModal = () => {
+    setLulusModal(null);
+    setLulusError('');
+  };
+
+  const confirmLuluskan = async () => {
+    setLulusSaving(true);
+    setLulusError('');
     try {
-      const res = await api.post(`/classes/${c.id}/luluskan`);
+      const res = await api.post(`/classes/${lulusModal.id}/luluskan`, {
+        name: `${lulusTahun.trim()} ${lulusNamaKelas.trim()}`.trim(),
+        tanggal_lulus: lulusTanggal,
+      });
       alert(res.data.message);
+      setLulusModal(null);
       loadClasses();
     } catch (err) {
-      alert(err.response?.data?.message || 'Gagal meluluskan kelas ini.');
+      setLulusError(err.response?.data?.message || 'Gagal meluluskan kelas ini.');
+    } finally {
+      setLulusSaving(false);
     }
   };
 
@@ -207,7 +239,7 @@ export default function ClassesTab() {
                       <button onClick={() => startEdit(c)} className="text-xs text-ink-500 hover:text-brand-600 font-medium border border-line-200 rounded-lg px-2 py-1">
                         Edit
                       </button>
-                      <button onClick={() => handleLuluskan(c)} disabled={!c.students_count} className="text-ink-300 hover:text-brand-600 disabled:opacity-30 disabled:hover:text-ink-300" title="Luluskan Semua Siswa Aktif di Kelas Ini">
+                      <button onClick={() => openLulusModal(c)} disabled={!c.students_count} className="text-ink-300 hover:text-brand-600 disabled:opacity-30 disabled:hover:text-ink-300" title="Luluskan Semua Siswa Aktif di Kelas Ini">
                         <GraduationCap className="w-4 h-4" />
                       </button>
                       {canDelete && (
@@ -227,6 +259,46 @@ export default function ClassesTab() {
         </table>
         </div>
       </div>
+
+      {lulusModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-ink-900/40" onClick={batalLulusModal} />
+          <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-sm p-5">
+            <h3 className="font-display font-semibold text-ink-900 mb-1">Luluskan Kelas</h3>
+            <p className="text-sm text-ink-500 mb-4">
+              {lulusModal.students_count ?? 0} siswa aktif di kelas "{lulusModal.name}" akan pindah ke menu Alumni. Nama kelas ini juga akan diubah jadi nama angkatan lulusnya.
+            </p>
+            {lulusError && <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2 mb-3">{lulusError}</p>}
+            <div className="space-y-3 mb-4">
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-ink-500 mb-1">Tahun Lulus</label>
+                  <input value={lulusTahun} onChange={(e) => setLulusTahun(e.target.value)} className="field-input" placeholder="2026" />
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-xs font-medium text-ink-500 mb-1">Nama Kelas</label>
+                  <input value={lulusNamaKelas} onChange={(e) => setLulusNamaKelas(e.target.value)} className="field-input" />
+                </div>
+              </div>
+              <p className="text-xs text-ink-400 -mt-1.5">Nama kelas akan disimpan sebagai "{lulusTahun.trim()} {lulusNamaKelas.trim()}".</p>
+              <div>
+                <label className="block text-xs font-medium text-ink-500 mb-1">Tanggal Lulus</label>
+                <input type="date" value={lulusTanggal} onChange={(e) => setLulusTanggal(e.target.value)} className="field-input" />
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={confirmLuluskan}
+                disabled={lulusSaving || !lulusTahun.trim() || !lulusNamaKelas.trim() || !lulusTanggal}
+                className="btn-primary flex-1 justify-center"
+              >
+                {lulusSaving ? 'Memproses...' : 'Luluskan'}
+              </button>
+              <button onClick={batalLulusModal} className="text-sm text-ink-500 hover:text-ink-700 border border-line-200 rounded-lg px-4 py-2">Batal</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

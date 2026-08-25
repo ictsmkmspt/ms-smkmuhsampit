@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Spp;
+use App\Models\TagihanLain;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -189,5 +191,36 @@ class StudentSelfController extends Controller
         $student = $request->user()->student;
         $data = $student->achievements()->with('achievementType')->orderByDesc('date')->get();
         return response()->json($data);
+    }
+
+    /**
+     * Riwayat SPP milik siswa yang sedang login — READ-ONLY (bayar/cicil
+     * tetap cuma lewat TU). Dipakai menu "Tagihan" di dashboard alumni
+     * (SiswaDashboard.jsx) supaya alumni bisa lihat sendiri tunggakan SPP
+     * dari sebelum lulus, pola sama seperti ParentController::spp() untuk
+     * wali tapi di-scope ke akun sendiri (tidak perlu cek relasi anak).
+     */
+    public function mySpp(Request $request)
+    {
+        $student = $request->user()->student;
+        abort_unless($student, 404);
+
+        return Spp::where('student_id', $student->id)
+            ->orderByDesc('tahun')->orderByDesc('bulan')
+            ->get();
+    }
+
+    /**
+     * Riwayat Tagihan Lain milik siswa yang sedang login — READ-ONLY, pola
+     * sama seperti mySpp() di atas.
+     */
+    public function myTagihanLain(Request $request)
+    {
+        $student = $request->user()->student;
+        abort_unless($student, 404);
+
+        return TagihanLain::where('student_id', $student->id)
+            ->orderByDesc('created_at')
+            ->get();
     }
 }

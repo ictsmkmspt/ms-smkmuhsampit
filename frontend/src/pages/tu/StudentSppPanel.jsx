@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
-import { CheckCircle2, Printer, X, CheckCircle, Info, CalendarPlus, Wallet, Trash2, History } from 'lucide-react';
+import { CheckCircle2, Printer, X, CheckCircle, Info, CalendarPlus, Wallet, Trash2, History, Plus } from 'lucide-react';
 import api from '../../api/axios';
 import { BULAN, formatRupiah, Avatar } from './shared';
 import { fmtDMY } from '../../utils/date';
+
+const emptyTagihanForm = { nama_tagihan: '', nominal: '', keterangan: '' };
 
 /**
  * Panel "riwayat tagihan 1 siswa" dengan tombol Bayar Lunas / Bayar Sebagian
@@ -14,10 +16,19 @@ import { fmtDMY } from '../../utils/date';
  * tidak salah bayar tagihan yang beda jenis. Kalau salah satu dimatikan,
  * request API-nya juga tidak dikirim sama sekali (bukan cuma disembunyikan).
  */
-export default function StudentSppPanel({ student, onClose, onPaid, showSpp = true, showTagihanLain = true, showBayarDimuka = true }) {
+export default function StudentSppPanel({ student, onClose, onPaid, showSpp = true, showTagihanLain = true, showBayarDimuka = true, allowAddTagihan = false }) {
   const [spp, setSpp] = useState(null);
   const [tagihanLain, setTagihanLain] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showAddTagihan, setShowAddTagihan] = useState(false);
+  const [tagihanForm, setTagihanForm] = useState(emptyTagihanForm);
+  const [savingTagihan, setSavingTagihan] = useState(false);
+  const [tagihanFormError, setTagihanFormError] = useState('');
+  const [editingTagihanId, setEditingTagihanId] = useState(null);
+  const [editTagihanForm, setEditTagihanForm] = useState(emptyTagihanForm);
+  const [savingEditTagihan, setSavingEditTagihan] = useState(false);
+  const [editTagihanError, setEditTagihanError] = useState('');
+  const [deletingTagihanId, setDeletingTagihanId] = useState(null);
   const [payingId, setPayingId] = useState(null); // `${type}-${id}` yang sedang diproses (bayar lunas)
   const [payingDimuka, setPayingDimuka] = useState(false);
   const [partialTarget, setPartialTarget] = useState(null); // `${type}-${id}` yang lagi buka form bayar sebagian
@@ -205,8 +216,47 @@ export default function StudentSppPanel({ student, onClose, onPaid, showSpp = tr
                 )}
               </>
             )}
+            {type === 'lain' && allowAddTagihan && (
+              <>
+                <button
+                  onClick={() => openEditTagihan(item)}
+                  className="text-xs font-medium text-ink-500 hover:text-brand-600 hover:bg-mist-50 rounded-lg px-2 py-1.5 transition"
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={() => handleDeleteTagihan(item)}
+                  disabled={deletingTagihanId === item.id}
+                  title="Hapus tagihan ini"
+                  className="shrink-0 p-1.5 text-ink-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg disabled:opacity-40 transition"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </>
+            )}
           </div>
         </div>
+
+        {type === 'lain' && editingTagihanId === item.id && (
+          <form onSubmit={(e) => handleEditTagihan(e, item.id)} className="mt-2 bg-mist-50 border border-line-200 rounded-lg p-3">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-xs font-medium text-ink-700">Edit Tagihan</p>
+              <button type="button" onClick={() => setEditingTagihanId(null)} className="text-ink-400 hover:text-ink-600"><X className="w-3.5 h-3.5" /></button>
+            </div>
+            {editTagihanError && <p className="text-xs text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2 mb-2">{editTagihanError}</p>}
+            <div className="grid sm:grid-cols-2 gap-2 mb-2">
+              <input placeholder="Nama tagihan" value={editTagihanForm.nama_tagihan} onChange={(e) => setEditTagihanForm({ ...editTagihanForm, nama_tagihan: e.target.value })} className="field-input text-sm py-1.5" required />
+              <input type="number" min={0} placeholder="Nominal" value={editTagihanForm.nominal} onChange={(e) => setEditTagihanForm({ ...editTagihanForm, nominal: e.target.value })} className="field-input text-sm py-1.5" required />
+              <input placeholder="Keterangan (opsional)" value={editTagihanForm.keterangan} onChange={(e) => setEditTagihanForm({ ...editTagihanForm, keterangan: e.target.value })} className="field-input text-sm py-1.5 sm:col-span-2" />
+            </div>
+            <div className="flex gap-2">
+              <button disabled={savingEditTagihan} className="text-xs font-medium text-white bg-brand-600 hover:bg-brand-700 disabled:opacity-60 rounded-lg px-3 py-1.5 transition">
+                {savingEditTagihan ? 'Menyimpan...' : 'Simpan'}
+              </button>
+              <button type="button" onClick={() => setEditingTagihanId(null)} className="text-xs font-medium text-ink-500 hover:text-ink-700 px-2 py-1.5">Batal</button>
+            </div>
+          </form>
+        )}
 
         {partialTarget === key && belumLunas && (
           <div className="mt-2 flex items-center gap-2 bg-mist-50 border border-line-200 rounded-lg p-2">
@@ -297,6 +347,80 @@ export default function StudentSppPanel({ student, onClose, onPaid, showSpp = tr
     }
   };
 
+  // Buat tagihan lain BARU untuk siswa ini — dipakai menu Alumni buat
+  // menagih biaya pasca-lulus (mis. legalisir ijazah, transkrip) yang
+  // tidak berkaitan dengan tunggakan SPP sebelum lulus.
+  const handleAddTagihan = async (e) => {
+    e.preventDefault();
+    setTagihanFormError('');
+    if (!tagihanForm.nama_tagihan.trim()) { setTagihanFormError('Nama tagihan wajib diisi.'); return; }
+    if (tagihanForm.nominal === '' || Number(tagihanForm.nominal) < 0) { setTagihanFormError('Nominal wajib diisi.'); return; }
+    setSavingTagihan(true);
+    try {
+      const res = await api.post('/tagihan-lain', {
+        student_id: student.id,
+        nama_tagihan: tagihanForm.nama_tagihan,
+        nominal: Number(tagihanForm.nominal),
+        keterangan: tagihanForm.keterangan || undefined,
+      });
+      setTagihanLain((prev) => [res.data, ...(prev || [])]);
+      setTagihanForm(emptyTagihanForm);
+      setShowAddTagihan(false);
+      notify('success', `Tagihan "${res.data.nama_tagihan}" berhasil dibuat.`);
+      onPaid?.();
+    } catch (err) {
+      const msgs = err.response?.data?.errors;
+      setTagihanFormError(msgs ? Object.values(msgs).flat().join(', ') : err.response?.data?.message || 'Gagal membuat tagihan.');
+    } finally {
+      setSavingTagihan(false);
+    }
+  };
+
+  const openEditTagihan = (t) => {
+    setEditTagihanError('');
+    setEditingTagihanId(t.id);
+    setEditTagihanForm({ nama_tagihan: t.nama_tagihan, nominal: t.nominal, keterangan: t.keterangan || '' });
+  };
+
+  const handleEditTagihan = async (e, id) => {
+    e.preventDefault();
+    setEditTagihanError('');
+    if (!editTagihanForm.nama_tagihan.trim()) { setEditTagihanError('Nama tagihan wajib diisi.'); return; }
+    if (editTagihanForm.nominal === '' || Number(editTagihanForm.nominal) < 0) { setEditTagihanError('Nominal wajib diisi.'); return; }
+    setSavingEditTagihan(true);
+    try {
+      const res = await api.put(`/tagihan-lain/${id}`, {
+        nama_tagihan: editTagihanForm.nama_tagihan,
+        nominal: Number(editTagihanForm.nominal),
+        keterangan: editTagihanForm.keterangan || null,
+      });
+      setTagihanLain((prev) => (prev || []).map((x) => (x.id === id ? res.data : x)));
+      setEditingTagihanId(null);
+      notify('success', `Tagihan "${res.data.nama_tagihan}" berhasil diperbarui.`);
+      onPaid?.();
+    } catch (err) {
+      const msgs = err.response?.data?.errors;
+      setEditTagihanError(msgs ? Object.values(msgs).flat().join(', ') : err.response?.data?.message || 'Gagal menyimpan perubahan.');
+    } finally {
+      setSavingEditTagihan(false);
+    }
+  };
+
+  const handleDeleteTagihan = async (t) => {
+    if (!confirm(`Hapus tagihan "${t.nama_tagihan}" atas nama ${student.user?.name}? Tindakan ini tidak bisa dibatalkan.`)) return;
+    setDeletingTagihanId(t.id);
+    try {
+      await api.delete(`/tagihan-lain/${t.id}`);
+      setTagihanLain((prev) => (prev || []).filter((x) => x.id !== t.id));
+      notify('success', `Tagihan "${t.nama_tagihan}" dihapus.`);
+      onPaid?.();
+    } catch (err) {
+      notify('error', err.response?.data?.message || 'Gagal menghapus tagihan.');
+    } finally {
+      setDeletingTagihanId(null);
+    }
+  };
+
   return (
     <div>
       <div className="flex items-center justify-between gap-3 mb-4 pb-4 border-b border-line-200">
@@ -376,7 +500,36 @@ export default function StudentSppPanel({ student, onClose, onPaid, showSpp = tr
 
           {showTagihanLain && (
             <div>
-              <p className="text-xs font-medium text-ink-500 mb-1 flex items-center gap-1.5"><Wallet className="w-3.5 h-3.5" /> Tagihan Lain</p>
+              <div className="flex items-center justify-between mb-1">
+                <p className="text-xs font-medium text-ink-500 flex items-center gap-1.5"><Wallet className="w-3.5 h-3.5" /> Tagihan Lain</p>
+                {allowAddTagihan && !showAddTagihan && (
+                  <button
+                    onClick={() => { setTagihanForm(emptyTagihanForm); setTagihanFormError(''); setShowAddTagihan(true); }}
+                    className="flex items-center gap-1 text-xs font-medium text-brand-700 bg-brand-50 hover:bg-brand-100 rounded-lg px-2.5 py-1 transition"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> Tambah Tagihan
+                  </button>
+                )}
+              </div>
+
+              {showAddTagihan && (
+                <form onSubmit={handleAddTagihan} className="bg-mist-50 border border-line-200 rounded-xl p-3 mb-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-xs font-medium text-ink-700">Tagihan Baru untuk {student.user?.name}</p>
+                    <button type="button" onClick={() => setShowAddTagihan(false)} className="text-ink-400 hover:text-ink-600"><X className="w-3.5 h-3.5" /></button>
+                  </div>
+                  {tagihanFormError && <p className="text-xs text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2 mb-2">{tagihanFormError}</p>}
+                  <div className="grid sm:grid-cols-2 gap-2 mb-2">
+                    <input placeholder="Nama tagihan (mis. Legalisir Ijazah)" value={tagihanForm.nama_tagihan} onChange={(e) => setTagihanForm({ ...tagihanForm, nama_tagihan: e.target.value })} className="field-input text-sm py-1.5" required />
+                    <input type="number" min={0} placeholder="Nominal" value={tagihanForm.nominal} onChange={(e) => setTagihanForm({ ...tagihanForm, nominal: e.target.value })} className="field-input text-sm py-1.5" required />
+                    <input placeholder="Keterangan (opsional)" value={tagihanForm.keterangan} onChange={(e) => setTagihanForm({ ...tagihanForm, keterangan: e.target.value })} className="field-input text-sm py-1.5 sm:col-span-2" />
+                  </div>
+                  <button disabled={savingTagihan} className="text-xs font-medium text-white bg-brand-600 hover:bg-brand-700 disabled:opacity-60 rounded-lg px-3 py-1.5 transition">
+                    {savingTagihan ? 'Menyimpan...' : 'Simpan Tagihan'}
+                  </button>
+                </form>
+              )}
+
               {(tagihanLain || []).length === 0 ? (
                 <p className="text-sm text-ink-400 text-center py-3">Belum ada tagihan lain.</p>
               ) : (

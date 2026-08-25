@@ -3,36 +3,42 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Jurusan;
 use App\Models\Student;
 use Illuminate\Http\Request;
 
 /**
- * Bantuan "cari NIS" untuk alumni — publik, TIDAK butuh login. Alumni
- * sering lupa NIS-nya padahal login BKK (/bursakerjakhusus/masuk) butuh
- * NIS (lihat AuthController::loginNis()). Nama lengkap + tanggal lahir
- * saja relatif gampang ditebak orang lain, jadi ditambah 1 pengaman lagi
- * (NISN, sudah unique per siswa) sebelum NIS asli ditampilkan.
+ * Bantuan "cari NIS" untuk alumni yang LUPA NIS-nya — publik, TIDAK
+ * butuh login. Alumni isi nama lengkap, jurusan, dan tahun lulus (data
+ * yang biasanya masih diingat), sistem balas NIS-nya kalau cocok.
+ * Cuma cari lewat 3 field ini (bukan nisn+tanggal_lahir) karena alumni
+ * yang diimport lewat Excel (AlumniImport) cuma punya
+ * nama/nis/jurusan/tanggal_lulus — kolom nisn/tanggal_lahir tidak
+ * selalu terisi.
  */
 class AlumniLookupController extends Controller
 {
     public function cariNis(Request $request)
     {
         $data = $request->validate([
-            'nama_lengkap'  => 'required|string|max:150',
-            'tanggal_lahir' => 'required|date',
-            'nisn'          => 'required|string|max:20',
+            'nama'        => 'required|string|max:150',
+            'jurusan'     => 'required|string|max:100',
+            'tahun_lulus' => 'required|digits:4',
         ]);
 
-        $student = Student::where('nisn', trim($data['nisn']))
-            ->where('status', 'lulus')
-            ->whereDate('tanggal_lahir', $data['tanggal_lahir'])
+        $jurusanTrim = trim($data['jurusan']);
+        $jurusan = Jurusan::where('kode', $jurusanTrim)->orWhere('nama', $jurusanTrim)->first();
+        abort_unless($jurusan, 404, 'Data tidak ditemukan. Pastikan nama, jurusan, dan tahun lulus sesuai data sekolah.');
+
+        $namaTrim = strtolower(trim($data['nama']));
+        $student = Student::where('status', 'lulus')
+            ->where('jurusan_id', $jurusan->id)
+            ->whereYear('tanggal_lulus', $data['tahun_lulus'])
             ->with('user')
-            ->first();
+            ->get()
+            ->first(fn ($s) => $s->user && strtolower(trim($s->user->name)) === $namaTrim);
 
-        $namaCocok = $student?->user
-            && strtolower(trim($student->user->name)) === strtolower(trim($data['nama_lengkap']));
-
-        abort_unless($namaCocok, 404, 'Data tidak ditemukan. Pastikan nama lengkap, tanggal lahir, dan NISN sesuai data sekolah.');
+        abort_unless($student, 404, 'Data tidak ditemukan. Pastikan nama, jurusan, dan tahun lulus sesuai data sekolah.');
 
         return response()->json(['nis' => $student->nis]);
     }

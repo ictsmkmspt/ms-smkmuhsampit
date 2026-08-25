@@ -39,9 +39,12 @@ class AuthController extends Controller
     }
 
     /**
-     * Login pakai email ATAU nomor HP — dipakai bareng: siswa/guru/admin/IDUKA
-     * biasanya pakai email, sedangkan wali (orang tua) khusus pakai nomor HP
-     * (akun wali sengaja tidak punya email sama sekali).
+     * Login pakai email, nomor HP, ATAU NIS — satu field, dicoba ketiganya
+     * tanpa user perlu pilih dulu. Guru/admin/IDUKA biasanya pakai email,
+     * wali (orang tua) khusus pakai nomor HP (akun wali sengaja tidak
+     * punya email sama sekali), siswa (aktif maupun alumni) bisa pakai
+     * email ATAU NIS — NIS dicek belakangan (lebih jarang dipakai role
+     * non-siswa) lewat Student::nis, NIS tidak berubah waktu siswa lulus.
      */
     public function login(Request $request)
     {
@@ -53,9 +56,13 @@ class AuthController extends Controller
         $identifier = trim($request->login);
         $user = User::where('email', $identifier)->orWhere('phone', $identifier)->first();
 
+        if (!$user) {
+            $user = Student::where('nis', $identifier)->first()?->user;
+        }
+
         if (!$user || !Hash::check($request->password, $user->password)) {
             throw ValidationException::withMessages([
-                'login' => ['Email/No. HP atau password salah.'],
+                'login' => ['Email/No. HP/NIS atau password salah.'],
             ]);
         }
 
@@ -63,10 +70,11 @@ class AuthController extends Controller
     }
 
     /**
-     * Login khusus alumni pakai NIS (bukan email/no. HP seperti login()
-     * biasa) — dipakai halaman /bursakerjakhusus/masuk. Cuma siswa
-     * berstatus "lulus" (alumni) yang boleh lewat sini; siswa aktif tetap
-     * login lewat email/no. HP seperti biasa.
+     * Login siswa pakai NIS (bukan email/no. HP seperti login() biasa) —
+     * dipakai halaman /login (opsi "Masuk pakai NIS") maupun
+     * /bursakerjakhusus/masuk. Berlaku untuk siswa AKTIF maupun ALUMNI
+     * (status tidak dibatasi) — NIS tidak berubah waktu siswa lulus, jadi
+     * satu jalur ini cukup untuk keduanya.
      */
     public function loginNis(Request $request)
     {
@@ -75,7 +83,7 @@ class AuthController extends Controller
             'password' => 'required',
         ]);
 
-        $student = Student::where('nis', trim($request->nis))->where('status', 'lulus')->first();
+        $student = Student::where('nis', trim($request->nis))->first();
         $user = $student?->user;
 
         if (!$user || !Hash::check($request->password, $user->password)) {
