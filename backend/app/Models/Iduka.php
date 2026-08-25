@@ -9,11 +9,11 @@ class Iduka extends Model
     // 'user_id' SENGAJA tidak di $fillable — dikelola eksplisit lewat
     // IdukaController (bukan mass-assignment), lihat user() di bawah.
     protected $fillable = [
-        'nama_perusahaan', 'alamat',
-        'telepon', 'latitude', 'longitude', 'radius_meter', 'tanda_tangan',
+        'nama_perusahaan', 'jenis_kerjasama', 'alamat',
+        'telepon', 'latitude', 'longitude', 'radius_meter', 'tanda_tangan', 'dokumen_mou',
     ];
 
-    protected $appends = ['tanda_tangan_url'];
+    protected $appends = ['tanda_tangan_url', 'dokumen_mou_url'];
 
     /**
      * Akun Instruktur yang mewakili perusahaan ini (bisa lebih dari 1).
@@ -36,6 +36,11 @@ class Iduka extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function jobVacancies()
+    {
+        return $this->hasMany(JobVacancy::class);
+    }
+
     /**
      * URL relatif gambar tanda tangan (null kalau IDUKA belum pernah unggah).
      * Sengaja relatif (bukan URL lengkap ke backend) supaya lewat proxy HTTPS
@@ -44,6 +49,11 @@ class Iduka extends Model
     public function getTandaTanganUrlAttribute(): ?string
     {
         return $this->tanda_tangan ? '/storage/' . $this->tanda_tangan : null;
+    }
+
+    public function getDokumenMouUrlAttribute(): ?string
+    {
+        return $this->dokumen_mou ? '/storage/' . $this->dokumen_mou : null;
     }
 
     /**

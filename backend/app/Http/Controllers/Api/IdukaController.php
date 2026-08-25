@@ -116,9 +116,27 @@ class IdukaController extends Controller
      * terhapus — cuma tertinggal tanpa perusahaan (iduka_id jadi null,
      * lihat nullOnDelete di migrasi), supaya tidak kehilangan akses login
      * cuma karena data perusahaannya dihapus admin.
+     *
+     * File di storage (tanda tangan, dokumen MOU, foto brosur tiap
+     * lowongan) dibersihkan manual di sini SEBELUM baris dihapus — kalau
+     * tidak, job_vacancies ikut terhapus otomatis lewat cascadeOnDelete DB
+     * tanpa pernah lewat logika hapus-file di JobVacancyController, jadi
+     * filenya tertinggal yatim piatu di storage selamanya.
      */
     public function destroy(Iduka $iduka)
     {
+        if ($iduka->tanda_tangan) {
+            Storage::disk('public')->delete($iduka->tanda_tangan);
+        }
+        if ($iduka->dokumen_mou) {
+            Storage::disk('public')->delete($iduka->dokumen_mou);
+        }
+        foreach ($iduka->jobVacancies as $loker) {
+            if ($loker->foto_brosur) {
+                Storage::disk('public')->delete($loker->foto_brosur);
+            }
+        }
+
         $iduka->user?->delete();
         $iduka->delete();
         return response()->json(['message' => 'Data perusahaan mitra dihapus.']);

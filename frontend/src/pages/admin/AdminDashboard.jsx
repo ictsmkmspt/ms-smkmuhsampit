@@ -33,7 +33,7 @@ const ROLE_LABEL = {
   waka_sarpras: 'Waka Sarpras',
 };
 
-const MASTER_ICONS = { siswa: Users, guru: GraduationCap, kelas: School, wali: UserCog, tu: Wallet, bk: HeartHandshake, admin: ShieldCheck };
+const MASTER_ICONS = { siswa: Users, guru: GraduationCap, kelas: School, wali: UserCog, tu: Wallet, bk: HeartHandshake, bkk: Briefcase, admin: ShieldCheck };
 const ALUMNI_ICONS = { siswa: GraduationCap, wali: UserCog };
 const SETTINGS_ICONS = { sekolah: Image, jam: Clock, jurusan: GraduationCap, 'kartu-pelajar': IdCard, backup: DatabaseBackup, maintenance: Wrench };
 const PKL_ICONS = { instruktur: UserCog, penempatan: ClipboardList, monitoring: CalendarClock };
@@ -71,7 +71,7 @@ function AdminDashboardContent() {
 
   const TABS = [
     { key: 'dashboard',  label: 'Dashboard',   icon: LayoutDashboard, component: DashboardHomeTab },
-    { key: 'master',     label: 'Master Data', icon: Database,        hasDropdown: true, submenu: masterDataSubmenu, subIcons: MASTER_ICONS, roles: ['waka_kesiswaan', 'waka_kurikulum'] },
+    { key: 'master',     label: 'Master Data', icon: Database,        hasDropdown: true, submenu: masterDataSubmenu, subIcons: MASTER_ICONS, roles: ['waka_kesiswaan', 'waka_kurikulum', 'waka_humas'] },
     { key: 'alumni',     label: 'Alumni',      icon: GraduationCap,   hasDropdown: true, submenu: ALUMNI_SUBMENU, subIcons: ALUMNI_ICONS, roles: ['waka_kesiswaan', 'waka_humas'] },
     { key: 'poin',       label: 'Poin',        icon: ClipboardList,   hasDropdown: true, submenu: poinSubmenu, subIcons: POIN_ICONS, roles: ['waka_kesiswaan'] },
     { key: 'iduka',      label: 'IDUKA',       icon: Building2,       component: IdukaTab, roles: ['waka_humas', 'waka_kurikulum'] },

@@ -14,6 +14,7 @@ function dashboardPathForRole(role) {
   if (role === 'wali') return '/wali';
   if (role === 'instruktur') return '/instruktur';
   if (role === 'iduka') return '/iduka';
+  if (role === 'pengurus_bkk') return '/bkk';
   if (role === 'tu') return '/tu';
   if (role === 'teknisi' || role === 'kepala_bengkel') return '/staf-ruang';
   if (role === 'bk') return '/bk';

@@ -16,13 +16,68 @@ class Student extends Model
         'tingkat_diterima', 'tanggal_diterima',
         'nama_ayah', 'nama_ibu', 'alamat_ortu', 'telp_ortu', 'pekerjaan_ortu', 'penghasilan_ortu',
         'nama_wali', 'alamat_wali', 'telp_wali', 'pekerjaan_wali',
+        'tinggi_badan', 'berat_badan', 'status_pernikahan', 'keahlian', 'pengalaman_kerja',
+        'ktp', 'cv', 'sertifikat',
     ];
 
-    protected $appends = ['foto_url'];
+    protected $appends = ['foto_url', 'ktp_url', 'cv_url', 'sertifikat_list', 'biodata_lengkap'];
+
+    protected function casts(): array
+    {
+        return [
+            // "keahlian" disimpan sebagai daftar (bisa nambah beberapa),
+            // BUKAN 1 blok teks — lihat BiodataTab.jsx.
+            'keahlian' => 'array',
+            'sertifikat' => 'array',
+        ];
+    }
 
     public function getFotoUrlAttribute(): ?string
     {
         return $this->foto ? '/storage/' . $this->foto : null;
+    }
+
+    public function getKtpUrlAttribute(): ?string
+    {
+        return $this->ktp ? '/storage/' . $this->ktp : null;
+    }
+
+    public function getCvUrlAttribute(): ?string
+    {
+        return $this->cv ? '/storage/' . $this->cv : null;
+    }
+
+    /**
+     * "sertifikat" mentah cuma berisi path file — tambahkan url siap-pakai
+     * per item supaya frontend tidak perlu membangun path sendiri.
+     */
+    public function getSertifikatListAttribute(): array
+    {
+        return collect($this->sertifikat ?? [])
+            ->map(fn ($s) => [...$s, 'url' => '/storage/' . $s['file']])
+            ->values()
+            ->all();
+    }
+
+    // Dicek sebelum alumni boleh melamar lowongan (JobApplicationController
+    // ::store()) — daftar field di sini SENGAJA cuma yang relevan buat
+    // lamaran kerja (bukan seluruh Buku Induk), lihat AskUserQuestion di
+    // sesi pembuatan fitur ini untuk alasan pemilihannya. Sertifikat TETAP
+    // tidak wajib (boleh lebih dari 1 atau tidak sama sekali), tapi KTP &
+    // CV sekarang wajib.
+    private const FIELD_BIODATA_WAJIB = [
+        'nik', 'tempat_lahir', 'tanggal_lahir', 'alamat', 'no_telp', 'agama', 'foto',
+        'tinggi_badan', 'berat_badan', 'status_pernikahan', 'keahlian', 'ktp', 'cv',
+    ];
+
+    public function getBiodataLengkapAttribute(): bool
+    {
+        foreach (self::FIELD_BIODATA_WAJIB as $field) {
+            if (empty($this->{$field})) {
+                return false;
+            }
+        }
+        return true;
     }
 
     public function user()
@@ -38,6 +93,16 @@ class Student extends Model
     public function jurusan()
     {
         return $this->belongsTo(Jurusan::class);
+    }
+
+    public function jobApplications()
+    {
+        return $this->hasMany(JobApplication::class);
+    }
+
+    public function tracerStudy()
+    {
+        return $this->hasOne(TracerStudy::class);
     }
 
     public function attendances()

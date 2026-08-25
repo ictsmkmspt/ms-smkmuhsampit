@@ -8,12 +8,16 @@ import api from './api/axios';
 import Login from './pages/Login';
 import MaintenancePage from './pages/MaintenancePage';
 import PpdbPublic from './pages/PpdbPublic';
+import LowonganPublic from './pages/LowonganPublic';
+import LowonganDetailPublic from './pages/LowonganDetailPublic';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import GuruDashboard from './pages/guru/GuruDashboard';
 import SiswaDashboard from './pages/siswa/SiswaDashboard';
 import ParentDashboard from './pages/wali/ParentDashboard';
 import InstrukturDashboard from './pages/instruktur/InstrukturDashboard';
 import IdukaDashboard from './pages/iduka/IdukaDashboard';
+import PelamarDetailPage from './pages/iduka/PelamarDetailPage';
+import BkkDashboard from './pages/bkk/BkkDashboard';
 import TuDashboard from './pages/tu/TuDashboard';
 import KepalaSekolahDashboard from './pages/kepala-sekolah/KepalaSekolahDashboard';
 import RoomStaffDashboard from './pages/sarpras-staff/RoomStaffDashboard';
@@ -35,6 +39,8 @@ import PrintKartuPelajar from './pages/print/PrintKartuPelajar';
 import PrintBukuInduk from './pages/print/PrintBukuInduk';
 import EditBiodataSiswaPage from './pages/EditBiodataSiswaPage';
 import PrintPenilaianPkl from './pages/print/PrintPenilaianPkl';
+import PrintSuratRekomendasi from './pages/print/PrintSuratRekomendasi';
+import PrintKartuPencariKerja from './pages/print/PrintKartuPencariKerja';
 import ExamAttemptPage from './pages/siswa/ExamAttemptPage';
 import CbtPortalLogin from './pages/cbt-portal/CbtPortalLogin';
 import CbtGuruPortal from './pages/cbt-portal/CbtGuruPortal';
@@ -108,6 +114,8 @@ export default function App() {
             <Route path="/" element={<Login />} />
             <Route path="/login" element={<Login />} />
             <Route path="/ppdb" element={<PpdbPublic />} />
+            <Route path="/bursakerjakhusus" element={<LowonganPublic />} />
+            <Route path="/bursakerjakhusus/:id" element={<LowonganDetailPublic />} />
 
             <Route path="/print/absensi-bulanan" element={
               <ProtectedRoute allowedRoles={['admin', 'guru', 'bk']}><PrintMonthlyAttendance /></ProtectedRoute>
@@ -173,6 +181,14 @@ export default function App() {
               <ProtectedRoute allowedRoles={['admin', 'guru', 'instruktur']}><PrintPenilaianPkl /></ProtectedRoute>
             } />
 
+            <Route path="/print/surat-rekomendasi" element={
+              <ProtectedRoute allowedRoles={['admin', 'pengurus_bkk']}><PrintSuratRekomendasi /></ProtectedRoute>
+            } />
+
+            <Route path="/print/kartu-pencari-kerja" element={
+              <ProtectedRoute allowedRoles={['admin', 'pengurus_bkk']}><PrintKartuPencariKerja /></ProtectedRoute>
+            } />
+
             <Route path="/admin/*" element={
               <ProtectedRoute allowedRoles={['admin', 'waka']}><AdminDashboard /></ProtectedRoute>
             } />
@@ -221,6 +237,14 @@ export default function App() {
 
             <Route path="/iduka" element={
               <ProtectedRoute allowedRoles={['iduka']}><IdukaDashboard /></ProtectedRoute>
+            } />
+
+            <Route path="/iduka/pelamar/:id" element={
+              <ProtectedRoute allowedRoles={['iduka']}><PelamarDetailPage /></ProtectedRoute>
+            } />
+
+            <Route path="/bkk" element={
+              <ProtectedRoute allowedRoles={['pengurus_bkk']}><BkkDashboard /></ProtectedRoute>
             } />
 
             <Route path="/tu/*" element={

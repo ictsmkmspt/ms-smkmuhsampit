@@ -23,3 +23,7 @@ Schedule::command('cbt:tutup-ujian-terjadwal')->everyFiveMinutes();
 
 // Pengingat H-1 & baru-lewat jatuh tempo peminjaman buku perpustakaan.
 Schedule::command('perpustakaan:notif-jatuh-tempo')->daily();
+
+// Lowongan BKK yang tanggal_tutup-nya sudah lewat ditutup otomatis, sisa
+// lamaran yang masih menggantung ("diajukan") ikut ditolak otomatis.
+Schedule::command('bkk:tutup-lowongan-kedaluwarsa')->daily();

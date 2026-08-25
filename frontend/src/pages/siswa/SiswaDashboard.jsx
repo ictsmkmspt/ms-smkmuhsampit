@@ -5,11 +5,14 @@ import {
   LogOut, Clock, ChevronDown, UserCog, ChevronLeft, ChevronRight,
   Award, AlertTriangle, ClipboardCheck, NotebookPen, ClipboardList,
   QrCode, BookOpen, CalendarRange, Briefcase, Megaphone, Library, Home, Monitor,
+  Inbox, GraduationCap, IdCard,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api/axios';
 import PklSiswaView from './PklSiswaView';
 import PerpustakaanTab from './PerpustakaanTab';
+import LokerTab from './LokerTab';
+import BiodataTab from './BiodataTab';
 import EditProfileModal from '../../components/EditProfileModal';
 import LeaderboardPrestasi from '../../components/LeaderboardPrestasi';
 import JadwalPelajaranView from '../../components/JadwalPelajaranView';
@@ -56,6 +59,7 @@ export default function SiswaDashboard() {
   const [activeTab, setActiveTab] = useState('qr');
   const [berandaSub, setBerandaSub] = useState('pengumuman');
   const [pklSub, setPklSub] = useState('absensi');
+  const [alumniSub, setAlumniSub] = useState('biodata'); // navbar bawah alumni: 'biodata' | 'terbuka' | 'lamaran' | 'tracer'
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -75,6 +79,9 @@ export default function SiswaDashboard() {
   // Tab PKL di navbar bawah cuma tampil kalau ini true (siswa belum pernah
   // PKL sama sekali tidak perlu lihat menu ini).
   const isPkl = !!(pklPlacement && Object.keys(pklPlacement).length > 0);
+  // Loker (BKK) cuma buat alumni (status "lulus") — siswa aktif belum
+  // ditawari lowongan kerja.
+  const isAlumni = profile?.status === 'lulus';
 
   useEffect(() => {
     api.get('/my-pkl-placement').then((res) => setPklPlacement(res.data));
@@ -164,6 +171,78 @@ export default function SiswaDashboard() {
           </div>
         </div>
         <p className="text-center text-ink-300 text-sm mt-10">Memuat...</p>
+
+        {showEditProfil && (
+          <EditProfileModal onClose={() => setShowEditProfil(false)} />
+        )}
+      </div>
+    );
+  }
+
+  // Alumni (status "lulus") dapat dashboard yang jauh lebih sederhana —
+  // cuma menu Loker (Lowongan Terbuka/Lamaran Saya/Tracer Study, lihat
+  // LokerTab.jsx). Beranda, Penilaian, QR absensi, Perpus, dan PKL sengaja
+  // TIDAK ditampilkan lagi buat alumni (semua itu relevan buat siswa aktif
+  // yang masih sekolah, bukan yang sudah lulus).
+  if (isAlumni) {
+    const ALUMNI_TABS = [
+      { key: 'biodata', label: 'Biodata', icon: IdCard },
+      { key: 'terbuka', label: 'Lowongan', icon: Briefcase },
+      { key: 'lamaran', label: 'Lamaran', icon: Inbox },
+      { key: 'tracer', label: 'Tracer Study', icon: GraduationCap },
+    ];
+    return (
+      <div className="min-h-screen bg-mist-50 p-6 pb-24">
+        <div className="flex justify-between items-end max-w-md mx-auto mb-6">
+          <div>
+            <p className="text-xs text-ink-500">Alumni</p>
+            <h1 className="font-display text-lg font-semibold text-ink-900">{user.name}</h1>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="relative" ref={menuRef}>
+              <button
+                onClick={() => setMenuOpen((v) => !v)}
+                className="flex items-center gap-1 text-sm font-semibold text-ink-700 hover:text-brand-600 transition"
+              >
+                Profil
+                <ChevronDown className={`w-4 h-4 transition-transform ${menuOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              {menuOpen && (
+                <div className="absolute right-0 z-20 mt-2 w-44 surface-card overflow-hidden">
+                  <button
+                    onClick={() => { setShowEditProfil(true); setMenuOpen(false); }}
+                    className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-left text-ink-700 hover:bg-mist-50 transition"
+                  >
+                    <UserCog className="w-4 h-4" /> Edit Profil
+                  </button>
+                  <button
+                    onClick={logout}
+                    className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-left text-ink-700 hover:bg-mist-50 transition"
+                  >
+                    <LogOut className="w-4 h-4" /> Keluar
+                  </button>
+                </div>
+              )}
+            </div>
+            <NotificationBell variant="light" />
+          </div>
+        </div>
+
+        {alumniSub === 'biodata' ? (
+          <BiodataTab profile={profile} onUpdated={setProfile} />
+        ) : (
+          <LokerTab sub={alumniSub} biodataLengkap={profile?.biodata_lengkap} onNavigateBiodata={() => setAlumniSub('biodata')} />
+        )}
+
+        {/* Navbar bawah — Lowongan, Lamaran, Tracer Study */}
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-line-200 z-50">
+          <div className="max-w-md mx-auto flex">
+            {ALUMNI_TABS.map((tab) => (
+              <SideTabButton key={tab.key} tab={tab} isActive={alumniSub === tab.key} onClick={() => setAlumniSub(tab.key)} />
+            ))}
+          </div>
+        </div>
 
         {showEditProfil && (
           <EditProfileModal onClose={() => setShowEditProfil(false)} />

@@ -31,7 +31,12 @@ use App\Http\Controllers\Api\CbtQuestionController;
 use App\Http\Controllers\Api\CbtTpController;
 use App\Http\Controllers\Api\ClassRoomController;
 use App\Http\Controllers\Api\DashboardChartController;
+use App\Http\Controllers\Api\BkkAccountController;
+use App\Http\Controllers\Api\BkkController;
 use App\Http\Controllers\Api\IdukaController;
+use App\Http\Controllers\Api\JobApplicationController;
+use App\Http\Controllers\Api\JobVacancyController;
+use App\Http\Controllers\Api\TracerStudyController;
 use App\Http\Controllers\Api\HolidayController;
 use App\Http\Controllers\Api\LaporanController;
 use App\Http\Controllers\Api\MaintenanceModeController;
@@ -103,6 +108,13 @@ Route::post('/ppdb/daftar', [PpdbController::class, 'daftar'])->middleware('thro
 Route::get('/ppdb/status/{kode}', [PpdbController::class, 'status'])->middleware('throttle:ppdb-status');
 Route::get('/ppdb/pengaturan', [PpdbController::class, 'pengaturan']);
 
+// Papan lowongan kerja (BKK) — publik, TIDAK butuh login, dipakai halaman
+// /lowongan (pola sama seperti PpdbPublic.jsx). Cuma lowongan berstatus
+// "dibuka" (sudah disetujui Waka Humas) yang muncul di sini.
+Route::get('/lowongan', [JobVacancyController::class, 'publicIndex']);
+Route::get('/lowongan-stats', [JobVacancyController::class, 'publicStats']);
+Route::get('/lowongan/{jobVacancy}', [JobVacancyController::class, 'publicShow']);
+
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
     Route::put('/me/password', [AuthController::class, 'changePassword']);
@@ -122,6 +134,14 @@ Route::middleware('auth:sanctum')->group(function () {
     // siswa/wali (menampilkan nama surah di riwayat), jadi tidak dikunci
     // ke satu role tertentu.
     Route::get('/quran-surah', [TadarusScoreController::class, 'daftarSurah']);
+    // Daftar jurusan (kode+nama) — data referensi non-sensitif juga, dipakai
+    // luas: form Master Data Siswa, form Verifikasi/Pasang Lowongan (BKK)
+    // filter "jurusan dicari", dst. Sebelumnya didaftarkan 2x di grup
+    // role-terbatas berbeda (admin,waka_kesiswaan dan +tu) — karena URI+method
+    // sama, cuma registrasi PALING TERAKHIR yang berlaku (lihat catatan di
+    // grup /students), jadi dipindah ke sini supaya semua role login bisa
+    // baca tanpa perlu daftar ulang tiap kali ada role baru yang butuh.
+    Route::get('/jurusan', [JurusanController::class, 'index']);
 
     // Didaftarkan SEBELUM grup role:admin (yang punya apiResource('iduka', ...)
     // dengan rute wildcard /iduka/{iduka}) — supaya /iduka/profile & /iduka/tanda-tangan
@@ -151,6 +171,20 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/pkl-placements/{pklPlacement}/penilaian', [PklPenilaianController::class, 'destroy']);
     });
 
+    // Lowongan kerja (BKK) — akun IDUKA kelola lowongan miliknya sendiri +
+    // tinjau pelamarnya. Instruktur TIDAK ikut grup ini (PKL & BKK memang
+    // dipisah, lihat komentar peran masing-masing di IdukaController).
+    Route::middleware('role:iduka')->group(function () {
+        Route::get('/iduka/lowongan', [JobVacancyController::class, 'indexIduka']);
+        Route::post('/iduka/lowongan', [JobVacancyController::class, 'storeIduka']);
+        Route::put('/iduka/lowongan/{jobVacancy}', [JobVacancyController::class, 'updateIduka']);
+        Route::put('/iduka/lowongan/{jobVacancy}/tutup', [JobVacancyController::class, 'tutupIduka']);
+        Route::delete('/iduka/lowongan/{jobVacancy}', [JobVacancyController::class, 'destroyIduka']);
+        Route::get('/iduka/lowongan/{jobVacancy}/pelamar', [JobApplicationController::class, 'indexForVacancy']);
+        Route::get('/iduka/lamaran/{jobApplication}', [JobApplicationController::class, 'showForIduka']);
+        Route::put('/iduka/lamaran/{jobApplication}', [JobApplicationController::class, 'updateStatus']);
+    });
+
     // Waka Kesiswaan — Kelas, Siswa, Wali Siswa, jenis Poin Pelanggaran/
     // Prestasi, Kalender Libur, Jam Masuk, ditambah Catatan BK dan Aturan
     // Sanksi Bertingkat (eskalasi otomatis dari akumulasi poin siswa).
@@ -168,7 +202,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/students/{student}/reset-password', [StudentController::class, 'resetPassword']);
         Route::post('/students/{student}/foto', [StudentController::class, 'uploadFoto']);
         Route::post('/students/foto-massal', [StudentController::class, 'uploadFotoMassal']);
-        Route::get('/jurusan', [JurusanController::class, 'index']);
         Route::get('/kartu-pelajar-pengaturan', [KartuPelajarController::class, 'show']);
         Route::get('/settings', [SettingController::class, 'index']);
         Route::put('/settings', [SettingController::class, 'update']);
@@ -211,7 +244,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/students/{student}', [StudentController::class, 'update']);
         Route::post('/students/{student}/foto', [StudentController::class, 'uploadFoto']);
         Route::post('/students/foto-massal', [StudentController::class, 'uploadFotoMassal']);
-        Route::get('/jurusan', [JurusanController::class, 'index']);
     });
 
     // Catatan BK (bk-cases) sengaja PUNYA GRUP SENDIRI (bukan digabung ke
@@ -285,6 +317,31 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/instruktur/{instruktur}', [IdukaController::class, 'updateInstruktur']);
         Route::delete('/instruktur/{instruktur}', [IdukaController::class, 'destroyInstruktur']);
         Route::put('/instruktur/{instruktur}/reset-password', [IdukaController::class, 'resetPasswordInstruktur']);
+
+        // Cuma baca daftar akun Pengurus BKK — tulis (buat/ubah/hapus/reset)
+        // tetap admin-only, didaftarkan di grup role:admin bareng akun BK/TU.
+        Route::get('/bkk-account', [BkkAccountController::class, 'index']);
+    });
+
+    // Dashboard Pengurus BKK (role baru, terpisah dari Waka Humas) — Loker
+    // (verifikasi lowongan dari IDUKA, pindah dari grup Waka Humas di atas),
+    // Lamaran Masuk lintas mitra, Tracer Study, Mitra & Kerja Sama (MoU),
+    // Laporan Penempatan (format Disnaker). "Kelola IDUKA" (data master
+    // perusahaan + GPS) TETAP wewenang Waka Humas, tidak ikut ke sini.
+    Route::middleware('role:admin,pengurus_bkk')->group(function () {
+        Route::get('/lowongan-verifikasi', [JobVacancyController::class, 'indexVerifikasi']);
+        Route::put('/lowongan-verifikasi/{jobVacancy}/setujui', [JobVacancyController::class, 'setujui']);
+        Route::put('/lowongan-verifikasi/{jobVacancy}/tolak', [JobVacancyController::class, 'tolak']);
+        Route::put('/lowongan-verifikasi/{jobVacancy}/tutup', [JobVacancyController::class, 'tutupPaksa']);
+
+        Route::get('/bkk/beranda', [BkkController::class, 'beranda']);
+        Route::get('/bkk/loker-aktif', [BkkController::class, 'lokerAktif']);
+        Route::get('/bkk/lamaran', [BkkController::class, 'lamaranMasuk']);
+        Route::get('/bkk/tracer', [BkkController::class, 'tracerRecap']);
+        Route::get('/bkk/alumni/{student}', [BkkController::class, 'alumniDetail']);
+        Route::put('/bkk/iduka/{iduka}/kerjasama', [BkkController::class, 'updateKerjasama']);
+        Route::get('/bkk/laporan-penempatan', [BkkController::class, 'laporanPenempatan']);
+        Route::put('/bkk/lamaran/{jobApplication}', [JobApplicationController::class, 'updateStatusAsBkk']);
     });
 
     // Penempatan PKL — cuma admin & Waka Kurikulum yang boleh tulis. Waka
@@ -429,6 +486,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/bk/{id}', [BkAccountController::class, 'update']);
         Route::delete('/bk/{id}', [BkAccountController::class, 'destroy']);
         Route::put('/bk/{id}/reset-password', [BkAccountController::class, 'resetPassword']);
+        Route::post('/bkk-account', [BkkAccountController::class, 'store']);
+        Route::put('/bkk-account/{id}', [BkkAccountController::class, 'update']);
+        Route::delete('/bkk-account/{id}', [BkkAccountController::class, 'destroy']);
+        Route::put('/bkk-account/{id}/reset-password', [BkkAccountController::class, 'resetPassword']);
         Route::get('/admin-accounts', [AdminAccountController::class, 'index']);
         Route::post('/admin-accounts', [AdminAccountController::class, 'store']);
         Route::put('/admin-accounts/{id}', [AdminAccountController::class, 'update']);
@@ -467,8 +528,10 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Daftar IDUKA — Waka Kurikulum cuma boleh baca (dipakai buat pilih
     // IDUKA di form Penempatan PKL — tulisnya cuma admin & Waka Humas,
-    // lihat grup di atas).
-    Route::middleware('role:admin,waka_humas,waka_kurikulum')->group(function () {
+    // lihat grup di atas). Pengurus BKK juga cuma baca, dipakai menu Mitra
+    // & Kerja Sama (jenis_kerjasama/dokumen_mou-nya diubah lewat
+    // BkkController::updateKerjasama(), bukan lewat apiResource ini).
+    Route::middleware('role:admin,waka_humas,waka_kurikulum,pengurus_bkk')->group(function () {
         Route::get('/iduka', [IdukaController::class, 'index']);
     });
 
@@ -795,6 +858,14 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::middleware('role:siswa')->group(function () {
         Route::get('/my-profile', [StudentSelfController::class, 'profile']);
+        Route::put('/my-biodata', [StudentSelfController::class, 'updateBiodata']);
+        Route::post('/my-biodata/foto', [StudentSelfController::class, 'uploadMyFoto']);
+        Route::post('/my-biodata/ktp', [StudentSelfController::class, 'uploadMyKtp']);
+        Route::delete('/my-biodata/ktp', [StudentSelfController::class, 'deleteMyKtp']);
+        Route::post('/my-biodata/cv', [StudentSelfController::class, 'uploadMyCv']);
+        Route::delete('/my-biodata/cv', [StudentSelfController::class, 'deleteMyCv']);
+        Route::post('/my-biodata/sertifikat', [StudentSelfController::class, 'uploadMySertifikat']);
+        Route::delete('/my-biodata/sertifikat/{sertifikatId}', [StudentSelfController::class, 'deleteMySertifikat']);
         Route::get('/my-attendances', [StudentSelfController::class, 'attendances']);
         Route::get('/my-violations', [StudentSelfController::class, 'violations']);
         Route::get('/my-achievements', [StudentSelfController::class, 'achievements']);
@@ -812,6 +883,15 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/my-tahsin-scores', [TahsinScoreController::class, 'myScores']);
         Route::get('/my-tahfidz-scores', [TahfidzScoreController::class, 'myScores']);
         Route::get('/my-tadarus-scores', [TadarusScoreController::class, 'myScores']);
+
+        // Papan loker (BKK) — cuma alumni yang boleh, dicek manual di
+        // controller (Student::status === 'lulus') karena role "siswa" ini
+        // dipakai bareng siswa aktif & alumni.
+        Route::get('/my-lamaran', [JobApplicationController::class, 'myApplications']);
+        Route::post('/lowongan/{jobVacancy}/lamar', [JobApplicationController::class, 'store']);
+        Route::delete('/lamaran/{jobApplication}', [JobApplicationController::class, 'destroy']);
+        Route::get('/my-tracer-study', [TracerStudyController::class, 'myTracerStudy']);
+        Route::post('/tracer-study', [TracerStudyController::class, 'submit']);
 
         // CBT — sisi siswa (portal /ujian). Rute literal "preview"/"join"
         // WAJIB didaftarkan sebelum {cbtExamAttempt} yang segmen-nya beda

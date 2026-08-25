@@ -1,14 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
-import { LogOut, Building2, ChevronDown, UserCog, Briefcase } from 'lucide-react';
+import { LogOut, Building2, ChevronDown, UserCog } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api/axios';
 import IdukaProfileModal from '../../components/IdukaProfileModal';
 import NotificationBell from '../../components/NotificationBell';
+import LowonganTab from './LowonganTab';
 
 /**
  * Dashboard akun IDUKA — akun login milik perusahaan mitra sendiri (beda
- * dari akun Instruktur untuk PKL). Fitur lowongan kerja untuk akun ini
- * belum dibangun, jadi untuk sekarang cuma halaman profil + pemberitahuan.
+ * dari akun Instruktur untuk PKL). Isinya kelola lowongan kerja (BKK)
+ * milik perusahaan ini.
  */
 export default function IdukaDashboard() {
   const { user, logout } = useAuth();
@@ -78,16 +79,8 @@ export default function IdukaDashboard() {
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-6 pt-10">
-        <div className="surface-card p-8 text-center">
-          <div className="w-14 h-14 rounded-2xl bg-brand-50 flex items-center justify-center mx-auto mb-4">
-            <Briefcase className="w-7 h-7 text-brand-600" />
-          </div>
-          <h2 className="font-display text-lg font-semibold text-ink-900 mb-2">Fitur Lowongan Kerja Segera Hadir</h2>
-          <p className="text-sm text-ink-500 max-w-sm mx-auto">
-            Fitur pasang lowongan kerja &amp; lamaran alumni untuk perusahaan Anda sedang disiapkan. Sementara ini Anda bisa memastikan profil perusahaan sudah benar lewat menu Profil di atas.
-          </p>
-        </div>
+      <div className="max-w-4xl mx-auto px-6 pt-6">
+        <LowonganTab />
       </div>
 
       {showEditProfil && (
