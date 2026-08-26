@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Trash2, UserCheck, X, Plus, Check, Pencil, Wallet } from 'lucide-react';
+import { Trash2, UserCheck, X, Plus, Check, Pencil, Wallet, BellRing, ShieldCheck } from 'lucide-react';
 import api from '../../../api/axios';
 import TruncateText from '../../../components/TruncateText';
 import Pagination from '../../../components/Pagination';
@@ -108,6 +108,7 @@ export default function FormulirPpdbTab() {
       const list = await api.get(`/ppdb/${pembayaranTarget.id}/pembayaran`);
       setPembayaranList(list.data);
       load(statusFilter, periodeFilter);
+      loadBuktiMasuk();
     } catch (err) {
       const msgs = err.response?.data?.errors;
       setBayarError(msgs ? Object.values(msgs).flat().join(', ') : err.response?.data?.message || 'Gagal menyimpan pembayaran.');
@@ -122,6 +123,7 @@ export default function FormulirPpdbTab() {
     setPembayaranTarget(res.data);
     setPembayaranList((prev) => prev.filter((x) => x.id !== id));
     load(statusFilter, periodeFilter);
+    loadBuktiMasuk();
   };
 
   // Sisa tagihan pendaftar yang lagi dibuka modalnya — dipakai batasi
@@ -131,6 +133,46 @@ export default function FormulirPpdbTab() {
     const target = targetBayar(p);
     if (target <= 0) return null;
     return Math.max(0, target - Number(p.total_dibayar || 0));
+  };
+
+  // Notifikasi "Bukti Pembayaran Masuk" — pendaftar berstatus Diterima yang
+  // sudah unggah bukti transfer (lewat halaman Cek Status publik) tapi
+  // tagihannya di sistem masih ada sisa, artinya admin BELUM mencocokkan
+  // buktinya ke catatan pembayaran. Begitu diverifikasi (atau dicatat lunas
+  // manual), sisaBayar jadi 0 dan otomatis hilang dari daftar ini — tidak
+  // perlu status terpisah buat "sudah diproses". SENGAJA di-fetch terpisah
+  // dari tabel utama (bukan diturunkan dari `pendaftar`) supaya tidak ikut
+  // hilang kalau admin sedang memfilter tabel ke status/periode lain —
+  // notifikasi ini harus selalu kelihatan apa pun filter tabel yang aktif.
+  const [buktiMasuk, setBuktiMasuk] = useState([]);
+  const loadBuktiMasuk = () => api.get('/ppdb', { params: { status: 'diterima' } }).then((res) => {
+    setBuktiMasuk(res.data.filter((p) => p.bukti_pembayaran_url && (sisaBayar(p) || 0) > 0));
+  });
+  useEffect(() => { loadBuktiMasuk(); }, []);
+
+  const [verifyingId, setVerifyingId] = useState(null);
+
+  const handleVerifikasiLunas = async (p) => {
+    const sisa = sisaBayar(p);
+    if (!sisa) return;
+    const yakin = confirm(
+      `Konfirmasi Verifikasi Pembayaran\n\n` +
+      `Pastikan Anda sudah membuka & mencocokkan bukti transfer "${p.nama_lengkap}" (${p.kode_pendaftaran}) dengan mutasi rekening sekolah SEBELUM melanjutkan.\n\n` +
+      `Tindakan ini akan mencatat pelunasan sebesar ${rupiah(sisa)} dan tidak bisa dibatalkan otomatis. Lanjutkan?`
+    );
+    if (!yakin) return;
+    setVerifyingId(p.id);
+    try {
+      await api.post(`/ppdb/${p.id}/pembayaran`, {
+        nominal: sisa, metode: 'transfer', catatan: 'Verifikasi bukti pembayaran',
+      });
+      load(statusFilter, periodeFilter);
+      loadBuktiMasuk();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Gagal memverifikasi pembayaran.');
+    } finally {
+      setVerifyingId(null);
+    }
   };
 
   const handleTandaiLunas = async () => {
@@ -146,6 +188,7 @@ export default function FormulirPpdbTab() {
       const list = await api.get(`/ppdb/${pembayaranTarget.id}/pembayaran`);
       setPembayaranList(list.data);
       load(statusFilter, periodeFilter);
+      loadBuktiMasuk();
     } catch (err) {
       setBayarError(err.response?.data?.message || 'Gagal mencatat pelunasan.');
     } finally {
@@ -159,6 +202,7 @@ export default function FormulirPpdbTab() {
     setPembayaranTarget(res.data);
     setPembayaranList([]);
     load(statusFilter, periodeFilter);
+    loadBuktiMasuk();
   };
 
   const [jadikanTarget, setJadikanTarget] = useState(null);
@@ -221,6 +265,50 @@ export default function FormulirPpdbTab() {
           <Plus className="w-4 h-4" /> Tambah Pendaftar Offline
         </button>
       </div>
+
+      {buktiMasuk.length > 0 && (
+        <div className="surface-card p-5 border-l-4 border-l-honey-400">
+          <h2 className="font-display font-semibold text-ink-900 mb-1 flex items-center gap-2">
+            <BellRing className="w-4.5 h-4.5 text-honey-600" /> Bukti Pembayaran Masuk
+            <span className="text-ink-500 font-sans font-normal text-sm">({buktiMasuk.length})</span>
+          </h2>
+          <p className="text-xs text-ink-500 mb-4">Calon siswa yang sudah unggah bukti transfer lewat halaman Cek Status, tapi belum dicocokkan/dicatat sebagai pembayaran. Cek buktinya dulu sebelum verifikasi.</p>
+          <div className="table-scroll">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-ink-500 border-b border-line-200">
+                  <th className="pb-2 font-medium whitespace-nowrap px-2">Nama</th>
+                  <th className="font-medium whitespace-nowrap px-2">Kode</th>
+                  <th className="font-medium text-right whitespace-nowrap px-2">Sisa Tagihan</th>
+                  <th className="font-medium whitespace-nowrap px-2">Bukti</th>
+                  <th className="whitespace-nowrap px-2"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {buktiMasuk.map((p) => (
+                  <tr key={p.id} className="border-t border-line-200">
+                    <td className="py-2.5 text-ink-900 whitespace-nowrap px-2"><TruncateText text={p.nama_lengkap} /></td>
+                    <td className="font-mono text-xs text-ink-500 whitespace-nowrap px-2">{p.kode_pendaftaran}</td>
+                    <td className="text-right font-medium text-ink-900 whitespace-nowrap px-2">{rupiah(sisaBayar(p))}</td>
+                    <td className="whitespace-nowrap px-2">
+                      <a href={p.bukti_pembayaran_url} target="_blank" rel="noreferrer" className="text-xs font-medium text-brand-600 hover:underline">Lihat Bukti</a>
+                    </td>
+                    <td className="whitespace-nowrap px-2 text-right">
+                      <button
+                        onClick={() => handleVerifikasiLunas(p)}
+                        disabled={verifyingId === p.id}
+                        className="flex items-center gap-1.5 text-xs font-medium text-brand-700 bg-brand-50 hover:bg-brand-100 rounded-lg px-2.5 py-1.5 whitespace-nowrap ml-auto disabled:opacity-60"
+                      >
+                        <ShieldCheck className="w-3.5 h-3.5" /> {verifyingId === p.id ? 'Memverifikasi...' : 'Verifikasi Lunas'}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       <div className="surface-card p-5 flex items-center gap-3 flex-wrap">
         <label className="text-sm font-medium text-ink-700">Periode PPDB</label>
@@ -367,7 +455,12 @@ export default function FormulirPpdbTab() {
               <h2 className="font-display font-semibold text-ink-900">Pembayaran Biaya Pendaftaran</h2>
               <button type="button" onClick={() => setPembayaranTarget(null)} className="text-ink-400 hover:text-ink-600"><X className="w-4 h-4" /></button>
             </div>
-            <p className="text-xs text-ink-500 mb-4">{pembayaranTarget.nama_lengkap} — {pembayaranTarget.kode_pendaftaran}</p>
+            <p className="text-xs text-ink-500 mb-4">
+              {pembayaranTarget.nama_lengkap} — {pembayaranTarget.kode_pendaftaran}
+              {pembayaranTarget.bukti_pembayaran_url && (
+                <a href={pembayaranTarget.bukti_pembayaran_url} target="_blank" rel="noreferrer" className="ml-2 font-medium text-brand-600 hover:underline">Lihat Bukti Pembayaran</a>
+              )}
+            </p>
 
             <div className="flex items-center justify-between gap-3 bg-mist-50 border border-line-200 rounded-lg px-3 py-2.5 mb-4 flex-wrap">
               <div>

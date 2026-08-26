@@ -2,7 +2,10 @@ import { useEffect, useState } from 'react';
 import { Power, Save, Upload, FileText, ExternalLink, Plus, CheckCircle2, Trash2, X, ImagePlus } from 'lucide-react';
 import api from '../../../api/axios';
 
-const emptyInfo = { jadwal_pendaftaran: '', syarat_pendaftaran: '', biaya_pendaftaran: '', info_tambahan: '' };
+const emptyInfo = {
+  jadwal_pendaftaran: '', syarat_pendaftaran: '', biaya_pendaftaran: '', info_tambahan: '',
+  rekening_bank: '', rekening_nomor: '', rekening_atas_nama: '', kontak_admin: '',
+};
 const emptyPeriode = { nama: '', tanggal_mulai: '', tanggal_selesai: '', biaya_nominal_l: '', biaya_nominal_p: '' };
 const rupiah = (n) => `Rp${Number(n || 0).toLocaleString('id-ID')}`;
 
@@ -29,6 +32,10 @@ export default function PengaturanPpdbTab() {
       syarat_pendaftaran: res.data.syarat_pendaftaran || '',
       biaya_pendaftaran: res.data.biaya_pendaftaran || '',
       info_tambahan: res.data.info_tambahan || '',
+      rekening_bank: res.data.rekening_bank || '',
+      rekening_nomor: res.data.rekening_nomor || '',
+      rekening_atas_nama: res.data.rekening_atas_nama || '',
+      kontak_admin: res.data.kontak_admin || '',
     });
     setTemplateUrl(res.data.template_pernyataan_url);
     setBrosurDepanUrl(res.data.brosur_depan_url);
@@ -404,6 +411,20 @@ export default function PengaturanPpdbTab() {
                 </label>
               ))}
             </div>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-ink-500 mb-1">Rekening Pembayaran</label>
+            <p className="text-xs text-ink-400 mb-2">Ditampilkan ke calon siswa yang statusnya sudah "Diterima" lewat halaman Cek Status, supaya tahu ke mana harus transfer biaya pendaftaran.</p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+              <input placeholder="Nama Bank (mis. BRI)" value={info.rekening_bank} onChange={(e) => setInfo({ ...info, rekening_bank: e.target.value })} className="field-input w-full" />
+              <input placeholder="No. Rekening" value={info.rekening_nomor} onChange={(e) => setInfo({ ...info, rekening_nomor: e.target.value })} className="field-input w-full" />
+              <input placeholder="Atas Nama" value={info.rekening_atas_nama} onChange={(e) => setInfo({ ...info, rekening_atas_nama: e.target.value })} className="field-input w-full" />
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-ink-500 mb-1">Kontak Admin PPDB</label>
+            <p className="text-xs text-ink-400 mb-2">Nomor WhatsApp/Telepon admin — ditampilkan di halaman Cek Status sebagai alternatif kalau calon siswa butuh bantuan soal pembayaran.</p>
+            <input placeholder="Mis. 081234567890" value={info.kontak_admin} onChange={(e) => setInfo({ ...info, kontak_admin: e.target.value })} className="field-input w-full max-w-xs" />
           </div>
           <div>
             <label className="block text-xs font-medium text-ink-500 mb-1">Info Tambahan</label>

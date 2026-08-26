@@ -108,6 +108,7 @@ Route::get('/maintenance-status', [MaintenanceModeController::class, 'status']);
 // sekali, jadi formulir daftar & cek status WAJIB publik (tanpa auth:sanctum).
 Route::post('/ppdb/daftar', [PpdbController::class, 'daftar'])->middleware('throttle:ppdb-daftar');
 Route::get('/ppdb/status/{kode}', [PpdbController::class, 'status'])->middleware('throttle:ppdb-status');
+Route::post('/ppdb/status/{kode}/bukti-pembayaran', [PpdbController::class, 'uploadBuktiPembayaran'])->middleware('throttle:ppdb-daftar');
 Route::get('/ppdb/edit/{kode}', [PpdbController::class, 'editByKode'])->middleware('throttle:ppdb-status');
 Route::post('/ppdb/edit/{kode}', [PpdbController::class, 'updateByKode'])->middleware('throttle:ppdb-daftar');
 Route::get('/ppdb/pengaturan', [PpdbController::class, 'pengaturan']);

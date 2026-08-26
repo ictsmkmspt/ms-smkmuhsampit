@@ -10,7 +10,7 @@ import Reveal from '../components/Reveal';
 
 const LANGKAH = [
   { icon: FileEdit, judul: 'Isi Formulir Online', desc: 'Lengkapi data diri, orang tua/wali, dan pilihan jurusan lewat formulir pendaftaran.' },
-  { icon: UploadCloud, judul: 'Unggah Berkas', desc: 'Unggah ijazah, rapor, KK, akta lahir, dan berkas persyaratan lain (boleh disusulkan).' },
+  { icon: UploadCloud, judul: 'Unggah Berkas', cta: { label: 'Lihat Syarat Berkas Pendaftaran', href: '#syarat-berkas' } },
   { icon: ClipboardList, judul: 'Verifikasi Sekolah', desc: 'Panitia PPDB memeriksa data & berkas, lalu memperbarui status pendaftaran.' },
   { icon: BadgeCheck, judul: 'Cek Status & Daftar Ulang', desc: 'Pantau status pakai kode pendaftaran. Kalau diterima, lanjut daftar ulang di sekolah.' },
 ];
@@ -221,7 +221,13 @@ export default function PpdbLandingPublic() {
                 <span className="text-xs font-mono text-ink-300">{String(i + 1).padStart(2, '0')}</span>
               </div>
               <h3 className="font-display font-medium text-sm text-ink-900 mb-1.5">{l.judul}</h3>
-              <p className="text-sm text-ink-500 leading-relaxed">{l.desc}</p>
+              {l.cta ? (
+                <a href={l.cta.href} className="inline-flex items-center gap-1.5 text-sm font-medium text-brand-600 hover:text-brand-700 hover:underline">
+                  <ClipboardList className="w-3.5 h-3.5" /> {l.cta.label}
+                </a>
+              ) : (
+                <p className="text-sm text-ink-500 leading-relaxed">{l.desc}</p>
+              )}
             </Reveal>
           ))}
         </div>

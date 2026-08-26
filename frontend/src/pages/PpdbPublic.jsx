@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { UserPlus, Search, CheckCircle2, Upload, Check, Download, ClipboardList, X, ImagePlus, Pencil } from 'lucide-react';
+import { UserPlus, Search, CheckCircle2, Upload, Check, Download, ClipboardList, X, ImagePlus, Pencil, Wallet, Lock, Phone } from 'lucide-react';
 import api from '../api/axios';
 import { useSchoolProfile } from '../context/SchoolProfileContext';
 import DateInput from '../components/DateInput';
@@ -80,6 +80,10 @@ export default function PpdbPublic() {
   const [hasilCek, setHasilCek] = useState(null);
   const [errorCek, setErrorCek] = useState('');
   const [loadingCek, setLoadingCek] = useState(false);
+  const [rekening, setRekening] = useState({ bank: '', nomor: '', atas_nama: '' });
+  const [kontakAdmin, setKontakAdmin] = useState('');
+  const [uploadingBukti, setUploadingBukti] = useState(false);
+  const [buktiError, setBuktiError] = useState('');
 
   const [kodeEdit, setKodeEdit] = useState('');
   const [editData, setEditData] = useState(null);
@@ -92,6 +96,8 @@ export default function PpdbPublic() {
       setDibuka(res.data.dibuka);
       setTemplateUrl(res.data.template_pernyataan_url);
       setSyaratText(res.data.syarat_pendaftaran || '');
+      setRekening({ bank: res.data.rekening_bank || '', nomor: res.data.rekening_nomor || '', atas_nama: res.data.rekening_atas_nama || '' });
+      setKontakAdmin(res.data.kontak_admin || '');
     }).catch(() => {});
     api.get('/ppdb/jurusan').then((res) => setJurusanList(res.data)).catch(() => {});
   }, []);
@@ -137,6 +143,22 @@ export default function PpdbPublic() {
       setErrorCek(err.response?.data?.message || 'Kode pendaftaran tidak ditemukan.');
     } finally {
       setLoadingCek(false);
+    }
+  };
+
+  const handleUploadBukti = async (file) => {
+    if (!file || !hasilCek) return;
+    setBuktiError('');
+    setUploadingBukti(true);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      const res = await api.post(`/ppdb/status/${encodeURIComponent(hasilCek.kode_pendaftaran)}/bukti-pembayaran`, fd);
+      setHasilCek({ ...hasilCek, bukti_pembayaran_url: res.data.bukti_pembayaran_url });
+    } catch (err) {
+      setBuktiError(err.response?.data?.message || 'Gagal mengunggah bukti pembayaran.');
+    } finally {
+      setUploadingBukti(false);
     }
   };
 
@@ -483,6 +505,13 @@ export default function PpdbPublic() {
                   </form>
                   {errorEdit && <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2">{errorEdit}</p>}
                 </div>
+              ) : editData.status === 'diterima' ? (
+                <div className="text-center space-y-3 max-w-sm mx-auto">
+                  <Lock className="w-8 h-8 text-ink-300 mx-auto" />
+                  <p className="text-sm text-ink-700">Data pendaftar <strong>{editData.nama_lengkap}</strong> tidak bisa diedit lagi karena pendaftaran sudah <strong>Diterima</strong>.</p>
+                  <p className="text-xs text-ink-400">Hubungi sekolah kalau ada data yang perlu dikoreksi.</p>
+                  <button type="button" onClick={() => setEditData(null)} className="text-xs font-medium text-ink-500 hover:text-ink-700">Ganti Kode</button>
+                </div>
               ) : (
                 <form onSubmit={handleSimpanEdit} className="space-y-4">
                   <div className="flex items-center justify-between gap-3 bg-mist-50 border border-line-200 rounded-lg px-3 py-2.5">
@@ -516,9 +545,52 @@ export default function PpdbPublic() {
                         <p className="text-ink-700 text-sm">{hasilCek.catatan}</p>
                       </>
                     )}
-                    <button onClick={() => bukaEdit(hasilCek.kode_pendaftaran)} className="flex items-center justify-center gap-1.5 text-xs font-medium text-brand-700 bg-brand-50 hover:bg-brand-100 rounded-lg px-3 py-2 w-full mt-1">
-                      <Pencil className="w-3.5 h-3.5" /> Edit Data / Berkas
-                    </button>
+
+                    {hasilCek.status === 'diterima' && hasilCek.sisa_bayar > 0 && (
+                      <div className="mt-3 bg-honey-50 border border-honey-200 rounded-lg p-3 space-y-2.5">
+                        <p className="text-sm font-medium text-honey-800 flex items-center gap-1.5">
+                          <Wallet className="w-4 h-4 shrink-0" /> Silakan lakukan pembayaran biaya pendaftaran
+                        </p>
+                        <p className="text-sm text-honey-900">
+                          Sebesar <strong>Rp{Number(hasilCek.sisa_bayar).toLocaleString('id-ID')}</strong>
+                        </p>
+                        {(rekening.bank || rekening.nomor || rekening.atas_nama) && (
+                          <div className="bg-white rounded-lg border border-honey-200 p-2.5">
+                            {rekening.bank && <p className="text-sm font-semibold text-ink-900">{rekening.bank}</p>}
+                            {rekening.nomor && <p className="font-mono text-sm text-ink-900">{rekening.nomor}</p>}
+                            {rekening.atas_nama && <p className="text-xs text-ink-500 mt-0.5">a.n. {rekening.atas_nama}</p>}
+                          </div>
+                        )}
+                        {buktiError && <p className="text-xs text-honey-700">{buktiError}</p>}
+                        <label className="flex items-center justify-center gap-1.5 text-xs font-medium text-brand-700 bg-white hover:bg-brand-50 border border-brand-200 rounded-lg px-3 py-2 cursor-pointer transition">
+                          <input type="file" accept=".jpg,.jpeg,.png,.pdf" className="hidden" onChange={(e) => handleUploadBukti(e.target.files[0] || null)} disabled={uploadingBukti} />
+                          <Upload className="w-3.5 h-3.5" /> {uploadingBukti ? 'Mengunggah...' : hasilCek.bukti_pembayaran_url ? 'Ganti Bukti Pembayaran' : 'Unggah Bukti Pembayaran'}
+                        </label>
+                        {hasilCek.bukti_pembayaran_url && (
+                          <a href={hasilCek.bukti_pembayaran_url} target="_blank" rel="noreferrer" className="block text-center text-xs text-brand-600 hover:underline">Lihat Bukti Terunggah</a>
+                        )}
+                        {kontakAdmin && (
+                          <a href={`tel:${kontakAdmin.replace(/[^0-9+]/g, '')}`} className="flex items-center justify-center gap-1.5 text-xs text-honey-800 hover:underline">
+                            <Phone className="w-3.5 h-3.5 shrink-0" /> Atau hubungi Admin PPDB: {kontakAdmin}
+                          </a>
+                        )}
+                      </div>
+                    )}
+                    {hasilCek.status === 'diterima' && hasilCek.target_biaya > 0 && hasilCek.sisa_bayar <= 0 && (
+                      <p className="mt-3 flex items-center gap-1.5 text-sm text-brand-700 bg-brand-50 border border-brand-200 rounded-lg px-3 py-2">
+                        <CheckCircle2 className="w-4 h-4 shrink-0" /> Biaya pendaftaran sudah lunas.
+                      </p>
+                    )}
+
+                    {hasilCek.status === 'diterima' ? (
+                      <p className="flex items-center justify-center gap-1.5 text-xs text-ink-400 border border-line-200 rounded-lg px-3 py-2 w-full mt-1">
+                        <Lock className="w-3.5 h-3.5 shrink-0" /> Data tidak bisa diedit lagi (sudah diterima)
+                      </p>
+                    ) : (
+                      <button onClick={() => bukaEdit(hasilCek.kode_pendaftaran)} className="flex items-center justify-center gap-1.5 text-xs font-medium text-brand-700 bg-brand-50 hover:bg-brand-100 rounded-lg px-3 py-2 w-full mt-1">
+                        <Pencil className="w-3.5 h-3.5" /> Edit Data / Berkas
+                      </button>
+                    )}
                   </div>
                 )}
               </div>

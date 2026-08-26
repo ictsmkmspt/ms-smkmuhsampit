@@ -45,6 +45,13 @@ class PpdbController extends Controller
             // profile.tahun_ajaran (tahun ajaran sekolah), karena PPDB
             // sengaja dilepas dari tahun ajaran (lihat PpdbPeriode).
             'periode_aktif' => PpdbPeriode::where('status', 'aktif')->value('nama'),
+            // Info rekening ditampilkan ke calon siswa yang statusnya sudah
+            // "diterima" lewat halaman Cek Status (lihat status() di bawah),
+            // supaya mereka tahu ke mana harus transfer biaya pendaftaran.
+            'rekening_bank' => Setting::get('ppdb_rekening_bank', ''),
+            'rekening_nomor' => Setting::get('ppdb_rekening_nomor', ''),
+            'rekening_atas_nama' => Setting::get('ppdb_rekening_atas_nama', ''),
+            'kontak_admin' => Setting::get('ppdb_kontak_admin', ''),
         ]);
     }
 
@@ -62,6 +69,10 @@ class PpdbController extends Controller
             'syarat_pendaftaran' => 'nullable|string|max:3000',
             'biaya_pendaftaran' => 'nullable|string|max:2000',
             'info_tambahan' => 'nullable|string|max:3000',
+            'rekening_bank' => 'nullable|string|max:100',
+            'rekening_nomor' => 'nullable|string|max:50',
+            'rekening_atas_nama' => 'nullable|string|max:150',
+            'kontak_admin' => 'nullable|string|max:50',
         ]);
 
         Setting::set(self::SETTING_KEY, $data['dibuka'] ? '1' : '0');
@@ -69,6 +80,10 @@ class PpdbController extends Controller
         Setting::set('ppdb_syarat', $data['syarat_pendaftaran'] ?? '');
         Setting::set('ppdb_biaya', $data['biaya_pendaftaran'] ?? '');
         Setting::set('ppdb_info_tambahan', $data['info_tambahan'] ?? '');
+        Setting::set('ppdb_rekening_bank', $data['rekening_bank'] ?? '');
+        Setting::set('ppdb_rekening_nomor', $data['rekening_nomor'] ?? '');
+        Setting::set('ppdb_rekening_atas_nama', $data['rekening_atas_nama'] ?? '');
+        Setting::set('ppdb_kontak_admin', $data['kontak_admin'] ?? '');
 
         return response()->json([
             'message' => $data['dibuka'] ? 'Pendaftaran online PPDB dibuka.' : 'Pendaftaran online PPDB ditutup.',
@@ -295,11 +310,63 @@ class PpdbController extends Controller
             return response()->json(['message' => 'Kode pendaftaran tidak ditemukan.'], 404);
         }
 
+        // Sisa tagihan dihitung di sini (bukan diserahkan ke frontend) supaya
+        // himbauan "silakan bayar" di halaman Cek Status cuma muncul kalau
+        // memang belum lunas — pola sama seperti sisaBayar() di tabel admin.
+        $totalDibayar = (int) $pendaftar->pembayarans()->sum('nominal');
+        $target = $pendaftar->target_biaya;
+        $sisaBayar = max(0, $target - $totalDibayar);
+
         return response()->json([
             'kode_pendaftaran' => $pendaftar->kode_pendaftaran,
             'nama_lengkap' => $pendaftar->nama_lengkap,
             'status' => $pendaftar->status,
             'catatan' => $pendaftar->catatan,
+            'target_biaya' => $target,
+            'total_dibayar' => $totalDibayar,
+            'sisa_bayar' => $sisaBayar,
+            'bukti_pembayaran_url' => $pendaftar->bukti_pembayaran_url,
+        ]);
+    }
+
+    /**
+     * Upload/ganti bukti transfer biaya pendaftaran — dipakai calon siswa
+     * lewat halaman Cek Status setelah statusnya "diterima", supaya admin
+     * punya buktinya sebelum mencatat pembayaran resmi lewat
+     * storePembayaran(). Publik tanpa auth (kode pendaftaran = kuncinya),
+     * pola sama seperti updateByKode(). File lama (kalau ada) dihapus dulu.
+     */
+    public function uploadBuktiPembayaran(Request $request, $kode)
+    {
+        $pendaftar = PpdbPendaftar::where('kode_pendaftaran', $kode)->first();
+
+        if (!$pendaftar) {
+            return response()->json(['message' => 'Kode pendaftaran tidak ditemukan.'], 404);
+        }
+
+        // Himbauan pembayaran (lihat status() di atas) cuma tampil ke calon
+        // siswa kalau statusnya "diterima" — dikunci di sini juga supaya
+        // kode pendaftaran yang masih "mendaftar"/"verifikasi"/"ditolak"
+        // tidak bisa dipakai upload bukti lewat panggilan API langsung
+        // (bukan cuma disembunyikan di frontend), dan tidak nyasar muncul
+        // di notifikasi "Bukti Pembayaran Masuk" admin padahal belum
+        // resmi diterima.
+        if ($pendaftar->status !== 'diterima') {
+            return response()->json(['message' => 'Bukti pembayaran cuma bisa diunggah setelah pendaftaran berstatus Diterima.'], 422);
+        }
+
+        $request->validate(['file' => 'required|file|mimes:jpg,jpeg,png,pdf|max:5120']);
+
+        if ($pendaftar->bukti_pembayaran) {
+            Storage::disk('public')->delete($pendaftar->bukti_pembayaran);
+        }
+
+        $path = $request->file('file')->store('ppdb-bukti-bayar', 'public');
+        $pendaftar->update(['bukti_pembayaran' => $path]);
+
+        return response()->json([
+            'message' => 'Bukti pembayaran berhasil diunggah.',
+            'bukti_pembayaran_url' => $pendaftar->fresh()->bukti_pembayaran_url,
         ]);
     }
 
@@ -337,6 +404,14 @@ class PpdbController extends Controller
 
         if (!$pendaftar) {
             return response()->json(['message' => 'Kode pendaftaran tidak ditemukan.'], 404);
+        }
+
+        // Sekali diterima, biodata & berkas dianggap final — dikunci di sini
+        // (bukan cuma disembunyikan di frontend) supaya tidak bisa diubah
+        // lewat panggilan API langsung juga. Koreksi setelah diterima harus
+        // lewat admin (menu Edit Pendaftar).
+        if ($pendaftar->status === 'diterima') {
+            return response()->json(['message' => 'Data tidak bisa diubah karena pendaftaran sudah diterima. Hubungi sekolah kalau ada yang perlu dikoreksi.'], 422);
         }
 
         $data = $request->validate($this->aturanValidasiPpdb('offline'));
