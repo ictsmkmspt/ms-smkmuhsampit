@@ -30,6 +30,7 @@ class PpdbController extends Controller
         $templatePernyataan = Setting::get('ppdb_template_pernyataan', '');
         $brosurDepan = Setting::get('ppdb_brosur_depan', '');
         $brosurBelakang = Setting::get('ppdb_brosur_belakang', '');
+        $periodeAktif = PpdbPeriode::where('status', 'aktif')->first();
 
         return response()->json([
             'dibuka' => Setting::get(self::SETTING_KEY, '1') === '1',
@@ -44,7 +45,13 @@ class PpdbController extends Controller
             // Didik Baru {periode}" — SENGAJA nama periode PPDB, bukan
             // profile.tahun_ajaran (tahun ajaran sekolah), karena PPDB
             // sengaja dilepas dari tahun ajaran (lihat PpdbPeriode).
-            'periode_aktif' => PpdbPeriode::where('status', 'aktif')->value('nama'),
+            'periode_aktif' => $periodeAktif?->nama,
+            // Nominal biaya per gender periode aktif — dipakai halaman Cek
+            // Status buat kasih tahu calon siswa yang BELUM diterima berapa
+            // yang bakal ditagih nanti (lihat PpdbPublic.jsx), supaya tidak
+            // kaget pas statusnya berubah jadi Diterima.
+            'biaya_nominal_l' => (int) ($periodeAktif->biaya_nominal_l ?? 0),
+            'biaya_nominal_p' => (int) ($periodeAktif->biaya_nominal_p ?? 0),
             // Info rekening ditampilkan ke calon siswa yang statusnya sudah
             // "diterima" lewat halaman Cek Status (lihat status() di bawah),
             // supaya mereka tahu ke mana harus transfer biaya pendaftaran.

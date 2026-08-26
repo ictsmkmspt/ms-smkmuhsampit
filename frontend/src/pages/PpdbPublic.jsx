@@ -82,6 +82,7 @@ export default function PpdbPublic() {
   const [loadingCek, setLoadingCek] = useState(false);
   const [rekening, setRekening] = useState({ bank: '', nomor: '', atas_nama: '' });
   const [kontakAdmin, setKontakAdmin] = useState('');
+  const [biayaNominal, setBiayaNominal] = useState({ l: 0, p: 0 });
   const [uploadingBukti, setUploadingBukti] = useState(false);
   const [buktiError, setBuktiError] = useState('');
 
@@ -98,6 +99,7 @@ export default function PpdbPublic() {
       setSyaratText(res.data.syarat_pendaftaran || '');
       setRekening({ bank: res.data.rekening_bank || '', nomor: res.data.rekening_nomor || '', atas_nama: res.data.rekening_atas_nama || '' });
       setKontakAdmin(res.data.kontak_admin || '');
+      setBiayaNominal({ l: res.data.biaya_nominal_l || 0, p: res.data.biaya_nominal_p || 0 });
     }).catch(() => {});
     api.get('/ppdb/jurusan').then((res) => setJurusanList(res.data)).catch(() => {});
   }, []);
@@ -544,6 +546,13 @@ export default function PpdbPublic() {
                         <p className="text-sm text-ink-500 mt-2">Catatan</p>
                         <p className="text-ink-700 text-sm">{hasilCek.catatan}</p>
                       </>
+                    )}
+
+                    {hasilCek.status !== 'diterima' && (biayaNominal.l > 0 || biayaNominal.p > 0) && (
+                      <p className="mt-3 text-xs text-ink-500 bg-mist-50 border border-line-200 rounded-lg px-3 py-2 leading-relaxed">
+                        Pembayaran biaya pendaftaran akan diajukan setelah kamu resmi <strong>Diterima</strong>.
+                        Biaya untuk siswa laki-laki <strong>Rp{Number(biayaNominal.l).toLocaleString('id-ID')}</strong>, perempuan <strong>Rp{Number(biayaNominal.p).toLocaleString('id-ID')}</strong>.
+                      </p>
                     )}
 
                     {hasilCek.status === 'diterima' && hasilCek.sisa_bayar > 0 && (
