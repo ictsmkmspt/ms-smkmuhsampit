@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Power, Save, Upload, FileText, ExternalLink, Plus, CheckCircle2, Trash2, X } from 'lucide-react';
+import { Power, Save, Upload, FileText, ExternalLink, Plus, CheckCircle2, Trash2, X, ImagePlus } from 'lucide-react';
 import api from '../../../api/axios';
 
 const emptyInfo = { jadwal_pendaftaran: '', syarat_pendaftaran: '', biaya_pendaftaran: '', info_tambahan: '' };
@@ -17,6 +17,10 @@ export default function PengaturanPpdbTab() {
   const [templateUrl, setTemplateUrl] = useState(null);
   const [uploadingTemplate, setUploadingTemplate] = useState(false);
   const [templateError, setTemplateError] = useState('');
+  const [brosurDepanUrl, setBrosurDepanUrl] = useState(null);
+  const [brosurBelakangUrl, setBrosurBelakangUrl] = useState(null);
+  const [uploadingBrosur, setUploadingBrosur] = useState(null); // 'depan' | 'belakang' | null
+  const [brosurError, setBrosurError] = useState('');
 
   const loadPengaturan = () => api.get('/ppdb/pengaturan').then((res) => {
     setDibuka(res.data.dibuka);
@@ -27,6 +31,8 @@ export default function PengaturanPpdbTab() {
       info_tambahan: res.data.info_tambahan || '',
     });
     setTemplateUrl(res.data.template_pernyataan_url);
+    setBrosurDepanUrl(res.data.brosur_depan_url);
+    setBrosurBelakangUrl(res.data.brosur_belakang_url);
   });
 
   useEffect(() => { loadPengaturan().finally(() => setLoading(false)); }, []);
@@ -132,6 +138,24 @@ export default function PengaturanPpdbTab() {
     } finally {
       setUploadingTemplate(false);
       e.target.value = '';
+    }
+  };
+
+  const handleUploadBrosur = async (sisi, file) => {
+    if (!file) return;
+    setBrosurError('');
+    setUploadingBrosur(sisi);
+    try {
+      const fd = new FormData();
+      fd.append('sisi', sisi);
+      fd.append('file', file);
+      const res = await api.post('/ppdb/brosur', fd);
+      setBrosurDepanUrl(res.data.brosur_depan_url);
+      setBrosurBelakangUrl(res.data.brosur_belakang_url);
+    } catch (err) {
+      setBrosurError(err.response?.data?.message || 'Gagal mengunggah brosur.');
+    } finally {
+      setUploadingBrosur(null);
     }
   };
 
@@ -351,6 +375,35 @@ export default function PengaturanPpdbTab() {
               className="field-input w-full" rows={2}
               placeholder="Contoh: Gratis biaya formulir pendaftaran."
             />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-ink-500 mb-1">Brosur PPDB</label>
+            <p className="text-xs text-ink-400 mb-2">Gambar brosur (JPG/PNG, maks 5MB) yang ditampilkan di halaman awal PPDB publik.</p>
+            {brosurError && <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2 mb-2">{brosurError}</p>}
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { sisi: 'depan', label: 'Halaman Depan', url: brosurDepanUrl },
+                { sisi: 'belakang', label: 'Halaman Belakang', url: brosurBelakangUrl },
+              ].map((b) => (
+                <label key={b.sisi} className="flex flex-col items-center justify-center gap-1.5 aspect-[3/4] border-2 border-dashed border-line-300 rounded-lg cursor-pointer hover:bg-mist-50 transition overflow-hidden relative">
+                  <input type="file" accept=".jpg,.jpeg,.png" className="hidden" onChange={(e) => handleUploadBrosur(b.sisi, e.target.files[0] || null)} disabled={uploadingBrosur === b.sisi} />
+                  {b.url ? (
+                    <img src={b.url} alt={`Brosur ${b.label}`} className="w-full h-full object-cover" />
+                  ) : (
+                    <>
+                      <ImagePlus className="w-5 h-5 text-ink-300" />
+                      <span className="text-[10px] text-ink-400 text-center px-1">Unggah {b.label}</span>
+                    </>
+                  )}
+                  {uploadingBrosur === b.sisi && (
+                    <div className="absolute inset-0 bg-white/70 flex items-center justify-center text-[10px] font-medium text-ink-600">Mengunggah...</div>
+                  )}
+                  {b.url && uploadingBrosur !== b.sisi && (
+                    <div className="absolute inset-x-0 bottom-0 bg-black/50 text-white text-[10px] text-center py-1">Ganti {b.label}</div>
+                  )}
+                </label>
+              ))}
+            </div>
           </div>
           <div>
             <label className="block text-xs font-medium text-ink-500 mb-1">Info Tambahan</label>

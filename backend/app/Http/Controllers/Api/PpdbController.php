@@ -28,6 +28,8 @@ class PpdbController extends Controller
     public function pengaturan()
     {
         $templatePernyataan = Setting::get('ppdb_template_pernyataan', '');
+        $brosurDepan = Setting::get('ppdb_brosur_depan', '');
+        $brosurBelakang = Setting::get('ppdb_brosur_belakang', '');
 
         return response()->json([
             'dibuka' => Setting::get(self::SETTING_KEY, '1') === '1',
@@ -36,6 +38,13 @@ class PpdbController extends Controller
             'biaya_pendaftaran' => Setting::get('ppdb_biaya', ''),
             'info_tambahan' => Setting::get('ppdb_info_tambahan', ''),
             'template_pernyataan_url' => $templatePernyataan ? '/storage/' . $templatePernyataan : null,
+            'brosur_depan_url' => $brosurDepan ? '/storage/' . $brosurDepan : null,
+            'brosur_belakang_url' => $brosurBelakang ? '/storage/' . $brosurBelakang : null,
+            // Dipakai halaman landing publik buat label "Penerimaan Peserta
+            // Didik Baru {periode}" — SENGAJA nama periode PPDB, bukan
+            // profile.tahun_ajaran (tahun ajaran sekolah), karena PPDB
+            // sengaja dilepas dari tahun ajaran (lihat PpdbPeriode).
+            'periode_aktif' => PpdbPeriode::where('status', 'aktif')->value('nama'),
         ]);
     }
 
@@ -88,6 +97,35 @@ class PpdbController extends Controller
         return response()->json([
             'message' => 'Template Surat Pernyataan berhasil diunggah.',
             'template_pernyataan_url' => '/storage/' . $path,
+        ]);
+    }
+
+    /**
+     * Upload/ganti gambar brosur PPDB (halaman depan/belakang) — ditampilkan
+     * di halaman landing publik /ppdb di bawah info Biaya Pendaftaran. Pola
+     * sama seperti uploadTemplatePernyataan(): file lama (kalau ada) dihapus
+     * dulu supaya storage tidak menumpuk versi usang.
+     */
+    public function uploadBrosur(Request $request)
+    {
+        $data = $request->validate([
+            'sisi' => 'required|in:depan,belakang',
+            'file' => 'required|file|mimes:jpg,jpeg,png|max:5120',
+        ]);
+
+        $key = 'ppdb_brosur_' . $data['sisi'];
+        $lama = Setting::get($key, '');
+        if ($lama) {
+            Storage::disk('public')->delete($lama);
+        }
+
+        $path = $request->file('file')->store('ppdb-brosur', 'public');
+        Setting::set($key, $path);
+
+        return response()->json([
+            'message' => 'Brosur halaman ' . $data['sisi'] . ' berhasil diunggah.',
+            'brosur_depan_url' => ($p = Setting::get('ppdb_brosur_depan', '')) ? '/storage/' . $p : null,
+            'brosur_belakang_url' => ($p = Setting::get('ppdb_brosur_belakang', '')) ? '/storage/' . $p : null,
         ]);
     }
 
@@ -175,6 +213,7 @@ class PpdbController extends Controller
             // dipaksa wajib di sini walau mode online — sekolah tetap bisa
             // terima berkas susulan fisik.
             'berkas_pas_foto' => ($mode === 'online' ? 'required' : 'nullable') . '|file|mimes:jpg,jpeg|max:2048',
+            'berkas_formulir_pendaftaran' => 'nullable|file|mimes:pdf|max:2048',
             'berkas_ijazah' => 'nullable|file|mimes:pdf|max:2048',
             'berkas_skhu' => 'nullable|file|mimes:pdf|max:2048',
             'berkas_rapot' => 'nullable|file|mimes:pdf|max:2048',
@@ -199,7 +238,7 @@ class PpdbController extends Controller
         $data['nama_orang_tua'] = $data['nama_ayah'] ?? $data['nama_ibu'] ?? null;
         $data['no_hp_orang_tua'] = $data['no_hp_ayah'] ?? $data['no_hp_ibu'] ?? $data['no_hp_siswa'] ?? '-';
 
-        foreach (['ijazah', 'skhu', 'rapot', 'skkb', 'pas_foto', 'pernyataan', 'akta_lahir', 'kk', 'kip'] as $field) {
+        foreach (['ijazah', 'skhu', 'rapot', 'skkb', 'pas_foto', 'formulir_pendaftaran', 'pernyataan', 'akta_lahir', 'kk', 'kip'] as $field) {
             if ($request->hasFile("berkas_{$field}")) {
                 $data["berkas_{$field}"] = $request->file("berkas_{$field}")->store('ppdb-berkas', 'public');
             }

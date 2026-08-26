@@ -164,6 +164,21 @@ export default function TambahPendaftarPpdbTab({ onSaved, onBack, editTarget }) 
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && <p className="text-sm text-honey-700 bg-honey-50 border border-honey-200 rounded-lg px-3 py-2">{error}</p>}
 
+        <label className="flex items-center gap-2.5 border border-line-200 rounded-lg px-3 py-2.5 cursor-pointer hover:bg-mist-50 transition">
+          <input type="file" accept=".pdf" className="hidden" onChange={(e) => setBerkas({ ...berkas, berkas_formulir_pendaftaran: e.target.files[0] || null })} />
+          {berkas.berkas_formulir_pendaftaran || editTarget?.berkas_formulir_pendaftaran_url ? <Check className="w-4 h-4 text-brand-600 shrink-0" /> : <Upload className="w-4 h-4 text-ink-300 shrink-0" />}
+          <span className="text-xs text-ink-700 truncate">{berkas.berkas_formulir_pendaftaran?.name || 'Upload PDF Formulir Pendaftaran'}</span>
+          {!berkas.berkas_formulir_pendaftaran && editTarget?.berkas_formulir_pendaftaran_url && (
+            <a
+              href={editTarget.berkas_formulir_pendaftaran_url} target="_blank" rel="noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="text-[10px] font-medium text-brand-600 hover:underline shrink-0 ml-auto"
+            >
+              Lihat Berkas
+            </a>
+          )}
+        </label>
+
         <div className="border border-line-200 rounded-xl p-4">
           <div className="grid grid-cols-1 sm:grid-cols-[auto_1fr] gap-4 items-start">
             <div>

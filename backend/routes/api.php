@@ -460,6 +460,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/ppdb/manual', [PpdbController::class, 'storeManual']);
         Route::put('/ppdb/pengaturan', [PpdbController::class, 'updatePengaturan']);
         Route::post('/ppdb/template-pernyataan', [PpdbController::class, 'uploadTemplatePernyataan']);
+        Route::post('/ppdb/brosur', [PpdbController::class, 'uploadBrosur']);
         Route::put('/ppdb/{ppdbPendaftar}', [PpdbController::class, 'update']);
         Route::put('/ppdb/{ppdbPendaftar}/manual', [PpdbController::class, 'updateManual']);
         Route::delete('/ppdb/{ppdbPendaftar}', [PpdbController::class, 'destroy']);

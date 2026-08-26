@@ -246,13 +246,12 @@ export default function FormulirPpdbTab() {
       </div>
 
       <div className="surface-card p-5">
-        <h2 className="font-display font-semibold text-ink-900 mb-4">Daftar Pendaftar <span className="text-ink-500 font-sans font-normal text-sm">({pendaftarTersaring.length})</span></h2>
+        <h2 className="font-display font-semibold text-ink-900 mb-4">Daftar Calon Siswa <span className="text-ink-500 font-sans font-normal text-sm">({pendaftarTersaring.length})</span></h2>
         <div className="table-scroll">
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-ink-500 border-b border-line-200">
-              <th className="pb-2 font-medium whitespace-nowrap px-2">Kode</th>
-              <th className="font-medium whitespace-nowrap px-2">Nama</th>
+              <th className="pb-2 font-medium whitespace-nowrap px-2">Nama</th>
               <th className="font-medium whitespace-nowrap px-2">Jurusan</th>
               <th className="font-medium whitespace-nowrap px-2">Kelengkapan Biodata</th>
               <th className="font-medium whitespace-nowrap px-2">Kelengkapan Berkas</th>
@@ -264,8 +263,7 @@ export default function FormulirPpdbTab() {
           <tbody>
             {pendaftarHalaman.map((p) => (
               <tr key={p.id} className="border-t border-line-200">
-                <td className="py-2.5 font-mono text-xs text-ink-500 whitespace-nowrap px-2">{p.kode_pendaftaran}</td>
-                <td className="text-ink-900 whitespace-nowrap px-2"><TruncateText text={p.nama_lengkap} /></td>
+                <td className="py-2.5 text-ink-900 whitespace-nowrap px-2"><TruncateText text={p.nama_lengkap} /></td>
                 <td className="text-ink-700 whitespace-nowrap px-2"><TruncateText text={p.jurusan_pilihan || '—'} /></td>
                 <td className="whitespace-nowrap px-2">
                   <span className={`badge-soft ${p.biodata_lengkap ? 'badge-brand' : 'badge-honey'}`}>

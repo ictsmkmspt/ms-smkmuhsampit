@@ -70,7 +70,7 @@ export default function PpdbLandingPublic() {
             <div className="flex-1 min-w-0">
               <Reveal>
                 <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-700 bg-brand-50 rounded-full px-3 py-1 mb-6">
-                  <span className="w-1.5 h-1.5 rounded-full bg-brand-500" /> Penerimaan Peserta Didik Baru{profile?.tahun_ajaran ? ` ${profile.tahun_ajaran}` : ''}
+                  <span className="w-1.5 h-1.5 rounded-full bg-brand-500" /> Penerimaan Peserta Didik Baru{info?.periode_aktif ? ` ${info.periode_aktif}` : ''}
                 </span>
               </Reveal>
               <Reveal delay={80}>
@@ -132,7 +132,7 @@ export default function PpdbLandingPublic() {
             <h2 className="font-display text-2xl font-semibold text-ink-900 mb-1">Program keahlian yang dibuka</h2>
             <p className="text-sm text-ink-500 mb-12">Pilih jurusan sesuai minat &amp; bakatmu — bisa diisi di formulir pendaftaran.</p>
           </Reveal>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="grid sm:grid-cols-2 gap-5">
             {jurusanList.map((j, i) => (
               <Reveal key={j.id} delay={(i % 6) * 60}>
                 <div className="flex items-start gap-3 bg-white rounded-xl p-4 shadow-sm border border-line-200">
@@ -151,7 +151,7 @@ export default function PpdbLandingPublic() {
       )}
 
       {/* Info PPDB (jadwal/syarat/biaya) — cuma tampil kalau diisi admin */}
-      {infoCards.length > 0 && (
+      {(infoCards.length > 0 || info?.brosur_depan_url || info?.brosur_belakang_url) && (
         <div id="syarat-berkas" className="border-t border-line-200 bg-white scroll-mt-20">
           <div className="max-w-6xl mx-auto px-5 py-16 sm:py-24">
             <Reveal>
@@ -177,6 +177,26 @@ export default function PpdbLandingPublic() {
                 <div className="mt-6 flex items-start gap-3 bg-honey-50 border border-honey-200 rounded-xl p-4">
                   <Info className="w-4 h-4 text-honey-700 shrink-0 mt-0.5" />
                   <p className="text-sm text-honey-800 leading-relaxed whitespace-pre-line">{info.info_tambahan}</p>
+                </div>
+              </Reveal>
+            )}
+
+            {(info?.brosur_depan_url || info?.brosur_belakang_url) && (
+              <Reveal delay={(infoCards.length + 1) * 90}>
+                <div className="mt-10 text-center">
+                  <h3 className="font-display font-medium text-sm text-ink-900 mb-3">Brosur PPDB</h3>
+                  <div className="grid grid-cols-2 gap-6 max-w-3xl mx-auto">
+                    {info.brosur_depan_url && (
+                      <a href={info.brosur_depan_url} target="_blank" rel="noreferrer" className="block rounded-xl overflow-hidden border border-line-200 shadow-sm">
+                        <img src={info.brosur_depan_url} alt="Brosur PPDB halaman depan" className="w-full h-auto object-cover" />
+                      </a>
+                    )}
+                    {info.brosur_belakang_url && (
+                      <a href={info.brosur_belakang_url} target="_blank" rel="noreferrer" className="block rounded-xl overflow-hidden border border-line-200 shadow-sm">
+                        <img src={info.brosur_belakang_url} alt="Brosur PPDB halaman belakang" className="w-full h-auto object-cover" />
+                      </a>
+                    )}
+                  </div>
                 </div>
               </Reveal>
             )}

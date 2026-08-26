@@ -20,12 +20,13 @@ class PpdbPendaftar extends Model
         'nama_wali', 'alamat_wali',
         'jurusan_pilihan', 'tinggi_badan', 'jarak_rumah_sekolah', 'berat_badan', 'ukuran_baju', 'hobi',
         'status', 'catatan', 'student_id', 'ppdb_periode_id',
-        'berkas_ijazah', 'berkas_skhu', 'berkas_rapot', 'berkas_skkb', 'berkas_pas_foto',
+        'berkas_ijazah', 'berkas_skhu', 'berkas_rapot', 'berkas_skkb', 'berkas_pas_foto', 'berkas_formulir_pendaftaran',
         'berkas_pernyataan', 'berkas_akta_lahir', 'berkas_kk', 'berkas_kip',
     ];
 
     protected $appends = [
         'berkas_ijazah_url', 'berkas_skhu_url', 'berkas_rapot_url', 'berkas_skkb_url', 'berkas_pas_foto_url',
+        'berkas_formulir_pendaftaran_url',
         'berkas_pernyataan_url', 'berkas_akta_lahir_url', 'berkas_kk_url', 'berkas_kip_url',
         'biodata_lengkap', 'target_biaya',
     ];
@@ -84,6 +85,7 @@ class PpdbPendaftar extends Model
     public function getBerkasRapotUrlAttribute() { return $this->berkas_rapot ? '/storage/' . $this->berkas_rapot : null; }
     public function getBerkasSkkbUrlAttribute() { return $this->berkas_skkb ? '/storage/' . $this->berkas_skkb : null; }
     public function getBerkasPasFotoUrlAttribute() { return $this->berkas_pas_foto ? '/storage/' . $this->berkas_pas_foto : null; }
+    public function getBerkasFormulirPendaftaranUrlAttribute() { return $this->berkas_formulir_pendaftaran ? '/storage/' . $this->berkas_formulir_pendaftaran : null; }
     public function getBerkasPernyataanUrlAttribute() { return $this->berkas_pernyataan ? '/storage/' . $this->berkas_pernyataan : null; }
     public function getBerkasAktaLahirUrlAttribute() { return $this->berkas_akta_lahir ? '/storage/' . $this->berkas_akta_lahir : null; }
     public function getBerkasKkUrlAttribute() { return $this->berkas_kk ? '/storage/' . $this->berkas_kk : null; }
