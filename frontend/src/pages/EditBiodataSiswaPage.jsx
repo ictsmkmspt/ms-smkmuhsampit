@@ -1,18 +1,36 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Save, ImagePlus, UserRound, ArrowLeft } from 'lucide-react';
+import { Save, ImagePlus, UserRound, ArrowLeft, Upload, Check } from 'lucide-react';
 import api from '../api/axios';
 import DateInput from '../components/DateInput';
 
 const FORM_KOSONG = {
   name: '', email: '', nis: '', nisn: '', nik: '', jenis_kelamin: '', agama: '',
-  class_room_id: '', jurusan_id: '', tempat_lahir: '', tanggal_lahir: '', alamat: '',
+  kewarganegaraan: 'Indonesia', no_registrasi_akta_lahir: '',
+  class_room_id: '', jurusan_id: '', tempat_lahir: '', tanggal_lahir: '', alamat: '', tempat_tinggal: '',
   kebutuhan_khusus: '', jumlah_saudara: '', anak_ke: '', no_telp: '',
-  sekolah_asal_nama: '', sekolah_asal_alamat: '', ijazah_tahun: '', ijazah_nomor: '',
+  sekolah_asal_nama: '', sekolah_asal_alamat: '', ijazah_tahun: '', ijazah_nomor: '', tanggal_no_stk: '',
   tingkat_diterima: '', tanggal_diterima: '',
-  nama_ayah: '', nama_ibu: '', alamat_ortu: '', telp_ortu: '', pekerjaan_ortu: '', penghasilan_ortu: '',
+  nama_ayah: '', pekerjaan_ayah: '', penghasilan_ayah: '', alamat_ayah: '', no_hp_ayah: '',
+  nama_ibu: '', pekerjaan_ibu: '', penghasilan_ibu: '', alamat_ibu: '', no_hp_ibu: '',
   nama_wali: '', alamat_wali: '', telp_wali: '', pekerjaan_wali: '',
+  tinggi_badan: '', berat_badan: '', jarak_rumah_sekolah: '', ukuran_baju: '', hobi: '',
 };
+
+// Sama persis dengan BERKAS_LIST di formulir PPDB (TambahPendaftarPpdbTab.jsx)
+// — supaya buku induk siswa bisa dilengkapi berkas persyaratan yang sama,
+// baik yang sudah tersalin otomatis dari PPDB maupun diunggah manual di sini.
+const BERKAS_LIST = [
+  { key: 'berkas_ijazah', label: 'Scan Asli Ijazah SMP (dilegalisir)' },
+  { key: 'berkas_skhu', label: 'Scan Asli SKHU (dilegalisir)' },
+  { key: 'berkas_rapot', label: 'Scan Asli Nilai Rapor Kelas IX' },
+  { key: 'berkas_skkb', label: 'Surat Keterangan Berkelakuan Baik' },
+  { key: 'berkas_akta_lahir', label: 'Scan Asli Akta Kelahiran' },
+  { key: 'berkas_kk', label: 'Scan Asli Kartu Keluarga' },
+  { key: 'berkas_kip', label: 'Scan Asli Kartu Indonesia Pintar (bila ada)' },
+  { key: 'berkas_formulir_pendaftaran', label: 'Formulir Pendaftaran' },
+  { key: 'berkas_pernyataan', label: 'Scan Asli Fakta Integritas' },
+];
 
 function Section({ nomor, title, children }) {
   return (
@@ -74,18 +92,23 @@ export default function EditBiodataSiswaPage() {
         name: s.user?.name || '', email: s.user?.email || '',
         nis: s.nis || '', nisn: s.nisn || '', nik: s.nik || '',
         jenis_kelamin: s.jenis_kelamin || '', agama: s.agama || '',
+        kewarganegaraan: s.kewarganegaraan || 'Indonesia', no_registrasi_akta_lahir: s.no_registrasi_akta_lahir || '',
         class_room_id: s.class_room_id || '', jurusan_id: s.jurusan_id || '',
         tempat_lahir: s.tempat_lahir || '', tanggal_lahir: s.tanggal_lahir || '', alamat: s.alamat || '',
+        tempat_tinggal: s.tempat_tinggal || '',
         kebutuhan_khusus: s.kebutuhan_khusus || '', jumlah_saudara: s.jumlah_saudara ?? '', anak_ke: s.anak_ke ?? '',
         no_telp: s.no_telp || '',
         sekolah_asal_nama: s.sekolah_asal_nama || '', sekolah_asal_alamat: s.sekolah_asal_alamat || '',
-        ijazah_tahun: s.ijazah_tahun || '', ijazah_nomor: s.ijazah_nomor || '',
+        ijazah_tahun: s.ijazah_tahun || '', ijazah_nomor: s.ijazah_nomor || '', tanggal_no_stk: s.tanggal_no_stk || '',
         tingkat_diterima: s.tingkat_diterima || '', tanggal_diterima: s.tanggal_diterima || '',
-        nama_ayah: s.nama_ayah || '', nama_ibu: s.nama_ibu || '',
-        alamat_ortu: s.alamat_ortu || '', telp_ortu: s.telp_ortu || '',
-        pekerjaan_ortu: s.pekerjaan_ortu || '', penghasilan_ortu: s.penghasilan_ortu || '',
+        nama_ayah: s.nama_ayah || '', pekerjaan_ayah: s.pekerjaan_ayah || '', penghasilan_ayah: s.penghasilan_ayah || '',
+        alamat_ayah: s.alamat_ayah || '', no_hp_ayah: s.no_hp_ayah || '',
+        nama_ibu: s.nama_ibu || '', pekerjaan_ibu: s.pekerjaan_ibu || '', penghasilan_ibu: s.penghasilan_ibu || '',
+        alamat_ibu: s.alamat_ibu || '', no_hp_ibu: s.no_hp_ibu || '',
         nama_wali: s.nama_wali || '', alamat_wali: s.alamat_wali || '',
         telp_wali: s.telp_wali || '', pekerjaan_wali: s.pekerjaan_wali || '',
+        tinggi_badan: s.tinggi_badan ?? '', berat_badan: s.berat_badan ?? '',
+        jarak_rumah_sekolah: s.jarak_rumah_sekolah || '', ukuran_baju: s.ukuran_baju || '', hobi: s.hobi || '',
       });
     }).catch((err) => setError(err.response?.data?.message || 'Gagal memuat data siswa.'))
       .finally(() => setLoading(false));
@@ -98,13 +121,26 @@ export default function EditBiodataSiswaPage() {
     setFotoPreview(file ? URL.createObjectURL(file) : null);
   };
 
+  const [berkas, setBerkas] = useState({});
+  const [uploadingBerkas, setUploadingBerkas] = useState(false);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setSaved(false);
     setSaving(true);
     try {
-      const res = await api.put(`/students/${id}`, form);
+      // Kolom gabungan "_ortu" (dipakai tempat lain di aplikasi, mis.
+      // kontak SPP) diturunkan otomatis dari Ayah, fallback Ibu — pola
+      // sama seperti PpdbController::lengkapiDataOrtuDanBerkas().
+      const payload = {
+        ...form,
+        alamat_ortu: form.alamat_ayah || form.alamat_ibu,
+        telp_ortu: form.no_hp_ayah || form.no_hp_ibu,
+        pekerjaan_ortu: form.pekerjaan_ayah || form.pekerjaan_ibu,
+        penghasilan_ortu: form.penghasilan_ayah || form.penghasilan_ibu,
+      };
+      const res = await api.put(`/students/${id}`, payload);
       let updated = res.data;
       if (fotoFile) {
         const fd = new FormData();
@@ -112,9 +148,19 @@ export default function EditBiodataSiswaPage() {
         const resFoto = await api.post(`/students/${id}/foto`, fd, { headers: { 'Content-Type': 'multipart/form-data' } });
         updated = resFoto.data;
       }
+      const berkasEntries = Object.entries(berkas).filter(([, file]) => file);
+      if (berkasEntries.length > 0) {
+        setUploadingBerkas(true);
+        const fd = new FormData();
+        berkasEntries.forEach(([k, file]) => fd.append(k, file));
+        const resBerkas = await api.post(`/students/${id}/berkas`, fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+        updated = resBerkas.data;
+        setUploadingBerkas(false);
+      }
       setStudent(updated);
       setFotoFile(null);
       setFotoPreview(null);
+      setBerkas({});
       setSaved(true);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err) {
@@ -123,6 +169,7 @@ export default function EditBiodataSiswaPage() {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } finally {
       setSaving(false);
+      setUploadingBerkas(false);
     }
   };
 
@@ -193,7 +240,10 @@ export default function EditBiodataSiswaPage() {
           </Field>
           <Field label="Tempat Lahir" required><input value={form.tempat_lahir} onChange={set('tempat_lahir')} className="field-input w-full" required /></Field>
           <Field label="Tanggal Lahir" required><DateInput value={form.tanggal_lahir} onChange={set('tanggal_lahir')} className="field-input w-full" required /></Field>
+          <Field label="No. Registrasi Akta Lahir"><input value={form.no_registrasi_akta_lahir} onChange={set('no_registrasi_akta_lahir')} className="field-input w-full" /></Field>
+          <Field label="Kewarganegaraan"><input value={form.kewarganegaraan} onChange={set('kewarganegaraan')} className="field-input w-full" /></Field>
           <Field label="Alamat Siswa" span required><input value={form.alamat} onChange={set('alamat')} className="field-input w-full" required /></Field>
+          <Field label="Tempat Tinggal"><input value={form.tempat_tinggal} onChange={set('tempat_tinggal')} placeholder="mis. Bersama orang tua" className="field-input w-full" /></Field>
           <Field label="Kebutuhan Khusus"><input value={form.kebutuhan_khusus} onChange={set('kebutuhan_khusus')} className="field-input w-full" placeholder="kosongkan kalau tidak ada" /></Field>
           <Field label="No. Telp Siswa"><input value={form.no_telp} onChange={set('no_telp')} className="field-input w-full" /></Field>
           <Field label="Jumlah Saudara"><input type="number" min="0" value={form.jumlah_saudara} onChange={set('jumlah_saudara')} className="field-input w-full" /></Field>
@@ -208,6 +258,7 @@ export default function EditBiodataSiswaPage() {
         <Section nomor="12" title="Surat Tanda Tamat Belajar / Ijazah / STL">
           <Field label="Tahun"><input value={form.ijazah_tahun} onChange={set('ijazah_tahun')} className="field-input w-full" placeholder="mis. 2023/2024" /></Field>
           <Field label="Nomor"><input value={form.ijazah_nomor} onChange={set('ijazah_nomor')} className="field-input w-full" /></Field>
+          <Field label="Tanggal / No. STK" span><input value={form.tanggal_no_stk} onChange={set('tanggal_no_stk')} className="field-input w-full" /></Field>
         </Section>
 
         <Section nomor="13" title="Diterima di Sekolah Ini">
@@ -227,13 +278,20 @@ export default function EditBiodataSiswaPage() {
           </Field>
         </Section>
 
-        <Section nomor="14-17" title="Orang Tua">
+        <Section nomor="14-15" title="Data Ayah Kandung">
           <Field label="Nama Ayah"><input value={form.nama_ayah} onChange={set('nama_ayah')} className="field-input w-full" /></Field>
+          <Field label="Pekerjaan"><input value={form.pekerjaan_ayah} onChange={set('pekerjaan_ayah')} className="field-input w-full" /></Field>
+          <Field label="Penghasilan"><input value={form.penghasilan_ayah} onChange={set('penghasilan_ayah')} className="field-input w-full" placeholder="mis. 2.000.000" /></Field>
+          <Field label="No. Telp"><input value={form.no_hp_ayah} onChange={set('no_hp_ayah')} className="field-input w-full" /></Field>
+          <Field label="Alamat" span><input value={form.alamat_ayah} onChange={set('alamat_ayah')} className="field-input w-full" /></Field>
+        </Section>
+
+        <Section nomor="16-17" title="Data Ibu Kandung">
           <Field label="Nama Ibu"><input value={form.nama_ibu} onChange={set('nama_ibu')} className="field-input w-full" /></Field>
-          <Field label="Alamat Orang Tua" span><input value={form.alamat_ortu} onChange={set('alamat_ortu')} className="field-input w-full" /></Field>
-          <Field label="No. Telp Orang Tua"><input value={form.telp_ortu} onChange={set('telp_ortu')} className="field-input w-full" /></Field>
-          <Field label="Pekerjaan Orang Tua"><input value={form.pekerjaan_ortu} onChange={set('pekerjaan_ortu')} className="field-input w-full" /></Field>
-          <Field label="Penghasilan Orang Tua" span><input value={form.penghasilan_ortu} onChange={set('penghasilan_ortu')} className="field-input w-full" placeholder="mis. 2.000.000" /></Field>
+          <Field label="Pekerjaan"><input value={form.pekerjaan_ibu} onChange={set('pekerjaan_ibu')} className="field-input w-full" /></Field>
+          <Field label="Penghasilan"><input value={form.penghasilan_ibu} onChange={set('penghasilan_ibu')} className="field-input w-full" placeholder="mis. 2.000.000" /></Field>
+          <Field label="No. Telp"><input value={form.no_hp_ibu} onChange={set('no_hp_ibu')} className="field-input w-full" /></Field>
+          <Field label="Alamat" span><input value={form.alamat_ibu} onChange={set('alamat_ibu')} className="field-input w-full" /></Field>
         </Section>
 
         <Section nomor="18-20" title="Wali (kalau ada)">
@@ -242,6 +300,41 @@ export default function EditBiodataSiswaPage() {
           <Field label="Alamat Wali" span><input value={form.alamat_wali} onChange={set('alamat_wali')} className="field-input w-full" /></Field>
           <Field label="Pekerjaan Wali" span><input value={form.pekerjaan_wali} onChange={set('pekerjaan_wali')} className="field-input w-full" /></Field>
         </Section>
+
+        <Section nomor="21" title="Data Periodik Siswa">
+          <Field label="Tinggi Badan (cm)"><input type="number" min="50" max="250" value={form.tinggi_badan} onChange={set('tinggi_badan')} className="field-input w-full" /></Field>
+          <Field label="Berat Badan (kg)"><input type="number" min="10" max="300" value={form.berat_badan} onChange={set('berat_badan')} className="field-input w-full" /></Field>
+          <Field label="Jarak Rumah ke Sekolah"><input value={form.jarak_rumah_sekolah} onChange={set('jarak_rumah_sekolah')} className="field-input w-full" placeholder="mis. 5 km" /></Field>
+          <Field label="Ukuran Baju"><input value={form.ukuran_baju} onChange={set('ukuran_baju')} className="field-input w-full" /></Field>
+          <Field label="Hobi" span><input value={form.hobi} onChange={set('hobi')} className="field-input w-full" /></Field>
+        </Section>
+
+        <div className="surface-card p-5">
+          <h3 className="font-display font-semibold text-ink-900 mb-1 flex items-center gap-2">
+            <span className="w-6 h-6 rounded-full bg-brand-50 text-brand-700 text-xs font-bold flex items-center justify-center shrink-0">G</span>
+            Berkas Persyaratan Pendaftaran
+          </h3>
+          <p className="text-xs text-ink-500 mb-4">Format PDF, maksimal 2MB per berkas. Otomatis terisi kalau siswa berasal dari jalur PPDB — unggah manual di sini kalau belum ada atau mau mengganti.</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            {BERKAS_LIST.map((b) => (
+              <label key={b.key} className="flex items-center gap-2.5 border border-line-200 rounded-lg px-3 py-2.5 cursor-pointer hover:bg-mist-50 transition">
+                <input type="file" accept=".pdf" className="hidden" onChange={(e) => setBerkas((prev) => ({ ...prev, [b.key]: e.target.files[0] || null }))} />
+                {berkas[b.key] || student[`${b.key}_url`] ? <Check className="w-4 h-4 text-brand-600 shrink-0" /> : <Upload className="w-4 h-4 text-ink-300 shrink-0" />}
+                <span className="text-xs text-ink-700 truncate">{berkas[b.key]?.name || b.label}</span>
+                {!berkas[b.key] && student[`${b.key}_url`] && (
+                  <a
+                    href={student[`${b.key}_url`]} target="_blank" rel="noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="text-[10px] font-medium text-brand-600 hover:underline shrink-0 ml-auto"
+                  >
+                    Lihat Berkas
+                  </a>
+                )}
+              </label>
+            ))}
+          </div>
+          {uploadingBerkas && <p className="text-xs text-ink-400 mt-3">Mengunggah berkas...</p>}
+        </div>
 
         <div className="flex justify-end">
           <button disabled={saving} className="btn-primary">

@@ -13,7 +13,7 @@ export default function TeachersTab() {
   const { user } = useAuth();
   const canEdit = user.role === 'admin' || user.role === 'waka_kurikulum';
   const [teachers, setTeachers] = useState([]);
-  const [form, setForm] = useState({ name: '', email: '', nip: '', jenis_kelamin: '' });
+  const [form, setForm] = useState({ name: '', email: '', nip: '', jenis_kelamin: '', max_jam_mengajar: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
@@ -42,7 +42,7 @@ export default function TeachersTab() {
     setLoading(true);
     try {
       await api.post('/teachers', form);
-      setForm({ name: '', email: '', nip: '', jenis_kelamin: '' });
+      setForm({ name: '', email: '', nip: '', jenis_kelamin: '', max_jam_mengajar: '' });
       emailManual.current = false;
       setShowForm(false);
       loadTeachers();
@@ -76,14 +76,14 @@ export default function TeachersTab() {
 
   const batalForm = () => {
     setShowForm(false);
-    setForm({ name: '', email: '', nip: '', jenis_kelamin: '' });
+    setForm({ name: '', email: '', nip: '', jenis_kelamin: '', max_jam_mengajar: '' });
     emailManual.current = false;
     setError('');
   };
 
   const startEdit = (t) => {
     setEditId(t.id);
-    setEditData({ name: t.user?.name || '', email: t.user?.email || '', nip: t.nip || '', jenis_kelamin: t.jenis_kelamin || '' });
+    setEditData({ name: t.user?.name || '', email: t.user?.email || '', nip: t.nip || '', jenis_kelamin: t.jenis_kelamin || '', max_jam_mengajar: t.max_jam_mengajar ?? '' });
   };
 
   const handleSaveEdit = async (id) => {
@@ -216,11 +216,12 @@ export default function TeachersTab() {
           }} className="field-input" required />
           <input placeholder="Email" type="email" value={form.email} onChange={(e) => { emailManual.current = true; setForm({ ...form, email: e.target.value }); }} className="field-input" required autoComplete="off" />
           <input placeholder="NIP" value={form.nip} onChange={(e) => setForm({ ...form, nip: e.target.value })} className="field-input col-span-2" required />
-          <select value={form.jenis_kelamin} onChange={(e) => setForm({ ...form, jenis_kelamin: e.target.value })} className="field-input col-span-2 text-ink-700">
+          <select value={form.jenis_kelamin} onChange={(e) => setForm({ ...form, jenis_kelamin: e.target.value })} className="field-input text-ink-700">
             <option value="">— Jenis Kelamin —</option>
             <option value="L">Laki-laki</option>
             <option value="P">Perempuan</option>
           </select>
+          <input type="number" min="0" max="60" placeholder="Maks Jam Mengajar/Minggu (opsional)" value={form.max_jam_mengajar} onChange={(e) => setForm({ ...form, max_jam_mengajar: e.target.value })} className="field-input" />
         </div>
         <div className="flex gap-2 mt-4">
           <button disabled={loading} className="btn-primary">
@@ -235,7 +236,7 @@ export default function TeachersTab() {
         <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
           <h2 className="font-display font-semibold text-ink-900">Daftar Guru <span className="text-ink-500 font-sans font-normal text-sm">({teachers.length})</span></h2>
           {canEdit && !showForm && (
-            <button onClick={() => { setForm({ name: '', email: '', nip: '', jenis_kelamin: '' }); emailManual.current = false; setError(''); setShowForm(true); }} className="btn-primary shrink-0">
+            <button onClick={() => { setForm({ name: '', email: '', nip: '', jenis_kelamin: '', max_jam_mengajar: '' }); emailManual.current = false; setError(''); setShowForm(true); }} className="btn-primary shrink-0">
               <Plus className="w-4 h-4" /> Tambah Guru
             </button>
           )}
@@ -245,14 +246,14 @@ export default function TeachersTab() {
         <table className="w-full text-sm min-w-[560px]">
           <thead>
             <tr className="text-left text-ink-500 border-b border-line-200">
-              <th className="pb-2 font-medium whitespace-nowrap px-2">Nama</th><th className="font-medium whitespace-nowrap px-2">Email</th><th className="font-medium whitespace-nowrap px-2">NIP</th><th className="font-medium whitespace-nowrap px-2">Jenis Kelamin</th>{canEdit && <th className="whitespace-nowrap px-2"></th>}
+              <th className="pb-2 font-medium whitespace-nowrap px-2">Nama</th><th className="font-medium whitespace-nowrap px-2">Email</th><th className="font-medium whitespace-nowrap px-2">NIP</th><th className="font-medium whitespace-nowrap px-2">Jenis Kelamin</th><th className="font-medium whitespace-nowrap px-2">Maks Jam Mengajar</th>{canEdit && <th className="whitespace-nowrap px-2"></th>}
             </tr>
           </thead>
           <tbody>
             {teachersHalaman.map((t) => (
               editId === t.id ? (
                 <tr key={t.id} className="border-t border-line-200 bg-mist-50">
-                  <td colSpan="5" className="py-3 whitespace-nowrap px-2">
+                  <td colSpan="6" className="py-3 whitespace-nowrap px-2">
                     <div className="grid grid-cols-2 gap-2 mb-2">
                       <input value={editData.name} onChange={(e) => setEditData({ ...editData, name: e.target.value })} className="field-input py-1.5 text-sm" placeholder="Nama" />
                       <input value={editData.email} onChange={(e) => setEditData({ ...editData, email: e.target.value })} className="field-input py-1.5 text-sm" placeholder="Email" type="email" />
@@ -262,6 +263,7 @@ export default function TeachersTab() {
                         <option value="L">Laki-laki</option>
                         <option value="P">Perempuan</option>
                       </select>
+                      <input type="number" min="0" max="60" placeholder="Maks Jam Mengajar/Minggu" value={editData.max_jam_mengajar} onChange={(e) => setEditData({ ...editData, max_jam_mengajar: e.target.value })} className="field-input py-1.5 text-sm" />
                     </div>
                     <div className="flex gap-2">
                       <button onClick={() => handleSaveEdit(t.id)} disabled={saving} className="flex items-center gap-1.5 text-xs font-medium text-white bg-brand-600 hover:bg-brand-700 rounded-lg px-3 py-1.5">
@@ -277,6 +279,7 @@ export default function TeachersTab() {
                   <td className="text-ink-700 whitespace-nowrap px-2"><TruncateText text={t.user?.email} /></td>
                   <td className="text-ink-700 whitespace-nowrap px-2">{t.nip}</td>
                   <td className="text-ink-700 whitespace-nowrap px-2">{JK_LABEL[t.jenis_kelamin] || '-'}</td>
+                  <td className="text-ink-700 whitespace-nowrap px-2">{t.max_jam_mengajar != null ? `${t.max_jam_mengajar} jam/minggu` : '-'}</td>
                   {canEdit && (
                     <td className="text-right whitespace-nowrap px-2">
                       <div className="flex justify-end gap-2">
@@ -296,7 +299,7 @@ export default function TeachersTab() {
               )
             ))}
             {teachers.length === 0 && (
-              <tr><td colSpan="5" className="py-6 text-center text-ink-300 whitespace-nowrap px-2">Belum ada guru.</td></tr>
+              <tr><td colSpan="6" className="py-6 text-center text-ink-300 whitespace-nowrap px-2">Belum ada guru.</td></tr>
             )}
           </tbody>
         </table>

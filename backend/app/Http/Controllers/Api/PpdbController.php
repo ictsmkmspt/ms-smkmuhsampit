@@ -688,13 +688,25 @@ class PpdbController extends Controller
             'jurusan_id' => 'nullable|exists:jurusans,id',
         ]);
 
+        $student = $this->buatSiswaDariPendaftar($ppdbPendaftar, $data);
+
+        return $student->load(['user', 'classRoom', 'jurusan']);
+    }
+
+    /**
+     * Isi sekaligus dari kedua jalur (jadikanSiswa() 1-per-1 &
+     * jadikanSiswaMassal() di bawah) — supaya logika bikin akun User+Student
+     * SELALU sama, tidak diam-diam beda antara jalur tunggal & massal.
+     */
+    private function buatSiswaDariPendaftar(PpdbPendaftar $ppdbPendaftar, array $data): Student
+    {
         $jurusanId = $data['jurusan_id'] ?? null;
         if (!$jurusanId && $ppdbPendaftar->jurusan_pilihan) {
             $pilihan = trim($ppdbPendaftar->jurusan_pilihan);
             $jurusanId = Jurusan::where('kode', $pilihan)->orWhere('nama', $pilihan)->first()?->id;
         }
 
-        $student = DB::transaction(function () use ($data, $jurusanId, $ppdbPendaftar) {
+        return DB::transaction(function () use ($data, $jurusanId, $ppdbPendaftar) {
             $user = User::create([
                 'name' => $ppdbPendaftar->nama_lengkap,
                 'email' => $data['email'] ?? null,
@@ -708,13 +720,61 @@ class PpdbController extends Controller
                 'jurusan_id' => $jurusanId,
                 'nis' => $data['nis'],
                 'nisn' => $ppdbPendaftar->nisn,
+                'nik' => $ppdbPendaftar->nik,
                 'jenis_kelamin' => $ppdbPendaftar->jenis_kelamin,
+                'agama' => $ppdbPendaftar->agama,
+                'kewarganegaraan' => $ppdbPendaftar->kewarganegaraan,
+                'no_registrasi_akta_lahir' => $ppdbPendaftar->no_registrasi_akta_lahir,
                 'tempat_lahir' => $ppdbPendaftar->tempat_lahir,
                 'tanggal_lahir' => $ppdbPendaftar->tanggal_lahir,
                 'alamat' => $ppdbPendaftar->alamat,
+                'tempat_tinggal' => $ppdbPendaftar->tempat_tinggal,
+                'kebutuhan_khusus' => $ppdbPendaftar->berkebutuhan_khusus,
+                'anak_ke' => $ppdbPendaftar->anak_ke,
+                'jumlah_saudara' => $ppdbPendaftar->jumlah_saudara,
+                'no_telp' => $ppdbPendaftar->no_hp_siswa,
+                // Sekolah asal & pendaftaran
                 'sekolah_asal_nama' => $ppdbPendaftar->asal_sekolah,
-                'nama_ayah' => $ppdbPendaftar->nama_orang_tua,
+                'tanggal_no_stk' => $ppdbPendaftar->tanggal_no_stk,
+                // Data ayah/ibu terpisah (setara PPDB) + kolom gabungan lama
+                // (dipakai tempat lain) tetap diisi dari ayah, fallback ibu —
+                // pola sama seperti lengkapiDataOrtuDanBerkas() di daftar().
+                'nama_ayah' => $ppdbPendaftar->nama_ayah,
+                'pekerjaan_ayah' => $ppdbPendaftar->pekerjaan_ayah,
+                'penghasilan_ayah' => $ppdbPendaftar->penghasilan_ayah,
+                'alamat_ayah' => $ppdbPendaftar->alamat_ayah,
+                'no_hp_ayah' => $ppdbPendaftar->no_hp_ayah,
+                'nama_ibu' => $ppdbPendaftar->nama_ibu,
+                'pekerjaan_ibu' => $ppdbPendaftar->pekerjaan_ibu,
+                'penghasilan_ibu' => $ppdbPendaftar->penghasilan_ibu,
+                'alamat_ibu' => $ppdbPendaftar->alamat_ibu,
+                'no_hp_ibu' => $ppdbPendaftar->no_hp_ibu,
+                'alamat_ortu' => $ppdbPendaftar->alamat_ayah ?? $ppdbPendaftar->alamat_ibu,
                 'telp_ortu' => $ppdbPendaftar->no_hp_orang_tua,
+                'pekerjaan_ortu' => $ppdbPendaftar->pekerjaan_ayah ?? $ppdbPendaftar->pekerjaan_ibu,
+                'penghasilan_ortu' => $ppdbPendaftar->penghasilan_ayah ?? $ppdbPendaftar->penghasilan_ibu,
+                // Wali
+                'nama_wali' => $ppdbPendaftar->nama_wali,
+                'alamat_wali' => $ppdbPendaftar->alamat_wali,
+                // Data periodik
+                'tinggi_badan' => $ppdbPendaftar->tinggi_badan,
+                'berat_badan' => $ppdbPendaftar->berat_badan,
+                'jarak_rumah_sekolah' => $ppdbPendaftar->jarak_rumah_sekolah,
+                'ukuran_baju' => $ppdbPendaftar->ukuran_baju,
+                'hobi' => $ppdbPendaftar->hobi,
+                // Berkas — path disalin langsung (disk 'public' yang sama,
+                // BUKAN file fisik diduplikasi) supaya buku induk siswa
+                // lengkap tanpa perlu unggah ulang berkas yang sudah ada.
+                'foto' => $ppdbPendaftar->berkas_pas_foto,
+                'berkas_ijazah' => $ppdbPendaftar->berkas_ijazah,
+                'berkas_skhu' => $ppdbPendaftar->berkas_skhu,
+                'berkas_rapot' => $ppdbPendaftar->berkas_rapot,
+                'berkas_skkb' => $ppdbPendaftar->berkas_skkb,
+                'berkas_akta_lahir' => $ppdbPendaftar->berkas_akta_lahir,
+                'berkas_kk' => $ppdbPendaftar->berkas_kk,
+                'berkas_kip' => $ppdbPendaftar->berkas_kip,
+                'berkas_formulir_pendaftaran' => $ppdbPendaftar->berkas_formulir_pendaftaran,
+                'berkas_pernyataan' => $ppdbPendaftar->berkas_pernyataan,
                 'status' => 'aktif',
                 'qr_code' => 'STD-' . strtoupper(Str::random(8)),
             ]);
@@ -723,7 +783,71 @@ class PpdbController extends Controller
 
             return $student;
         });
+    }
 
-        return $student->load(['user', 'classRoom', 'jurusan']);
+    /**
+     * Versi massal dari jadikanSiswa() — dipakai admin buat proses banyak
+     * pendaftar "Diterima" sekaligus (mis. awal tahun ajaran) tanpa harus
+     * buka modal satu-satu. class_room_id/jurusan_id divalidasi di level
+     * request (kalau ada yang tidak valid, seluruh request ditolak 422 —
+     * wajar, itu berarti bug di frontend, bukan salah ketik admin). Yang
+     * lain (status "Diterima", belum pernah jadi siswa, NIS/email bentrok)
+     * dicek PER BARIS di dalam loop supaya 1 baris gagal tidak menggagalkan
+     * baris lain yang valid — hasilnya dilaporkan per baris ke frontend
+     * supaya admin bisa perbaiki & kirim ulang baris yang gagal saja.
+     */
+    public function jadikanSiswaMassal(Request $request)
+    {
+        $data = $request->validate([
+            'items' => 'required|array|min:1',
+            'items.*.ppdb_pendaftar_id' => 'required|integer|distinct',
+            'items.*.nis' => 'required|string|distinct',
+            'items.*.email' => 'nullable|email',
+            'items.*.class_room_id' => 'required|exists:class_rooms,id',
+            'items.*.jurusan_id' => 'nullable|exists:jurusans,id',
+        ]);
+
+        $hasil = [];
+
+        foreach ($data['items'] as $item) {
+            $ppdbPendaftar = PpdbPendaftar::find($item['ppdb_pendaftar_id']);
+            $nama = $ppdbPendaftar->nama_lengkap ?? '(pendaftar tidak ditemukan)';
+
+            try {
+                if (!$ppdbPendaftar) {
+                    throw new \RuntimeException('Pendaftar tidak ditemukan.');
+                }
+                if ($ppdbPendaftar->status !== 'diterima') {
+                    throw new \RuntimeException('Bukan status "Diterima".');
+                }
+                if ($ppdbPendaftar->student_id) {
+                    throw new \RuntimeException('Sudah pernah dijadikan siswa sebelumnya.');
+                }
+                if (Student::where('nis', $item['nis'])->exists()) {
+                    throw new \RuntimeException('NIS sudah dipakai siswa lain.');
+                }
+                if (!empty($item['email']) && User::where('email', $item['email'])->exists()) {
+                    throw new \RuntimeException('Email sudah dipakai akun lain.');
+                }
+
+                $student = $this->buatSiswaDariPendaftar($ppdbPendaftar, $item);
+
+                $hasil[] = [
+                    'ppdb_pendaftar_id' => $ppdbPendaftar->id,
+                    'nama_lengkap' => $nama,
+                    'sukses' => true,
+                    'student_id' => $student->id,
+                ];
+            } catch (\Throwable $e) {
+                $hasil[] = [
+                    'ppdb_pendaftar_id' => $item['ppdb_pendaftar_id'],
+                    'nama_lengkap' => $nama,
+                    'sukses' => false,
+                    'pesan' => $e->getMessage(),
+                ];
+            }
+        }
+
+        return response()->json(['hasil' => $hasil]);
     }
 }

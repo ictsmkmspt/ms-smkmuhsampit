@@ -18,9 +18,21 @@ class Student extends Model
         'nama_wali', 'alamat_wali', 'telp_wali', 'pekerjaan_wali',
         'tinggi_badan', 'berat_badan', 'status_pernikahan', 'keahlian', 'pengalaman_kerja',
         'ktp', 'cv', 'sertifikat',
+        // Pelengkap "buku induk" biar setara formulir PPDB — lihat migrasi
+        // 2026_08_28_090000_add_ppdb_parity_fields_to_students_table.
+        'no_registrasi_akta_lahir', 'kewarganegaraan', 'tempat_tinggal', 'tanggal_no_stk',
+        'pekerjaan_ayah', 'penghasilan_ayah', 'alamat_ayah', 'no_hp_ayah',
+        'pekerjaan_ibu', 'penghasilan_ibu', 'alamat_ibu', 'no_hp_ibu',
+        'jarak_rumah_sekolah', 'ukuran_baju', 'hobi',
+        'berkas_ijazah', 'berkas_skhu', 'berkas_rapot', 'berkas_skkb', 'berkas_akta_lahir',
+        'berkas_kk', 'berkas_kip', 'berkas_formulir_pendaftaran', 'berkas_pernyataan',
     ];
 
-    protected $appends = ['foto_url', 'ktp_url', 'cv_url', 'sertifikat_list', 'biodata_lengkap'];
+    protected $appends = [
+        'foto_url', 'ktp_url', 'cv_url', 'sertifikat_list', 'biodata_lengkap',
+        'berkas_ijazah_url', 'berkas_skhu_url', 'berkas_rapot_url', 'berkas_skkb_url', 'berkas_akta_lahir_url',
+        'berkas_kk_url', 'berkas_kip_url', 'berkas_formulir_pendaftaran_url', 'berkas_pernyataan_url',
+    ];
 
     protected function casts(): array
     {
@@ -46,6 +58,20 @@ class Student extends Model
     {
         return $this->cv ? '/storage/' . $this->cv : null;
     }
+
+    // Berkas persyaratan pendaftaran (pelengkap "buku induk", disalin dari
+    // berkas PPDB kalau siswa berasal dari jalur PPDB — lihat
+    // PpdbController::buatSiswaDariPendaftar()) atau diunggah manual admin
+    // lewat uploadBerkas(). Path relatif, pola sama seperti foto/ktp/cv.
+    public function getBerkasIjazahUrlAttribute(): ?string { return $this->berkas_ijazah ? '/storage/' . $this->berkas_ijazah : null; }
+    public function getBerkasSkhuUrlAttribute(): ?string { return $this->berkas_skhu ? '/storage/' . $this->berkas_skhu : null; }
+    public function getBerkasRapotUrlAttribute(): ?string { return $this->berkas_rapot ? '/storage/' . $this->berkas_rapot : null; }
+    public function getBerkasSkkbUrlAttribute(): ?string { return $this->berkas_skkb ? '/storage/' . $this->berkas_skkb : null; }
+    public function getBerkasAktaLahirUrlAttribute(): ?string { return $this->berkas_akta_lahir ? '/storage/' . $this->berkas_akta_lahir : null; }
+    public function getBerkasKkUrlAttribute(): ?string { return $this->berkas_kk ? '/storage/' . $this->berkas_kk : null; }
+    public function getBerkasKipUrlAttribute(): ?string { return $this->berkas_kip ? '/storage/' . $this->berkas_kip : null; }
+    public function getBerkasFormulirPendaftaranUrlAttribute(): ?string { return $this->berkas_formulir_pendaftaran ? '/storage/' . $this->berkas_formulir_pendaftaran : null; }
+    public function getBerkasPernyataanUrlAttribute(): ?string { return $this->berkas_pernyataan ? '/storage/' . $this->berkas_pernyataan : null; }
 
     /**
      * "sertifikat" mentah cuma berisi path file — tambahkan url siap-pakai

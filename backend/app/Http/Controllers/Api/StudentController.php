@@ -140,17 +140,31 @@ class StudentController extends Controller
             'jumlah_saudara' => 'nullable|integer|min:0|max:99',
             'anak_ke' => 'nullable|integer|min:0|max:99',
             'no_telp' => 'nullable|string|max:30',
+            // Pelengkap Keterangan Pribadi (setara formulir PPDB)
+            'no_registrasi_akta_lahir' => 'nullable|string|max:100',
+            'kewarganegaraan' => 'nullable|string|max:50',
+            'tempat_tinggal' => 'nullable|string|max:100',
             // Sekolah asal & ijazah/STTB
             'sekolah_asal_nama' => 'nullable|string|max:255',
             'sekolah_asal_alamat' => 'nullable|string|max:255',
             'ijazah_tahun' => 'nullable|string|max:20',
             'ijazah_nomor' => 'nullable|string|max:100',
+            'tanggal_no_stk' => 'nullable|string|max:100',
             // Penerimaan di sekolah ini
             'tingkat_diterima' => 'nullable|string|max:10',
             'tanggal_diterima' => 'nullable|date',
-            // Orang tua
+            // Orang tua — kolom gabungan LAMA tetap ada (dipakai tempat
+            // lain), field ayah/ibu terpisah ini TAMBAHAN, setara PPDB.
             'nama_ayah' => 'nullable|string|max:255',
+            'pekerjaan_ayah' => 'nullable|string|max:255',
+            'penghasilan_ayah' => 'nullable|string|max:60',
+            'alamat_ayah' => 'nullable|string|max:300',
+            'no_hp_ayah' => 'nullable|string|max:60',
             'nama_ibu' => 'nullable|string|max:255',
+            'pekerjaan_ibu' => 'nullable|string|max:255',
+            'penghasilan_ibu' => 'nullable|string|max:60',
+            'alamat_ibu' => 'nullable|string|max:300',
+            'no_hp_ibu' => 'nullable|string|max:60',
             'alamat_ortu' => 'nullable|string|max:300',
             'telp_ortu' => 'nullable|string|max:60',
             'pekerjaan_ortu' => 'nullable|string|max:255',
@@ -160,6 +174,13 @@ class StudentController extends Controller
             'alamat_wali' => 'nullable|string|max:300',
             'telp_wali' => 'nullable|string|max:60',
             'pekerjaan_wali' => 'nullable|string|max:255',
+            // Data Periodik (setara formulir PPDB — tinggi/berat_badan
+            // sudah ada kolomnya sejak fitur BKK, di sini baru divalidasi)
+            'tinggi_badan' => 'nullable|integer|min:50|max:250',
+            'berat_badan' => 'nullable|integer|min:10|max:300',
+            'jarak_rumah_sekolah' => 'nullable|string|max:100',
+            'ukuran_baju' => 'nullable|string|max:20',
+            'hobi' => 'nullable|string|max:100',
         ]);
 
         if (isset($data['name']) || isset($data['email'])) {
@@ -168,13 +189,55 @@ class StudentController extends Controller
         $student->update($request->only([
             'nis', 'nisn', 'nik', 'class_room_id', 'jenis_kelamin', 'agama', 'jurusan_id',
             'tempat_lahir', 'tanggal_lahir', 'alamat', 'kebutuhan_khusus', 'jumlah_saudara', 'anak_ke', 'no_telp',
-            'sekolah_asal_nama', 'sekolah_asal_alamat', 'ijazah_tahun', 'ijazah_nomor',
+            'no_registrasi_akta_lahir', 'kewarganegaraan', 'tempat_tinggal',
+            'sekolah_asal_nama', 'sekolah_asal_alamat', 'ijazah_tahun', 'ijazah_nomor', 'tanggal_no_stk',
             'tingkat_diterima', 'tanggal_diterima',
-            'nama_ayah', 'nama_ibu', 'alamat_ortu', 'telp_ortu', 'pekerjaan_ortu', 'penghasilan_ortu',
+            'nama_ayah', 'pekerjaan_ayah', 'penghasilan_ayah', 'alamat_ayah', 'no_hp_ayah',
+            'nama_ibu', 'pekerjaan_ibu', 'penghasilan_ibu', 'alamat_ibu', 'no_hp_ibu',
+            'alamat_ortu', 'telp_ortu', 'pekerjaan_ortu', 'penghasilan_ortu',
             'nama_wali', 'alamat_wali', 'telp_wali', 'pekerjaan_wali',
+            'tinggi_badan', 'berat_badan', 'jarak_rumah_sekolah', 'ukuran_baju', 'hobi',
         ]));
 
         return $student->load(['user', 'classRoom', 'jurusan']);
+    }
+
+    /**
+     * Upload berkas persyaratan pendaftaran (ijazah, SKHU, rapor, dst) buat
+     * biodata siswa — "berkas tambahan" pelengkap buku induk, setara
+     * dengan G. Berkas Persyaratan di formulir PPDB. Bisa unggah beberapa
+     * sekaligus (field mana saja yang ikut), pola sama seperti
+     * PpdbController::lengkapiDataOrtuDanBerkas(). File lama (kalau ada)
+     * ditimpa (dihapus dulu dari storage).
+     */
+    public function uploadBerkas(Request $request, Student $student)
+    {
+        $request->validate([
+            'berkas_ijazah' => 'nullable|file|mimes:pdf|max:2048',
+            'berkas_skhu' => 'nullable|file|mimes:pdf|max:2048',
+            'berkas_rapot' => 'nullable|file|mimes:pdf|max:2048',
+            'berkas_skkb' => 'nullable|file|mimes:pdf|max:2048',
+            'berkas_akta_lahir' => 'nullable|file|mimes:pdf|max:2048',
+            'berkas_kk' => 'nullable|file|mimes:pdf|max:2048',
+            'berkas_kip' => 'nullable|file|mimes:pdf|max:2048',
+            'berkas_formulir_pendaftaran' => 'nullable|file|mimes:pdf|max:2048',
+            'berkas_pernyataan' => 'nullable|file|mimes:pdf|max:2048',
+        ]);
+
+        $data = [];
+        foreach (['ijazah', 'skhu', 'rapot', 'skkb', 'akta_lahir', 'kk', 'kip', 'formulir_pendaftaran', 'pernyataan'] as $field) {
+            if ($request->hasFile("berkas_{$field}")) {
+                $kolom = "berkas_{$field}";
+                if ($student->{$kolom}) {
+                    Storage::disk('public')->delete($student->{$kolom});
+                }
+                $data[$kolom] = $request->file($kolom)->store('siswa-berkas', 'public');
+            }
+        }
+
+        $student->update($data);
+
+        return $student->fresh(['user', 'classRoom', 'jurusan']);
     }
 
     /**

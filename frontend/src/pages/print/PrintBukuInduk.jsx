@@ -1,11 +1,30 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Printer, User } from 'lucide-react';
+import { Printer, User, X as XIcon } from 'lucide-react';
 import PrintKembaliButton from '../../components/PrintKembaliButton';
 import api from '../../api/axios';
 import { useSchoolProfile } from '../../context/SchoolProfileContext';
 
 const JK_LABEL = { L: 'Laki-laki', P: 'Perempuan' };
+const EKSTENSI_GAMBAR = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
+const isGambar = (url) => EKSTENSI_GAMBAR.includes((url.split('.').pop() || '').toLowerCase());
+
+// Sama persis dengan BERKAS_LIST di EditBiodataSiswaPage.jsx / formulir
+// PPDB — daftar berkas persyaratan pendaftaran yang jadi lampiran buku
+// induk. Tiap berkas ditampilkan LANGSUNG (gambar/PDF ter-embed di kartu
+// "Berkas Pendukung", lihat bawah), bukan cuma link/checklist, supaya
+// TU/Waka Kesiswaan bisa langsung lihat isinya tanpa klik apa pun.
+const BERKAS_LIST = [
+  { key: 'berkas_ijazah', label: 'Ijazah SMP' },
+  { key: 'berkas_skhu', label: 'SKHU' },
+  { key: 'berkas_rapot', label: 'Nilai Rapor Kelas IX' },
+  { key: 'berkas_skkb', label: 'Surat Keterangan Berkelakuan Baik' },
+  { key: 'berkas_akta_lahir', label: 'Akta Kelahiran' },
+  { key: 'berkas_kk', label: 'Kartu Keluarga' },
+  { key: 'berkas_kip', label: 'Kartu Indonesia Pintar' },
+  { key: 'berkas_formulir_pendaftaran', label: 'Formulir Pendaftaran' },
+  { key: 'berkas_pernyataan', label: 'Fakta Integritas' },
+];
 
 const BULAN = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
 const formatTanggal = (iso) => {
@@ -68,8 +87,11 @@ export default function PrintBukuInduk() {
               <tr><td className="lembar-label">NIK</td><td className="font-mono">{siswa.nik || '-'}</td></tr>
               <tr><td className="lembar-label">Jenis Kelamin</td><td>{JK_LABEL[siswa.jenis_kelamin] || '-'}</td></tr>
               <tr><td className="lembar-label">Tempat, Tanggal Lahir</td><td>{[siswa.tempat_lahir, formatTanggal(siswa.tanggal_lahir)].filter(Boolean).join(', ') || '-'}</td></tr>
+              <tr><td className="lembar-label">No. Registrasi Akta Lahir</td><td>{siswa.no_registrasi_akta_lahir || '-'}</td></tr>
               <tr><td className="lembar-label">Agama</td><td>{siswa.agama || '-'}</td></tr>
+              <tr><td className="lembar-label">Kewarganegaraan</td><td>{siswa.kewarganegaraan || '-'}</td></tr>
               <tr><td className="lembar-label">Alamat Siswa</td><td>{siswa.alamat || '-'}</td></tr>
+              <tr><td className="lembar-label">Tempat Tinggal</td><td>{siswa.tempat_tinggal || '-'}</td></tr>
               <tr><td className="lembar-label">Kebutuhan Khusus</td><td>{siswa.kebutuhan_khusus || '-'}</td></tr>
               <tr><td className="lembar-label">Jumlah Saudara / Anak Ke</td><td>{siswa.jumlah_saudara ?? '-'} / {siswa.anak_ke ?? '-'}</td></tr>
               <tr><td className="lembar-label">No. Telp Siswa</td><td>{siswa.no_telp || '-'}</td></tr>
@@ -83,6 +105,7 @@ export default function PrintBukuInduk() {
               <tr><td className="lembar-label">Alamat Sekolah Asal</td><td>{siswa.sekolah_asal_alamat || '-'}</td></tr>
               <tr><td className="lembar-label">Tahun Ijazah / STTB</td><td>{siswa.ijazah_tahun || '-'}</td></tr>
               <tr><td className="lembar-label">Nomor Ijazah / STTB</td><td>{siswa.ijazah_nomor || '-'}</td></tr>
+              <tr><td className="lembar-label">Tanggal / No. STK</td><td>{siswa.tanggal_no_stk || '-'}</td></tr>
               <tr><td className="lembar-label">Diterima di Tingkat</td><td>{siswa.tingkat_diterima || '-'}</td></tr>
               <tr><td className="lembar-label">Pada Tanggal</td><td>{formatTanggal(siswa.tanggal_diterima)}</td></tr>
               <tr><td className="lembar-label">Kompetensi Keahlian</td><td>{siswa.jurusan?.nama || '-'}</td></tr>
@@ -93,11 +116,15 @@ export default function PrintBukuInduk() {
           <table className="lembar-tabel lembar-tabel-full">
             <tbody>
               <tr><td className="lembar-label">Nama Ayah</td><td>{siswa.nama_ayah || '-'}</td></tr>
+              <tr><td className="lembar-label">Pekerjaan Ayah</td><td>{siswa.pekerjaan_ayah || '-'}</td></tr>
+              <tr><td className="lembar-label">Penghasilan Ayah</td><td>{siswa.penghasilan_ayah || '-'}</td></tr>
+              <tr><td className="lembar-label">Alamat Ayah</td><td>{siswa.alamat_ayah || '-'}</td></tr>
+              <tr><td className="lembar-label">No. Telp Ayah</td><td>{siswa.no_hp_ayah || '-'}</td></tr>
               <tr><td className="lembar-label">Nama Ibu</td><td>{siswa.nama_ibu || '-'}</td></tr>
-              <tr><td className="lembar-label">Alamat Orang Tua</td><td>{siswa.alamat_ortu || '-'}</td></tr>
-              <tr><td className="lembar-label">No. Telp Orang Tua</td><td>{siswa.telp_ortu || '-'}</td></tr>
-              <tr><td className="lembar-label">Pekerjaan Orang Tua</td><td>{siswa.pekerjaan_ortu || '-'}</td></tr>
-              <tr><td className="lembar-label">Penghasilan Orang Tua</td><td>{siswa.penghasilan_ortu || '-'}</td></tr>
+              <tr><td className="lembar-label">Pekerjaan Ibu</td><td>{siswa.pekerjaan_ibu || '-'}</td></tr>
+              <tr><td className="lembar-label">Penghasilan Ibu</td><td>{siswa.penghasilan_ibu || '-'}</td></tr>
+              <tr><td className="lembar-label">Alamat Ibu</td><td>{siswa.alamat_ibu || '-'}</td></tr>
+              <tr><td className="lembar-label">No. Telp Ibu</td><td>{siswa.no_hp_ibu || '-'}</td></tr>
               {(siswa.nama_wali || siswa.alamat_wali || siswa.telp_wali || siswa.pekerjaan_wali) && (
                 <>
                   <tr><td className="lembar-label">Nama Wali</td><td>{siswa.nama_wali || '-'}</td></tr>
@@ -106,6 +133,15 @@ export default function PrintBukuInduk() {
                   <tr><td className="lembar-label">Pekerjaan Wali</td><td>{siswa.pekerjaan_wali || '-'}</td></tr>
                 </>
               )}
+            </tbody>
+          </table>
+
+          <table className="lembar-tabel lembar-tabel-full">
+            <tbody>
+              <tr><td className="lembar-label">Tinggi / Berat Badan</td><td>{siswa.tinggi_badan ? `${siswa.tinggi_badan} cm` : '-'} / {siswa.berat_badan ? `${siswa.berat_badan} kg` : '-'}</td></tr>
+              <tr><td className="lembar-label">Jarak Rumah ke Sekolah</td><td>{siswa.jarak_rumah_sekolah || '-'}</td></tr>
+              <tr><td className="lembar-label">Ukuran Baju</td><td>{siswa.ukuran_baju || '-'}</td></tr>
+              <tr><td className="lembar-label">Hobi</td><td>{siswa.hobi || '-'}</td></tr>
             </tbody>
           </table>
 
@@ -128,6 +164,41 @@ export default function PrintBukuInduk() {
               {profile?.nip_kepala_sekolah && <p className="lembar-pengesahan-nip">NIP. {profile.nip_kepala_sekolah}</p>}
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Kartu terpisah dari biodata di atas — di layar berjarak (mb-6/mt-6
+          lewat space-y pada pembungkus), saat dicetak dipaksa mulai di
+          halaman baru (page-break-before, lihat style .lembar-berkas). */}
+      <div className="lembar lembar-berkas max-w-3xl mx-auto bg-white mt-6">
+        <div className="lembar-header">
+          {profile?.logo_url && <img src={profile.logo_url} alt="" className="lembar-logo" />}
+          <div>
+            <p className="lembar-sekolah">{profile?.nama_sekolah}</p>
+            <p className="lembar-judul">BERKAS PENDUKUNG — {siswa.user?.name}</p>
+          </div>
+        </div>
+
+        <div className="lembar-body space-y-6">
+          {BERKAS_LIST.map((b) => {
+            const url = siswa[`${b.key}_url`];
+            return (
+              <div key={b.key} className="berkas-item">
+                <p className="lembar-label mb-2" style={{ width: 'auto' }}>{b.label}</p>
+                {url ? (
+                  isGambar(url) ? (
+                    <img src={url} alt={b.label} className="berkas-preview-img" />
+                  ) : (
+                    <iframe src={url} title={b.label} className="berkas-preview-pdf" />
+                  )
+                ) : (
+                  <p className="flex items-center gap-1.5 text-ink-400 text-sm border border-dashed border-line-200 rounded-lg px-3 py-6 justify-center">
+                    <XIcon className="w-4 h-4" /> Belum diunggah
+                  </p>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
 
@@ -170,10 +241,16 @@ export default function PrintBukuInduk() {
         .lembar-pengesahan-nama { font-size: 13px; font-weight: 700; color: #0f172a; text-decoration: underline; }
         .lembar-pengesahan-nip { font-size: 11px; color: #64748b; margin-top: 2px; }
 
+        .berkas-item { break-inside: avoid; }
+        .berkas-preview-img { max-width: 100%; max-height: 130mm; object-fit: contain; border: 1px solid #E2E8F0; border-radius: 6px; }
+        .berkas-preview-pdf { width: 100%; height: 160mm; border: 1px solid #E2E8F0; border-radius: 6px; }
+
         @media print {
           .no-print { display: none !important; }
           body { margin: 0; background: #fff; }
           .lembar { border: none; }
+          .lembar-berkas { page-break-before: always; break-before: page; }
+          .berkas-preview-pdf { height: 220mm; }
           .lembar, .lembar * {
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;

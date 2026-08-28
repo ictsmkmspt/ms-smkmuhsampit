@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Plus, Trash2, Download, Upload, KeyRound, Printer, ImagePlus, UserRound, Search } from 'lucide-react';
+import { Plus, Trash2, Download, Upload, KeyRound, Printer, ImagePlus, UserRound, Search, UserCheck } from 'lucide-react';
 import api from '../../../api/axios';
 import TruncateText from '../../../components/TruncateText';
 import Pagination from '../../../components/Pagination';
 import usePagination from '../../../hooks/usePagination';
 import DateInput from '../../../components/DateInput';
 import { namaKeEmailSekolah } from '../../../utils/email';
+import { useAuth } from '../../../context/AuthContext';
+import JadikanSiswaMassalPpdbTab from '../ppdb/JadikanSiswaMassalPpdbTab';
 
 import QRCode from "qrcode";
 import JSZip from "jszip";
@@ -17,6 +19,7 @@ const FORM_KOSONG = {
 };
 
 export default function StudentsTab() {
+  const { user } = useAuth();
   const [students, setStudents] = useState([]);
   const [classes, setClasses] = useState([]);
   const [jurusanList, setJurusanList] = useState([]);
@@ -25,6 +28,7 @@ export default function StudentsTab() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
+  const [showJadikanMassal, setShowJadikanMassal] = useState(false);
 
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState(null);
@@ -232,10 +236,29 @@ export default function StudentsTab() {
   }
 };
 
+  if (showJadikanMassal) {
+    return (
+      <JadikanSiswaMassalPpdbTab
+        classList={classes}
+        jurusanList={jurusanList}
+        onSaved={loadStudents}
+        onBack={() => setShowJadikanMassal(false)}
+      />
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="surface-card p-5 flex flex-wrap items-center gap-3">
         <h2 className="font-display font-semibold text-ink-900 mr-auto">Import Data Siswa dari Excel</h2>
+        {user?.role === 'admin' && (
+          <button
+            onClick={() => setShowJadikanMassal(true)}
+            className="flex items-center gap-1.5 text-sm font-medium text-brand-700 bg-brand-50 hover:bg-brand-100 border border-brand-200 rounded-xl px-4 py-2 transition"
+          >
+            <UserCheck className="w-4 h-4" /> Tarik Data Calon Siswa
+          </button>
+        )}
         <button
           onClick={handleDownloadTemplate}
           className="flex items-center gap-1.5 text-sm font-medium text-ink-700 bg-mist-50 hover:bg-mist-100 border border-line-200 rounded-xl px-4 py-2 transition"

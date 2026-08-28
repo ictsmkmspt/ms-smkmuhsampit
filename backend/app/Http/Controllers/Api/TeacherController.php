@@ -39,6 +39,7 @@ class TeacherController extends Controller
             'password' => 'nullable|min:6',
             'nip' => 'required|string|unique:teachers,nip',
             'jenis_kelamin' => 'nullable|in:L,P',
+            'max_jam_mengajar' => 'nullable|integer|min:0|max:60',
         ]);
 
         return DB::transaction(function () use ($data) {
@@ -54,6 +55,7 @@ class TeacherController extends Controller
                 'nip' => $data['nip'],
                 'qr_code' => 'GRU-' . strtoupper(Str::random(8)),
                 'jenis_kelamin' => $data['jenis_kelamin'] ?? null,
+                'max_jam_mengajar' => $data['max_jam_mengajar'] ?? null,
             ])->load('user');
         });
     }
@@ -65,12 +67,13 @@ class TeacherController extends Controller
             'email' => 'sometimes|email|unique:users,email,' . $teacher->user_id,
             'nip' => 'sometimes|string|unique:teachers,nip,' . $teacher->id,
             'jenis_kelamin' => 'nullable|in:L,P',
+            'max_jam_mengajar' => 'nullable|integer|min:0|max:60',
         ]);
 
         if (isset($data['name']) || isset($data['email'])) {
             $teacher->user->update(array_intersect_key($data, array_flip(['name', 'email'])));
         }
-        $teacher->update($request->only('nip', 'jenis_kelamin'));
+        $teacher->update($request->only('nip', 'jenis_kelamin', 'max_jam_mengajar'));
 
         return $teacher->load('user');
     }

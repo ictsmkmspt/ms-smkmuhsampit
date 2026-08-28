@@ -261,6 +261,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/students/{student}', [StudentController::class, 'show']);
         Route::put('/students/{student}', [StudentController::class, 'update']);
         Route::post('/students/{student}/foto', [StudentController::class, 'uploadFoto']);
+        Route::post('/students/{student}/berkas', [StudentController::class, 'uploadBerkas']);
         Route::post('/students/foto-massal', [StudentController::class, 'uploadFotoMassal']);
     });
 
@@ -440,6 +441,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::apiResource('teaching-assignments', TeachingAssignmentController::class)->except(['show']);
         Route::apiResource('period-templates', PeriodTemplateController::class)->except(['show']);
         Route::get('/schedules/grid', [ScheduleController::class, 'grid']);
+        Route::post('/schedules/generate-otomatis', [ScheduleController::class, 'generateOtomatis']);
         Route::get('/schedules/export-excel', [ScheduleExportController::class, 'exportExcel']);
         Route::apiResource('schedules', ScheduleController::class)->except(['show', 'index']);
         // Jadwal Monitoring PKL global — dibuat admin/waka_kurikulum. GET-nya
@@ -466,6 +468,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/ppdb/{ppdbPendaftar}/manual', [PpdbController::class, 'updateManual']);
         Route::delete('/ppdb/{ppdbPendaftar}', [PpdbController::class, 'destroy']);
         Route::post('/ppdb/{ppdbPendaftar}/jadikan-siswa', [PpdbController::class, 'jadikanSiswa']);
+        Route::post('/ppdb/jadikan-siswa-massal', [PpdbController::class, 'jadikanSiswaMassal']);
         Route::get('/ppdb/{ppdbPendaftar}/pembayaran', [PpdbController::class, 'pembayaranList']);
         Route::post('/ppdb/{ppdbPendaftar}/pembayaran', [PpdbController::class, 'storePembayaran']);
         Route::delete('/ppdb/{ppdbPendaftar}/pembayaran', [PpdbController::class, 'clearPembayaran']);

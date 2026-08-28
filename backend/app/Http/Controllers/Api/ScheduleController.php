@@ -65,6 +65,131 @@ class ScheduleController extends Controller
     }
 
     /**
+     * Isi otomatis SISA jam yang belum ditempatkan dari semua Tugas
+     * Mengajar tahun ajaran aktif — pengisian greedy per assignment
+     * (urutan sesuai `urutan`), cari slot kosong pertama yang tidak
+     * bentrok kelas/guru, dan yang tidak membuat total jam guru itu
+     * melebihi `max_jam_mengajar`-nya (kalau diisi). Assignment yang
+     * kekurangan slot dilaporkan di `gagal` (bukan bikin request gagal
+     * total) supaya admin tinggal lengkapi manual sisanya lewat grid,
+     * pola sama seperti StudentsImport::failures() — batch besar tidak
+     * boleh gagal total gara-gara 1-2 baris bermasalah.
+     */
+    public function generateOtomatis(Request $request)
+    {
+        $tahunAjaranId = TahunAjaran::aktifId();
+        abort_unless($tahunAjaranId, 422, 'Tidak ada tahun ajaran aktif.');
+
+        $periods = PeriodTemplate::where('tipe', 'pelajaran')
+            ->orderByRaw("FIELD(hari, 'senin','selasa','rabu','kamis','jumat','sabtu')")
+            ->orderBy('waktu_mulai')
+            ->get();
+
+        if ($periods->isEmpty()) {
+            return response()->json(['message' => 'Belum ada Template Jadwal bertipe "pelajaran" — isi dulu di menu Template Jadwal.'], 422);
+        }
+
+        $assignments = TeachingAssignment::with(['teacher.user', 'subject', 'classRoom'])
+            ->withCount('schedules')
+            ->where('tahun_ajaran_id', $tahunAjaranId)
+            ->whereNotNull('target_jam')
+            ->orderBy('urutan')
+            ->get()
+            ->filter(fn ($a) => $a->schedules_count < $a->target_jam)
+            ->values();
+
+        if ($assignments->isEmpty()) {
+            return response()->json([
+                'ditempatkan' => 0,
+                'gagal' => [],
+                'message' => 'Tidak ada yang perlu ditempatkan — semua Tugas Mengajar yang punya target jam sudah terisi penuh.',
+            ]);
+        }
+
+        // Peta slot yang sudah terpakai + akumulasi jam per guru, dimulai
+        // dari isian yang SUDAH ada (bukan cuma yang baru ditempatkan di
+        // sini) — supaya batas max_jam_mengajar dihitung dari jam mengajar
+        // guru itu SELURUHNYA di tahun ajaran ini, bukan cuma dari
+        // assignment yang sedang diproses.
+        $existing = Schedule::where('tahun_ajaran_id', $tahunAjaranId)->get(['class_room_id', 'teacher_id', 'period_id']);
+
+        $occupiedKelas = [];
+        $occupiedGuru = [];
+        $jamGuruTerpakai = [];
+        foreach ($existing as $s) {
+            $occupiedKelas["{$s->class_room_id}-{$s->period_id}"] = true;
+            if ($s->teacher_id) {
+                $occupiedGuru["{$s->teacher_id}-{$s->period_id}"] = true;
+                $jamGuruTerpakai[$s->teacher_id] = ($jamGuruTerpakai[$s->teacher_id] ?? 0) + 1;
+            }
+        }
+
+        $ditempatkan = 0;
+        $gagal = [];
+
+        DB::transaction(function () use ($assignments, $periods, $tahunAjaranId, &$occupiedKelas, &$occupiedGuru, &$jamGuruTerpakai, &$ditempatkan, &$gagal) {
+            foreach ($assignments as $assignment) {
+                $butuh = $assignment->target_jam - $assignment->schedules_count;
+                $teacherId = $assignment->teacher_id;
+                $maxJam = $assignment->teacher?->max_jam_mengajar;
+
+                for ($i = 0; $i < $butuh; $i++) {
+                    $slot = null;
+                    $guruPenuh = false;
+
+                    foreach ($periods as $period) {
+                        if ($teacherId && $maxJam !== null && ($jamGuruTerpakai[$teacherId] ?? 0) >= $maxJam) {
+                            $guruPenuh = true;
+                            break;
+                        }
+                        if (isset($occupiedKelas["{$assignment->class_room_id}-{$period->id}"])) {
+                            continue;
+                        }
+                        if ($teacherId && isset($occupiedGuru["{$teacherId}-{$period->id}"])) {
+                            continue;
+                        }
+                        $slot = $period;
+                        break;
+                    }
+
+                    if (!$slot) {
+                        $gagal[] = [
+                            'teaching_assignment_id' => $assignment->id,
+                            'guru' => $assignment->teacher?->user?->name ?? '(belum ditentukan)',
+                            'mapel' => $assignment->subject?->nama ?? '-',
+                            'kelas' => $assignment->classRoom?->name ?? '-',
+                            'kurang' => $butuh - $i,
+                            'alasan' => $guruPenuh
+                                ? "Guru sudah mencapai batas {$maxJam} jam/minggu."
+                                : 'Tidak ada slot kosong yang cocok lagi (kelas/guru sudah terisi di semua jam tersisa).',
+                        ];
+                        break;
+                    }
+
+                    Schedule::create([
+                        'period_id' => $slot->id,
+                        'teaching_assignment_id' => $assignment->id,
+                        'class_room_id' => $assignment->class_room_id,
+                        'subject_id' => $assignment->subject_id,
+                        'teacher_id' => $teacherId,
+                        'tahun_ajaran_id' => $tahunAjaranId,
+                        'kode' => $assignment->kode_guru,
+                    ]);
+
+                    $occupiedKelas["{$assignment->class_room_id}-{$slot->id}"] = true;
+                    if ($teacherId) {
+                        $occupiedGuru["{$teacherId}-{$slot->id}"] = true;
+                        $jamGuruTerpakai[$teacherId] = ($jamGuruTerpakai[$teacherId] ?? 0) + 1;
+                    }
+                    $ditempatkan++;
+                }
+            }
+        });
+
+        return response()->json(['ditempatkan' => $ditempatkan, 'gagal' => $gagal]);
+    }
+
+    /**
      * Isi 1 sel grid — WAJIB berasal dari Tugas Mengajar yang sudah ada
      * (bukan pilih bebas mapel+guru lagi), supaya isian jadwal tidak pernah
      * menyimpang dari penugasan resminya, dan otomatis kebal dari 2 hal:

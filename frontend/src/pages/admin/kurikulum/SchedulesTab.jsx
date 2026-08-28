@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Trash2, X, FileSpreadsheet } from 'lucide-react';
+import { Trash2, X, FileSpreadsheet, Wand2, AlertTriangle, Check } from 'lucide-react';
 import api from '../../../api/axios';
 import { useTahunAjaran, useTahunAjaranParam } from '../../../context/TahunAjaranContext';
 
@@ -29,6 +29,9 @@ export default function SchedulesTab() {
     try { return JSON.parse(localStorage.getItem('jadwal_export_ttd')) || {}; } catch { return {}; }
   });
   const [exporting, setExporting] = useState(false);
+
+  const [generating, setGenerating] = useState(false);
+  const [generateResult, setGenerateResult] = useState(null); // null | { ditempatkan, gagal, message? }
 
   const loadGrid = () => api.get('/schedules/grid', { params: tahunParam }).then((res) => {
     setClasses(res.data.classes);
@@ -161,6 +164,26 @@ export default function SchedulesTab() {
     }
   };
 
+  // ===== Generate Otomatis =====
+  // Isi sisa jam Tugas Mengajar yang belum ditempatkan ke slot kosong yang
+  // valid (tidak bentrok kelas/guru, tidak melebihi Maks Jam Mengajar guru)
+  // — isian yang SUDAH ada tidak disentuh sama sekali, jadi aman dijalankan
+  // berkali-kali (idempotent buat bagian yang sudah terisi).
+  const handleGenerateOtomatis = async () => {
+    if (!confirm('Isi otomatis semua sisa jam Tugas Mengajar yang belum ditempatkan? Isian yang sudah ada tidak akan diubah/ditimpa — cuma slot kosong yang diisi.')) return;
+    setGenerating(true);
+    setGenerateResult(null);
+    try {
+      const res = await api.post('/schedules/generate-otomatis');
+      setGenerateResult(res.data);
+      loadGrid();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Gagal menjalankan pengisian otomatis.');
+    } finally {
+      setGenerating(false);
+    }
+  };
+
   // ===== Export Excel =====
   const handleExport = async () => {
     localStorage.setItem('jadwal_export_ttd', JSON.stringify(exportForm));
@@ -189,10 +212,58 @@ export default function SchedulesTab() {
             ? <>Struktur jam mengikuti menu <b>Template Jadwal</b> secara otomatis. Tempatkan Tugas Mengajar ke jam yang tersedia lewat panel di bawah — isian jadwal selalu mengikuti Tugas Mengajar, tidak bisa isi bebas mapel/guru lagi, supaya tidak ada guru yang kebentur jam mengajar di 2 kelas sekaligus.</>
             : 'Anda sedang melihat tahun ajaran lain (bukan yang aktif) — tempatkan/ubah/hapus isian jadwal dinonaktifkan di sini. Kembali ke tahun ajaran aktif di sidebar untuk mengubahnya.'}
         </p>
-        <button onClick={() => setExportModal(true)} className="btn-primary whitespace-nowrap">
-          <FileSpreadsheet className="w-4 h-4" /> Export ke Excel
-        </button>
+        <div className="flex items-center gap-2 shrink-0">
+          {tahunAktif && (
+            <button onClick={handleGenerateOtomatis} disabled={generating} className="flex items-center gap-1.5 text-sm font-medium text-brand-700 bg-brand-50 hover:bg-brand-100 disabled:opacity-50 border border-brand-200 rounded-xl px-3.5 py-2 whitespace-nowrap">
+              <Wand2 className="w-4 h-4" /> {generating ? 'Memproses...' : 'Generate Otomatis'}
+            </button>
+          )}
+          <button onClick={() => setExportModal(true)} className="btn-primary whitespace-nowrap">
+            <FileSpreadsheet className="w-4 h-4" /> Export ke Excel
+          </button>
+        </div>
       </div>
+
+      {generateResult && (
+        <div className="surface-card p-5 border-l-4 border-l-brand-400">
+          <div className="flex items-center justify-between gap-3 mb-1">
+            <h2 className="font-display font-semibold text-ink-900 flex items-center gap-2">
+              <Check className="w-4.5 h-4.5 text-brand-600" /> Hasil Generate Otomatis
+            </h2>
+            <button onClick={() => setGenerateResult(null)} className="text-ink-400 hover:text-ink-600"><X className="w-4 h-4" /></button>
+          </div>
+          <p className="text-sm text-ink-700 mb-3">
+            {generateResult.message || `${generateResult.ditempatkan} jam berhasil ditempatkan otomatis.`}
+          </p>
+          {generateResult.gagal?.length > 0 && (
+            <div className="table-scroll">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left text-ink-500 border-b border-line-200">
+                    <th className="pb-2 font-medium whitespace-nowrap px-2">Guru</th>
+                    <th className="font-medium whitespace-nowrap px-2">Mapel</th>
+                    <th className="font-medium whitespace-nowrap px-2">Kelas</th>
+                    <th className="font-medium text-right whitespace-nowrap px-2">Kurang</th>
+                    <th className="font-medium whitespace-nowrap px-2">Alasan</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {generateResult.gagal.map((g, i) => (
+                    <tr key={i} className="border-t border-line-200">
+                      <td className="py-2 text-ink-900 whitespace-nowrap px-2">{g.guru}</td>
+                      <td className="text-ink-700 whitespace-nowrap px-2">{g.mapel}</td>
+                      <td className="text-ink-700 whitespace-nowrap px-2">{g.kelas}</td>
+                      <td className="text-right font-medium text-honey-700 whitespace-nowrap px-2">{g.kurang} jam</td>
+                      <td className="text-ink-500 whitespace-nowrap px-2 flex items-center gap-1.5"><AlertTriangle className="w-3.5 h-3.5 shrink-0 text-honey-600" /> {g.alasan}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <p className="text-xs text-ink-400 mt-2">Sisa jam di atas belum tertempatkan — lengkapi manual lewat panel "Tempatkan Tugas Mengajar" di bawah, atau sesuaikan Maks Jam Mengajar gurunya di Master Data &gt; Guru.</p>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* ===== Panel: pool Tugas Mengajar per kelas ===== */}
       {tahunAktif && (

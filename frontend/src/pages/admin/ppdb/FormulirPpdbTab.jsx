@@ -259,7 +259,7 @@ export default function FormulirPpdbTab() {
     <div className="space-y-6">
       <div className="surface-card p-4 border-l-4 border-l-brand-400 flex items-center justify-between gap-3 flex-wrap">
         <p className="text-sm text-ink-700">
-          Pendaftaran PPDB dilakukan calon siswa lewat formulir publik (<code className="font-mono">/ppdb</code>, tanpa akun login), atau diinput manual di sini kalau calon siswa daftar langsung ke sekolah (offline) — keduanya masuk ke daftar yang sama di bawah.
+          Pendaftaran PPDB dilakukan calon siswa lewat formulir publik (<code className="font-mono">/ppdb</code>, tanpa akun login), atau diinput manual di sini kalau calon siswa daftar langsung ke sekolah (offline) — keduanya masuk ke daftar yang sama di bawah. Pendaftar yang sudah <strong>Diterima</strong> bisa dijadikan siswa aktif lewat menu <strong>Siswa &gt; Tarik Data Calon Siswa</strong>.
         </p>
         <button onClick={() => setShowTambah(true)} className="btn-primary shrink-0">
           <Plus className="w-4 h-4" /> Tambah Pendaftar Offline
